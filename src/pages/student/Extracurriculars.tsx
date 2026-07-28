@@ -3,15 +3,6 @@ import PageHero from '../../components/ui/PageHero'
 import { extracurriculars, type Extracurricular } from '../../data/extracurriculars'
 import { CalendarDays, User, Clock } from 'lucide-react'
 
-const categoryIcons: Record<string, string> = {
-  Olahraga: '🏃',
-  Keagamaan: '🕌',
-  'Seni & Kreatif': '🎨',
-  Kedisiplinan: '⭐',
-  Sosial: '🤝',
-  Akademik: '📚',
-}
-
 const Extracurriculars: React.FC = () => {
   const [items, setItems] = useState<Extracurricular[]>(extracurriculars)
   const [filter, setFilter] = useState<string>('Semua')
@@ -41,7 +32,7 @@ const Extracurriculars: React.FC = () => {
                   : 'border border-[#1B2A4A]/20 bg-white text-[#1B2A4A] hover:bg-[#FAF6F0]'
               }`}
             >
-              {cat === 'Semua' ? 'Semua' : `${categoryIcons[cat] || ''} ${cat}`}
+              {cat}
             </button>
           ))}
         </div>

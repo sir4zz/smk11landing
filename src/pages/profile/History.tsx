@@ -2,14 +2,16 @@ import React from 'react';
 import PageHero from '../../components/ui/PageHero';
 
 const milestones = [
-  { year: '2015', title: 'Pendirian SMKN 11 Kabupaten Tangerang', description: 'Sekolah resmi didirikan untuk memenuhi kebutuhan pendidikan kejuruan di wilayah Kabupaten Tangerang.' },
-  { year: '2016', title: 'Pembukaan program keahlian pertama', description: 'Program keahlian Teknik Komputer dan Jaringan (TKJ) dan Rekayasa Perangkat Lunak (RPL) resmi dibuka.' },
-  { year: '2017', title: 'Penambahan program keahlian', description: 'Membuka program Teknik Kendaraan Ringan (TKR) dan Teknik dan Bisnis Sepeda Motor (TBSM).' },
-  { year: '2018', title: 'Akreditasi dan penambahan program', description: 'Mendapatkan akreditasi pertama dan membuka program Akuntansi dan Keuangan Lembaga (AKL).' },
-  { year: '2019', title: 'Prestasi tingkat kabupaten', description: 'Meraih berbagai prestasi di tingkat kabupaten dalam kompetensi keahlian dan ekstrakurikuler.' },
-  { year: '2020', title: 'Adaptasi pembelajaran daring', description: 'Menerapkan sistem pembelajaran daring yang efektif selama masa pandemi global.' },
-  { year: '2022', title: 'Renovasi fasilitas', description: 'Peningkatan fasilitas sekolah dan laboratorium praktik untuk menunjang kompetensi siswa.' },
-  { year: '2024', title: 'Akreditasi A dan kerjasama industri', description: 'Mencapai akreditasi A dan memperluas jaringan kerjasama dengan berbagai industri ternama.' },
+  { year: '2013', title: 'Pendirian SMKN 11 Kabupaten Tangerang', description: 'Berdasarkan SK Operasional No. 420/Kep.678-Huk/2013 pada tanggal 5 Oktober 2013, SMKN 11 Kabupaten Tangerang resmi didirikan untuk memenuhi kebutuhan pendidikan kejuruan di wilayah Kecamatan Jayanti dan sekitarnya.' },
+  { year: '2014', title: 'Tahun Ajaran Perdana', description: 'Tahun ajaran pertama dimulai dengan membuka beberapa program keahlian. Sekolah menerapkan sistem militer dalam pembinaan siswa, yang kemudian menjadi ciri khas SMKN 11 Kabupaten Tangerang.' },
+  { year: '2015', title: 'Pengembangan Program Keahlian', description: 'Melakukan pengembangan dan penambahan program keahlian untuk menjawab kebutuhan industri. Program keahlian yang ada terus dibenahi kurikulumnya agar sesuai dengan standar dunia usaha dan industri.' },
+  { year: '2016', title: 'Peningkatan Kualitas Pembelajaran', description: 'Mengembangkan model pembelajaran berbasis ICT dan mulai membangun infrastruktur teknologi informasi untuk mendukung proses belajar mengajar yang modern.' },
+  { year: '2017', title: 'Penambahan Sarana dan Prasarana', description: 'Melakukan pembangunan dan renovasi sarana prasarana sekolah termasuk laboratorium komputer, bengkel otomotif, dan fasilitas pendukung pembelajaran lainnya.' },
+  { year: '2018', title: 'Akreditasi B', description: 'Meraih akreditasi B berdasarkan SK No. 039/BAN-SM-Prov/SK/2018 dari Badan Akreditasi Nasional Sekolah/Madrasah (BAN-S/M) pada tanggal 12 Desember 2018.' },
+  { year: '2019', title: 'Kegiatan Keagamaan dan Sosial', description: 'Menyelenggarakan peringatan Maulid Nabi Muhammad SAW yang melibatkan seluruh siswa, guru, dan masyarakat sekitar. Kegiatan ini menjadi agenda tahunan untuk membentuk akhlakul karimah siswa.' },
+  { year: '2020', title: 'Adaptasi Pembelajaran Daring', description: 'Menerapkan sistem pembelajaran daring yang efektif selama masa pandemi global. Sekolah berhasil beradaptasi dengan cepat menggunakan platform digital untuk kelangsungan pendidikan.' },
+  { year: '2022', title: 'Pembaruan Kurikulum', description: 'Melakukan transisi dan pembaruan kurikulum menuju Kurikulum Merdeka dengan penataan ulang program keahlian sesuai kebutuhan industri modern.' },
+  { year: '2024', title: 'Inovasi dan Prestasi Berkelanjutan', description: 'Terus berinovasi dalam layanan pendidikan dan meraih berbagai prestasi di ajang Lomba Kompetensi Siswa (LKS) tingkat Kabupaten dan Provinsi Banten.' },
 ];
 
 const History: React.FC = () => {
@@ -24,7 +26,7 @@ const History: React.FC = () => {
         <div className="relative border-l-4 border-[#1B2A4A] ml-4 md:ml-6">
           {milestones.map((milestone, index) => (
             <div key={index} className="mb-10 ml-8 md:ml-12 relative group">
-              <span className="absolute -left-[42px] md:-left-[58px] top-1 h-6 w-6 rounded-full bg-[#C8A951] border-4 border-[#FAF6F0]" />
+              <span className="absolute -left-10 md:-left-14 top-1 h-6 w-6 rounded-full bg-[#C8A951] border-4 border-[#FAF6F0]" />
               <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 transition duration-300 hover:shadow-md">
                 <span className="inline-block text-[#866D2C] font-bold text-lg mb-2">{milestone.year}</span>
                 <h3 className="text-xl font-semibold text-[#1B2A4A] mb-2">{milestone.title}</h3>

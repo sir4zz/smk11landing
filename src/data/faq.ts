@@ -9,7 +9,7 @@ export const faqData: FAQItem[] = [
   {
     id: 'faq-1',
     question: 'Apa saja program keahlian yang tersedia di SMKN 11 Kabupaten Tangerang?',
-    answer: 'SMKN 11 Kabupaten Tangerang memiliki 5 program keahlian unggulan, yaitu Teknik Komputer dan Jaringan (TKJ), Rekayasa Perangkat Lunak (RPL), Teknik Kendaraan Ringan (TKR), Teknik Bisnis Sepeda Motor (TBSM), serta Akuntansi dan Keuangan Lembaga (AKL).',
+    answer: 'SMKN 11 Kabupaten Tangerang memiliki 6 program keahlian unggulan, yaitu Teknik Jaringan Komputer dan Telekomunikasi (TJKT), Desain Komunikasi Visual (DKV), Teknik Otomotif (TO), Teknik Ketenagalistrikan (TITL), Manajemen Perkantoran dan Layanan Bisnis (MPLB), dan Busana.',
     category: 'Umum'
   },
   {
@@ -27,7 +27,7 @@ export const faqData: FAQItem[] = [
   {
     id: 'faq-4',
     question: 'Berapa biaya sekolah di SMKN 11 Kabupaten Tangerang?',
-    answer: 'SMKN 11 Kabupaten Tangerang adalah sekolah negeri yang tidak memungut biaya SPP (gratis). Terdapat biaya sukarela untuk kegiatan tertentu seperti MOS/LMS, praktik, dan kegiatan ekstrakurikuler yang telah disesuaikan dengan kemampuan orang tua siswa.',
+    answer: 'SMKN 11 Kabupaten Tangerang adalah sekolah negeri gratis yang tidak memungut biaya SPP. Terdapat biaya sukarela untuk kegiatan tertentu seperti MPLS, praktik, dan kegiatan ekstrakurikuler yang telah disesuaikan dengan kemampuan orang tua siswa.',
     category: 'Umum'
   },
   {

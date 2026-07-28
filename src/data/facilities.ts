@@ -10,14 +10,14 @@ export const facilitiesData: Facility[] = [
   {
     id: 'fac-1',
     name: 'Laboratorium Komputer',
-    description: 'Terdapat 4 ruang laboratorium komputer yang dilengkapi dengan PC spesifikasi tinggi, AC, dan koneksi internet fiber optik untuk menunjang praktik jurusan TKJ dan RPL.',
+    description: 'Terdapat 4 ruang laboratorium komputer yang dilengkapi dengan PC spesifikasi tinggi, AC, dan koneksi internet fiber optik untuk menunjang praktik jurusan TJKT dan DKV.',
     category: 'Akademik',
     photo: '/images/facilities/lab-komputer.jpg'
   },
   {
     id: 'fac-2',
     name: 'Bengkel Otomotif',
-    description: 'Fasilitas bengkel luas standar industri yang dilengkapi dengan peralatan servis lengkap, engine stand, car lift, dan scanner EFI untuk siswa TKR dan TBSM.',
+    description: 'Fasilitas bengkel luas standar industri yang dilengkapi dengan peralatan servis lengkap, engine stand, car lift, dan scanner EFI untuk siswa jurusan Teknik Otomotif.',
     category: 'Akademik',
     photo: '/images/facilities/bengkel.jpg'
   },
@@ -52,7 +52,7 @@ export const facilitiesData: Facility[] = [
   {
     id: 'fac-7',
     name: 'Laboratorium Akuntansi (Bank Mini)',
-    description: 'Ruang praktik bagi jurusan AKL yang didesain menyerupai pelayanan teller bank (Bank Mini) dan dilengkapi dengan mesin hitung uang serta software akuntansi.',
+    description: 'Ruang praktik bagi jurusan MPLB yang didesain menyerupai pelayanan teller bank (Bank Mini) dan dilengkapi dengan peralatan administrasi perkantoran serta software manajemen bisnis.',
     category: 'Akademik',
     photo: '/images/facilities/lab-akuntansi.jpg'
   },

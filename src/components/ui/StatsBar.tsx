@@ -13,9 +13,9 @@ interface StatsBarProps {
 
 export const StatsBar: React.FC<StatsBarProps> = ({ stats, className = '' }) => {
   return (
-    <div className={`bg-[#1B2A4A] text-[#FAF6F0] py-12 px-6 w-full ${className}`}>
+    <div className={`bg-[#1B2A4A] text-[#FAF6F0] py-12 px-4 sm:px-6 w-full ${className}`}>
       <div className="container mx-auto">
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {stats.map((stat, index) => (
             <div key={index} className="flex flex-col items-center text-center">
               {stat.icon && (

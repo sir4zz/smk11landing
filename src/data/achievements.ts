@@ -12,83 +12,53 @@ export interface Achievement {
 export const achievementsData: Achievement[] = [
   {
     id: 'ach-1',
-    title: 'Juara 1 IT Network Systems Administration',
-    event: 'Lomba Kompetensi Siswa (LKS)',
-    year: 2026,
-    level: 'Provinsi',
-    rank: 'Juara 1',
-    students: ['Budi Santoso (XII TKJ 1)'],
-    photo: '/images/achievements/lks-tkj.jpg'
+    title: 'Medali Perak Ajang Prestasi SMK Kabupaten Tangerang',
+    event: 'Ajang Prestasi SMK Kabupaten Tangerang',
+    year: 2025,
+    level: 'Kabupaten',
+    rank: 'Medali Perak',
+    students: ['Febriyani'],
+    photo: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=900&q=80'
   },
   {
     id: 'ach-2',
-    title: 'Juara 2 Web Technologies',
-    event: 'Lomba Kompetensi Siswa (LKS)',
-    year: 2025,
+    title: 'Medali Perak LKS Tingkat Kabupaten',
+    event: 'Lomba Kompetensi Siswa (LKS) Kabupaten',
+    year: 2024,
     level: 'Kabupaten',
     rank: 'Juara 2',
-    students: ['Rizky Aditya (XI RPL 2)'],
-    photo: '/images/achievements/lks-rpl.jpg'
+    students: ['Melati Febriyani'],
+    photo: 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=900&q=80'
   },
   {
     id: 'ach-3',
-    title: 'Juara 1 Futsal Antar Pelajar',
-    event: 'Bupati Cup Kabupaten Tangerang',
-    year: 2025,
+    title: 'Peringkat 14 Ajang Prestasi SMK Tingkat Kabupaten',
+    event: 'Ajang Prestasi SMK Kabupaten Tangerang',
+    year: 2024,
     level: 'Kabupaten',
-    rank: 'Juara 1',
-    students: ['Tim Futsal SMKN 11'],
-    photo: '/images/achievements/futsal.jpg'
+    rank: 'Medali Perak',
+    students: ['Tim SMKN 11 Kab. Tangerang'],
+    photo: 'https://images.unsplash.com/photo-1567427017947-545c5f8d16ad?auto=format&fit=crop&w=900&q=80'
   },
   {
     id: 'ach-4',
-    title: 'Juara 3 Line Follower Robot',
-    event: 'National Robotics Competition',
-    year: 2024,
-    level: 'Nasional',
-    rank: 'Juara 3',
-    students: ['Dimas (XII TKJ 2)', 'Gilang (XII TKJ 2)'],
-    photo: '/images/achievements/robotik.jpg'
+    title: 'Partisipasi LKS Kabel Jaringan Komputer Informasi',
+    event: 'Lomba Kompetensi Siswa (LKS) Kabupaten',
+    year: 2025,
+    level: 'Kabupaten',
+    rank: 'Peserta',
+    students: ['Febriyani'],
+    photo: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=900&q=80'
   },
   {
     id: 'ach-5',
-    title: 'Harapan 1 Olimpiade Akuntansi',
-    event: 'Olimpiade Akuntansi Nasional Vokasi',
-    year: 2024,
-    level: 'Nasional',
-    rank: 'Harapan 1',
-    students: ['Nisa Salsabila (XII AKL 1)'],
-    photo: '/images/achievements/akuntansi.jpg'
-  },
-  {
-    id: 'ach-6',
-    title: 'Juara 2 Paskibra Formasi Terbaik',
-    event: 'Lomba Ketangkasan Baris Berbaris (LKBB)',
-    year: 2023,
-    level: 'Provinsi',
-    rank: 'Juara 2',
-    students: ['Paskibra Satria 11'],
-    photo: '/images/achievements/paskibra.jpg'
-  },
-  {
-    id: 'ach-7',
-    title: 'Juara 1 Lomba Cipta Puisi Kebangsaan',
-    event: 'Bulan Bahasa & Sastra',
-    year: 2023,
+    title: 'Peringatan Maulid Nabi Muhammad SAW',
+    event: 'Kegiatan Keagamaan Sekolah',
+    year: 2019,
     level: 'Kabupaten',
-    rank: 'Juara 1',
-    students: ['Dewi Lestari (X AKL 2)'],
-    photo: '/images/achievements/puisi.jpg'
-  },
-  {
-    id: 'ach-8',
-    title: 'Best Mechanic Contest',
-    event: 'AHASS Vocational Skill Contest',
-    year: 2023,
-    level: 'Regional',
-    rank: 'Peringkat 2',
-    students: ['Fajar Hidayat (XII TBSM 1)'],
-    photo: '/images/achievements/tbsm-contest.jpg'
+    rank: 'Partisipasi',
+    students: ['Seluruh Siswa dan Guru'],
+    photo: 'https://images.unsplash.com/photo-1585412727339-54e4bae3bbf9?auto=format&fit=crop&w=900&q=80'
   }
 ];
 

@@ -3,10 +3,11 @@ import { Link } from 'react-router-dom';
 import {
   ArrowRight,
   Monitor,
-  Code,
+  Palette,
   Car,
-  Bike,
+  Zap,
   Calculator,
+  Scissors,
   Users,
   GraduationCap,
   BookOpen,
@@ -27,14 +28,16 @@ const getProgramIcon = (slug: string) => {
   switch (slug) {
     case 'tkj':
       return <Monitor className="h-8 w-8 text-[#C8A951]" />;
-    case 'rpl':
-      return <Code className="h-8 w-8 text-[#C8A951]" />;
-    case 'tkr':
+    case 'dkv':
+      return <Palette className="h-8 w-8 text-[#C8A951]" />;
+    case 'otomotif':
       return <Car className="h-8 w-8 text-[#C8A951]" />;
-    case 'tbsm':
-      return <Bike className="h-8 w-8 text-[#C8A951]" />;
-    case 'akl':
+    case 'titl':
+      return <Zap className="h-8 w-8 text-[#C8A951]" />;
+    case 'mplb':
       return <Calculator className="h-8 w-8 text-[#C8A951]" />;
+    case 'busana':
+      return <Scissors className="h-8 w-8 text-[#C8A951]" />;
     default:
       return <Monitor className="h-8 w-8 text-[#C8A951]" />;
   }
@@ -52,10 +55,10 @@ const Home: React.FC = () => {
   const [publicNews, setPublicNews] = useState(news);
   const [publicAchievements, setPublicAchievements] = useState(achievements);
   const [stats, setStats] = useState([
-    { value: '1200+', label: 'Siswa Aktif', icon: <Users className="h-6 w-6" /> },
-    { value: '85+', label: 'Tenaga Pengajar', icon: <GraduationCap className="h-6 w-6" /> },
-    { value: '5', label: 'Program Keahlian', icon: <BookOpen className="h-6 w-6" /> },
-    { value: '8', label: 'Prestasi', icon: <Trophy className="h-6 w-6" /> },
+    { value: '1.124+', label: 'Siswa Aktif', icon: <Users className="h-6 w-6" /> },
+    { value: '51+', label: 'Tenaga Pengajar', icon: <GraduationCap className="h-6 w-6" /> },
+    { value: '6', label: 'Program Keahlian', icon: <BookOpen className="h-6 w-6" /> },
+    { value: '33', label: 'Rombel', icon: <Trophy className="h-6 w-6" /> },
   ]);
 
   useEffect(() => {
@@ -66,10 +69,10 @@ const Home: React.FC = () => {
       .then((res) => res.json())
       .then((data) => {
         setStats([
-          { value: data.students || '1200+', label: 'Siswa Aktif', icon: <Users className="h-6 w-6" /> },
-          { value: data.teachers || '85+', label: 'Tenaga Pengajar', icon: <GraduationCap className="h-6 w-6" /> },
-          { value: data.programs || '5', label: 'Program Keahlian', icon: <BookOpen className="h-6 w-6" /> },
-          { value: data.achievements || '8', label: 'Prestasi', icon: <Trophy className="h-6 w-6" /> },
+          { value: data.students || '1.124+', label: 'Siswa Aktif', icon: <Users className="h-6 w-6" /> },
+          { value: data.teachers || '51+', label: 'Tenaga Pengajar', icon: <GraduationCap className="h-6 w-6" /> },
+          { value: data.programs || '6', label: 'Program Keahlian', icon: <BookOpen className="h-6 w-6" /> },
+          { value: data.achievements || '33', label: 'Rombel', icon: <Trophy className="h-6 w-6" /> },
         ]);
       })
       .catch(() => {});
@@ -232,9 +235,9 @@ const Home: React.FC = () => {
             {/* Image/Photo */}
             <div className="relative mx-auto w-full max-w-md lg:max-w-none">
               <div className="relative overflow-hidden rounded-3xl rounded-tr-[80px] rounded-bl-[80px] bg-[#FAF6F0] p-4 shadow-sm">
-                <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=800" alt="Kepala Sekolah SMKN 11" className="h-[450px] w-full object-cover rounded-2xl rounded-tr-[70px] rounded-bl-[70px]" />
+                <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=800" alt="Kepala Sekolah SMKN 11" className="h-[250px] sm:h-[350px] md:h-[450px] w-full object-cover rounded-2xl rounded-tr-[70px] rounded-bl-[70px]" />
                 <div className="absolute bottom-10 left-0 bg-[#1B2A4A] text-white p-4 pr-8 rounded-r-2xl shadow-xl border-l-4 border-[#C8A951]">
-                  <h4 className="font-bold text-lg">Dianna, S.Pd., M.Si.</h4>
+                  <h4 className="font-bold text-lg">Emma Sukmayati</h4>
                   <p className="text-[#F9E7A8] text-sm">Kepala SMKN 11 Kab. Tangerang</p>
                 </div>
               </div>
@@ -272,9 +275,9 @@ const Home: React.FC = () => {
 
           <div className="mt-12 grid items-center gap-8 lg:grid-cols-[1.1fr_0.9fr]">
             <div className="space-y-5 text-lg leading-8 text-[#23314D]">
-              <p>SMKN 11 Kabupaten Tangerang adalah lembaga pendidikan kejuruan yang berkomitmen mencetak siswa berprestasi, berkarakter, dan memiliki kompetensi sesuai kebutuhan industri.</p>
-              <p>Dengan tenaga pendidik yang berdedikasi, lingkungan belajar yang kondusif, dan fasilitas pembelajaran yang terus dikembangkan, sekolah ini menjadi pilihan tepat bagi siswa yang ingin menjemput masa depan lebih cepat.</p>
-              <p>Lulusan kami tidak hanya siap bekerja, tetapi juga memiliki jiwa kewirausahaan dan kemampuan adaptasi yang kuat untuk terus berkembang.</p>
+              <p>SMKN 11 Kabupaten Tangerang adalah lembaga pendidikan kejuruan negeri yang berdiri pada tahun 2013 dan berkomitmen mencetak siswa berprestasi, berakhlaqul karimah, dan memiliki kompetensi sesuai kebutuhan industri.</p>
+              <p>Berlokasi di Kp. Saradan, Desa Pangkat, Kecamatan Jayanti, sekolah ini memiliki 6 program keahlian unggulan dengan 1.124 siswa aktif dan 51 tenaga pengajar profesional yang berdedikasi.</p>
+              <p>Dengan akreditasi B dan didukung fasilitas laboratorium, bengkel, serta lingkungan belajar yang kondusif, lulusan kami tidak hanya siap bekerja, tetapi juga memiliki jiwa kewirausahaan dan akhlak mulia yang kuat.</p>
             </div>
 
             <div className="rounded-[1.5rem] border border-[#1B2A4A]/10 bg-white p-8 shadow-sm">

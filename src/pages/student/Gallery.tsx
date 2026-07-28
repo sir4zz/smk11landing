@@ -73,13 +73,13 @@ const Gallery: React.FC = () => {
             <X className="h-6 w-6" />
           </button>
           <div
-            className="relative max-h-[90vh] max-w-4xl overflow-hidden rounded-2xl shadow-2xl"
+            className="relative max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <img
               src={selected.src}
               alt={selected.caption}
-              className="max-h-[80vh] w-full object-contain"
+              className="max-h-[50vh] sm:max-h-[80vh] w-full object-contain"
             />
             <div className="bg-white p-4">
               <p className="font-semibold text-[#1B2A4A]">{selected.caption}</p>

@@ -17,6 +17,12 @@ app.use(express.json({ limit: '10mb' }));
 
 const allowedTypes = new Set(['news', 'programs', 'facilities', 'staff', 'achievements']);
 const publicTypes = new Set(['programs', 'facilities', 'staff', 'news', 'achievements']);
+const jsonColumns = { programs: ['competencies', 'careerProspects', 'facilities'], achievements: ['students'] };
+function parseRows(table, rows) {
+  const cols = jsonColumns[table] || [];
+  if (!cols.length) return rows;
+  return rows.map(r => ({ ...r, ...Object.fromEntries(cols.map(c => [c, typeof r[c] === 'string' ? JSON.parse(r[c]) : r[c]])) }));
+}
 const ppdbStatuses = ['Menunggu Verifikasi', 'Sedang Diverifikasi', 'Perlu Perbaikan Dokumen', 'Lolos Seleksi', 'Cadangan', 'Tidak Lolos', 'Sudah Daftar Ulang'];
 const docTypes = ['pas_foto', 'kartu_keluarga', 'akta_kelahiran', 'rapor', 'skl', 'dokumen_pendukung'];
 
@@ -40,22 +46,22 @@ const applicantAuth = async (req, res, next) => {
 /* ===== Stats & Public ===== */
 app.get('/api/public/stats', async (_req, res) => {
   try {
-    const [pc] = await db.query(`SELECT COUNT(*) AS c FROM content_records WHERE content_type = 'programs'`);
-    const [ac] = await db.query(`SELECT COUNT(*) AS c FROM content_records WHERE content_type = 'achievements'`);
+    const [pc] = await db.query(`SELECT COUNT(*) AS c FROM programs`);
+    const [ac] = await db.query(`SELECT COUNT(*) AS c FROM achievements`);
     const [sr] = await db.query('SELECT stat_key, stat_value FROM site_stats');
     const m = {}; for (const r of sr) m[r.stat_key] = r.stat_value;
-    res.json({ students: m.students || '1200+', teachers: m.teachers || '85+', programs: String(pc[0].c || 5), achievements: String(ac[0].c || 8) });
-  } catch { res.json({ students: '1200+', teachers: '85+', programs: '5', achievements: '8' }); }
+    res.json({ students: m.students || '1.124+', teachers: m.teachers || '51+', programs: String(pc[0].c || 6), achievements: String(ac[0].c || 33) });
+  } catch { res.json({ students: '1.124+', teachers: '51+', programs: '6', achievements: '33' }); }
 });
 app.get('/api/public/content/:type', async (req, res) => {
   if (!publicTypes.has(req.params.type)) return res.sendStatus(404);
-  try { const [rows] = await db.query('SELECT id, data FROM content_records WHERE content_type = ? ORDER BY updated_at DESC', [req.params.type]); res.json(rows.map(r => ({ id: r.id, ...JSON.parse(r.data) }))); } catch { res.status(503).json({ message: 'Konten belum tersedia.' }); }
+  try { const [rows] = await db.query(`SELECT * FROM ${req.params.type} ORDER BY updated_at DESC`); res.json(parseRows(req.params.type, rows)); } catch { res.status(503).json({ message: 'Konten belum tersedia.' }); }
 });
 app.get('/api/public/content/:type/:id', async (req, res) => {
   if (!publicTypes.has(req.params.type)) return res.sendStatus(404);
-  const [rows] = await db.query('SELECT id, data FROM content_records WHERE content_type = ? AND id = ?', [req.params.type, req.params.id]);
+  const [rows] = await db.query(`SELECT * FROM ${req.params.type} WHERE id = ?`, [req.params.id]);
   if (!rows.length) return res.sendStatus(404);
-  res.json({ id: rows[0].id, ...JSON.parse(rows[0].data) });
+  res.json(parseRows(req.params.type, rows)[0]);
 });
 
 /* ===== Auth ===== */
@@ -69,50 +75,33 @@ app.post('/api/auth/login', async (req, res) => {
 });
 app.get('/api/health', async (_req, res) => { try { await db.query('SELECT 1'); res.json({ ok: true }); } catch { res.status(503).json({ ok: false }); } });
 
-/* ===== Admin Content CRUD ===== */
+/* ===== Admin Content CRUD (per-table) ===== */
 app.get('/api/content/:type', adminAuth, async (req, res) => {
   if (!allowedTypes.has(req.params.type)) return res.sendStatus(404);
-  const [rows] = await db.query('SELECT id, data FROM content_records WHERE content_type = ? ORDER BY updated_at DESC', [req.params.type]);
-  res.json(rows.map(r => ({ id: r.id, ...JSON.parse(r.data) })));
+  const [rows] = await db.query(`SELECT * FROM ${req.params.type} ORDER BY updated_at DESC`);
+  res.json(parseRows(req.params.type, rows));
 });
 app.post('/api/content/:type', adminAuth, async (req, res) => {
   if (!allowedTypes.has(req.params.type)) return res.sendStatus(404);
   const id = req.body.id || randomUUID();
-  await db.query('INSERT INTO content_records (id, content_type, data) VALUES (?, ?, ?)', [id, req.params.type, JSON.stringify(req.body)]);
-  res.status(201).json({ id, ...req.body });
+  const data = { ...req.body, id };
+  const keys = Object.keys(data);
+  const vals = keys.map(k => Array.isArray(data[k]) ? JSON.stringify(data[k]) : data[k]);
+  await db.query(`INSERT INTO ${req.params.type} (${keys.join(',')}) VALUES (${keys.map(() => '?').join(',')})`, vals);
+  res.status(201).json(data);
 });
 app.put('/api/content/:type/:id', adminAuth, async (req, res) => {
   if (!allowedTypes.has(req.params.type)) return res.sendStatus(404);
-  const [r] = await db.query('UPDATE content_records SET data = ? WHERE id = ? AND content_type = ?', [JSON.stringify(req.body), req.params.id, req.params.type]);
+  const data = { ...req.body }; delete data.id;
+  const keys = Object.keys(data);
+  const vals = keys.map(k => Array.isArray(data[k]) ? JSON.stringify(data[k]) : data[k]);
+  const [r] = await db.query(`UPDATE ${req.params.type} SET ${keys.map(k => `${k}=?`).join(',')} WHERE id=?`, [...vals, req.params.id]);
   if (!r.affectedRows) return res.sendStatus(404);
   res.json({ id: req.params.id, ...req.body });
 });
 app.delete('/api/content/:type/:id', adminAuth, async (req, res) => {
-  const [r] = await db.query('DELETE FROM content_records WHERE id = ? AND content_type = ?', [req.params.id, req.params.type]);
+  const [r] = await db.query(`DELETE FROM ${req.params.type} WHERE id=?`, [req.params.id]);
   res.status(r.affectedRows ? 204 : 404).end();
-});
-
-/* ===== Old PPDB compat ===== */
-app.get('/api/ppdb', adminAuth, async (_req, res) => { const [rows] = await db.query('SELECT id, name, program, status, submitted_at AS date FROM ppdb_applications ORDER BY submitted_at DESC'); res.json(rows); });
-app.post('/api/ppdb/apply', async (req, res) => {
-  const { name, nisn, email, phone, address, program, documentUrl } = req.body;
-  if (![name, nisn, email, phone, address, program].every(v => v && v.trim())) return res.status(400).json({ message: 'Data wajib diisi.' });
-  if (!/^\S+@\S+\.\S+$/.test(email)) return res.status(400).json({ message: 'Email tidak valid.' });
-  const id = randomUUID(); const date = new Date().toISOString().slice(0, 10);
-  await db.query('INSERT INTO ppdb_applications (id, name, nisn, email, phone, address, program, document_url, submitted_at) VALUES (?,?,?,?,?,?,?,?,?)', [id, name.trim(), nisn.trim(), email.trim(), phone.trim(), address.trim(), program.trim(), documentUrl?.trim() || null, date]);
-  res.status(201).json({ id, message: 'Pendaftaran berhasil dikirim.' });
-});
-app.post('/api/ppdb', adminAuth, async (req, res) => {
-  const { name, program, status = 'Menunggu Verifikasi', date } = req.body; const id = randomUUID();
-  await db.query('INSERT INTO ppdb_applications (id, name, program, status, submitted_at) VALUES (?,?,?,?,?)', [id, name, program, status, date]); res.status(201).json({ id, name, program, status, date });
-});
-app.put('/api/ppdb/:id', adminAuth, async (req, res) => {
-  const { name, program, status, date } = req.body;
-  const [r] = await db.query('UPDATE ppdb_applications SET name=?, program=?, status=?, submitted_at=? WHERE id=?', [name, program, status, date, req.params.id]);
-  if (!r.affectedRows) return res.sendStatus(404); res.json({ id: req.params.id, ...req.body });
-});
-app.delete('/api/ppdb/:id', adminAuth, async (req, res) => {
-  const [r] = await db.query('DELETE FROM ppdb_applications WHERE id=?', [req.params.id]); res.status(r.affectedRows ? 204 : 404).end();
 });
 
 /* ===== Contact ===== */
@@ -316,15 +305,46 @@ app.get('/api/ppdb/export/csv', adminAuth, async (_req, res) => {
 });
 
 /* ======================================================== */
+/* ===== Old PPDB compat (legacy /api/ppdb) ===== */
+/* ======================================================== */
+app.get('/api/ppdb', adminAuth, async (_req, res) => { const [rows] = await db.query('SELECT id, name, program, status, submitted_at AS date FROM ppdb_applications ORDER BY submitted_at DESC'); res.json(rows); });
+app.post('/api/ppdb/apply', async (req, res) => {
+  const { name, nisn, email, phone, address, program, documentUrl } = req.body;
+  if (![name, nisn, email, phone, address, program].every(v => v && v.trim())) return res.status(400).json({ message: 'Data wajib diisi.' });
+  if (!/^\S+@\S+\.\S+$/.test(email)) return res.status(400).json({ message: 'Email tidak valid.' });
+  const id = randomUUID(); const date = new Date().toISOString().slice(0, 10);
+  await db.query('INSERT INTO ppdb_applications (id, name, nisn, email, phone, address, program, document_url, submitted_at) VALUES (?,?,?,?,?,?,?,?,?)', [id, name.trim(), nisn.trim(), email.trim(), phone.trim(), address.trim(), program.trim(), documentUrl?.trim() || null, date]);
+  res.status(201).json({ id, message: 'Pendaftaran berhasil dikirim.' });
+});
+app.post('/api/ppdb', adminAuth, async (req, res) => {
+  const { name, program, status = 'Menunggu Verifikasi', date } = req.body; const id = randomUUID();
+  await db.query('INSERT INTO ppdb_applications (id, name, program, status, submitted_at) VALUES (?,?,?,?,?)', [id, name, program, status, date]); res.status(201).json({ id, name, program, status, date });
+});
+app.put('/api/ppdb/:id', adminAuth, async (req, res) => {
+  const { name, program, status, date } = req.body;
+  const [r] = await db.query('UPDATE ppdb_applications SET name=?, program=?, status=?, submitted_at=? WHERE id=?', [name, program, status, date, req.params.id]);
+  if (!r.affectedRows) return res.sendStatus(404); res.json({ id: req.params.id, ...req.body });
+});
+app.delete('/api/ppdb/:id', adminAuth, async (req, res) => {
+  const [r] = await db.query('DELETE FROM ppdb_applications WHERE id=?', [req.params.id]); res.status(r.affectedRows ? 204 : 404).end();
+});
+
+/* ======================================================== */
 /* ===== Database Schema & Seed ===== */
 /* ======================================================== */
 
 async function initializeSchema() {
   await db.query(`CREATE TABLE IF NOT EXISTS site_stats (stat_key VARCHAR(50) PRIMARY KEY, stat_value VARCHAR(50) NOT NULL, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
   await db.query(`CREATE TABLE IF NOT EXISTS users (id CHAR(36) PRIMARY KEY, username VARCHAR(50) NOT NULL UNIQUE, password_hash VARCHAR(255) NOT NULL, role ENUM('admin') NOT NULL DEFAULT 'admin', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
-  await db.query(`CREATE TABLE IF NOT EXISTS content_records (id CHAR(36) PRIMARY KEY, content_type ENUM('news','programs','facilities','staff','achievements') NOT NULL, data JSON NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, INDEX cti (content_type)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
   await db.query(`CREATE TABLE IF NOT EXISTS contact_messages (id CHAR(36) PRIMARY KEY, name VARCHAR(150) NOT NULL, email VARCHAR(150) NOT NULL, subject VARCHAR(255) NOT NULL, message TEXT NOT NULL, is_read TINYINT(1) DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
   await db.query(`CREATE TABLE IF NOT EXISTS ppdb_applications (id CHAR(36) PRIMARY KEY, name VARCHAR(150) NOT NULL, nisn VARCHAR(20) NOT NULL, email VARCHAR(150) NOT NULL, phone VARCHAR(30) NOT NULL, address TEXT NOT NULL, program VARCHAR(150) NOT NULL, document_url VARCHAR(500) NULL, status ENUM('Menunggu Verifikasi','Terverifikasi','Ditolak') DEFAULT 'Menunggu Verifikasi', submitted_at DATE NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+
+  /* Content type tables */
+  await db.query(`CREATE TABLE IF NOT EXISTS programs (id CHAR(36) PRIMARY KEY, name VARCHAR(150), slug VARCHAR(50), shortName VARCHAR(10), shortDescription TEXT, description TEXT, competencies JSON, careerProspects JSON, facilities JSON, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+  await db.query(`CREATE TABLE IF NOT EXISTS news (id CHAR(36) PRIMARY KEY, title VARCHAR(255), slug VARCHAR(100), date DATE, excerpt TEXT, content TEXT, thumbnail VARCHAR(500), category VARCHAR(50), author VARCHAR(100), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+  await db.query(`CREATE TABLE IF NOT EXISTS facilities (id CHAR(36) PRIMARY KEY, name VARCHAR(150), category VARCHAR(50), description TEXT, photo VARCHAR(500), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+  await db.query(`CREATE TABLE IF NOT EXISTS staff (id CHAR(36) PRIMARY KEY, name VARCHAR(150), position VARCHAR(100), department VARCHAR(100), photo VARCHAR(500), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+  await db.query(`CREATE TABLE IF NOT EXISTS achievements (id CHAR(36) PRIMARY KEY, title VARCHAR(255), event VARCHAR(255), year YEAR, level VARCHAR(50), rank VARCHAR(50), students JSON, photo VARCHAR(500), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
 
   /* New PPDB tables */
   await db.query(`CREATE TABLE IF NOT EXISTS ppdb_users (id CHAR(36) PRIMARY KEY, name VARCHAR(150) NOT NULL, email VARCHAR(150) NOT NULL UNIQUE, phone VARCHAR(30) NOT NULL, password_hash VARCHAR(255) NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
@@ -343,62 +363,65 @@ async function ensureAdmin() {
 
 const initialContent = {
   programs: [
-    { id: 'tkj', name: 'Teknik Komputer dan Jaringan', slug: 'tkj', shortName: 'TKJ', shortDescription: 'Mempelajari perakitan komputer, instalasi jaringan, dan administrasi server.', description: 'Program keahlian Teknik Komputer dan Jaringan membekali siswa dengan keterampilan infrastruktur teknologi informasi.', competencies: ['Perakitan dan Perbaikan Komputer', 'Instalasi Jaringan LAN/WAN', 'Administrasi Server', 'Keamanan Jaringan'], careerProspects: ['Network Administrator', 'System Administrator', 'IT Support'], facilities: ['Laboratorium Komputer', 'Peralatan Jaringan', 'Server Praktik'] },
-    { id: 'rpl', name: 'Rekayasa Perangkat Lunak', slug: 'rpl', shortName: 'RPL', shortDescription: 'Mempelajari pengembangan aplikasi web, desktop, mobile, dan basis data.', description: 'Program Rekayasa Perangkat Lunak fokus pada pengembangan perangkat lunak dari desain hingga pemeliharaan sistem.', competencies: ['Pemrograman Web', 'Pemrograman Berorientasi Objek', 'Pengembangan Aplikasi Mobile', 'Manajemen Basis Data'], careerProspects: ['Web Developer', 'Mobile App Developer', 'UI/UX Designer'], facilities: ['Laboratorium RPL', 'Komputer Spesifikasi Tinggi', 'SDK Terkini'] },
-    { id: 'tkr', name: 'Teknik Kendaraan Ringan', slug: 'tkr', shortName: 'TKR', shortDescription: 'Fokus pada perawatan dan perbaikan kendaraan roda empat.', description: 'Mendidik siswa memiliki keahlian dalam perawatan dan perbaikan mesin otomotif roda empat.', competencies: ['Pemeliharaan Mesin', 'Sistem Kelistrikan', 'Sistem Sasis', 'Overhaul Mesin'], careerProspects: ['Mekanik Mobil', 'Service Advisor', 'Teknisi Dealer'], facilities: ['Bengkel Otomotif', 'Engine Stand', 'Car Lift'] },
-    { id: 'tbsm', name: 'Teknik Bisnis Sepeda Motor', slug: 'tbsm', shortName: 'TBSM', shortDescription: 'Mempelajari teknik perawatan, perbaikan sepeda motor, dan manajemen bengkel.', description: 'Menyiapkan siswa menjadi ahli perawatan, perbaikan, dan modifikasi sepeda motor.', competencies: ['Pemeliharaan Mesin Motor', 'Kelistrikan Motor', 'Teknologi Injeksi', 'Manajemen Bengkel'], careerProspects: ['Mekanik Sepeda Motor', 'Kepala Mekanik', 'Wirausaha Bengkel'], facilities: ['Bengkel Motor', 'Peralatan Servis', 'Scanner Injeksi'] },
-    { id: 'akl', name: 'Akuntansi dan Keuangan Lembaga', slug: 'akl', shortName: 'AKL', shortDescription: 'Mempelajari penyusunan laporan keuangan, perpajakan, dan aplikasi komputer akuntansi.', description: 'Membekali siswa dengan kompetensi pengelolaan keuangan, laporan keuangan, perpajakan, dan aplikasi akuntansi.', competencies: ['Akuntansi Jasa dan Dagang', 'Administrasi Pajak', 'Komputer Akuntansi', 'Pengelolaan Kas'], careerProspects: ['Staf Akunting', 'Teller Bank', 'Staf Administrasi Keuangan'], facilities: ['Laboratorium Akuntansi', 'Bank Mini', 'Software Akuntansi'] }
+    { id: 'tkj', name: 'Teknik Jaringan Komputer dan Telekomunikasi', slug: 'tkj', shortName: 'TJKT', shortDescription: 'Mempelajari perakitan komputer, instalasi jaringan, administrasi server, dan teknologi telekomunikasi.', description: 'Program keahlian Teknik Jaringan Komputer dan Telekomunikasi (TJKT) membekali siswa dengan keterampilan dalam perakitan komputer, instalasi jaringan lokal (LAN) maupun luas (WAN), administrasi server, serta teknologi telekomunikasi.', competencies: ['Perakitan dan Perbaikan Komputer', 'Instalasi Jaringan LAN/WAN', 'Administrasi Server', 'Keamanan Jaringan dan Cyber Security', 'Teknologi Telekomunikasi dan Fiber Optik'], careerProspects: ['Network Administrator', 'System Administrator', 'Teknisi Jaringan Telekomunikasi', 'IT Support', 'Teknisi Fiber Optik'], facilities: ['Laboratorium Komputer', 'Peralatan Jaringan (Router, Switch, MikroTik)', 'Server Khusus Praktik', 'Koneksi Internet Fiber Optik'] },
+    { id: 'dkv', name: 'Desain Komunikasi Visual', slug: 'dkv', shortName: 'DKV', shortDescription: 'Mempelajari desain grafis, multimedia, videografi, fotografi, dan animasi digital.', description: 'Desain Komunikasi Visual (DKV) fokus pada pengembangan kreativitas di bidang desain grafis, multimedia, videografi, fotografi, dan animasi.', competencies: ['Desain Grafis (CorelDRAW, Adobe Illustrator, Photoshop)', 'Videografi dan Editing Video', 'Fotografi Digital', 'Animasi 2D dan 3D', 'Produksi Konten Digital Kreatif'], careerProspects: ['Desainer Grafis', 'Videografer/Editor Video', 'Fotografer', 'Animator', 'Social Media Specialist'], facilities: ['Laboratorium Multimedia', 'Kamera DSLR/Mirrorless', 'Studio Fotografi', 'Green Screen Studio'] },
+    { id: 'otomotif', name: 'Teknik Otomotif', slug: 'otomotif', shortName: 'TO', shortDescription: 'Fokus pada perawatan dan perbaikan kendaraan bermotor roda dua dan roda empat.', description: 'Teknik Otomotif mendidik siswa untuk memiliki keahlian dalam perawatan dan perbaikan kendaraan roda empat dan roda dua, mencakup mesin bensin dan diesel, sistem kelistrikan, sistem injeksi, serta sasis.', competencies: ['Pemeliharaan Mesin Kendaraan', 'Perbaikan Sistem Kelistrikan Kendaraan', 'Perawatan Sistem Sasis dan Pemindah Tenaga', 'Overhaul Mesin', 'Teknologi Injeksi (EFI & PGM-FI)'], careerProspects: ['Mekanik Profesional', 'Service Advisor', 'Teknisi Bengkel Resmi', 'Wirausaha Bengkel', 'Kepala Mekanik'], facilities: ['Bengkel Otomotif Standar Industri', 'Engine Stand', 'Car Lift', 'Alat Uji Emisi', 'Scanner EFI'] },
+    { id: 'titl', name: 'Teknik Ketenagalistrikan', slug: 'titl', shortName: 'TITL', shortDescription: 'Mempelajari instalasi listrik, sistem tenaga, motor listrik, dan otomasi industri.', description: 'Teknik Ketenagalistrikan (TITL) membekali siswa dengan kompetensi di bidang instalasi listrik, sistem tenaga listrik, motor listrik, dan kendali otomasi industri.', competencies: ['Instalasi Listrik Penerangan dan Tenaga', 'Sistem Distribusi Tenaga Listrik', 'Motor Listrik dan Kontrol', 'PLC (Programmable Logic Controller)', 'Elektronika Daya'], careerProspects: ['Teknisi Listrik', 'Instalatir Listrik', 'Teknisi Pemeliharaan Gedung', 'Operator Pembangkit Listrik', 'Wirausaha Jasa Instalasi Listrik'], facilities: ['Laboratorium Instalasi Listrik', 'Panel Listrik Praktik', 'Motor Listrik Berbagai Jenis', 'Trainer PLC', 'Peralatan K3'] },
+    { id: 'mplb', name: 'Manajemen Perkantoran dan Layanan Bisnis', slug: 'mplb', shortName: 'MPLB', shortDescription: 'Mempelajari administrasi perkantoran, manajemen bisnis, dan layanan profesional.', description: 'Manajemen Perkantoran dan Layanan Bisnis (MPLB) membekali siswa dengan kompetensi dalam mengelola administrasi perkantoran, komunikasi bisnis, pengelolaan keuangan, dan aplikasi komputer perkantoran.', competencies: ['Administrasi dan Manajemen Perkantoran', 'Komunikasi Bisnis', 'Kearsipan Digital', 'Komputer Akuntansi', 'Public Relation dan Layanan Pelanggan'], careerProspects: ['Staf Administrasi Perkantoran', 'Customer Service Representative', 'Administrasi Keuangan', 'Resepsionis', 'Administrasi Personalia (HR)'], facilities: ['Laboratorium Administrasi Perkantoran', 'Bank Mini', 'Perangkat Multimedia', 'Software Administrasi Perkantoran'] },
+    { id: 'busana', name: 'Busana', slug: 'busana', shortName: 'Busana', shortDescription: 'Mempelajari desain busana, pembuatan pola, menjahit, dan produksi fashion.', description: 'Program keahlian Busana membekali siswa dengan keterampilan di bidang desain busana, pembuatan pola, menjahit, dan produksi busana, serta kewirausahaan fashion.', competencies: ['Desain Busana (Fashion Design)', 'Pembuatan Pola (Pattern Making)', 'Menjahit Busana Pria/Wanita/Anak', 'Teknik Hiasan Busana', 'Manajemen Produksi Busana'], careerProspects: ['Desainer Busana', 'Penjahit Profesional', 'Pattern Maker', 'Pemilik Butik/Konveksi', 'Quality Control Produk Garmen'], facilities: ['Ruang Praktik Menjahit', 'Mesin Jahit Industri', 'Mesin Obras dan Neci', 'Manekin (Dress Form)', 'Laboratorium Desain Busana'] }
   ],
   facilities: [
-    { id: 'fac-1', name: 'Laboratorium Komputer', category: 'Akademik', description: 'Laboratorium komputer dengan PC spesifikasi tinggi dan koneksi internet untuk menunjang praktik TKJ dan RPL.', photo: '/images/facilities/lab-komputer.jpg' },
-    { id: 'fac-2', name: 'Bengkel Otomotif', category: 'Akademik', description: 'Bengkel praktik dengan peralatan servis lengkap untuk siswa TKR dan TBSM.', photo: '/images/facilities/bengkel.jpg' },
+    { id: 'fac-1', name: 'Laboratorium Komputer', category: 'Akademik', description: 'Laboratorium komputer dengan PC spesifikasi tinggi dan koneksi internet fiber optik untuk menunjang praktik TJKT dan DKV.', photo: '/images/facilities/lab-komputer.jpg' },
+    { id: 'fac-2', name: 'Bengkel Otomotif', category: 'Akademik', description: 'Bengkel praktik standar industri dengan peralatan servis lengkap, engine stand, car lift, dan scanner EFI untuk siswa Teknik Otomotif.', photo: '/images/facilities/bengkel.jpg' },
     { id: 'fac-3', name: 'Perpustakaan Digital', category: 'Akademik', description: 'Ruang baca nyaman dengan koleksi buku dan akses referensi digital.', photo: '/images/facilities/perpustakaan.jpg' },
     { id: 'fac-4', name: 'Lapangan Olahraga Utama', category: 'Fasilitas Umum', description: 'Lapangan serbaguna untuk olahraga dan kegiatan sekolah.', photo: '/images/facilities/lapangan.jpg' },
     { id: 'fac-5', name: 'Masjid Ulil Albab', category: 'Keagamaan', description: 'Masjid sekolah untuk ibadah dan pembinaan rohani.', photo: '/images/facilities/masjid.jpg' },
     { id: 'fac-6', name: 'Aula Serbaguna', category: 'Fasilitas Umum', description: 'Aula untuk pertemuan, seminar, pentas seni, dan kegiatan sekolah.', photo: '/images/facilities/aula.jpg' },
-    { id: 'fac-7', name: 'Laboratorium Akuntansi (Bank Mini)', category: 'Akademik', description: 'Ruang praktik jurusan AKL dengan simulasi pelayanan teller bank.', photo: '/images/facilities/lab-akuntansi.jpg' },
-    { id: 'fac-8', name: 'Ruang Multimedia & Podcast', category: 'Pendukung', description: 'Ruang produksi konten edukasi dan siaran sekolah.', photo: '/images/facilities/multimedia.jpg' }
+    { id: 'fac-7', name: 'Laboratorium Perkantoran (Bank Mini)', category: 'Akademik', description: 'Ruang praktik jurusan MPLB dengan simulasi pelayanan perkantoran dan teller bank.', photo: '/images/facilities/lab-akuntansi.jpg' },
+    { id: 'fac-8', name: 'Studio Multimedia', category: 'Pendukung', description: 'Studio produksi konten digital dilengkapi perangkat rekaman untuk praktik DKV dan ekstrakurikuler jurnalistik.', photo: '/images/facilities/multimedia.jpg' }
   ],
   news: [
-    { id: 'news-1', title: 'Siswa SMKN 11 Kabupaten Tangerang Juara 1 LKS Tingkat Provinsi', slug: 'juara-1-lks-provinsi', date: '2026-07-20', excerpt: 'Prestasi membanggakan kembali diraih oleh siswa jurusan TKJ pada ajang Lomba Kompetensi Siswa (LKS) bidang IT Network Systems Administration tingkat Provinsi Banten.', content: '<p>Kabar gembira datang dari ajang Lomba Kompetensi Siswa (LKS) tingkat Provinsi Banten tahun 2026. Siswa perwakilan SMKN 11 Kabupaten Tangerang berhasil meraih Juara 1 pada bidang IT Network Systems Administration.</p><p>Dengan kemenangan ini, siswa berhak mewakili Provinsi Banten untuk berlaga di LKS tingkat Nasional yang akan diselenggarakan bulan depan.</p>', thumbnail: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=900&q=80', category: 'Prestasi', author: 'Tim Humas' },
-    { id: 'news-2', title: 'Penerimaan Peserta Didik Baru (PPDB) Tahun Ajaran 2026/2027 Segera Dibuka', slug: 'info-ppdb-2026', date: '2026-06-15', excerpt: 'Informasi lengkap terkait jadwal, persyaratan, dan alur pendaftaran PPDB SMKN 11 Kabupaten Tangerang tahun ajaran 2026/2027.', content: '<p>Penerimaan Peserta Didik Baru (PPDB) SMKN 11 Kabupaten Tangerang tahun ajaran 2026/2027 akan segera dibuka secara online melalui portal resmi PPDB Provinsi Banten.</p><p>SMKN 11 membuka pendaftaran untuk 5 Program Keahlian: TKJ, RPL, TKR, TBSM, dan AKL dengan daya tampung total 400 siswa.</p>', thumbnail: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=900&q=80', category: 'Informasi', author: 'Panitia PPDB' },
-    { id: 'news-3', title: 'Kunjungan Industri Jurusan TKR ke Pabrik Perakitan Mobil', slug: 'kunjungan-industri-tkr', date: '2026-05-10', excerpt: 'Siswa kelas XI Teknik Kendaraan Ringan mengikuti kegiatan Kunjungan Industri ke pabrik perakitan mobil ternama di Cikarang.', content: '<p>Sebanyak 72 siswa kelas XI jurusan TKR melaksanakan Kunjungan Industri ke pabrik perakitan mobil di Cikarang. Para siswa diajak mengamati langsung proses perakitan kendaraan dari pengelasan bodi hingga uji kualitas.</p>', thumbnail: 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?auto=format&fit=crop&w=900&q=80', category: 'Kegiatan', author: 'Tim Humas' },
-    { id: 'news-4', title: 'Peresmian Laboratorium Rekayasa Perangkat Lunak Baru', slug: 'peresmian-lab-rpl', date: '2026-04-22', excerpt: 'SMKN 11 resmi membuka lab komputer baru khusus untuk praktik siswa jurusan Rekayasa Perangkat Lunak.', content: '<p>Laboratorium RPL baru dilengkapi dengan 40 unit komputer spesifikasi tinggi dan koneksi internet serat optik dedicated untuk mendukung pembelajaran pengembangan perangkat lunak.</p>', thumbnail: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=900&q=80', category: 'Fasilitas', author: 'Tim Humas' },
-    { id: 'news-5', title: 'Pelaksanaan Uji Kompetensi Keahlian (UKK) Tahun 2026 Berjalan Lancar', slug: 'pelaksanaan-ukk-2026', date: '2026-03-05', excerpt: 'Seluruh siswa kelas XII dari lima program keahlian sukses mengikuti Uji Kompetensi Keahlian sebagai syarat kelulusan.', content: '<p>UKK berlangsung selama satu pekan dengan melibatkan penguji internal dan penguji eksternal dari dunia usaha dan industri.</p>', thumbnail: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=900&q=80', category: 'Akademik', author: 'Kurikulum' },
+    { id: 'news-1', title: 'Siswa SMKN 11 Kabupaten Tangerang Raih Medali Ajang Prestasi 2025', slug: 'ajang-prestasi-2025', date: '2025-10-15', excerpt: 'Febriyani, siswa SMKN 11 Kabupaten Tangerang, berhasil meraih medali perak pada Ajang Prestasi SMK Tingkat Kabupaten Tangerang tahun 2025.', content: '<p>Prestasi membanggakan kembali diraih oleh siswa SMKN 11 Kabupaten Tangerang. Febriyani berhasil meraih medali perak pada Ajang Prestasi SMK Tingkat Kabupaten Tangerang tahun 2025.</p><p>Keberhasilan ini merupakan buah dari persiapan matang dan bimbingan intensif dari para guru pembimbing.</p>', thumbnail: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=900&q=80', category: 'Prestasi', author: 'Tim Humas' },
+    { id: 'news-2', title: 'Penerimaan Peserta Didik Baru (PPDB) Tahun Ajaran 2026/2027 Segera Dibuka', slug: 'info-ppdb-2026', date: '2026-06-15', excerpt: 'Informasi lengkap terkait jadwal, persyaratan, dan alur pendaftaran PPDB SMKN 11 Kabupaten Tangerang tahun ajaran 2026/2027.', content: '<p>Penerimaan Peserta Didik Baru (PPDB) SMKN 11 Kabupaten Tangerang tahun ajaran 2026/2027 akan segera dibuka secara online melalui portal resmi PPDB Provinsi Banten.</p><p>SMKN 11 membuka pendaftaran untuk 6 Program Keahlian: TJKT, DKV, Teknik Otomotif, TITL, MPLB, dan Busana dengan daya tampung total 400 siswa.</p>', thumbnail: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=900&q=80', category: 'Informasi', author: 'Panitia PPDB' },
+    { id: 'news-3', title: 'Kunjungan Industri Jurusan Teknik Otomotif ke Pabrik Perakitan Mobil', slug: 'kunjungan-industri-otomotif', date: '2026-05-10', excerpt: 'Siswa kelas XI Teknik Otomotif mengikuti kegiatan Kunjungan Industri ke pabrik perakitan mobil ternama di Cikarang.', content: '<p>Sebanyak 65 siswa kelas XI jurusan Teknik Otomotif melaksanakan Kunjungan Industri ke pabrik perakitan mobil di Cikarang. Para siswa diajak mengamati langsung proses perakitan kendaraan dari pengelasan bodi hingga uji kualitas.</p>', thumbnail: 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?auto=format&fit=crop&w=900&q=80', category: 'Kegiatan', author: 'Tim Humas' },
+    { id: 'news-4', title: 'Peresmian Laboratorium Desain Komunikasi Visual Baru', slug: 'peresmian-lab-dkv', date: '2026-04-22', excerpt: 'SMKN 11 resmi membuka laboratorium multimedia baru khusus untuk praktik siswa jurusan Desain Komunikasi Visual.', content: '<p>Laboratorium DKV baru dilengkapi dengan 35 unit komputer spesifikasi tinggi, studio mini, dan perangkat kamera untuk praktik desain grafis dan produksi konten digital.</p>', thumbnail: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=900&q=80', category: 'Fasilitas', author: 'Tim Humas' },
+    { id: 'news-5', title: 'Pelaksanaan Uji Kompetensi Keahlian (UKK) Tahun 2026 Berjalan Lancar', slug: 'pelaksanaan-ukk-2026', date: '2026-03-05', excerpt: 'Seluruh siswa kelas XII dari enam program keahlian sukses mengikuti Uji Kompetensi Keahlian sebagai syarat kelulusan.', content: '<p>UKK berlangsung selama satu pekan dengan melibatkan penguji internal dan penguji eksternal dari dunia usaha dan industri.</p>', thumbnail: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=900&q=80', category: 'Akademik', author: 'Kurikulum' },
     { id: 'news-6', title: 'Peringatan Hari Guru Nasional di SMKN 11 Kab. Tangerang', slug: 'hari-guru-nasional', date: '2025-11-25', excerpt: 'Rangkaian acara peringatan Hari Guru Nasional dirayakan oleh seluruh guru dan siswa.', content: '<p>Peringatan Hari Guru Nasional diawali dengan upacara bendera, pemotongan tumpeng, dan penampilan pentas seni dari ekstrakurikuler sebagai bentuk penghormatan kepada para guru.</p>', thumbnail: 'https://images.unsplash.com/photo-1579389083078-4e7018379f89?auto=format&fit=crop&w=900&q=80', category: 'Kegiatan', author: 'OSIS' },
   ],
   achievements: [
-    { id: 'ach-1', title: 'Juara 1 IT Network Systems Administration', event: 'Lomba Kompetensi Siswa (LKS)', year: 2026, level: 'Provinsi', rank: 'Juara 1', students: ['Budi Santoso (XII TKJ 1)'], photo: '/images/achievements/lks-tkj.jpg' },
-    { id: 'ach-2', title: 'Juara 2 Web Technologies', event: 'Lomba Kompetensi Siswa (LKS)', year: 2025, level: 'Kabupaten', rank: 'Juara 2', students: ['Rizky Aditya (XI RPL 2)'], photo: '/images/achievements/lks-rpl.jpg' },
-    { id: 'ach-3', title: 'Juara 1 Futsal Antar Pelajar', event: 'Bupati Cup Kabupaten Tangerang', year: 2025, level: 'Kabupaten', rank: 'Juara 1', students: ['Tim Futsal SMKN 11'], photo: '/images/achievements/futsal.jpg' },
-    { id: 'ach-4', title: 'Juara 3 Line Follower Robot', event: 'National Robotics Competition', year: 2024, level: 'Nasional', rank: 'Juara 3', students: ['Dimas (XII TKJ 2)', 'Gilang (XII TKJ 2)'], photo: '/images/achievements/robotik.jpg' },
-    { id: 'ach-5', title: 'Harapan 1 Olimpiade Akuntansi', event: 'Olimpiade Akuntansi Nasional Vokasi', year: 2024, level: 'Nasional', rank: 'Harapan 1', students: ['Nisa Salsabila (XII AKL 1)'], photo: '/images/achievements/akuntansi.jpg' },
-    { id: 'ach-6', title: 'Juara 2 Paskibra Formasi Terbaik', event: 'LKBB', year: 2023, level: 'Provinsi', rank: 'Juara 2', students: ['Paskibra Satria 11'], photo: '/images/achievements/paskibra.jpg' },
-    { id: 'ach-7', title: 'Juara 1 Lomba Cipta Puisi Kebangsaan', event: 'Bulan Bahasa & Sastra', year: 2023, level: 'Kabupaten', rank: 'Juara 1', students: ['Dewi Lestari (X AKL 2)'], photo: '/images/achievements/puisi.jpg' },
-    { id: 'ach-8', title: 'Best Mechanic Contest', event: 'AHASS Vocational Skill Contest', year: 2023, level: 'Regional', rank: 'Peringkat 2', students: ['Fajar Hidayat (XII TBSM 1)'], photo: '/images/achievements/tbsm-contest.jpg' },
+    { id: 'ach-1', title: 'Medali Perak Ajang Prestasi SMK Kabupaten Tangerang', event: 'Ajang Prestasi SMK Kabupaten Tangerang', year: 2025, level: 'Kabupaten', rank: 'Medali Perak', students: ['Febriyani'], photo: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=900&q=80' },
+    { id: 'ach-2', title: 'Medali Perak LKS Tingkat Kabupaten', event: 'Lomba Kompetensi Siswa (LKS) Kabupaten', year: 2024, level: 'Kabupaten', rank: 'Juara 2', students: ['Melati Febriyani'], photo: 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=900&q=80' },
+    { id: 'ach-3', title: 'Peringkat 14 Ajang Prestasi SMK Tingkat Kabupaten', event: 'Ajang Prestasi SMK Kabupaten Tangerang', year: 2024, level: 'Kabupaten', rank: 'Medali Perak', students: ['Tim SMKN 11 Kab. Tangerang'], photo: 'https://images.unsplash.com/photo-1567427017947-545c5f8d16ad?auto=format&fit=crop&w=900&q=80' },
+    { id: 'ach-4', title: 'Partisipasi LKS Kabel Jaringan Komputer Informasi', event: 'Lomba Kompetensi Siswa (LKS) Kabupaten', year: 2025, level: 'Kabupaten', rank: 'Peserta', students: ['Febriyani'], photo: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=900&q=80' },
   ],
   staff: [
-    { id: 'staff-1', name: 'Drs. H. Ahmad Fauzi, M.Pd.', position: 'Kepala Sekolah', department: 'Manajemen', photo: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=800&q=80' },
+    { id: 'staff-1', name: 'Emma Sukmayati', position: 'Kepala Sekolah', department: 'Manajemen', photo: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=800&q=80' },
     { id: 'staff-2', name: 'Sri Mulyani, S.Pd., M.Si.', position: 'Wakil Kepala Sekolah Bid. Kurikulum', department: 'Kurikulum', photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=800&q=80' },
     { id: 'staff-3', name: 'Budi Santoso, S.Kom.', position: 'Wakil Kepala Sekolah Bid. Kesiswaan', department: 'Kesiswaan', photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80' },
     { id: 'staff-4', name: 'Haryanto, S.T.', position: 'Wakil Kepala Sekolah Bid. Sarana Prasarana', department: 'Sarana Prasarana', photo: 'https://images.unsplash.com/photo-1507591064344-4c6ce005b128?auto=format&fit=crop&w=800&q=80' },
     { id: 'staff-5', name: 'Dra. Rini Wulandari', position: 'Wakil Kepala Sekolah Bid. Humas & Hubin', department: 'Humas', photo: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=800&q=80' },
-    { id: 'staff-6', name: 'Eko Prasetyo, S.Kom.', position: 'Kepala Program Keahlian TKJ', department: 'Teknik Komputer dan Jaringan', photo: 'https://images.unsplash.com/photo-1504593811423-6dd665756598?auto=format&fit=crop&w=800&q=80' },
-    { id: 'staff-7', name: 'Anita Rahmawati, S.Kom., M.Kom.', position: 'Kepala Program Keahlian RPL', department: 'Rekayasa Perangkat Lunak', photo: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=800&q=80' },
-    { id: 'staff-8', name: 'Asep Saepudin, S.Pd.T.', position: 'Kepala Program Keahlian TKR', department: 'Teknik Kendaraan Ringan', photo: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=800&q=80' },
-    { id: 'staff-9', name: 'Deni Setiawan, S.T.', position: 'Kepala Program Keahlian TBSM', department: 'Teknik Bisnis Sepeda Motor', photo: 'https://images.unsplash.com/photo-1544723795-3fb6469f5b39?auto=format&fit=crop&w=800&q=80' },
-    { id: 'staff-10', name: 'Siti Aminah, S.E., M.Ak.', position: 'Kepala Program Keahlian AKL', department: 'Akuntansi dan Keuangan Lembaga', photo: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80' },
+    { id: 'staff-6', name: 'Eko Prasetyo, S.Kom.', position: 'Kepala Program Keahlian TJKT', department: 'Teknik Jaringan Komputer dan Telekomunikasi', photo: 'https://images.unsplash.com/photo-1504593811423-6dd665756598?auto=format&fit=crop&w=800&q=80' },
+    { id: 'staff-7', name: 'Anita Rahmawati, S.Kom., M.Kom.', position: 'Kepala Program Keahlian DKV', department: 'Desain Komunikasi Visual', photo: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=800&q=80' },
+    { id: 'staff-8', name: 'Asep Saepudin, S.Pd.T.', position: 'Kepala Program Keahlian Teknik Otomotif', department: 'Teknik Otomotif', photo: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=800&q=80' },
+    { id: 'staff-9', name: 'Deni Setiawan, S.T.', position: 'Kepala Program Keahlian TITL', department: 'Teknik Ketenagalistrikan', photo: 'https://images.unsplash.com/photo-1544723795-3fb6469f5b39?auto=format&fit=crop&w=800&q=80' },
+    { id: 'staff-10', name: 'Siti Aminah, S.E.', position: 'Kepala Program Keahlian MPLB', department: 'Manajemen Perkantoran dan Layanan Bisnis', photo: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80' },
+    { id: 'staff-11', name: 'Nurhayati, S.Pd.', position: 'Kepala Program Keahlian Busana', department: 'Busana', photo: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=800&q=80' },
   ],
 };
 
 async function ensureInitialContent() {
-  for (const [type, items] of Object.entries(initialContent)) {
+  for (const [table, items] of Object.entries(initialContent)) {
+    const newIds = items.map(i => i.id);
     for (const item of items) {
-      const { id, ...data } = item;
-      const [rows] = await db.query('SELECT id FROM content_records WHERE content_type = ? AND JSON_EXTRACT(data, \'$.id\') = ?', [type, id]);
-      if (rows.length) continue;
-      await db.query('INSERT INTO content_records (id, content_type, data) VALUES (?, ?, ?)', [id, type, JSON.stringify({ ...data, id })]);
+      const data = { ...item };
+      const keys = Object.keys(data);
+      const vals = keys.map(k => Array.isArray(data[k]) ? JSON.stringify(data[k]) : data[k]);
+      const updates = keys.filter(k => k !== 'id').map(k => `${k}=?`).join(',');
+      const updateVals = keys.filter(k => k !== 'id').map(k => Array.isArray(data[k]) ? JSON.stringify(data[k]) : data[k]);
+      await db.query(`INSERT INTO ${table} (${keys.join(',')}) VALUES (${keys.map(() => '?').join(',')}) ON DUPLICATE KEY UPDATE ${updates}`, [...vals, ...updateVals]);
     }
+    const [existing] = await db.query(`SELECT id FROM ${table} WHERE id NOT IN (${newIds.map(() => '?').join(',')})`, newIds);
+    for (const row of existing) await db.query(`DELETE FROM ${table} WHERE id=?`, [row.id]);
   }
 }
 
@@ -416,7 +439,7 @@ async function ensurePpdbColumns() {
 }
 
 async function ensureStats() {
-  for (const [k, v] of Object.entries({ students: '1200+', teachers: '85+' })) {
+  for (const [k, v] of Object.entries({ students: '1.124+', teachers: '51+' })) {
     await db.query('INSERT IGNORE INTO site_stats (stat_key, stat_value) VALUES (?, ?)', [k, v]);
   }
 }

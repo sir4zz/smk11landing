@@ -50,11 +50,12 @@ const Footer: React.FC = () => {
           <div>
             <h3 className="text-[#C8A951] font-bold text-lg mb-4">Program Keahlian</h3>
             <ul className="space-y-2">
-              <li className="text-[#F3E8D0]">Teknik Komputer dan Jaringan</li>
-              <li className="text-[#F3E8D0]">Rekayasa Perangkat Lunak</li>
-              <li className="text-[#F3E8D0]">Teknik Kendaraan Ringan</li>
-              <li className="text-[#F3E8D0]">Teknik Bisnis Sepeda Motor</li>
-              <li className="text-[#F3E8D0]">Akuntansi dan Keuangan Lembaga</li>
+              <li className="text-[#F3E8D0]">Teknik Jaringan Komputer dan Telekomunikasi</li>
+              <li className="text-[#F3E8D0]">Desain Komunikasi Visual</li>
+              <li className="text-[#F3E8D0]">Teknik Otomotif</li>
+              <li className="text-[#F3E8D0]">Teknik Ketenagalistrikan</li>
+              <li className="text-[#F3E8D0]">Manajemen Perkantoran dan Layanan Bisnis</li>
+              <li className="text-[#F3E8D0]">Busana</li>
             </ul>
           </div>
 
@@ -64,15 +65,15 @@ const Footer: React.FC = () => {
             <ul className="space-y-4">
               <li className="flex items-start gap-3">
                 <MapPin className="text-[#C8A951] shrink-0 mt-1" size={18} />
-                <span className="text-[#F3E8D0] text-sm">Jl. Raya Cisoka, Kec. Cisoka, Kab. Tangerang, Banten 15730</span>
+                <span className="text-[#F3E8D0] text-sm">Kp. Saradan RT. 03/01, Desa Pangkat, Kec. Jayanti, Kab. Tangerang, Banten 15610</span>
               </li>
               <li className="flex items-center gap-3">
                 <Phone className="text-[#C8A951] shrink-0" size={18} />
-                <span className="text-[#F3E8D0] text-sm">(021) 5555-1234</span>
+                <span className="text-[#F3E8D0] text-sm">0812 9922 0831</span>
               </li>
               <li className="flex items-center gap-3">
                 <Mail className="text-[#C8A951] shrink-0" size={18} />
-                <span className="text-[#F3E8D0] text-sm">info@smkn11tangerang.sch.id</span>
+                <span className="text-[#F3E8D0] text-sm">admin@smkn11kabtang.sch.id</span>
               </li>
             </ul>
           </div>

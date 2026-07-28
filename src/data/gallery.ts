@@ -38,14 +38,14 @@ export const galleryData: GalleryItem[] = [
   {
     id: 'gal-5',
     src: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=900&q=80',
-    caption: 'Siswa TKJ praktik konfigurasi jaringan',
+    caption: 'Siswa TJKT praktik konfigurasi jaringan',
     category: 'Akademik',
     date: '2026-05-20'
   },
   {
     id: 'gal-6',
     src: 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?auto=format&fit=crop&w=900&q=80',
-    caption: 'Kunjungan industri jurusan TKR ke pabrik mobil',
+    caption: 'Kunjungan industri jurusan Teknik Otomotif ke pabrik mobil',
     category: 'Akademik',
     date: '2026-05-10'
   },
@@ -66,7 +66,7 @@ export const galleryData: GalleryItem[] = [
   {
     id: 'gal-9',
     src: 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=900&q=80',
-    caption: 'Praktik perbaikan mesin siswa TBSM',
+    caption: 'Praktik perbaikan mesin siswa Teknik Otomotif',
     category: 'Akademik',
     date: '2026-03-12'
   },

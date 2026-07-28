@@ -22,8 +22,8 @@ const seed = {
   staff: initialStaff,
   achievements: initialAchievements,
   ppdb: [
-    { id: 'ppdb-1', name: 'Aulia Rahman', program: 'Teknik Komputer dan Jaringan', status: 'Menunggu Verifikasi', date: '2026-07-23' },
-    { id: 'ppdb-2', name: 'Nadia Putri', program: 'Rekayasa Perangkat Lunak', status: 'Terverifikasi', date: '2026-07-22' },
+    { id: 'ppdb-1', name: 'Aulia Rahman', program: 'Teknik Jaringan Komputer dan Telekomunikasi', status: 'Menunggu Verifikasi', date: '2026-07-23' },
+    { id: 'ppdb-2', name: 'Nadia Putri', program: 'Desain Komunikasi Visual', status: 'Terverifikasi', date: '2026-07-22' },
   ],
 };
 

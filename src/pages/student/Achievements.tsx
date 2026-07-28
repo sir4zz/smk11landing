@@ -109,7 +109,7 @@ const Achievements: React.FC = () => {
 
               <div className="mt-3 flex items-start gap-2 text-sm text-[#23314D]">
                 <Users className="mt-0.5 h-4 w-4 flex-shrink-0" />
-                <span>{achievement.students.join(', ')}</span>
+                <span className="break-words">{achievement.students.join(', ')}</span>
               </div>
             </div>
           ))}

@@ -3,19 +3,17 @@ import PageHero from '../../components/ui/PageHero';
 import { ShieldCheck, Lightbulb, Users, Award } from 'lucide-react';
 
 const missions = [
-  "Menyelenggarakan pendidikan dan pelatihan kejuruan yang berkualitas sesuai dengan standar industri.",
-  "Mengembangkan kemitraan strategis dengan Dunia Usaha dan Dunia Industri (DUDI) untuk sinkronisasi kurikulum dan penyaluran lulusan.",
-  "Menanamkan nilai-nilai karakter, kedisiplinan, dan etika kerja yang kuat pada seluruh peserta didik.",
-  "Meningkatkan kompetensi pendidik dan tenaga kependidikan secara berkelanjutan.",
-  "Menyediakan fasilitas dan lingkungan belajar yang aman, nyaman, dan berbasis teknologi.",
-  "Mendorong inovasi dan kewirausahaan di kalangan peserta didik."
+  "Mewujudkan sarana-prasarana belajar sesuai standar Nasional.",
+  "Mewujudkan Manajemen berbasis Sekolah dan ICT.",
+  "Mewujudkan Pembelajaran yang berstandar Nasional.",
+  "Mewujudkan lulusan yang religius."
 ];
 
 const values = [
-  { icon: ShieldCheck, title: "Integritas", description: "Menjunjung tinggi kejujuran dan tanggung jawab dalam setiap tindakan." },
-  { icon: Lightbulb, title: "Inovasi", description: "Terus berkreasi dan beradaptasi dengan perkembangan teknologi." },
-  { icon: Users, title: "Kolaborasi", description: "Bekerja sama dalam harmoni untuk mencapai tujuan bersama." },
-  { icon: Award, title: "Keunggulan", description: "Berkomitmen memberikan kualitas terbaik dalam pendidikan." }
+  { icon: ShieldCheck, title: "Integritas", description: "Menjunjung tinggi kejujuran, tanggung jawab, dan akhlakul karimah dalam setiap tindakan." },
+  { icon: Lightbulb, title: "Inovasi", description: "Terus berkreasi dan beradaptasi dengan perkembangan teknologi dan industri." },
+  { icon: Users, title: "Kolaborasi", description: "Membangun kemitraan dengan dunia usaha, industri, dan masyarakat." },
+  { icon: Award, title: "Keunggulan", description: "Berorientasi pada mutu dan kualitas layanan pendidikan yang unggul." }
 ];
 
 const VisionMission: React.FC = () => {
@@ -31,7 +29,7 @@ const VisionMission: React.FC = () => {
           <div className="bg-[#1B2A4A] text-[#FAF6F0] rounded-2xl p-10 md:p-16 text-center shadow-lg">
             <h2 className="text-3xl md:text-4xl font-bold text-[#C8A951] mb-8 uppercase tracking-wider">Visi</h2>
             <p className="text-xl md:text-2xl text-white leading-relaxed font-medium">
-              "Menjadi lembaga pendidikan kejuruan yang unggul, inovatif, dan menghasilkan lulusan berkarakter, kompeten, serta berdaya saing di tingkat nasional dan global."
+              "Terselenggaranya layanan prima pendidikan Menengah Kejuruan dalam membentuk kelulusan SMK Negeri 11 Kab. Tangerang yang berakhlaqul karimah, disiplin, mandiri, dan terampil, berjiwa kewirausahaan, siap kerja, memiliki kepribadian bangsa yang mampu mengembangkan keunggulan lokal."
             </p>
           </div>
         </div>

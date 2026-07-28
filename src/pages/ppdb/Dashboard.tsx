@@ -196,7 +196,7 @@ export default function Dashboard() {
         )}
 
         {/* Tabs */}
-        <div className="mb-6 flex border-b border-[#1B2A4A]/10">
+        <div className="mb-6 flex overflow-x-auto border-b border-[#1B2A4A]/10 whitespace-nowrap">
           {([
             { key: 'biodata', label: 'Biodata', icon: User },
             { key: 'dokumen', label: 'Dokumen', icon: FileText, count: documents.length },
@@ -220,8 +220,8 @@ export default function Dashboard() {
             <h2 className="mb-6 text-xl font-bold text-[#1B2A4A]">Data Pribadi</h2>
             <div className="grid gap-5 md:grid-cols-2">
               <Label label="Nama Lengkap"><input name="full_name" value={form.full_name} onChange={handleChange} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-4 py-3 text-sm" /></Label>
-              <Label label="NISN"><input name="nisn" value={form.nisn} onChange={handleChange} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-4 py-3 text-sm" /></Label>
-              <Label label="NIK"><input name="nik" value={form.nik} onChange={handleChange} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-4 py-3 text-sm" /></Label>
+              <Label label="NISN"><input name="nisn" value={form.nisn} inputMode="numeric" onChange={e => { const v = e.target.value.replace(/\D/g, '').slice(0, 10); setForm(f => ({ ...f, nisn: v })) }} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-4 py-3 text-sm" /></Label>
+              <Label label="NIK"><input name="nik" value={form.nik} inputMode="numeric" onChange={e => setForm(f => ({ ...f, nik: e.target.value.replace(/\D/g, '') }))} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-4 py-3 text-sm" /></Label>
               <Label label="Jenis Kelamin">
                 <select name="gender" value={form.gender} onChange={handleChange} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 bg-white px-4 py-3 text-sm">
                   <option value="">Pilih</option><option value="L">Laki-laki</option><option value="P">Perempuan</option>
@@ -230,7 +230,7 @@ export default function Dashboard() {
               <Label label="Tempat Lahir"><input name="place_of_birth" value={form.place_of_birth} onChange={handleChange} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-4 py-3 text-sm" /></Label>
               <Label label="Tanggal Lahir"><input name="date_of_birth" type="date" value={form.date_of_birth} onChange={handleChange} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-4 py-3 text-sm" /></Label>
               <Label label="Agama"><input name="religion" value={form.religion} onChange={handleChange} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-4 py-3 text-sm" /></Label>
-              <Label label="No. HP/WA"><input name="phone" value={form.phone} onChange={handleChange} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-4 py-3 text-sm" /></Label>
+              <Label label="No. HP/WA"><input name="phone" value={form.phone} inputMode="numeric" onChange={e => setForm(f => ({ ...f, phone: e.target.value.replace(/\D/g, '') }))} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-4 py-3 text-sm" /></Label>
               <Label label="Alamat" className="md:col-span-2"><textarea name="address" value={form.address} onChange={handleChange} rows={3} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-4 py-3 text-sm" /></Label>
             </div>
 
@@ -241,7 +241,7 @@ export default function Dashboard() {
               <Label label="Nama Ibu"><input name="mother_name" value={form.mother_name} onChange={handleChange} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-4 py-3 text-sm" /></Label>
               <Label label="Pekerjaan Ibu"><input name="mother_occupation" value={form.mother_occupation} onChange={handleChange} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-4 py-3 text-sm" /></Label>
               <Label label="Nama Wali"><input name="guardian_name" value={form.guardian_name} onChange={handleChange} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-4 py-3 text-sm" /></Label>
-              <Label label="No. HP Wali"><input name="guardian_phone" value={form.guardian_phone} onChange={handleChange} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-4 py-3 text-sm" /></Label>
+              <Label label="No. HP Wali"><input name="guardian_phone" value={form.guardian_phone} inputMode="numeric" onChange={e => setForm(f => ({ ...f, guardian_phone: e.target.value.replace(/\D/g, '') }))} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-4 py-3 text-sm" /></Label>
               <Label label="Alamat Orang Tua" className="md:col-span-2"><textarea name="parent_address" value={form.parent_address} onChange={handleChange} rows={2} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-4 py-3 text-sm" /></Label>
             </div>
 
@@ -249,7 +249,7 @@ export default function Dashboard() {
             <div className="grid gap-5 md:grid-cols-2">
               <Label label="Sekolah Asal"><input name="previous_school" value={form.previous_school} onChange={handleChange} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-4 py-3 text-sm" /></Label>
               <Label label="Alamat Sekolah"><input name="previous_school_address" value={form.previous_school_address} onChange={handleChange} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-4 py-3 text-sm" /></Label>
-              <Label label="Tahun Lulus"><input name="graduation_year" type="number" value={form.graduation_year} onChange={handleChange} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-4 py-3 text-sm" /></Label>
+              <Label label="Tahun Lulus"><input name="graduation_year" type="number" value={form.graduation_year} inputMode="numeric" onChange={e => { const v = e.target.value.replace(/\D/g, '').slice(0, 4); setForm(f => ({ ...f, graduation_year: v })) }} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-4 py-3 text-sm" /></Label>
               <Label label="Program Keahlian Pilihan">
                 <select name="program" value={form.program} onChange={handleChange} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 bg-white px-4 py-3 text-sm">
                   <option value="">Pilih jurusan</option>

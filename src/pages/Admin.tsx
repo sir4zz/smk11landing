@@ -23,8 +23,8 @@ const seed = {
   staff: initialStaff,
   achievements: initialAchievements,
   ppdb: [
-    { id: 'ppdb-1', name: 'Aulia Rahman', program: 'Teknik Komputer dan Jaringan', status: 'Menunggu Verifikasi', date: '2026-07-23' },
-    { id: 'ppdb-2', name: 'Nadia Putri', program: 'Rekayasa Perangkat Lunak', status: 'Terverifikasi', date: '2026-07-22' },
+    { id: 'ppdb-1', name: 'Aulia Rahman', program: 'Teknik Jaringan Komputer dan Telekomunikasi', status: 'Menunggu Verifikasi', date: '2026-07-23' },
+    { id: 'ppdb-2', name: 'Nadia Putri', program: 'Desain Komunikasi Visual', status: 'Terverifikasi', date: '2026-07-22' },
   ],
   contact: [] as Item[],
 };
@@ -427,7 +427,7 @@ function PPDBManagement({ token }: { token: string }) {
 
       {/* Filter & Search */}
       <div className="mb-6 flex flex-wrap items-center gap-4">
-        <div className="relative flex-1 min-w-[200px]">
+        <div className="relative w-full sm:flex-1 sm:min-w-[200px]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#23314D]/50" />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari nama/NISN/no. daftar..." className="w-full rounded-lg border border-[#1B2A4A]/20 bg-white py-2.5 pl-10 pr-4 text-sm" />
         </div>
@@ -601,6 +601,9 @@ function PPDBDetail({ data, onClose, onUpdateStatus, onVerifyDoc, token }: {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
+                      {doc.file_data && (
+                        <button onClick={() => { const raw = doc.file_data; const b64 = raw.indexOf('data:') === 0 ? raw.split(',')[1] : raw; const mime = doc.mime_type || 'image/jpeg'; const bin = atob(b64); const u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i); window.open(URL.createObjectURL(new Blob([u8], { type: mime })), '_blank'); }} className="rounded-lg bg-[#1B2A4A]/10 px-3 py-1 text-xs font-semibold text-[#1B2A4A] hover:bg-[#1B2A4A]/20"><Eye className="mr-1 inline h-3 w-3" />Lihat</button>
+                      )}
                       {doc.verified ? (
                         <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">Sudah</span>
                       ) : (

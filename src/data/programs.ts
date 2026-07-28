@@ -15,154 +15,201 @@ export interface Program {
 export const programsData: Program[] = [
   {
     id: 'tkj',
-    name: 'Teknik Komputer dan Jaringan',
+    name: 'Teknik Jaringan Komputer dan Telekomunikasi',
     slug: 'tkj',
-    shortName: 'TKJ',
+    shortName: 'TJKT',
     icon: 'Network',
     image: 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=900&q=80',
-    description: 'Program keahlian Teknik Komputer dan Jaringan (TKJ) membekali siswa dengan keterampilan dalam perakitan komputer, instalasi jaringan lokal (LAN) maupun luas (WAN), serta administrasi server. Lulusan dipersiapkan untuk menjadi teknisi jaringan, administrator sistem, dan tenaga ahli di bidang infrastruktur TI.',
-    shortDescription: 'Mempelajari perakitan komputer, instalasi jaringan, dan administrasi server.',
+    description: 'Program keahlian Teknik Jaringan Komputer dan Telekomunikasi (TJKT) membekali siswa dengan keterampilan dalam perakitan komputer, instalasi jaringan lokal (LAN) maupun luas (WAN), administrasi server, serta teknologi telekomunikasi. Lulusan dipersiapkan untuk menjadi teknisi jaringan, administrator sistem, dan tenaga ahli di bidang infrastruktur TI dan telekomunikasi.',
+    shortDescription: 'Mempelajari perakitan komputer, instalasi jaringan, administrasi server, dan teknologi telekomunikasi.',
     competencies: [
       'Perakitan dan Perbaikan Komputer',
       'Instalasi Jaringan (LAN/WAN)',
       'Administrasi Server (Windows/Linux)',
-      'Keamanan Jaringan',
+      'Keamanan Jaringan dan Cyber Security',
+      'Teknologi Telekomunikasi dan Fiber Optik',
       'Troubleshooting Perangkat Keras dan Jaringan'
     ],
     careerProspects: [
       'Network Administrator',
       'System Administrator',
+      'Teknisi Jaringan Telekomunikasi',
       'IT Support/Technician',
-      'Wirausaha di bidang IT',
-      'Staf IT Perusahaan'
+      'Teknisi Fiber Optik',
+      'Wirausaha di bidang IT'
     ],
     facilities: [
       'Laboratorium Komputer',
-      'Peralatan Jaringan (Router, Switch)',
+      'Peralatan Jaringan (Router, Switch, MikroTik)',
       'Server Khusus Praktik',
-      'Koneksi Internet Kecepatan Tinggi'
+      'Koneksi Internet Fiber Optik',
+      'Toolkit Perbaikan Komputer'
     ]
   },
   {
-    id: 'rpl',
-    name: 'Rekayasa Perangkat Lunak',
-    slug: 'rpl',
-    shortName: 'RPL',
+    id: 'dkv',
+    name: 'Desain Komunikasi Visual',
+    slug: 'dkv',
+    shortName: 'DKV',
     icon: 'Code',
-    image: 'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&w=900&q=80',
-    description: 'Rekayasa Perangkat Lunak (RPL) fokus pada pengembangan perangkat lunak, mulai dari desain, coding, pengujian, hingga pemeliharaan sistem. Siswa akan mempelajari berbagai bahasa pemrograman, pengembangan web, aplikasi mobile, dan basis data.',
-    shortDescription: 'Mempelajari pengembangan aplikasi web, desktop, mobile, dan manajemen basis data.',
+    image: 'https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=900&q=80',
+    description: 'Desain Komunikasi Visual (DKV) fokus pada pengembangan kreativitas di bidang desain grafis, multimedia, videografi, fotografi, dan animasi. Siswa akan mempelajari berbagai perangkat lunak desain, teknik fotografi, produksi video, dan pengembangan konten digital kreatif.',
+    shortDescription: 'Mempelajari desain grafis, multimedia, videografi, fotografi, dan animasi digital.',
     competencies: [
-      'Pemrograman Web (HTML, CSS, JS, PHP, Framework)',
-      'Pemrograman Berorientasi Objek (Java/C#)',
-      'Pengembangan Aplikasi Mobile (Android)',
-      'Desain dan Manajemen Basis Data (MySQL/PostgreSQL)',
-      'Analisis dan Desain Sistem'
+      'Desain Grafis (CorelDRAW, Adobe Illustrator, Photoshop)',
+      'Videografi dan Editing Video (Premiere, After Effects)',
+      'Fotografi Digital',
+      'Animasi 2D dan 3D',
+      'Pengembangan Web & UI/UX Design',
+      'Produksi Konten Digital Kreatif'
     ],
     careerProspects: [
-      'Web Developer',
-      'Mobile App Developer',
-      'Database Administrator',
-      'UI/UX Designer',
-      'Software Tester/Quality Assurance'
+      'Desainer Grafis',
+      'Videografer / Editor Video',
+      'Fotografer',
+      'Animator',
+      'Social Media Specialist',
+      'UI/UX Designer'
     ],
     facilities: [
-      'Laboratorium Rekayasa Perangkat Lunak',
-      'Komputer Spesifikasi Tinggi',
-      'Software Development Kit Terkini',
-      'Proyektor dan Smart TV untuk Presentasi'
+      'Laboratorium Multimedia',
+      'Kamera DSLR/Mirrorless',
+      'Studio Fotografi',
+      'Green Screen Studio',
+      'Komputer Spesifikasi Tinggi untuk Desain'
     ]
   },
   {
-    id: 'tkr',
-    name: 'Teknik Kendaraan Ringan',
-    slug: 'tkr',
-    shortName: 'TKR',
+    id: 'otomotif',
+    name: 'Teknik Otomotif',
+    slug: 'otomotif',
+    shortName: 'TO',
     icon: 'Car',
     image: 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=900&q=80',
-    description: 'Teknik Kendaraan Ringan (TKR) mendidik siswa untuk memiliki keahlian dalam perawatan dan perbaikan mesin otomotif roda empat. Program ini mencakup pemahaman mendalam tentang mesin bensin dan diesel, sistem kelistrikan otomotif, serta sistem sasis dan pemindah tenaga.',
-    shortDescription: 'Fokus pada perawatan dan perbaikan kendaraan roda empat (mobil).',
+    description: 'Teknik Otomotif mendidik siswa untuk memiliki keahlian dalam perawatan dan perbaikan kendaraan roda empat dan roda dua. Program ini mencakup pemahaman mendalam tentang mesin bensin dan diesel, sistem kelistrikan otomotif, sistem injeksi, serta sistem sasis dan pemindah tenaga.',
+    shortDescription: 'Fokus pada perawatan dan perbaikan kendaraan bermotor roda dua dan roda empat.',
     competencies: [
       'Pemeliharaan Mesin Kendaraan Ringan',
       'Perbaikan Sistem Kelistrikan Kendaraan',
       'Perawatan Sistem Sasis dan Pemindah Tenaga',
       'Overhaul Mesin',
+      'Teknologi Injeksi (EFI & PGM-FI)',
       'Spooring dan Balancing'
     ],
     careerProspects: [
-      'Mekanik Mobil Profesional',
+      'Mekanik Profesional',
       'Service Advisor',
       'Teknisi Bengkel Resmi (Dealer)',
-      'Wirausaha Bengkel Mobil',
-      'Operator Industri Otomotif'
+      'Wirausaha Bengkel',
+      'Operator Industri Otomotif',
+      'Kepala Mekanik'
     ],
     facilities: [
       'Bengkel Otomotif Standar Industri',
       'Engine Stand',
       'Car Lift',
       'Alat Uji Emisi',
-      'Scanner EFI'
+      'Scanner EFI',
+      'Unit Sepeda Motor Berbagai Tipe'
     ]
   },
   {
-    id: 'tbsm',
-    name: 'Teknik Bisnis Sepeda Motor',
-    slug: 'tbsm',
-    shortName: 'TBSM',
-    icon: 'Bike',
-    image: 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=900&q=80',
-    description: 'Program keahlian Teknik Bisnis Sepeda Motor (TBSM) menyiapkan siswa menjadi ahli dalam perawatan, perbaikan, dan modifikasi sepeda motor. Siswa juga dibekali pengetahuan kewirausahaan untuk mengelola bengkel atau bisnis suku cadang secara mandiri.',
-    shortDescription: 'Mempelajari teknik perawatan, perbaikan sepeda motor, dan manajemen bengkel.',
+    id: 'titl',
+    name: 'Teknik Ketenagalistrikan',
+    slug: 'titl',
+    shortName: 'TITL',
+    icon: 'Zap',
+    image: 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?auto=format&fit=crop&w=900&q=80',
+    description: 'Teknik Ketenagalistrikan (TITL) membekali siswa dengan kompetensi di bidang instalasi listrik, sistem tenaga listrik, motor listrik, dan kendali otomasi industri. Lulusan siap bekerja di sektor kelistrikan, perawatan gedung, dan industri manufaktur.',
+    shortDescription: 'Mempelajari instalasi listrik, sistem tenaga, motor listrik, dan otomasi industri.',
     competencies: [
-      'Pemeliharaan Mesin Sepeda Motor',
-      'Perbaikan Kelistrikan Sepeda Motor',
-      'Perawatan Sasis Sepeda Motor',
-      'Teknologi Injeksi (PGM-FI)',
-      'Manajemen Bengkel'
+      'Instalasi Listrik Penerangan dan Tenaga',
+      'Sistem Distribusi Tenaga Listrik',
+      'Motor Listrik dan Kontrol',
+      'PLC (Programmable Logic Controller)',
+      'Elektronika Daya',
+      'Instalasi Panel Listrik'
     ],
     careerProspects: [
-      'Mekanik Sepeda Motor',
-      'Kepala Mekanik (Chief Mechanic)',
-      'Wirausaha Bengkel Sepeda Motor',
-      'Sales Suku Cadang',
-      'Perakit di Industri Sepeda Motor'
+      'Teknisi Listrik',
+      'Instalatir Listrik',
+      'Teknisi Pemeliharaan Gedung',
+      'Operator Pembangkit Listrik',
+      'Wirausaha Jasa Instalasi Listrik',
+      'Staf Teknik di Perusahaan Manufaktur'
     ],
     facilities: [
-      'Bengkel Praktik Sepeda Motor',
-      'Unit Sepeda Motor Berbagai Tipe (Matic, Sport, Cub)',
-      'Peralatan Servis Lengkap',
-      'Simulator Sistem Kelistrikan',
-      'Scanner Motor Injeksi'
+      'Laboratorium Instalasi Listrik',
+      'Panel Listrik Praktik',
+      'Motor Listrik Berbagai Jenis',
+      'Trainer PLC',
+      'Peralatan Keselamatan Kerja (K3)'
     ]
   },
   {
-    id: 'akl',
-    name: 'Akuntansi dan Keuangan Lembaga',
-    slug: 'akl',
-    shortName: 'AKL',
+    id: 'mplb',
+    name: 'Manajemen Perkantoran dan Layanan Bisnis',
+    slug: 'mplb',
+    shortName: 'MPLB',
     icon: 'Calculator',
     image: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=900&q=80',
-    description: 'Program Akuntansi dan Keuangan Lembaga (AKL) membekali siswa dengan kompetensi dalam mengelola keuangan, menyusun laporan keuangan, perpajakan, dan mengoperasikan aplikasi akuntansi komputer. Lulusan siap bekerja di sektor perbankan, perusahaan swasta, maupun instansi pemerintah.',
-    shortDescription: 'Mempelajari penyusunan laporan keuangan, perpajakan, dan aplikasi komputer akuntansi.',
+    description: 'Manajemen Perkantoran dan Layanan Bisnis (MPLB) membekali siswa dengan kompetensi dalam mengelola administrasi perkantoran, kemampuan komunikasi bisnis, pengelolaan keuangan, dan pengoperasian aplikasi komputer perkantoran. Lulusan siap bekerja di sektor perkantoran, perbankan, dan perusahaan jasa.',
+    shortDescription: 'Mempelajari administrasi perkantoran, manajemen bisnis, dan layanan profesional.',
     competencies: [
-      'Akuntansi Jasa, Dagang, dan Manufaktur',
-      'Administrasi Pajak',
-      'Komputer Akuntansi (MYOB/Accurate)',
-      'Pengelolaan Kas',
-      'Etika Profesi Akuntansi'
+      'Administrasi dan Manajemen Perkantoran',
+      'Komunikasi Bisnis',
+      'Kearsipan Digital',
+      'Komputer Akuntansi',
+      'Public Relation dan Layanan Pelanggan',
+      'Kewirausahaan'
     ],
     careerProspects: [
-      'Staf Akunting',
-      'Kasir / Teller Bank',
-      'Staf Administrasi Keuangan',
-      'Asisten Auditor',
-      'Pegawai Pajak'
+      'Staf Administrasi Perkantoran',
+      'Customer Service Representative',
+      'Administrasi Keuangan',
+      'Resepsionis',
+      'Administrasi Personalia (HR)',
+      'Wirausaha Jasa Perkantoran'
     ],
     facilities: [
-      'Laboratorium Akuntansi Komputer',
+      'Laboratorium Administrasi Perkantoran',
       'Bank Mini',
-      'Kalkulator dan Mesin Hitung',
-      'Software Akuntansi Asli'
+      'Perangkat Multimedia',
+      'Software Administrasi Perkantoran'
+    ]
+  },
+  {
+    id: 'busana',
+    name: 'Busana',
+    slug: 'busana',
+    shortName: 'Busana',
+    icon: 'Scissors',
+    image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=900&q=80',
+    description: 'Program keahlian Busana membekali siswa dengan keterampilan di bidang desain busana, pembuatan pola, menjahit, dan produksi busana. Siswa juga dibekali pengetahuan kewirausahaan untuk mengelola butik atau industri fashion skala kecil dan menengah.',
+    shortDescription: 'Mempelajari desain busana, pembuatan pola, menjahit, dan produksi fashion.',
+    competencies: [
+      'Desain Busana (Fashion Design)',
+      'Pembuatan Pola (Pattern Making)',
+      'Menjahit (Busana Pria/Wanita/Anak)',
+      'Teknik Hiasan Busana (Embroidery, Beading)',
+      'Manajemen Produksi Busana',
+      'Kewirausahaan Bidang Fashion'
+    ],
+    careerProspects: [
+      'Desainer Busana',
+      'Penjahit Profesional',
+      'Pattern Maker',
+      'Pemilik Butik / Konveksi',
+      'Quality Control Produk Garmen',
+      'Konsultan Fashion'
+    ],
+    facilities: [
+      'Ruang Praktik Menjahit',
+      'Mesin Jahit Industri',
+      'Mesin Obras dan Neci',
+      'Manekin (Dress Form)',
+      'Laboratorium Desain Busana',
+      'Peralatan Pembuatan Pola'
     ]
   }
 ];

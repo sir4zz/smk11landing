@@ -131,8 +131,8 @@ const Contact: React.FC = () => {
                   <div>
                     <h4 className="font-bold text-white mb-1">Alamat</h4>
                     <p className="text-[#F3E8D0] leading-relaxed">
-                      Jl. Raya Cisoka, Kec. Cisoka,<br />
-                      Kab. Tangerang, Banten 15730
+                      Kp. Saradan RT. 03/01, Desa Pangkat,<br />
+                      Kec. Jayanti, Kab. Tangerang, Banten 15610
                     </p>
                   </div>
                 </div>
@@ -141,7 +141,7 @@ const Contact: React.FC = () => {
                   <Phone className="w-6 h-6 text-[#C8A951] mr-4 shrink-0 mt-1" />
                   <div>
                     <h4 className="font-bold text-white mb-1">Telepon</h4>
-                    <p className="text-[#F3E8D0]">(021) 5555-1234</p>
+                    <p className="text-[#F3E8D0]">0812 9922 0831</p>
                   </div>
                 </div>
 
@@ -149,7 +149,7 @@ const Contact: React.FC = () => {
                   <Mail className="w-6 h-6 text-[#C8A951] mr-4 shrink-0 mt-1" />
                   <div>
                     <h4 className="font-bold text-white mb-1">Email</h4>
-                    <p className="text-[#F3E8D0]">info@smkn11tangerang.sch.id</p>
+                    <p className="text-[#F3E8D0]">admin@smkn11kabtang.sch.id</p>
                   </div>
                 </div>
 
@@ -166,7 +166,7 @@ const Contact: React.FC = () => {
             {/* Google Maps Embed */}
             <div className="rounded-xl overflow-hidden h-64 w-full">
               <iframe
-                src="https://www.google.com/maps?q=Jl.+Raya+Cisoka,+Cisoka,+Kabupaten+Tangerang,+Banten+15730&output=embed"
+                src="https://www.google.com/maps?q=Kp.+Saradan+RT.+03/01,+Pangkat,+Jayanti,+Kabupaten+Tangerang,+Banten+15610&output=embed"
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}
