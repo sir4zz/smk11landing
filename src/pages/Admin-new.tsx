@@ -107,8 +107,8 @@ export function AdminLogin() {
     <main className="min-h-screen bg-[#FAF6F0] grid place-items-center p-4">
       <form onSubmit={submit} className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-[#1B2A4A] text-white">
-            <GraduationCap />
+          <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-[#FAF6F0] p-2">
+            <img src={logoSekolah} alt="Logo SMKN 11" className="h-full w-full object-contain" />
           </div>
           <h1 className="text-2xl font-bold text-[#1B2A4A]">Admin SMKN 11</h1>
           <p className="mt-2 text-sm text-[#23314D]">Masuk untuk mengelola konten website.</p>
@@ -199,7 +199,7 @@ export default function Admin() {
       <aside className={`${mobile ? 'translate-x-0' : '-translate-x-full'} fixed inset-y-0 left-0 z-30 w-72 bg-[#1B2A4A] p-5 text-white transition-transform lg:translate-x-0`}>
         <div className="mb-8 flex items-center justify-between">
           <span className="flex items-center gap-2 font-bold">
-            <GraduationCap className="text-[#C8A951]" /> ADMIN SMKN 11
+            <img src={logoSekolah} alt="Logo SMKN 11" className="h-7 w-auto" style={{ height: '28px', width: 'auto', objectFit: 'contain' }} /> ADMIN SMKN 11
           </span>
           <button className="lg:hidden" onClick={() => setMobile(false)}><X /></button>
         </div>

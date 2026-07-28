@@ -118,7 +118,7 @@ const StudyProgramDetail: React.FC = () => {
           </div>
           
           <div className="lg:w-1/3">
-            <Card className="sticky top-8 bg-[#1B2A4A] text-[#FAF6F0]">
+            <Card className="sticky top-8 !bg-[#1B2A4A] text-[#FAF6F0]">
               <div className="p-8">
                 <h3 className="text-2xl font-bold text-[#C8A951] mb-4">{program.name}</h3>
                 <p className="text-[#F3E8D0] mb-8">{program.shortDescription}</p>

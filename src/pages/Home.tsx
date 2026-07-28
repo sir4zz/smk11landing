@@ -144,7 +144,7 @@ const Home: React.FC = () => {
                 <h1 className="text-6xl font-black italic tracking-tighter sm:text-7xl lg:text-[6.5rem] text-white [-webkit-text-stroke:1px_#C8A951] sm:[-webkit-text-stroke:2px_#C8A951]">
                   SMKN <span className="text-[#C8A951] text-[1.15em] leading-none [-webkit-text-stroke:1px_white] sm:[-webkit-text-stroke:2px_white]">11</span>
                 </h1>
-                <h2 className="mt-1 text-2xl font-bold tracking-[0.3em] text-[#F9E7A8] sm:text-4xl uppercase [-webkit-text-stroke:0.5px_white] sm:[-webkit-text-stroke:1px_white]">
+                <h2 className="mt-1 text-2xl font-bold tracking-[0.3em] text-[#1B2A4A] sm:text-4xl uppercase [-webkit-text-stroke:1px_white] sm:[-webkit-text-stroke:2px_white] [text-shadow:0_0_12px_rgba(200,169,81,0.5)]">
                   Kab. Tangerang
                 </h2>
               </div>

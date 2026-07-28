@@ -58,44 +58,42 @@
 }
 
 /* === Base Styles === */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
 
-html {
-  scroll-behavior: smooth;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 
-body {
-  font-family: var(--font-sans);
-  background-color: var(--color-cream);
-  color: var(--color-navy);
-  line-height: 1.7;
-  margin: 0;
-  padding: 0;
-}
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--color-cream);
+    color: var(--color-navy);
+    line-height: 1.7;
+    margin: 0;
+    padding: 0;
+  }
 
-h1, h2, h3, h4, h5, h6 {
-  /* Inherit the surrounding text color so headings remain visible in dark
-     sections that set text-white or another light foreground color. */
-  color: inherit;
-  line-height: 1.3;
-  font-weight: 700;
-}
+  h1, h2, h3, h4, h5, h6 {
+    color: inherit;
+    line-height: 1.3;
+    font-weight: 700;
+  }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
 
-img {
-  max-width: 100%;
-  height: auto;
-  display: block;
+  img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
 }
 
 /* === Scrollbar Styling === */

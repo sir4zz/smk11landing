@@ -421,4 +421,9 @@ async function ensureStats() {
   }
 }
 
+app.use((err, _req, res, _next) => {
+  console.error(err);
+  res.status(err.status || 500).json({ message: err.message || 'Terjadi kesalahan server.' });
+});
+
 initializeSchema().then(ensurePpdbColumns).then(ensureAdmin).then(ensureInitialContent).then(ensureStats).then(() => app.listen(port, () => console.log(`API berjalan pada http://localhost:${port}`))).catch(e => { console.error(e); process.exit(1); });

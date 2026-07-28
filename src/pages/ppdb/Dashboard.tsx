@@ -3,10 +3,11 @@ import { Link, useNavigate } from 'react-router-dom'
 import { usePpdbAuth } from './PPDBAuth'
 import { apiUrl } from '../../lib/api'
 import {
-  GraduationCap, LogOut, User, FileText, CheckCircle2, Clock, AlertCircle,
+  LogOut, User, FileText, CheckCircle2, Clock, AlertCircle,
   ArrowRight, Upload, X, Eye, Save, Send, ChevronRight, Home, Loader2, Trash2
 } from 'lucide-react'
 import { programs } from '../../data/programs'
+import logoSekolah from '../../assets/logo.png'
 
 type Tab = 'biodata' | 'dokumen' | 'review' | 'status'
 type Step = 'akun' | 'biodata' | 'dokumen' | 'submit' | 'selesai'
@@ -139,7 +140,7 @@ export default function Dashboard() {
       <header className="border-b border-[#1B2A4A]/10 bg-white shadow-sm">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
           <div className="flex items-center gap-3">
-            <GraduationCap className="h-6 w-6 text-[#C8A951]" />
+            <img src={logoSekolah} alt="Logo SMKN 11" className="h-8 w-auto" style={{ height: '32px', width: 'auto', objectFit: 'contain' }} />
             <span className="font-bold text-[#1B2A4A]">PPDB SMKN 11</span>
           </div>
           <div className="flex items-center gap-4">

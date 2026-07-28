@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { usePpdbAuth } from './PPDBAuth'
 import { apiUrl } from '../../lib/api'
-import { GraduationCap, Mail, Lock, ArrowRight, LogIn } from 'lucide-react'
+import { Mail, Lock, ArrowRight, LogIn } from 'lucide-react'
 import Button from '../../components/ui/Button'
+import logoSekolah from '../../assets/logo.png'
 
 export default function Login() {
   const { login } = usePpdbAuth()
@@ -28,7 +29,7 @@ export default function Login() {
       <div className="w-full max-w-md">
         <div className="mb-6 text-center">
           <Link to="/" className="inline-flex items-center gap-2 text-[#1B2A4A] font-bold text-xl">
-            <GraduationCap className="text-[#C8A951]" /> SMKN 11
+            <img src={logoSekolah} alt="Logo SMKN 11" className="h-8 w-auto" style={{ height: '32px', width: 'auto', objectFit: 'contain' }} /> SMKN 11
           </Link>
           <h1 className="mt-4 text-2xl font-bold text-[#1B2A4A]">Masuk PPDB</h1>
           <p className="mt-1 text-sm text-[#23314D]">Masuk ke akun pendaftaran Anda</p>
