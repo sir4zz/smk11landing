@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
-import { BarChart3, BookOpen, Building2, FileText, GraduationCap, LogOut, Mail, Menu, Pencil, Plus, Trophy, Trash2, Users, X } from 'lucide-react';
+import { BarChart3, BookOpen, Building2, FileText, GraduationCap, LogOut, Mail, Menu, Pencil, Plus, Trophy, Trash2, Users, X, Search, Download, CheckCircle2, Eye, ExternalLink, Loader2 } from 'lucide-react';
 import { news as initialNews } from '../data/news';
 import { programs as initialPrograms } from '../data/programs';
 import { facilities as initialFacilities } from '../data/facilities';
@@ -219,7 +219,9 @@ export default function Admin() {
             <ContactMessages items={data.contact} onMarkRead={markRead} onDelete={remove} />
           )}
 
-          {editableSections && (
+          {section === 'ppdb' && <PPDBManagement token={localStorage.getItem(tokenKey) || ''} />}
+
+          {editableSections && section !== 'ppdb' && (
             <>
               <div className="mb-6 flex items-center justify-between">
                 <p className="text-[#23314D]">Kelola data {active!.title.toLowerCase()}.</p>
@@ -325,6 +327,327 @@ function Table({ items, config, onEdit, onDelete }: { items: Item[]; config: { f
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+/* ===== PPDB Management (New System) ===== */
+const ppdbStatuses = ['Menunggu Verifikasi', 'Sedang Diverifikasi', 'Perlu Perbaikan Dokumen', 'Lolos Seleksi', 'Cadangan', 'Tidak Lolos', 'Sudah Daftar Ulang'];
+
+function PPDBManagement({ token }: { token: string }) {
+  const [stats, setStats] = useState<any>(null);
+  const [list, setList] = useState<any[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [programFilter, setProgramFilter] = useState('');
+  const [programs, setPrograms] = useState<string[]>([]);
+  const [detail, setDetail] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+
+  const fetchList = async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ page: String(page), limit: '20' });
+      if (search) params.set('search', search);
+      if (statusFilter) params.set('status', statusFilter);
+      if (programFilter) params.set('program', programFilter);
+      const res = await fetch(apiUrl(`/api/ppdb/admin/list?${params}`), { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (res.ok) { setList(data.data); setTotalPages(data.totalPages); setTotal(data.total); setPrograms(data.programs || []); }
+    } catch {} finally { setLoading(false); }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const res = await fetch(apiUrl('/api/ppdb/admin/stats'), { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) setStats(await res.json());
+    } catch {}
+  };
+
+  useEffect(() => { fetchStats(); }, []);
+  useEffect(() => { fetchList(); }, [page, statusFilter, programFilter]);
+
+  const searchTimer = useMemo(() => {
+    let t: any;
+    return {
+      run: () => { clearTimeout(t); t = setTimeout(() => { setPage(1); fetchList(); }, 300); },
+      cancel: () => clearTimeout(t),
+    };
+  }, [search]);
+
+  useEffect(() => { searchTimer.run(); return () => searchTimer.cancel(); }, [search]);
+
+  const statCards = stats ? [
+    { label: 'Total Pendaftar', value: stats.total, color: 'text-[#1B2A4A]' },
+    { label: 'Menunggu Verifikasi', value: stats['Menunggu Verifikasi'] || 0, color: 'text-[#C8A951]' },
+    { label: 'Lolos Seleksi', value: (stats['Lolos Seleksi'] || 0) + (stats['Sudah Daftar Ulang'] || 0), color: 'text-green-600' },
+    { label: 'Tidak Lolos', value: (stats['Tidak Lolos'] || 0) + (stats['Cadangan'] || 0), color: 'text-red-600' },
+  ] : [];
+
+  const openDetail = async (id: string) => {
+    try {
+      const res = await fetch(apiUrl(`/api/ppdb/admin/${id}`), { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) setDetail(await res.json());
+    } catch {}
+  };
+
+  const updateStatus = async (id: string, status: string, note: string) => {
+    const res = await fetch(apiUrl(`/api/ppdb/admin/${id}/status`), {
+      method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ status, note }),
+    });
+    if (res.ok) { fetchList(); fetchStats(); setDetail(null); }
+  };
+
+  const verifyDoc = async (docId: string, verified: boolean, note: string) => {
+    const res = await fetch(apiUrl(`/api/ppdb/admin/documents/${docId}/verify`), {
+      method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ verified, note }),
+    });
+    if (res.ok) { if (detail) openDetail(detail.id); }
+  };
+
+  return (
+    <div>
+      {/* Stats */}
+      {statCards.length > 0 && (
+        <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {statCards.map((s: any) => (
+            <div key={s.label} className="rounded-xl bg-white p-5 shadow-sm">
+              <p className={`text-3xl font-bold ${s.color}`}>{s.value}</p>
+              <p className="text-sm text-[#5B7088]">{s.label}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Filter & Search */}
+      <div className="mb-6 flex flex-wrap items-center gap-4">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#23314D]/50" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari nama/NISN/no. daftar..." className="w-full rounded-lg border border-[#1B2A4A]/20 bg-white py-2.5 pl-10 pr-4 text-sm" />
+        </div>
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="rounded-lg border border-[#1B2A4A]/20 bg-white px-4 py-2.5 text-sm">
+          <option value="">Semua Status</option>
+          {ppdbStatuses.map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
+        <select value={programFilter} onChange={e => setProgramFilter(e.target.value)} className="rounded-lg border border-[#1B2A4A]/20 bg-white px-4 py-2.5 text-sm">
+          <option value="">Semua Jurusan</option>
+          {programs.map(p => <option key={p} value={p}>{p}</option>)}
+        </select>
+        <button onClick={async () => {
+          try {
+            const res = await fetch(apiUrl('/api/ppdb/export/csv'), { headers: { Authorization: `Bearer ${token}` } });
+            if (!res.ok) return;
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = 'ppdb-export.csv'; a.click();
+            URL.revokeObjectURL(url);
+          } catch {}
+        }} className="inline-flex items-center gap-2 rounded-lg border border-[#1B2A4A]/20 bg-white px-4 py-2.5 text-sm font-semibold text-[#1B2A4A] hover:bg-[#FAF6F0]">
+          <Download className="h-4 w-4" /> Export CSV
+        </button>
+      </div>
+
+      {/* Table */}
+      <div className="overflow-x-auto rounded-xl bg-white shadow-sm">
+        <table className="w-full text-left text-sm">
+          <thead className="bg-[#FAF6F0] text-[#1B2A4A]">
+            <tr>
+              <th className="p-4">No. Daftar</th>
+              <th className="p-4">Nama</th>
+              <th className="p-4">Jurusan</th>
+              <th className="p-4">Status</th>
+              <th className="p-4">Dokumen</th>
+              <th className="p-4">Tgl Daftar</th>
+              <th className="p-4">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {list.map((item: any) => (
+              <tr key={item.id} className="border-t border-[#1B2A4A]/10 hover:bg-[#FAF6F0]/50">
+                <td className="p-4 font-mono text-xs">{item.registration_number}</td>
+                <td className="p-4 font-semibold">{item.name}</td>
+                <td className="p-4 text-[#23314D]">{item.program}</td>
+                <td className="p-4"><StatusBadge status={item.status} /></td>
+                <td className="p-4 text-xs">{item.documents_verified}/{item.documents_count}</td>
+                <td className="p-4 text-[#23314D]/70">{item.date ? new Date(item.date).toLocaleDateString('id-ID') : '-'}</td>
+                <td className="p-4">
+                  <button onClick={() => openDetail(item.id)} className="text-[#866D2C] hover:text-[#C8A951]"><Eye className="h-4 w-4" /></button>
+                </td>
+              </tr>
+            ))}
+            {list.length === 0 && !loading && (
+              <tr><td colSpan={7} className="p-8 text-center text-[#5B7088]">Belum ada pendaftar.</td></tr>
+            )}
+            {loading && (
+              <tr><td colSpan={7} className="p-8 text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin text-[#C8A951]" /></td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="mt-4 flex items-center justify-between text-sm">
+          <span className="text-[#5B7088]">Total: {total}</span>
+          <div className="flex gap-2">
+            <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="rounded-lg border border-[#1B2A4A]/20 bg-white px-3 py-1.5 disabled:opacity-40">Prev</button>
+            <span className="px-3 py-1.5 font-semibold">{page}</span>
+            <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="rounded-lg border border-[#1B2A4A]/20 bg-white px-3 py-1.5 disabled:opacity-40">Next</button>
+          </div>
+        </div>
+      )}
+
+      {/* Detail Modal */}
+      {detail && (
+        <PPDBDetail
+          data={detail}
+          onClose={() => setDetail(null)}
+          onUpdateStatus={updateStatus}
+          onVerifyDoc={verifyDoc}
+          token={token}
+        />
+      )}
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const colors: Record<string, string> = {
+    'Menunggu Verifikasi': 'bg-[#C8A951]/20 text-[#866D2C]',
+    'Sedang Diverifikasi': 'bg-blue-50 text-blue-700',
+    'Perlu Perbaikan Dokumen': 'bg-red-50 text-red-700',
+    'Lolos Seleksi': 'bg-green-50 text-green-700',
+    'Cadangan': 'bg-orange-50 text-orange-700',
+    'Tidak Lolos': 'bg-gray-100 text-gray-600',
+    'Sudah Daftar Ulang': 'bg-green-50 text-green-700',
+  };
+  return <span className={`rounded-full px-3 py-1 text-xs font-semibold ${colors[status] || 'bg-gray-100 text-gray-600'}`}>{status}</span>;
+}
+
+function PPDBDetail({ data, onClose, onUpdateStatus, onVerifyDoc, token }: {
+  data: any; onClose: () => void;
+  onUpdateStatus: (id: string, status: string, note: string) => void;
+  onVerifyDoc: (docId: string, verified: boolean, note: string) => void;
+  token: string;
+}) {
+  const [status, setStatus] = useState(data.status || '');
+  const [note, setNote] = useState('');
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-10">
+      <div className="w-full max-w-3xl rounded-2xl bg-white shadow-xl">
+        <div className="flex items-center justify-between border-b border-[#1B2A4A]/10 px-6 py-4">
+          <h2 className="text-lg font-bold text-[#1B2A4A]">Detail Pendaftar</h2>
+          <button onClick={onClose}><X className="h-5 w-5" /></button>
+        </div>
+
+        <div className="space-y-6 p-6">
+          {/* Info */}
+          <div className="grid gap-4 md:grid-cols-2">
+            <div><span className="text-xs text-[#5B7088]">No. Pendaftaran</span><p className="font-mono font-bold">{data.registration_number}</p></div>
+            <div><span className="text-xs text-[#5B7088]">Nama</span><p className="font-semibold">{data.full_name || data.name}</p></div>
+            <div><span className="text-xs text-[#5B7088]">NISN</span><p>{data.nisn || '-'}</p></div>
+            <div><span className="text-xs text-[#5B7088]">NIK</span><p>{data.nik || '-'}</p></div>
+            <div><span className="text-xs text-[#5B7088]">Jenis Kelamin</span><p>{data.gender === 'L' ? 'Laki-laki' : data.gender === 'P' ? 'Perempuan' : '-'}</p></div>
+            <div><span className="text-xs text-[#5B7088]">Tempat/Tgl Lahir</span><p>{data.place_of_birth ? `${data.place_of_birth}, ${new Date(data.date_of_birth).toLocaleDateString('id-ID')}` : '-'}</p></div>
+            <div><span className="text-xs text-[#5B7088]">Agama</span><p>{data.religion || '-'}</p></div>
+            <div><span className="text-xs text-[#5B7088]">Status</span><p><StatusBadge status={data.status} /></p></div>
+            <div className="md:col-span-2"><span className="text-xs text-[#5B7088]">Alamat</span><p>{data.address || '-'}</p></div>
+            <div><span className="text-xs text-[#5B7088]">No. HP</span><p>{data.phone || data.user_phone || '-'}</p></div>
+            <div><span className="text-xs text-[#5B7088]">Email</span><p>{data.user_email || '-'}</p></div>
+            <div><span className="text-xs text-[#5B7088]">Jurusan</span><p className="font-semibold">{data.program}</p></div>
+          </div>
+
+          {/* Parent Data */}
+          <div>
+            <h3 className="mb-3 font-semibold text-[#1B2A4A]">Data Orang Tua</h3>
+            <div className="grid gap-3 md:grid-cols-2 text-sm">
+              <div><span className="text-xs text-[#5B7088]">Ayah</span><p>{data.father_name || '-'} {data.father_occupation ? `(${data.father_occupation})` : ''}</p></div>
+              <div><span className="text-xs text-[#5B7088]">Ibu</span><p>{data.mother_name || '-'} {data.mother_occupation ? `(${data.mother_occupation})` : ''}</p></div>
+              <div><span className="text-xs text-[#5B7088]">Wali</span><p>{data.guardian_name || '-'}</p></div>
+              <div><span className="text-xs text-[#5B7088]">Alamat Orang Tua</span><p>{data.parent_address || '-'}</p></div>
+            </div>
+          </div>
+
+          {/* Previous School */}
+          <div>
+            <h3 className="mb-3 font-semibold text-[#1B2A4A]">Sekolah Asal</h3>
+            <div className="grid gap-3 md:grid-cols-2 text-sm">
+              <div><span className="text-xs text-[#5B7088]">Sekolah</span><p>{data.previous_school || '-'}</p></div>
+              <div><span className="text-xs text-[#5B7088]">Tahun Lulus</span><p>{data.graduation_year || '-'}</p></div>
+            </div>
+          </div>
+
+          {/* Documents */}
+          <div>
+            <h3 className="mb-3 font-semibold text-[#1B2A4A]">Dokumen</h3>
+            {(!data.documents || data.documents.length === 0) ? (
+              <p className="text-sm text-[#5B7088]">Belum ada dokumen.</p>
+            ) : (
+              <div className="space-y-2">
+                {data.documents.map((doc: any) => (
+                  <div key={doc.id} className="flex items-center justify-between rounded-xl border border-[#1B2A4A]/10 bg-[#FAF6F0] p-3">
+                    <div className="flex items-center gap-3">
+                      <FileText className="h-5 w-5 text-[#866D2C]" />
+                      <div>
+                        <p className="text-sm font-semibold">{doc.type.replace(/_/g, ' ')}</p>
+                        <p className="text-xs text-[#5B7088]">{doc.filename} ({Math.round(doc.file_size / 1024)}KB)</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {doc.verified ? (
+                        <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">Sudah</span>
+                      ) : (
+                        <div className="flex gap-2">
+                          <button onClick={() => onVerifyDoc(doc.id, true, '')} className="rounded-lg bg-green-100 px-3 py-1 text-xs font-semibold text-green-700 hover:bg-green-200">Setuju</button>
+                          <button onClick={() => { const n = prompt('Catatan penolakan:'); if (n !== null) onVerifyDoc(doc.id, false, n); }} className="rounded-lg bg-red-100 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-200">Tolak</button>
+                        </div>
+                      )}
+                      {doc.note && <span className="text-xs text-red-600">{doc.note}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Update Status */}
+          <div>
+            <h3 className="mb-3 font-semibold text-[#1B2A4A]">Ubah Status</h3>
+            <div className="flex flex-wrap gap-3">
+              <select value={status} onChange={e => setStatus(e.target.value)} className="rounded-lg border border-[#1B2A4A]/20 bg-white px-4 py-2.5 text-sm">
+                {ppdbStatuses.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+              <input value={note} onChange={e => setNote(e.target.value)} placeholder="Catatan (opsional)" className="flex-1 rounded-lg border border-[#1B2A4A]/20 px-4 py-2.5 text-sm min-w-[200px]" />
+              <button onClick={() => onUpdateStatus(data.id, status, note)} className="rounded-lg bg-[#1B2A4A] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#15203a]">Simpan</button>
+            </div>
+          </div>
+
+          {/* Activity Log */}
+          {data.activities && data.activities.length > 0 && (
+            <div>
+              <h3 className="mb-3 font-semibold text-[#1B2A4A]">Riwayat Aktivitas</h3>
+              <div className="space-y-2">
+                {data.activities.map((act: any, i: number) => (
+                  <div key={i} className="flex items-start gap-3 border-b border-[#1B2A4A]/5 pb-2 text-sm">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 text-[#C8A951]" />
+                    <div>
+                      <p className="font-semibold text-[#1B2A4A]">{act.action}</p>
+                      {act.note && <p className="text-xs text-[#5B7088]">{act.note}</p>}
+                      <p className="text-xs text-[#5B7088]/60">{new Date(act.created_at).toLocaleString('id-ID')} {act.admin_name ? `oleh ${act.admin_name}` : ''}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

@@ -13,96 +13,326 @@ if (!jwtSecret) throw new Error('JWT_SECRET wajib diisi pada file .env');
 
 const db = mysql.createPool({ host: process.env.DB_HOST, port: Number(process.env.DB_PORT || 3306), user: process.env.DB_USER, password: process.env.DB_PASSWORD, database: process.env.DB_NAME || 'smkn11ts', waitForConnections: true, connectionLimit: 10 });
 app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173' }));
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: '10mb' }));
 
 const allowedTypes = new Set(['news', 'programs', 'facilities', 'staff', 'achievements']);
 const publicTypes = new Set(['programs', 'facilities', 'staff', 'news', 'achievements']);
+const ppdbStatuses = ['Menunggu Verifikasi', 'Sedang Diverifikasi', 'Perlu Perbaikan Dokumen', 'Lolos Seleksi', 'Cadangan', 'Tidak Lolos', 'Sudah Daftar Ulang'];
+const docTypes = ['pas_foto', 'kartu_keluarga', 'akta_kelahiran', 'rapor', 'skl', 'dokumen_pendukung'];
 
+function genRegNumber() {
+  return `PPDB-${new Date().getFullYear()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+}
+
+const adminAuth = (req, res, next) => { const token = req.headers.authorization?.replace('Bearer ', ''); try { req.user = jwt.verify(token, jwtSecret); next(); } catch { res.status(401).json({ message: 'Sesi tidak valid.' }); } };
+
+const applicantAuth = async (req, res, next) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  if (!token) return res.status(401).json({ message: 'Silakan masuk terlebih dahulu.' });
+  try {
+    const p = jwt.verify(token, jwtSecret);
+    const [rows] = await db.query('SELECT id, name, email, phone FROM ppdb_users WHERE id = ?', [p.id]);
+    if (!rows.length) return res.status(401).json({ message: 'Akun tidak ditemukan.' });
+    req.user = rows[0]; next();
+  } catch { res.status(401).json({ message: 'Sesi tidak valid.' }); }
+};
+
+/* ===== Stats & Public ===== */
+app.get('/api/public/stats', async (_req, res) => {
+  try {
+    const [pc] = await db.query(`SELECT COUNT(*) AS c FROM content_records WHERE content_type = 'programs'`);
+    const [ac] = await db.query(`SELECT COUNT(*) AS c FROM content_records WHERE content_type = 'achievements'`);
+    const [sr] = await db.query('SELECT stat_key, stat_value FROM site_stats');
+    const m = {}; for (const r of sr) m[r.stat_key] = r.stat_value;
+    res.json({ students: m.students || '1200+', teachers: m.teachers || '85+', programs: String(pc[0].c || 5), achievements: String(ac[0].c || 8) });
+  } catch { res.json({ students: '1200+', teachers: '85+', programs: '5', achievements: '8' }); }
+});
 app.get('/api/public/content/:type', async (req, res) => {
   if (!publicTypes.has(req.params.type)) return res.sendStatus(404);
-  try {
-    const [rows] = await db.query('SELECT id, data FROM content_records WHERE content_type = ? ORDER BY updated_at DESC', [req.params.type]);
-    res.json(rows.map(row => ({ id: row.id, ...JSON.parse(row.data) })));
-  } catch {
-    res.status(503).json({ message: 'Konten publik belum tersedia.' });
-  }
+  try { const [rows] = await db.query('SELECT id, data FROM content_records WHERE content_type = ? ORDER BY updated_at DESC', [req.params.type]); res.json(rows.map(r => ({ id: r.id, ...JSON.parse(r.data) }))); } catch { res.status(503).json({ message: 'Konten belum tersedia.' }); }
 });
-
 app.get('/api/public/content/:type/:id', async (req, res) => {
   if (!publicTypes.has(req.params.type)) return res.sendStatus(404);
   const [rows] = await db.query('SELECT id, data FROM content_records WHERE content_type = ? AND id = ?', [req.params.type, req.params.id]);
   if (!rows.length) return res.sendStatus(404);
   res.json({ id: rows[0].id, ...JSON.parse(rows[0].data) });
 });
-const auth = (req, res, next) => { const token = req.headers.authorization?.replace('Bearer ', ''); try { req.user = jwt.verify(token, jwtSecret); next(); } catch { res.status(401).json({ message: 'Sesi tidak valid atau telah berakhir.' }); } };
 
-app.get('/api/health', async (_req, res) => { try { await db.query('SELECT 1'); res.json({ ok: true }); } catch { res.status(503).json({ ok: false, message: 'Database tidak terhubung.' }); } });
-app.post('/api/auth/login', async (req, res) => { const { username, password } = req.body; const [rows] = await db.query('SELECT * FROM users WHERE username = ?', [username]); const user = rows[0]; if (!user || !(await bcrypt.compare(password || '', user.password_hash))) return res.status(401).json({ message: 'Username atau kata sandi salah.' }); const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, jwtSecret, { expiresIn: '8h' }); res.json({ token, user: { id: user.id, username: user.username, role: user.role } }); });
+/* ===== Auth ===== */
+app.post('/api/auth/login', async (req, res) => {
+  const { username, password } = req.body;
+  const [rows] = await db.query('SELECT * FROM users WHERE username = ?', [username]);
+  const u = rows[0];
+  if (!u || !(await bcrypt.compare(password || '', u.password_hash))) return res.status(401).json({ message: 'Username atau kata sandi salah.' });
+  const token = jwt.sign({ id: u.id, username: u.username, role: u.role }, jwtSecret, { expiresIn: '8h' });
+  res.json({ token, user: { id: u.id, username: u.username, role: u.role } });
+});
+app.get('/api/health', async (_req, res) => { try { await db.query('SELECT 1'); res.json({ ok: true }); } catch { res.status(503).json({ ok: false }); } });
 
-app.get('/api/content/:type', auth, async (req, res) => { if (!allowedTypes.has(req.params.type)) return res.sendStatus(404); const [rows] = await db.query('SELECT id, data FROM content_records WHERE content_type = ? ORDER BY updated_at DESC', [req.params.type]); res.json(rows.map(row => ({ id: row.id, ...JSON.parse(row.data) }))); });
-app.post('/api/content/:type', auth, async (req, res) => { if (!allowedTypes.has(req.params.type)) return res.sendStatus(404); const id = req.body.id || randomUUID(); await db.query('INSERT INTO content_records (id, content_type, data) VALUES (?, ?, ?)', [id, req.params.type, JSON.stringify(req.body)]); res.status(201).json({ id, ...req.body }); });
-app.put('/api/content/:type/:id', auth, async (req, res) => { if (!allowedTypes.has(req.params.type)) return res.sendStatus(404); const [result] = await db.query('UPDATE content_records SET data = ? WHERE id = ? AND content_type = ?', [JSON.stringify(req.body), req.params.id, req.params.type]); if (!result.affectedRows) return res.sendStatus(404); res.json({ id: req.params.id, ...req.body }); });
-app.delete('/api/content/:type/:id', auth, async (req, res) => { const [result] = await db.query('DELETE FROM content_records WHERE id = ? AND content_type = ?', [req.params.id, req.params.type]); res.status(result.affectedRows ? 204 : 404).end(); });
+/* ===== Admin Content CRUD ===== */
+app.get('/api/content/:type', adminAuth, async (req, res) => {
+  if (!allowedTypes.has(req.params.type)) return res.sendStatus(404);
+  const [rows] = await db.query('SELECT id, data FROM content_records WHERE content_type = ? ORDER BY updated_at DESC', [req.params.type]);
+  res.json(rows.map(r => ({ id: r.id, ...JSON.parse(r.data) })));
+});
+app.post('/api/content/:type', adminAuth, async (req, res) => {
+  if (!allowedTypes.has(req.params.type)) return res.sendStatus(404);
+  const id = req.body.id || randomUUID();
+  await db.query('INSERT INTO content_records (id, content_type, data) VALUES (?, ?, ?)', [id, req.params.type, JSON.stringify(req.body)]);
+  res.status(201).json({ id, ...req.body });
+});
+app.put('/api/content/:type/:id', adminAuth, async (req, res) => {
+  if (!allowedTypes.has(req.params.type)) return res.sendStatus(404);
+  const [r] = await db.query('UPDATE content_records SET data = ? WHERE id = ? AND content_type = ?', [JSON.stringify(req.body), req.params.id, req.params.type]);
+  if (!r.affectedRows) return res.sendStatus(404);
+  res.json({ id: req.params.id, ...req.body });
+});
+app.delete('/api/content/:type/:id', adminAuth, async (req, res) => {
+  const [r] = await db.query('DELETE FROM content_records WHERE id = ? AND content_type = ?', [req.params.id, req.params.type]);
+  res.status(r.affectedRows ? 204 : 404).end();
+});
 
-app.get('/api/ppdb', auth, async (_req, res) => { const [rows] = await db.query('SELECT id, name, program, status, submitted_at AS date FROM ppdb_applications ORDER BY submitted_at DESC'); res.json(rows); });
-app.post('/api/ppdb/apply', async (req, res) => { const { name, nisn, email, phone, address, program, documentUrl } = req.body; if (![name, nisn, email, phone, address, program].every(value => typeof value === 'string' && value.trim())) return res.status(400).json({ message: 'Semua data wajib diisi.' }); if (!/^\S+@\S+\.\S+$/.test(email)) return res.status(400).json({ message: 'Format email tidak valid.' }); const id = randomUUID(); const date = new Date().toISOString().slice(0, 10); await db.query('INSERT INTO ppdb_applications (id, name, nisn, email, phone, address, program, document_url, submitted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', [id, name.trim(), nisn.trim(), email.trim(), phone.trim(), address.trim(), program.trim(), documentUrl?.trim() || null, date]); res.status(201).json({ id, message: 'Pendaftaran berhasil dikirim.' }); });
-app.post('/api/ppdb', auth, async (req, res) => { const { name, program, status = 'Menunggu Verifikasi', date } = req.body; const id = randomUUID(); await db.query('INSERT INTO ppdb_applications (id, name, program, status, submitted_at) VALUES (?, ?, ?, ?, ?)', [id, name, program, status, date]); res.status(201).json({ id, name, program, status, date }); });
-app.put('/api/ppdb/:id', auth, async (req, res) => { const { name, program, status, date } = req.body; const [result] = await db.query('UPDATE ppdb_applications SET name=?, program=?, status=?, submitted_at=? WHERE id=?', [name, program, status, date, req.params.id]); if (!result.affectedRows) return res.sendStatus(404); res.json({ id: req.params.id, ...req.body }); });
-app.delete('/api/ppdb/:id', auth, async (req, res) => { const [result] = await db.query('DELETE FROM ppdb_applications WHERE id=?', [req.params.id]); res.status(result.affectedRows ? 204 : 404).end(); });
+/* ===== Old PPDB compat ===== */
+app.get('/api/ppdb', adminAuth, async (_req, res) => { const [rows] = await db.query('SELECT id, name, program, status, submitted_at AS date FROM ppdb_applications ORDER BY submitted_at DESC'); res.json(rows); });
+app.post('/api/ppdb/apply', async (req, res) => {
+  const { name, nisn, email, phone, address, program, documentUrl } = req.body;
+  if (![name, nisn, email, phone, address, program].every(v => v && v.trim())) return res.status(400).json({ message: 'Data wajib diisi.' });
+  if (!/^\S+@\S+\.\S+$/.test(email)) return res.status(400).json({ message: 'Email tidak valid.' });
+  const id = randomUUID(); const date = new Date().toISOString().slice(0, 10);
+  await db.query('INSERT INTO ppdb_applications (id, name, nisn, email, phone, address, program, document_url, submitted_at) VALUES (?,?,?,?,?,?,?,?,?)', [id, name.trim(), nisn.trim(), email.trim(), phone.trim(), address.trim(), program.trim(), documentUrl?.trim() || null, date]);
+  res.status(201).json({ id, message: 'Pendaftaran berhasil dikirim.' });
+});
+app.post('/api/ppdb', adminAuth, async (req, res) => {
+  const { name, program, status = 'Menunggu Verifikasi', date } = req.body; const id = randomUUID();
+  await db.query('INSERT INTO ppdb_applications (id, name, program, status, submitted_at) VALUES (?,?,?,?,?)', [id, name, program, status, date]); res.status(201).json({ id, name, program, status, date });
+});
+app.put('/api/ppdb/:id', adminAuth, async (req, res) => {
+  const { name, program, status, date } = req.body;
+  const [r] = await db.query('UPDATE ppdb_applications SET name=?, program=?, status=?, submitted_at=? WHERE id=?', [name, program, status, date, req.params.id]);
+  if (!r.affectedRows) return res.sendStatus(404); res.json({ id: req.params.id, ...req.body });
+});
+app.delete('/api/ppdb/:id', adminAuth, async (req, res) => {
+  const [r] = await db.query('DELETE FROM ppdb_applications WHERE id=?', [req.params.id]); res.status(r.affectedRows ? 204 : 404).end();
+});
 
-app.post('/api/contact', async (req, res) => { const { name, email, subject, message } = req.body; if (![name, email, subject, message].every(value => typeof value === 'string' && value.trim())) return res.status(400).json({ message: 'Semua field wajib diisi.' }); if (!/^\S+@\S+\.\S+$/.test(email)) return res.status(400).json({ message: 'Format email tidak valid.' }); const id = randomUUID(); await db.query('INSERT INTO contact_messages (id, name, email, subject, message) VALUES (?, ?, ?, ?, ?)', [id, name.trim(), email.trim(), subject.trim(), message.trim()]); res.status(201).json({ id, message: 'Pesan berhasil dikirim.' }); });
-app.get('/api/contact', auth, async (_req, res) => { const [rows] = await db.query('SELECT id, name, email, subject, message, is_read AS isRead, created_at AS date FROM contact_messages ORDER BY created_at DESC'); res.json(rows); });
-app.put('/api/contact/:id/read', auth, async (req, res) => { const [result] = await db.query('UPDATE contact_messages SET is_read = 1 WHERE id = ?', [req.params.id]); if (!result.affectedRows) return res.sendStatus(404); res.json({ ok: true }); });
-app.delete('/api/contact/:id', auth, async (req, res) => { const [result] = await db.query('DELETE FROM contact_messages WHERE id = ?', [req.params.id]); res.status(result.affectedRows ? 204 : 404).end(); });
+/* ===== Contact ===== */
+app.post('/api/contact', async (req, res) => {
+  const { name, email, subject, message } = req.body;
+  if (![name, email, subject, message].every(v => v && v.trim())) return res.status(400).json({ message: 'Semua field wajib diisi.' });
+  if (!/^\S+@\S+\.\S+$/.test(email)) return res.status(400).json({ message: 'Email tidak valid.' });
+  const id = randomUUID();
+  await db.query('INSERT INTO contact_messages (id, name, email, subject, message) VALUES (?,?,?,?,?)', [id, name.trim(), email.trim(), subject.trim(), message.trim()]);
+  res.status(201).json({ id, message: 'Pesan berhasil dikirim.' });
+});
+app.get('/api/contact', adminAuth, async (_req, res) => {
+  const [rows] = await db.query('SELECT id, name, email, subject, message, is_read AS isRead, created_at AS date FROM contact_messages ORDER BY created_at DESC'); res.json(rows);
+});
+app.put('/api/contact/:id/read', adminAuth, async (req, res) => {
+  const [r] = await db.query('UPDATE contact_messages SET is_read = 1 WHERE id = ?', [req.params.id]); if (!r.affectedRows) return res.sendStatus(404); res.json({ ok: true });
+});
+app.delete('/api/contact/:id', adminAuth, async (req, res) => {
+  const [r] = await db.query('DELETE FROM contact_messages WHERE id = ?', [req.params.id]); res.status(r.affectedRows ? 204 : 404).end();
+});
+
+/* ======================================================== */
+/* ===== NEW PPDB SYSTEM ===== */
+/* ======================================================== */
+
+/* --- Applicant Auth --- */
+app.post('/api/ppdb/auth/register', async (req, res) => {
+  const { name, email, phone, password } = req.body;
+  if (![name, email, phone, password].every(v => v && v.trim())) return res.status(400).json({ message: 'Semua field wajib diisi.' });
+  if (!/^\S+@\S+\.\S+$/.test(email)) return res.status(400).json({ message: 'Format email tidak valid.' });
+  if (password.length < 6) return res.status(400).json({ message: 'Password minimal 6 karakter.' });
+  const [existing] = await db.query('SELECT id FROM ppdb_users WHERE email = ?', [email]);
+  if (existing.length) return res.status(409).json({ message: 'Email sudah terdaftar.' });
+  const id = randomUUID();
+  await db.query('INSERT INTO ppdb_users (id, name, email, phone, password_hash) VALUES (?,?,?,?,?)', [id, name.trim(), email.trim(), phone.trim(), await bcrypt.hash(password, 12)]);
+  const token = jwt.sign({ id }, jwtSecret, { expiresIn: '30d' });
+  res.status(201).json({ token, user: { id, name: name.trim(), email: email.trim(), phone: phone.trim() } });
+});
+
+app.post('/api/ppdb/auth/login', async (req, res) => {
+  const { email, password } = req.body;
+  if (![email, password].every(v => v && v.trim())) return res.status(400).json({ message: 'Email dan password wajib diisi.' });
+  const [rows] = await db.query('SELECT * FROM ppdb_users WHERE email = ?', [email]);
+  const u = rows[0];
+  if (!u || !(await bcrypt.compare(password || '', u.password_hash))) return res.status(401).json({ message: 'Email atau password salah.' });
+  const token = jwt.sign({ id: u.id }, jwtSecret, { expiresIn: '30d' });
+  res.json({ token, user: { id: u.id, name: u.name, email: u.email, phone: u.phone } });
+});
+
+/* --- Applicant Dashboard --- */
+app.get('/api/ppdb/me', applicantAuth, async (req, res) => {
+  const regRows = await db.query('SELECT * FROM ppdb_registrations WHERE user_id = ? ORDER BY created_at DESC LIMIT 1', [req.user.id]);
+  const registration = regRows[0][0] || null;
+  const [docs] = registration ? await db.query('SELECT id, type, filename, mime_type, file_size, verified, note, created_at FROM ppdb_documents WHERE application_id = ? ORDER BY created_at', [registration.id]) : [];
+  const [activities] = registration ? await db.query('SELECT action, note, created_at FROM ppdb_activity_log WHERE application_id = ? ORDER BY created_at DESC LIMIT 20', [registration.id]) : [];
+  res.json({ user: req.user, registration, documents: docs || [], activities: activities || [] });
+});
+
+/* --- Biodata --- */
+app.put('/api/ppdb/biodata', applicantAuth, async (req, res) => {
+  const { full_name, nisn, nik, gender, place_of_birth, date_of_birth, religion, address, phone, father_name, father_occupation, mother_name, mother_occupation, guardian_name, guardian_phone, parent_address, previous_school, previous_school_address, graduation_year, program } = req.body;
+  const [existing] = await db.query('SELECT id, status FROM ppdb_registrations WHERE user_id = ?', [req.user.id]);
+  if (existing.length && existing[0].status !== 'Menunggu Verifikasi' && existing[0].status !== 'Perlu Perbaikan Dokumen') return res.status(400).json({ message: 'Pendaftaran sudah diproses, tidak dapat diubah.' });
+  if (existing.length) {
+    await db.query(`UPDATE ppdb_registrations SET full_name=?, nisn=?, nik=?, gender=?, place_of_birth=?, date_of_birth=?, religion=?, address=?, phone=?, father_name=?, father_occupation=?, mother_name=?, mother_occupation=?, guardian_name=?, guardian_phone=?, parent_address=?, previous_school=?, previous_school_address=?, graduation_year=?, program=?, updated_at=NOW() WHERE user_id=?`,
+      [full_name, nisn, nik, gender, place_of_birth, date_of_birth, religion, address, phone, father_name, father_occupation, mother_name, mother_occupation, guardian_name, guardian_phone, parent_address, previous_school, previous_school_address, graduation_year, program, req.user.id]);
+  } else {
+    const id = randomUUID();
+    await db.query(`INSERT INTO ppdb_registrations (id, user_id, registration_number, full_name, nisn, nik, gender, place_of_birth, date_of_birth, religion, address, phone, father_name, father_occupation, mother_name, mother_occupation, guardian_name, guardian_phone, parent_address, previous_school, previous_school_address, graduation_year, program) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      [id, req.user.id, genRegNumber(), full_name, nisn, nik, gender, place_of_birth, date_of_birth, religion, address, phone, father_name, father_occupation, mother_name, mother_occupation, guardian_name, guardian_phone, parent_address, previous_school, previous_school_address, graduation_year, program]);
+  }
+  res.json({ message: 'Biodata berhasil disimpan.' });
+});
+
+/* --- Documents --- */
+app.post('/api/ppdb/documents', applicantAuth, async (req, res) => {
+  const { type, filename, file_data, mime_type } = req.body;
+  if (!docTypes.includes(type)) return res.status(400).json({ message: 'Tipe dokumen tidak valid.' });
+  if (!file_data) return res.status(400).json({ message: 'File harus diupload.' });
+  const [reg] = await db.query('SELECT id FROM ppdb_registrations WHERE user_id = ?', [req.user.id]);
+  if (!reg.length) return res.status(400).json({ message: 'Lengkapi biodata terlebih dahulu.' });
+  const appId = reg[0].id;
+  const existing = await db.query('SELECT id FROM ppdb_documents WHERE application_id = ? AND type = ?', [appId, type]);
+  if (existing[0].length) return res.status(400).json({ message: 'Dokumen jenis ini sudah diupload. Hapus terlebih dahulu untuk mengupload ulang.' });
+  const id = randomUUID();
+  const size = Math.round(file_data.length * 0.75);
+  await db.query('INSERT INTO ppdb_documents (id, application_id, type, filename, file_data, mime_type, file_size) VALUES (?,?,?,?,?,?,?)', [id, appId, type, filename || type, file_data, mime_type || 'image/jpeg', size]);
+  await db.query('UPDATE ppdb_registrations SET documents_count = documents_count + 1 WHERE id = ?', [appId]);
+  res.status(201).json({ id, type, filename, mime_type, file_size: size, verified: 0, note: null });
+});
+
+app.delete('/api/ppdb/documents/:id', applicantAuth, async (req, res) => {
+  const [doc] = await db.query('SELECT d.id, d.application_id FROM ppdb_documents d JOIN ppdb_registrations r ON r.id = d.application_id WHERE d.id = ? AND r.user_id = ?', [req.params.id, req.user.id]);
+  if (!doc.length) return res.sendStatus(404);
+  await db.query('DELETE FROM ppdb_documents WHERE id = ?', [req.params.id]);
+  await db.query('UPDATE ppdb_registrations SET documents_count = GREATEST(documents_count - 1, 0) WHERE id = ?', [doc[0].application_id]);
+  res.status(204).end();
+});
+
+/* --- Submit --- */
+app.post('/api/ppdb/submit', applicantAuth, async (req, res) => {
+  const [reg] = await db.query('SELECT id, status, full_name, program FROM ppdb_registrations WHERE user_id = ?', [req.user.id]);
+  if (!reg.length) return res.status(400).json({ message: 'Lengkapi biodata terlebih dahulu.' });
+  const r = reg[0];
+  if (r.status !== 'Menunggu Verifikasi' && r.status !== 'Perlu Perbaikan Dokumen') return res.status(400).json({ message: `Pendaftaran sudah dalam status "${r.status}".` });
+  if (!r.full_name) return res.status(400).json({ message: 'Lengkapi biodata terlebih dahulu.' });
+  const [docs] = await db.query('SELECT COUNT(*) AS c FROM ppdb_documents WHERE application_id = ?', [r.id]);
+  if (!docs[0].c) return res.status(400).json({ message: 'Upload minimal 1 dokumen sebelum submit.' });
+  await db.query('UPDATE ppdb_registrations SET status = ?, submitted_at = NOW() WHERE id = ?', ['Menunggu Verifikasi', r.id]);
+  await db.query('INSERT INTO ppdb_activity_log (id, application_id, action, note) VALUES (?,?,?,?)', [randomUUID(), r.id, 'Submit Pendaftaran', 'Pendaftaran berhasil dikirim.']);
+  res.json({ message: 'Pendaftaran berhasil dikirim.', status: 'Menunggu Verifikasi' });
+});
+
+/* --- Applicant Status --- */
+app.get('/api/ppdb/status', applicantAuth, async (req, res) => {
+  const [reg] = await db.query('SELECT id, registration_number, status, admin_note, submitted_at, created_at, full_name, program, documents_count FROM ppdb_registrations WHERE user_id = ?', [req.user.id]);
+  if (!reg.length) return res.json({ registration: null });
+  const r = reg[0];
+  const [docs] = await db.query('SELECT id, type, filename, verified, note FROM ppdb_documents WHERE application_id = ?', [r.id]);
+  const [activities] = await db.query('SELECT action, note, created_at FROM ppdb_activity_log WHERE application_id = ? ORDER BY created_at DESC LIMIT 50', [r.id]);
+  res.json({ registration: r, documents: docs, activities });
+});
+
+/* ===== PPDB Admin Endpoints ===== */
+
+/* --- Stats --- */
+app.get('/api/ppdb/admin/stats', adminAuth, async (_req, res) => {
+  const [total] = await db.query('SELECT COUNT(*) AS c FROM ppdb_registrations');
+  const rows = await db.query(`SELECT status, COUNT(*) AS c FROM ppdb_registrations GROUP BY status`);
+  const m = { 'Menunggu Verifikasi': 0, 'Sedang Diverifikasi': 0, 'Perlu Perbaikan Dokumen': 0, 'Lolos Seleksi': 0, 'Cadangan': 0, 'Tidak Lolos': 0, 'Sudah Daftar Ulang': 0 };
+  for (const r of rows[0]) m[r.status] = r.c;
+  res.json({ total: total[0].c, ...m });
+});
+
+/* --- List --- */
+app.get('/api/ppdb/admin/list', adminAuth, async (req, res) => {
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
+  const offset = (page - 1) * limit;
+  const search = req.query.search ? `%${req.query.search}%` : null;
+  const statusFilter = req.query.status || null;
+  const programFilter = req.query.program || null;
+  let where = 'WHERE 1=1';
+  const params = [];
+  if (search) { where += ' AND (full_name LIKE ? OR registration_number LIKE ? OR nisn LIKE ?)'; params.push(search, search, search); }
+  if (statusFilter && ppdbStatuses.includes(statusFilter)) { where += ' AND status = ?'; params.push(statusFilter); }
+  if (programFilter) { where += ' AND program = ?'; params.push(programFilter); }
+  const [countResult] = await db.query(`SELECT COUNT(*) AS c FROM ppdb_registrations ${where}`, params);
+  const [rows] = await db.query(`SELECT id, registration_number, full_name AS name, nisn, program, status, submitted_at AS date, documents_count, (SELECT COUNT(*) FROM ppdb_documents WHERE application_id = ppdb_registrations.id AND verified = 1) AS documents_verified, created_at FROM ppdb_registrations ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`, [...params, limit, offset]);
+  const [programs] = await db.query('SELECT DISTINCT program FROM ppdb_registrations ORDER BY program');
+  res.json({ data: rows, total: countResult[0].c, page, limit, totalPages: Math.ceil(countResult[0].c / limit), programs: programs.map(r => r.program) });
+});
+
+/* --- Detail --- */
+app.get('/api/ppdb/admin/:id', adminAuth, async (req, res) => {
+  const [reg] = await db.query('SELECT r.*, u.email AS user_email, u.phone AS user_phone, u.name AS user_name FROM ppdb_registrations r JOIN ppdb_users u ON u.id = r.user_id WHERE r.id = ?', [req.params.id]);
+  if (!reg.length) return res.sendStatus(404);
+  const [docs] = await db.query('SELECT * FROM ppdb_documents WHERE application_id = ? ORDER BY type', [req.params.id]);
+  const [activities] = await db.query('SELECT al.*, u.username AS admin_name FROM ppdb_activity_log al LEFT JOIN users u ON u.id = al.admin_id WHERE al.application_id = ? ORDER BY al.created_at DESC LIMIT 50', [req.params.id]);
+  res.json({ ...reg[0], documents: docs, activities });
+});
+
+/* --- Update Status --- */
+app.put('/api/ppdb/admin/:id/status', adminAuth, async (req, res) => {
+  const { status, note } = req.body;
+  if (!ppdbStatuses.includes(status)) return res.status(400).json({ message: 'Status tidak valid.' });
+  const [reg] = await db.query('SELECT id FROM ppdb_registrations WHERE id = ?', [req.params.id]);
+  if (!reg.length) return res.sendStatus(404);
+  await db.query('UPDATE ppdb_registrations SET status = ?, admin_note = ? WHERE id = ?', [status, note || null, req.params.id]);
+  await db.query('INSERT INTO ppdb_activity_log (id, application_id, action, note, admin_id) VALUES (?,?,?,?,?)', [randomUUID(), req.params.id, `Status → ${status}`, note || null, req.user.id]);
+  res.json({ message: 'Status berhasil diperbarui.' });
+});
+
+/* --- Verify Document --- */
+app.put('/api/ppdb/admin/documents/:id/verify', adminAuth, async (req, res) => {
+  const { verified, note } = req.body;
+  const [doc] = await db.query('SELECT d.id, d.application_id, d.type FROM ppdb_documents d WHERE d.id = ?', [req.params.id]);
+  if (!doc.length) return res.sendStatus(404);
+  await db.query('UPDATE ppdb_documents SET verified = ?, note = ? WHERE id = ?', [verified ? 1 : 0, note || null, req.params.id]);
+  const action = verified ? 'Dokumen Diverifikasi' : 'Dokumen Ditolak';
+  await db.query('INSERT INTO ppdb_activity_log (id, application_id, action, note, admin_id) VALUES (?,?,?,?,?)', [randomUUID(), doc[0].application_id, `${action}: ${doc[0].type}`, note || null, req.user.id]);
+  const [counts] = await db.query('SELECT COUNT(*) AS total, SUM(verified) AS verified FROM ppdb_documents WHERE application_id = ?', [doc[0].application_id]);
+  await db.query('UPDATE ppdb_registrations SET documents_verified = ? WHERE id = ?', [counts[0].verified || 0, doc[0].application_id]);
+  res.json({ message: verified ? 'Dokumen diverifikasi.' : 'Dokumen ditolak.' });
+});
+
+/* --- Activity --- */
+app.get('/api/ppdb/admin/:id/activity', adminAuth, async (req, res) => {
+  const [rows] = await db.query('SELECT al.*, u.username AS admin_name FROM ppdb_activity_log al LEFT JOIN users u ON u.id = al.admin_id WHERE al.application_id = ? ORDER BY al.created_at DESC LIMIT 100', [req.params.id]);
+  res.json(rows);
+});
+
+/* --- Export CSV --- */
+app.get('/api/ppdb/export/csv', adminAuth, async (_req, res) => {
+  const [rows] = await db.query(`SELECT registration_number, full_name, nisn, program, status, submitted_at, documents_count, documents_verified FROM ppdb_registrations ORDER BY created_at DESC`);
+  const header = 'No.Daftar,Nama,NISN,Jurusan,Status,Tgl Daftar,Dokumen,Dokumen Terverifikasi';
+  const csv = rows.map(r => `"${r.registration_number}","${r.full_name || ''}","${r.nisn || ''}","${r.program || ''}","${r.status}","${r.submitted_at || ''}",${r.documents_count || 0},${r.documents_verified || 0}`).join('\n');
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename=ppdb-export.csv');
+  res.send(`\uFEFF${header}\n${csv}`);
+});
+
+/* ======================================================== */
+/* ===== Database Schema & Seed ===== */
+/* ======================================================== */
 
 async function initializeSchema() {
-  await db.query(`
-    CREATE TABLE IF NOT EXISTS users (
-      id CHAR(36) PRIMARY KEY,
-      username VARCHAR(50) NOT NULL UNIQUE,
-      password_hash VARCHAR(255) NOT NULL,
-      role ENUM('admin') NOT NULL DEFAULT 'admin',
-      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-  `);
-  await db.query(`
-    CREATE TABLE IF NOT EXISTS content_records (
-      id CHAR(36) PRIMARY KEY,
-      content_type ENUM('news','programs','facilities','staff','achievements') NOT NULL,
-      data JSON NOT NULL,
-      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-      INDEX content_type_index (content_type)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-  `);
-  await db.query(`
-    CREATE TABLE IF NOT EXISTS ppdb_applications (
-      id CHAR(36) PRIMARY KEY,
-      name VARCHAR(150) NOT NULL,
-      nisn VARCHAR(20) NOT NULL,
-      email VARCHAR(150) NOT NULL,
-      phone VARCHAR(30) NOT NULL,
-      address TEXT NOT NULL,
-      program VARCHAR(150) NOT NULL,
-      document_url VARCHAR(500) NULL,
-      status ENUM('Menunggu Verifikasi','Terverifikasi','Ditolak') NOT NULL DEFAULT 'Menunggu Verifikasi',
-      submitted_at DATE NOT NULL,
-      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-  `);
-  await db.query(`
-    CREATE TABLE IF NOT EXISTS contact_messages (
-      id CHAR(36) PRIMARY KEY,
-      name VARCHAR(150) NOT NULL,
-      email VARCHAR(150) NOT NULL,
-      subject VARCHAR(255) NOT NULL,
-      message TEXT NOT NULL,
-      is_read TINYINT(1) NOT NULL DEFAULT 0,
-      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-  `);
+  await db.query(`CREATE TABLE IF NOT EXISTS site_stats (stat_key VARCHAR(50) PRIMARY KEY, stat_value VARCHAR(50) NOT NULL, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+  await db.query(`CREATE TABLE IF NOT EXISTS users (id CHAR(36) PRIMARY KEY, username VARCHAR(50) NOT NULL UNIQUE, password_hash VARCHAR(255) NOT NULL, role ENUM('admin') NOT NULL DEFAULT 'admin', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+  await db.query(`CREATE TABLE IF NOT EXISTS content_records (id CHAR(36) PRIMARY KEY, content_type ENUM('news','programs','facilities','staff','achievements') NOT NULL, data JSON NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, INDEX cti (content_type)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+  await db.query(`CREATE TABLE IF NOT EXISTS contact_messages (id CHAR(36) PRIMARY KEY, name VARCHAR(150) NOT NULL, email VARCHAR(150) NOT NULL, subject VARCHAR(255) NOT NULL, message TEXT NOT NULL, is_read TINYINT(1) DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+  await db.query(`CREATE TABLE IF NOT EXISTS ppdb_applications (id CHAR(36) PRIMARY KEY, name VARCHAR(150) NOT NULL, nisn VARCHAR(20) NOT NULL, email VARCHAR(150) NOT NULL, phone VARCHAR(30) NOT NULL, address TEXT NOT NULL, program VARCHAR(150) NOT NULL, document_url VARCHAR(500) NULL, status ENUM('Menunggu Verifikasi','Terverifikasi','Ditolak') DEFAULT 'Menunggu Verifikasi', submitted_at DATE NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+
+  /* New PPDB tables */
+  await db.query(`CREATE TABLE IF NOT EXISTS ppdb_users (id CHAR(36) PRIMARY KEY, name VARCHAR(150) NOT NULL, email VARCHAR(150) NOT NULL UNIQUE, phone VARCHAR(30) NOT NULL, password_hash VARCHAR(255) NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+  await db.query(`CREATE TABLE IF NOT EXISTS ppdb_registrations (id CHAR(36) PRIMARY KEY, user_id CHAR(36) NOT NULL, registration_number VARCHAR(20) NOT NULL UNIQUE, full_name VARCHAR(150), nisn VARCHAR(20), nik VARCHAR(20), gender ENUM('L','P'), place_of_birth VARCHAR(100), date_of_birth DATE, religion VARCHAR(30), address TEXT, phone VARCHAR(30), father_name VARCHAR(150), father_occupation VARCHAR(100), mother_name VARCHAR(150), mother_occupation VARCHAR(100), guardian_name VARCHAR(150), guardian_phone VARCHAR(30), parent_address TEXT, previous_school VARCHAR(200), previous_school_address TEXT, graduation_year YEAR, program VARCHAR(150), status ENUM('Menunggu Verifikasi','Sedang Diverifikasi','Perlu Perbaikan Dokumen','Lolos Seleksi','Cadangan','Tidak Lolos','Sudah Daftar Ulang') DEFAULT 'Menunggu Verifikasi', admin_note TEXT, documents_count INT DEFAULT 0, documents_verified INT DEFAULT 0, submitted_at DATETIME, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, INDEX reg_user (user_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+  await db.query(`CREATE TABLE IF NOT EXISTS ppdb_documents (id CHAR(36) PRIMARY KEY, application_id CHAR(36) NOT NULL, type ENUM('pas_foto','kartu_keluarga','akta_kelahiran','rapor','skl','dokumen_pendukung') NOT NULL, filename VARCHAR(255), file_data LONGTEXT, mime_type VARCHAR(100), file_size INT, verified TINYINT(1) DEFAULT 0, note TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, INDEX doc_app (application_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
+  await db.query(`CREATE TABLE IF NOT EXISTS ppdb_activity_log (id CHAR(36) PRIMARY KEY, application_id CHAR(36) NOT NULL, action VARCHAR(100) NOT NULL, note TEXT, admin_id CHAR(36), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, INDEX act_app (application_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`);
 }
+
 async function ensureAdmin() {
   const username = process.env.ADMIN_USERNAME;
   const password = process.env.ADMIN_PASSWORD;
@@ -171,9 +401,10 @@ async function ensureInitialContent() {
     }
   }
 }
+
 async function ensurePpdbColumns() {
   const [columns] = await db.query('SHOW COLUMNS FROM ppdb_applications');
-  const existing = new Set(columns.map(column => column.Field));
+  const existing = new Set(columns.map(c => c.Field));
   const additions = [
     ['nisn', 'VARCHAR(20) NOT NULL DEFAULT \'\' AFTER name'],
     ['email', 'VARCHAR(150) NOT NULL DEFAULT \'\' AFTER nisn'],
@@ -181,6 +412,13 @@ async function ensurePpdbColumns() {
     ['address', 'TEXT NOT NULL AFTER phone'],
     ['document_url', 'VARCHAR(500) NULL AFTER program'],
   ];
-  for (const [name, definition] of additions) if (!existing.has(name)) await db.query(`ALTER TABLE ppdb_applications ADD COLUMN ${name} ${definition}`);
+  for (const [name, def] of additions) if (!existing.has(name)) await db.query(`ALTER TABLE ppdb_applications ADD COLUMN ${name} ${def}`);
 }
-initializeSchema().then(ensurePpdbColumns).then(ensureAdmin).then(ensureInitialContent).then(() => app.listen(port, () => console.log(`API berjalan pada http://localhost:${port}`))).catch(error => { console.error(error); process.exit(1); });
+
+async function ensureStats() {
+  for (const [k, v] of Object.entries({ students: '1200+', teachers: '85+' })) {
+    await db.query('INSERT IGNORE INTO site_stats (stat_key, stat_value) VALUES (?, ?)', [k, v]);
+  }
+}
+
+initializeSchema().then(ensurePpdbColumns).then(ensureAdmin).then(ensureInitialContent).then(ensureStats).then(() => app.listen(port, () => console.log(`API berjalan pada http://localhost:${port}`))).catch(e => { console.error(e); process.exit(1); });

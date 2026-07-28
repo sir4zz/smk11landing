@@ -21,7 +21,7 @@ import Card from '../components/ui/Card';
 import { programs } from '../data/programs';
 import { news } from '../data/news';
 import { achievements } from '../data/achievements';
-import { fetchPublicContent } from '../lib/api';
+import { fetchPublicContent, apiUrl } from '../lib/api';
 
 const getProgramIcon = (slug: string) => {
   switch (slug) {
@@ -51,23 +51,34 @@ const Home: React.FC = () => {
   const [publicPrograms, setPublicPrograms] = useState(programs);
   const [publicNews, setPublicNews] = useState(news);
   const [publicAchievements, setPublicAchievements] = useState(achievements);
+  const [stats, setStats] = useState([
+    { value: '1200+', label: 'Siswa Aktif', icon: <Users className="h-6 w-6" /> },
+    { value: '85+', label: 'Tenaga Pengajar', icon: <GraduationCap className="h-6 w-6" /> },
+    { value: '5', label: 'Program Keahlian', icon: <BookOpen className="h-6 w-6" /> },
+    { value: '8', label: 'Prestasi', icon: <Trophy className="h-6 w-6" /> },
+  ]);
 
   useEffect(() => {
     fetchPublicContent('programs', programs).then(setPublicPrograms);
     fetchPublicContent('news', news).then(setPublicNews);
     fetchPublicContent('achievements', achievements).then(setPublicAchievements);
+    fetch(apiUrl('/api/public/stats'))
+      .then((res) => res.json())
+      .then((data) => {
+        setStats([
+          { value: data.students || '1200+', label: 'Siswa Aktif', icon: <Users className="h-6 w-6" /> },
+          { value: data.teachers || '85+', label: 'Tenaga Pengajar', icon: <GraduationCap className="h-6 w-6" /> },
+          { value: data.programs || '5', label: 'Program Keahlian', icon: <BookOpen className="h-6 w-6" /> },
+          { value: data.achievements || '8', label: 'Prestasi', icon: <Trophy className="h-6 w-6" /> },
+        ]);
+      })
+      .catch(() => {});
     const timer = window.setInterval(() => {
       setActiveImage((prev) => (prev + 1) % heroImages.length);
     }, 5000);
 
     return () => window.clearInterval(timer);
   }, []);
-  const stats = [
-    { value: '1200+', label: 'Siswa Aktif', icon: <Users className="h-6 w-6" /> },
-    { value: '85+', label: 'Tenaga Pengajar', icon: <GraduationCap className="h-6 w-6" /> },
-    { value: '5', label: 'Program Keahlian', icon: <BookOpen className="h-6 w-6" /> },
-    { value: '150+', label: 'Prestasi', icon: <Trophy className="h-6 w-6" /> },
-  ];
 
 
 

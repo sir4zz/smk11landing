@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import type { FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 import PageHero from '../components/ui/PageHero';
 import { SectionHeading } from '../components/ui/SectionHeading';
 import { Button } from '../components/ui/Button';
-import { ChevronDown, ChevronUp, CheckCircle2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, CheckCircle2, GraduationCap, UserPlus, LogIn, ArrowRight } from 'lucide-react';
 import { apiUrl } from '../lib/api';
 
 const Stepper: React.FC = () => {
@@ -127,7 +128,28 @@ const Admissions: React.FC = () => {
       />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">
-        
+
+        {/* Banner Sistem Baru */}
+        <div className="mb-12 overflow-hidden rounded-2xl bg-gradient-to-r from-[#1B2A4A] to-[#0C1527] shadow-xl text-white">
+          <div className="flex flex-col items-center gap-6 p-8 text-center md:flex-row md:text-left md:p-10">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#C8A951]/20">
+              <GraduationCap className="h-8 w-8 text-[#C8A951]" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xl font-bold text-white">PPDB Online SMKN 11 Kab. Tangerang</h3>
+              <p className="mt-1 text-[#F3E8D0]">Daftar sekarang melalui sistem PPDB online. Buat akun, lengkapi data, upload dokumen, dan pantau status pendaftaran secara real-time.</p>
+            </div>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button as="link" href="/ppdb/daftar" variant="primary" size="lg" className="w-full sm:w-auto">
+                <UserPlus className="mr-2 h-5 w-5" /> Buat Akun & Daftar
+              </Button>
+              <Button as="link" href="/ppdb/masuk" variant="outline-light" size="lg" className="w-full sm:w-auto">
+                <LogIn className="mr-2 h-5 w-5" /> Sudah Punya Akun
+              </Button>
+            </div>
+          </div>
+        </div>
+
         {/* Timeline Section */}
         <section className="mb-20">
           <div className="text-center mb-10">
@@ -169,19 +191,21 @@ const Admissions: React.FC = () => {
           </div>
         </section>
 
-        <section id="daftar" className="mb-20 rounded-2xl bg-white p-6 shadow-sm md:p-10">
-          <SectionHeading title="Formulir Pendaftaran PPDB" subtitle="Lengkapi data calon peserta didik dengan benar." />
-          <form onSubmit={submitApplication} className="mt-8 grid gap-5 md:grid-cols-2">
-            <label className="text-sm font-semibold text-[#1B2A4A]">Nama lengkap<input required name="name" className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-4 py-3 font-normal" /></label>
-            <label className="text-sm font-semibold text-[#1B2A4A]">NISN<input required name="nisn" inputMode="numeric" className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-4 py-3 font-normal" /></label>
-            <label className="text-sm font-semibold text-[#1B2A4A]">Email<input required name="email" type="email" className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-4 py-3 font-normal" /></label>
-            <label className="text-sm font-semibold text-[#1B2A4A]">Nomor WhatsApp<input required name="phone" type="tel" className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-4 py-3 font-normal" /></label>
-            <label className="text-sm font-semibold text-[#1B2A4A]">Pilihan program<select required name="program" defaultValue="" className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 bg-white px-4 py-3 font-normal"><option value="" disabled>Pilih program keahlian</option><option>Teknik Komputer dan Jaringan</option><option>Rekayasa Perangkat Lunak</option><option>Teknik Kendaraan Ringan</option><option>Teknik Bisnis Sepeda Motor</option><option>Akuntansi dan Keuangan Lembaga</option></select></label>
-            <label className="text-sm font-semibold text-[#1B2A4A]">Tautan berkas (opsional)<input name="documentUrl" type="url" placeholder="https://..." className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-4 py-3 font-normal" /></label>
-            <label className="text-sm font-semibold text-[#1B2A4A] md:col-span-2">Alamat<textarea required name="address" rows={3} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-4 py-3 font-normal" /></label>
-            {formStatus && <p className={`rounded-lg p-4 text-sm md:col-span-2 ${formStatus.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-700'}`}>{formStatus.message}</p>}
-            <div className="md:col-span-2"><Button type="submit" disabled={isSubmitting} className="bg-[#1B2A4A] px-8 py-3 text-white hover:bg-[#15203a]">{isSubmitting ? 'Mengirim...' : 'Kirim Pendaftaran'}</Button></div>
-          </form>
+        {/* CTA Sistem Baru */}
+        <section className="mb-20 rounded-2xl border-2 border-[#C8A951]/30 bg-[#C8A951]/5 p-8 text-center md:p-12">
+          <GraduationCap className="mx-auto mb-4 h-12 w-12 text-[#C8A951]" />
+          <h2 className="text-2xl font-bold text-[#1B2A4A] md:text-3xl">Daftar Sekarang via PPDB Online</h2>
+          <p className="mx-auto mt-3 max-w-2xl text-[#23314D]">
+            Daftar melalui sistem PPDB online kami. Buat akun, lengkapi formulir, upload dokumen, dan pantau status pendaftaran langsung dari dashboard Anda.
+          </p>
+          <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
+            <Button as="link" href="/ppdb/daftar" variant="primary" size="lg" className="px-8 py-4">
+              <UserPlus className="mr-2 h-5 w-5" /> Buat Akun & Daftar
+            </Button>
+            <Button as="link" href="/ppdb/masuk" variant="outline" size="lg" className="px-8 py-4">
+              <LogIn className="mr-2 h-5 w-5" /> Masuk ke Akun
+            </Button>
+          </div>
         </section>
 
         {/* FAQ Section */}
@@ -198,9 +222,12 @@ const Admissions: React.FC = () => {
           <p className="text-[#E8DCC7] mb-8 max-w-2xl mx-auto">
             Jangan lewatkan kesempatan untuk mengembangkan potensi Anda bersama SMKN 11 Kabupaten Tangerang.
           </p>
-          <Button size="lg" className="bg-[#C8A951] hover:bg-[#b09444] text-[#1B2A4A] font-bold text-lg px-8 py-4">
-            Daftar Online Sekarang
+          <Button as="link" href="/ppdb/daftar" variant="primary" size="lg" className="text-lg px-8 py-4">
+            <UserPlus className="mr-2 h-5 w-5 inline" /> Daftar Sekarang
           </Button>
+          <p className="mt-4 text-sm text-[#E8DCC7]">
+            Sudah punya akun? <Link to="/ppdb/masuk" className="font-semibold text-[#C8A951] hover:underline">Masuk di sini</Link>
+          </p>
         </section>
 
       </div>
