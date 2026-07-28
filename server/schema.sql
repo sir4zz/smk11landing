@@ -1,0 +1,44 @@
+CREATE DATABASE IF NOT EXISTS smkn11ts CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE smkn11ts;
+
+CREATE TABLE IF NOT EXISTS users (
+  id CHAR(36) PRIMARY KEY,
+  username VARCHAR(50) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  role ENUM('admin') NOT NULL DEFAULT 'admin',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS content_records (
+  id CHAR(36) PRIMARY KEY,
+  content_type ENUM('news','programs','facilities','staff','achievements') NOT NULL,
+  data JSON NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX content_type_index (content_type)
+);
+
+CREATE TABLE IF NOT EXISTS ppdb_applications (
+  id CHAR(36) PRIMARY KEY,
+  name VARCHAR(150) NOT NULL,
+  nisn VARCHAR(20) NOT NULL,
+  email VARCHAR(150) NOT NULL,
+  phone VARCHAR(30) NOT NULL,
+  address TEXT NOT NULL,
+  program VARCHAR(150) NOT NULL,
+  document_url VARCHAR(500) NULL,
+  status ENUM('Menunggu Verifikasi','Terverifikasi','Ditolak') NOT NULL DEFAULT 'Menunggu Verifikasi',
+  submitted_at DATE NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS contact_messages (
+  id CHAR(36) PRIMARY KEY,
+  name VARCHAR(150) NOT NULL,
+  email VARCHAR(150) NOT NULL,
+  subject VARCHAR(255) NOT NULL,
+  message TEXT NOT NULL,
+  is_read TINYINT(1) NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

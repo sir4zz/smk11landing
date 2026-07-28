@@ -1,0 +1,165 @@
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { Menu, X, Search, ChevronDown, ChevronUp } from 'lucide-react';
+import { navItems } from '../../data/navigation';
+import logoSekolah from '../../assets/logo.png';
+
+interface NavbarProps {
+  onSearchOpen: () => void;
+}
+
+const Navbar: React.FC<NavbarProps> = ({ onSearchOpen }) => {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [expandedMobileItem, setExpandedMobileItem] = useState<string | null>(null);
+  const location = useLocation();
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  const toggleMobileSubmenu = (label: string) => {
+    setExpandedMobileItem(expandedMobileItem === label ? null : label);
+  };
+
+  const isActive = (path: string) => {
+    if (path === '/') return location.pathname === '/';
+    return location.pathname.startsWith(path);
+  };
+
+  return (
+    <nav className="fixed top-0 left-0 right-0 h-[70px] bg-[#1B2A4A] text-[#FAF6F0] z-50 shadow-md">
+      <div className="container mx-auto px-4 h-full flex items-center justify-between">
+        {/* Logo */}
+        <Link to="/" className="flex items-center gap-3">
+          <img src={logoSekolah} alt="Logo SMKN 11" className="h-12 w-auto" style={{ height: '48px', width: 'auto', objectFit: 'contain' }} />
+          <div className="flex flex-col">
+            <span className="text-white font-bold text-xl leading-tight">SMKN 11</span>
+            <span className="text-[#F3E8D0] text-xs">Kab. Tangerang</span>
+          </div>
+        </Link>
+
+        {/* Desktop Navigation */}
+        <div className="hidden md:flex items-center space-x-1 lg:space-x-4">
+          {navItems.map((item) => (
+            <div key={item.label} className="relative group">
+              {item.children ? (
+                <div className="flex items-center cursor-pointer px-3 py-2 text-white hover:text-[#C8A951] transition-colors duration-300 ease-in-out">
+                  <span className={`${isActive(item.href) ? 'text-[#C8A951]' : ''}`}>{item.label}</span>
+                  <ChevronDown size={16} className="ml-1" />
+                </div>
+              ) : (
+                <Link
+                  to={item.href}
+                  className={`px-3 py-2 block transition-all duration-300 ease-in-out ${
+                    item.isHighlighted
+                      ? 'bg-[#C8A951] text-[#1B2A4A] font-medium rounded hover:bg-opacity-90'
+                      : isActive(item.href)
+                      ? 'text-[#C8A951] border-b-2 border-[#C8A951]'
+                      : 'text-white hover:text-[#C8A951]'
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              )}
+
+              {/* Dropdown Menu */}
+              {item.children && (
+                <div className="absolute left-0 top-full opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-y-2 group-hover:translate-y-0 transition-all duration-300 ease-in-out min-w-[200px] bg-[#1B2A4A] border border-[#2a3f6e] rounded-b-md shadow-lg py-2">
+                  {item.children.map((child) => (
+                    <Link
+                      key={child.label}
+                      to={child.href}
+                      className={`block px-4 py-2 text-sm ${
+                        isActive(child.href) ? 'text-[#C8A951] bg-[#121c32]' : 'text-[#F3E8D0] hover:text-[#C8A951] hover:bg-[#121c32]'
+                      } transition-colors duration-300 ease-in-out`}
+                    >
+                      {child.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+          
+          <button 
+            onClick={onSearchOpen}
+            className="text-white hover:text-[#C8A951] p-2 transition-colors duration-300 ease-in-out ml-2"
+            aria-label="Cari"
+          >
+            <Search size={20} />
+          </button>
+        </div>
+
+        {/* Mobile menu button */}
+        <div className="flex md:hidden items-center gap-4">
+          <button 
+            onClick={onSearchOpen}
+            className="text-white hover:text-[#C8A951] transition-colors duration-300 ease-in-out"
+            aria-label="Cari"
+          >
+            <Search size={20} />
+          </button>
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="text-white hover:text-[#C8A951] transition-colors duration-300 ease-in-out p-1"
+            aria-label="Menu"
+          >
+            {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Navigation Drawer */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden absolute top-[70px] left-0 w-full bg-[#1B2A4A] border-t border-[#2a3f6e] shadow-xl max-h-[calc(100vh-70px)] overflow-y-auto">
+          <div className="flex flex-col py-4 px-4 space-y-2">
+            {navItems.map((item) => (
+              <div key={item.label} className="border-b border-[#2a3f6e] last:border-0 pb-2">
+                {item.children ? (
+                  <div>
+                    <button
+                      onClick={() => toggleMobileSubmenu(item.label)}
+                      className="w-full flex justify-between items-center py-2 text-white"
+                    >
+                      <span className={`${isActive(item.href) ? 'text-[#C8A951]' : ''}`}>{item.label}</span>
+                      {expandedMobileItem === item.label ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                    </button>
+                    {expandedMobileItem === item.label && (
+                      <div className="flex flex-col pl-4 mt-2 space-y-3 pb-2">
+                        {item.children.map((child) => (
+                          <Link
+                            key={child.label}
+                            to={child.href}
+                            className={`text-sm ${isActive(child.href) ? 'text-[#C8A951]' : 'text-[#F3E8D0]'}`}
+                          >
+                            {child.label}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <Link
+                    to={item.href}
+                    className={`block py-2 transition-colors duration-300 ease-in-out ${
+                      item.isHighlighted
+                        ? 'bg-[#C8A951] text-[#1B2A4A] text-center font-medium rounded mt-2'
+                        : isActive(item.href)
+                        ? 'text-[#C8A951]'
+                        : 'text-white'
+                    }`}
+                  >
+                    {item.label}
+                  </Link>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </nav>
+  );
+};
+
+export default Navbar;
