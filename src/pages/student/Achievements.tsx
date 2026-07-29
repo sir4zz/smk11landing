@@ -3,7 +3,7 @@ import PageHero from '../../components/ui/PageHero'
 import SectionHeading from '../../components/ui/SectionHeading'
 import { achievements, type Achievement } from '../../data/achievements'
 import { fetchPublicContent } from '../../lib/api'
-import { Trophy, MapPin, Users, Calendar } from 'lucide-react'
+import { Trophy, Users, Calendar } from 'lucide-react'
 
 const levelColors: Record<string, string> = {
   Nasional: 'bg-[#C8A951]/20 text-[#866D2C]',

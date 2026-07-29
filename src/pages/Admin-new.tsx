@@ -7,6 +7,7 @@ import { programs as initialPrograms } from '../data/programs';
 import { facilities as initialFacilities } from '../data/facilities';
 import { staffData as initialStaff } from '../data/staff';
 import { achievements as initialAchievements } from '../data/achievements';
+import logoSekolah from '../assets/logo.png';
 
 type Section = 'dashboard' | 'news' | 'programs' | 'facilities' | 'staff' | 'achievements' | 'ppdb';
 type Item = Record<string, unknown>;

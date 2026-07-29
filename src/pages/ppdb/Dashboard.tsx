@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { usePpdbAuth } from './PPDBAuth'
-import { apiUrl } from '../../lib/api'
+import { insforge } from '../../lib/api'
+import LoadingScreen, { LoadingInline } from '../../components/ui/LoadingScreen'
 import {
   LogOut, User, FileText, CheckCircle2, Clock, AlertCircle,
-  ArrowRight, Upload, X, Eye, Save, Send, ChevronRight, Home, Loader2, Trash2
+  ArrowRight, Upload, Save, Send, Home, Trash2
 } from 'lucide-react'
 import { programs } from '../../data/programs'
 import logoSekolah from '../../assets/logo.png'
@@ -23,7 +24,7 @@ const statusColors: Record<string, string> = {
 }
 
 export default function Dashboard() {
-  const { user, logout } = usePpdbAuth()
+  const { user, insforgeUser, logout } = usePpdbAuth()
   const navigate = useNavigate()
   const [tab, setTab] = useState<Tab>('biodata')
   const [loading, setLoading] = useState(true)
@@ -44,18 +45,20 @@ export default function Dashboard() {
 
   const fetchData = async () => {
     try {
-      const res = await fetch(apiUrl('/api/ppdb/me'), { headers: { Authorization: `Bearer ${localStorage.getItem('ppdb_token')}` } })
-      const data = await res.json()
-      if (data.registration) {
-        setRegistration(data.registration)
-        setForm((prev: any) => ({ ...prev, ...data.registration }))
+      if (!insforgeUser) return;
+      const { data: regData } = await insforge.database.from('ppdb_registrations').select('*').eq('user_id', insforgeUser.id).maybeSingle();
+      if (regData) {
+        setRegistration(regData);
+        setForm((prev: any) => ({ ...prev, ...regData }));
+        const { data: docs } = await insforge.database.from('ppdb_documents').select('*').eq('application_id', regData.id).order('created_at', { ascending: true });
+        setDocuments(docs || []);
+        const { data: acts } = await insforge.database.from('ppdb_activity_log').select('*').eq('application_id', regData.id).order('created_at', { ascending: false }).limit(20);
+        setActivities(acts || []);
       }
-      setDocuments(data.documents || [])
-      setActivities(data.activities || [])
     } catch {} finally { setLoading(false) }
   }
 
-  useEffect(() => { fetchData() }, [])
+  useEffect(() => { if (insforgeUser) void fetchData() }, [insforgeUser])
 
   const currentStep: Step = !registration ? 'biodata' as Step
     : !registration.full_name ? 'biodata'
@@ -63,22 +66,31 @@ export default function Dashboard() {
     : registration.status === 'Menunggu Verifikasi' || registration.submitted_at ? 'selesai'
     : 'submit'
 
-  const steps = [
+  const steps: Array<{ key: Step; label: string; done: boolean }> = [
     { key: 'akun', label: 'Akun', done: true },
     { key: 'biodata', label: 'Biodata', done: currentStep !== 'biodata' },
     { key: 'dokumen', label: 'Dokumen', done: documents.length > 0 },
     { key: 'submit', label: 'Submit', done: currentStep === 'selesai' },
-  ] as const
+  ]
 
   const saveBiodata = async () => {
     setSaving(true); setMessage(null)
     try {
-      const res = await fetch(apiUrl('/api/ppdb/biodata'), {
-        method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('ppdb_token')}` },
-        body: JSON.stringify(form)
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.message || 'Gagal menyimpan.')
+      if (registration?.status && registration.status !== 'Menunggu Verifikasi' && registration.status !== 'Perlu Perbaikan Dokumen') {
+        throw new Error('Pendaftaran sudah diproses, tidak dapat diubah.');
+      }
+      
+      const payload: Record<string, unknown> = { ...form, user_id: insforgeUser?.id };
+      
+      if (registration?.id) {
+         const { error } = await insforge.database.from('ppdb_registrations').update({ ...payload, updated_at: new Date().toISOString() }).eq('id', registration.id);
+         if (error) throw error;
+      } else {
+         payload.registration_number = 'PPDB' + Math.floor(Math.random()*10000).toString().padStart(4,'0') + Date.now().toString().slice(-4);
+         const { error } = await insforge.database.from('ppdb_registrations').insert([payload]);
+         if (error) throw error;
+      }
+      
       setMessage({ type: 'success', text: 'Biodata berhasil disimpan.' })
       await fetchData()
     } catch (err: any) { setMessage({ type: 'error', text: err.message }) } finally { setSaving(false) }
@@ -89,27 +101,42 @@ export default function Dashboard() {
     input.onchange = async () => {
       const file = input.files?.[0]; if (!file) return
       setUploading(true)
-      const reader = new FileReader()
-      reader.onload = async (e) => {
-        const file_data = e.target?.result as string
-        try {
-          const res = await fetch(apiUrl('/api/ppdb/documents'), {
-            method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('ppdb_token')}` },
-            body: JSON.stringify({ type, filename: file.name, file_data, mime_type: file.type })
-          })
-          const data = await res.json()
-          if (!res.ok) throw new Error(data.message || 'Gagal upload.')
-          setMessage({ type: 'success', text: 'Dokumen berhasil diupload.' })
-          await fetchData()
-        } catch (err: any) { setMessage({ type: 'error', text: err.message }) } finally { setUploading(false) }
-      }; reader.readAsDataURL(file)
+      try {
+        if (!registration?.id) throw new Error('Lengkapi biodata terlebih dahulu.')
+        const existing = documents.find(d => d.type === type);
+        if (existing) throw new Error('Dokumen jenis ini sudah diupload. Hapus terlebih dahulu.');
+        
+        const fileExt = file.name.split('.').pop();
+        const filePath = `${insforgeUser?.id}/${type}-${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError } = await insforge.storage.from('ppdb_documents').upload(filePath, file);
+        if (uploadError) throw uploadError;
+        
+        const { error: dbError } = await insforge.database.from('ppdb_documents').insert([{
+           application_id: registration.id,
+           type,
+           filename: file.name,
+           file_path: filePath,
+           mime_type: file.type,
+           file_size: file.size,
+           verified: 0
+        }]);
+        if (dbError) throw dbError;
+        
+        await insforge.database.from('ppdb_registrations').update({ documents_count: documents.length + 1 }).eq('id', registration.id);
+
+        setMessage({ type: 'success', text: 'Dokumen berhasil diupload.' })
+        await fetchData()
+      } catch (err: any) { setMessage({ type: 'error', text: err.message }) } finally { setUploading(false) }
     }; input.click()
   }
 
-  const deleteDoc = async (id: string) => {
+  const deleteDoc = async (id: string, path: string) => {
     if (!confirm('Hapus dokumen ini?')) return
     try {
-      await fetch(apiUrl(`/api/ppdb/documents/${id}`), { method: 'DELETE', headers: { Authorization: `Bearer ${localStorage.getItem('ppdb_token')}` } })
+      if (path) await insforge.storage.from('ppdb_documents').remove([path]);
+      await insforge.database.from('ppdb_documents').delete().eq('id', id);
+      await insforge.database.from('ppdb_registrations').update({ documents_count: Math.max(0, documents.length - 1) }).eq('id', registration.id);
       await fetchData()
     } catch {}
   }
@@ -118,11 +145,14 @@ export default function Dashboard() {
     if (!confirm('Yakin ingin mengirim pendaftaran? Data tidak dapat diubah setelah dikirim.')) return
     setSaving(true)
     try {
-      const res = await fetch(apiUrl('/api/ppdb/submit'), {
-        method: 'POST', headers: { Authorization: `Bearer ${localStorage.getItem('ppdb_token')}` }
-      })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.message || 'Gagal submit.')
+      if (registration.status !== 'Menunggu Verifikasi' && registration.status !== 'Perlu Perbaikan Dokumen') throw new Error(`Pendaftaran sudah dalam status "${registration.status}".`);
+      if (documents.length === 0) throw new Error('Upload minimal 1 dokumen sebelum submit.');
+
+      const { error } = await insforge.database.from('ppdb_registrations').update({ status: 'Menunggu Verifikasi', submitted_at: new Date().toISOString() }).eq('id', registration.id);
+      if (error) throw error;
+      
+      await insforge.database.from('ppdb_activity_log').insert([{ application_id: registration.id, action: 'Submit Pendaftaran', note: 'Pendaftaran berhasil dikirim.' }]);
+
       setMessage({ type: 'success', text: 'Pendaftaran berhasil dikirim!' })
       await fetchData()
     } catch (err: any) { setMessage({ type: 'error', text: err.message }) } finally { setSaving(false) }
@@ -132,7 +162,14 @@ export default function Dashboard() {
     setForm((prev: any) => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
-  if (loading) return <div className="flex min-h-screen items-center justify-center bg-[#FAF6F0]"><Loader2 className="h-8 w-8 animate-spin text-[#C8A951]" /></div>
+  const tabs: Array<{ key: Tab; label: string; icon: typeof User; count?: number }> = [
+    { key: 'biodata', label: 'Biodata', icon: User },
+    { key: 'dokumen', label: 'Dokumen', icon: FileText, count: documents.length },
+    { key: 'review', label: 'Review & Submit', icon: Send },
+    { key: 'status', label: 'Status', icon: Clock },
+  ]
+
+  if (loading) return <LoadingScreen message="Memuat dashboard..." />
 
   return (
     <div className="min-h-screen bg-[#FAF6F0]">
@@ -197,12 +234,7 @@ export default function Dashboard() {
 
         {/* Tabs */}
         <div className="mb-6 flex overflow-x-auto border-b border-[#1B2A4A]/10 whitespace-nowrap">
-          {([
-            { key: 'biodata', label: 'Biodata', icon: User },
-            { key: 'dokumen', label: 'Dokumen', icon: FileText, count: documents.length },
-            { key: 'review', label: 'Review & Submit', icon: Send },
-            { key: 'status', label: 'Status', icon: Clock },
-          ] as const).map((t) => (
+          {tabs.map((t) => (
             <button key={t.key} onClick={() => setTab(t.key)}
               className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-semibold transition-colors ${
                 tab === t.key ? 'border-[#C8A951] text-[#1B2A4A]' : 'border-transparent text-[#23314D]/60 hover:text-[#1B2A4A]'
@@ -299,7 +331,7 @@ export default function Dashboard() {
                       </div>
                       <div className="flex gap-2">
                         {doc && (
-                          <button onClick={() => deleteDoc(doc.id)} className="rounded-lg p-2 text-red-500 hover:bg-red-50"><Trash2 className="h-4 w-4" /></button>
+                          <button onClick={() => deleteDoc(doc.id, doc.file_path)} className="rounded-lg p-2 text-red-500 hover:bg-red-50"><Trash2 className="h-4 w-4" /></button>
                         )}
                         <button onClick={() => uploadDoc(key)} disabled={uploading} className="rounded-lg bg-[#C8A951] p-2 text-[#1B2A4A] hover:bg-[#B59640] disabled:opacity-50">
                           <Upload className="h-4 w-4" />
@@ -347,7 +379,7 @@ export default function Dashboard() {
                 </div>
 
                 <button onClick={submitApplication} disabled={saving} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#C8A951] px-8 py-4 font-bold text-[#1B2A4A] disabled:opacity-70">
-                  {saving ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+                  {saving ? <LoadingInline size="sm" /> : <Send className="h-5 w-5" />}
                   {saving ? 'Mengirim...' : 'Kirim Pendaftaran'}
                 </button>
                 <p className="mt-3 text-center text-xs text-[#23314D]/50">Setelah dikirim, data tidak dapat diubah kecuali diminta oleh admin.</p>
@@ -435,5 +467,3 @@ export default function Dashboard() {
 function Label({ label, className, children }: { label: string; className?: string; children: React.ReactNode }) {
   return <label className={`block text-sm font-semibold text-[#1B2A4A] ${className || ''}`}>{label}{children}</label>
 }
-
-

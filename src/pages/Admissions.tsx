@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
-import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import PageHero from '../components/ui/PageHero';
 import { SectionHeading } from '../components/ui/SectionHeading';
 import { Button } from '../components/ui/Button';
-import { ChevronDown, ChevronUp, CheckCircle2, GraduationCap, UserPlus, LogIn, ArrowRight } from 'lucide-react';
-import { apiUrl } from '../lib/api';
+import { ChevronDown, ChevronUp, CheckCircle2, GraduationCap, UserPlus, LogIn } from 'lucide-react';
 
 const Stepper: React.FC = () => {
   const steps = [
@@ -70,8 +68,6 @@ const Accordion: React.FC = () => {
 };
 
 const Admissions: React.FC = () => {
-  const [formStatus, setFormStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const requirements = [
     'Ijazah SMP / Surat Keterangan Lulus (SKL)',
     'Kartu Keluarga (KK)',
@@ -80,44 +76,6 @@ const Admissions: React.FC = () => {
     'SKHUN (Surat Keterangan Hasil Ujian Nasional)',
     'Rapor SMP Semester 1 - 5'
   ];
-
-  const submitApplication = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setIsSubmitting(true);
-    setFormStatus(null);
-
-    const form = event.currentTarget;
-    const values = Object.fromEntries(new FormData(form) as any);
-
-    try {
-      const response = await fetch(apiUrl('/api/ppdb/apply'), {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(values),
-      });
-
-      const responseText = await response.text();
-      let result: { message?: string } | null = null;
-
-      if (responseText) {
-        try {
-          result = JSON.parse(responseText);
-        } catch {
-          result = null;
-        }
-      }
-
-      if (!response.ok) {
-        throw new Error(result?.message || responseText || 'Pendaftaran gagal dikirim.');
-      }
-
-      if (form instanceof HTMLFormElement) {
-        form.reset();
-      }
-
-      setFormStatus({ type: 'success', message: 'Pendaftaran berhasil dikirim. Panitia akan memverifikasi data Anda.' });
-    } catch (error) {
-      setFormStatus({ type: 'error', message: error instanceof Error ? error.message : 'Tidak dapat terhubung ke server PPDB.' });
-    } finally { setIsSubmitting(false); }
-  };
 
   return (
     <div className="bg-[#FAF6F0] min-h-screen">

@@ -4,7 +4,7 @@ import PageHero from '../components/ui/PageHero';
 import { SectionHeading } from '../components/ui/SectionHeading';
 import { Button } from '../components/ui/Button';
 import { MapPin, Phone, Mail, Clock } from 'lucide-react';
-import { apiUrl, readJsonResponse } from '../lib/api';
+import { insforge } from '../lib/api';
 
 const Contact: React.FC = () => {
   const [formStatus, setFormStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -19,14 +19,15 @@ const Contact: React.FC = () => {
     const values = Object.fromEntries(new FormData(form) as any);
 
     try {
-      const response = await fetch(apiUrl('/api/contact'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(values),
-      });
+      const { error } = await insforge.database.from('contact_messages').insert([{
+        name: values.name,
+        email: values.email,
+        subject: values.subject,
+        message: values.message,
+        is_read: 0
+      }]);
 
-      const result = await readJsonResponse(response);
-      if (!response.ok) throw new Error(result?.message || 'Gagal mengirim pesan.');
+      if (error) throw new Error(error.message || 'Gagal mengirim pesan.');
 
       if (form instanceof HTMLFormElement) form.reset();
       setFormStatus({ type: 'success', message: 'Pesan berhasil dikirim. Terima kasih telah menghubungi kami!' });

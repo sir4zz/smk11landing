@@ -1,13 +1,11 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { usePpdbAuth } from './PPDBAuth'
-import { apiUrl } from '../../lib/api'
+import { insforge } from '../../lib/api'
 import { UserPlus, Mail, Lock, Phone, ArrowRight } from 'lucide-react'
 import Button from '../../components/ui/Button'
 import logoSekolah from '../../assets/logo.png'
 
 export default function Register() {
-  const { login } = usePpdbAuth()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -16,12 +14,25 @@ export default function Register() {
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault(); setLoading(true); setError('')
     const fd = new FormData(e.currentTarget)
-    const body = { name: fd.get('name'), email: fd.get('email'), phone: fd.get('phone'), password: fd.get('password') }
+    const name = fd.get('name') as string
+    const email = fd.get('email') as string
+    const phone = fd.get('phone') as string
+    const password = fd.get('password') as string
+
     try {
-      const res = await fetch(apiUrl('/api/ppdb/auth/register'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.message || 'Registrasi gagal.')
-      login(data.token, data.user)
+      const { data: signUpData, error: signUpError } = await insforge.auth.signUp({
+        email,
+        password,
+        name,
+      })
+      if (signUpError) throw signUpError
+
+      const { error: profileError } = await insforge.database
+        .from('profiles')
+        .update({ phone })
+        .eq('id', signUpData?.user?.id ?? '')
+      if (profileError) throw profileError
+
       setSuccess(true)
       setTimeout(() => navigate('/ppdb/dashboard'), 1000)
     } catch (err: any) { setError(err.message) } finally { setLoading(false) }

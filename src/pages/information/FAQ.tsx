@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import PageHero from '../../components/ui/PageHero'
 import SectionHeading from '../../components/ui/SectionHeading'
-import { faq, type FAQItem } from '../../data/faq'
+import { faq } from '../../data/faq'
 import { ChevronDown, Search } from 'lucide-react'
 
 const FAQ: React.FC = () => {

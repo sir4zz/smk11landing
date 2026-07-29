@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import PageHero from '../../components/ui/PageHero'
-import SectionHeading from '../../components/ui/SectionHeading'
 import { news, type NewsItem } from '../../data/news'
 import { fetchPublicContent } from '../../lib/api'
 import { Calendar, User, ArrowRight, Search } from 'lucide-react'

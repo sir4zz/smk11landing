@@ -37,10 +37,10 @@ const Footer: React.FC = () => {
           <div>
             <h3 className="text-[#C8A951] font-bold text-lg mb-4">Tautan Cepat</h3>
             <ul className="space-y-2">
-              <li><Link to="/profil" className="text-[#F3E8D0] hover:text-white transition-colors">Profil Sekolah</Link></li>
-              <li><Link to="/akademik" className="text-[#F3E8D0] hover:text-white transition-colors">Akademik</Link></li>
-              <li><Link to="/kesiswaan" className="text-[#F3E8D0] hover:text-white transition-colors">Kesiswaan</Link></li>
-              <li><Link to="/informasi" className="text-[#F3E8D0] hover:text-white transition-colors">Berita & Pengumuman</Link></li>
+              <li><Link to="/profil/sejarah" className="text-[#F3E8D0] hover:text-white transition-colors">Profil Sekolah</Link></li>
+              <li><Link to="/akademik/program-keahlian" className="text-[#F3E8D0] hover:text-white transition-colors">Program Keahlian</Link></li>
+              <li><Link to="/kesiswaan/prestasi" className="text-[#F3E8D0] hover:text-white transition-colors">Kesiswaan</Link></li>
+              <li><Link to="/informasi/berita" className="text-[#F3E8D0] hover:text-white transition-colors">Berita & Pengumuman</Link></li>
               <li><Link to="/ppdb" className="text-[#F3E8D0] hover:text-white transition-colors">Informasi PPDB</Link></li>
               <li><Link to="/kontak" className="text-[#F3E8D0] hover:text-white transition-colors">Hubungi Kami</Link></li>
             </ul>

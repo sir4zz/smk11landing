@@ -22,7 +22,7 @@ import Card from '../components/ui/Card';
 import { programs } from '../data/programs';
 import { news } from '../data/news';
 import { achievements } from '../data/achievements';
-import { fetchPublicContent, apiUrl } from '../lib/api';
+import { fetchPublicContent, insforge } from '../lib/api';
 
 const getProgramIcon = (slug: string) => {
   switch (slug) {
@@ -65,17 +65,15 @@ const Home: React.FC = () => {
     fetchPublicContent('programs', programs).then(setPublicPrograms);
     fetchPublicContent('news', news).then(setPublicNews);
     fetchPublicContent('achievements', achievements).then(setPublicAchievements);
-    fetch(apiUrl('/api/public/stats'))
-      .then((res) => res.json())
-      .then((data) => {
-        setStats([
-          { value: data.students || '1.124+', label: 'Siswa Aktif', icon: <Users className="h-6 w-6" /> },
-          { value: data.teachers || '51+', label: 'Tenaga Pengajar', icon: <GraduationCap className="h-6 w-6" /> },
-          { value: data.programs || '6', label: 'Program Keahlian', icon: <BookOpen className="h-6 w-6" /> },
-          { value: data.achievements || '33', label: 'Rombel', icon: <Trophy className="h-6 w-6" /> },
+    // Use static stats for now (can be updated from DB later)
+    insforge.database.from('ppdb_registrations').select('*', { count: 'exact', head: true }).then(({ count }) => {
+      if (count !== null) {
+        setStats(prev => [
+          { ...prev[0], value: `${count}+` },
+          ...prev.slice(1),
         ]);
-      })
-      .catch(() => {});
+      }
+    }, () => {});
     const timer = window.setInterval(() => {
       setActiveImage((prev) => (prev + 1) % heroImages.length);
     }, 5000);

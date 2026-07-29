@@ -1,13 +1,11 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { usePpdbAuth } from './PPDBAuth'
-import { apiUrl } from '../../lib/api'
-import { Mail, Lock, ArrowRight, LogIn } from 'lucide-react'
+import { insforge } from '../../lib/api'
+import { Mail, Lock, ArrowRight } from 'lucide-react'
 import Button from '../../components/ui/Button'
 import logoSekolah from '../../assets/logo.png'
 
 export default function Login() {
-  const { login } = usePpdbAuth()
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -16,12 +14,17 @@ export default function Login() {
     e.preventDefault(); setLoading(true); setError('')
     const fd = new FormData(e.currentTarget)
     try {
-      const res = await fetch(apiUrl('/api/ppdb/auth/login'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: fd.get('email'), password: fd.get('password') }) })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.message || 'Login gagal.')
-      login(data.token, data.user)
+      const email = fd.get('email') as string
+      const password = fd.get('password') as string
+      
+      const { error: signInError } = await insforge.auth.signInWithPassword({
+        email,
+        password
+      })
+
+      if (signInError) throw signInError
       navigate('/ppdb/dashboard')
-    } catch (err: any) { setError(err.message) } finally { setLoading(false) }
+    } catch (err: any) { setError(err.message || 'Login gagal.') } finally { setLoading(false) }
   }
 
   return (

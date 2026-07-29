@@ -1,20 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
-import { BarChart3, BookOpen, Building2, FileText, GraduationCap, LogOut, Mail, Menu, Pencil, Plus, Trophy, Trash2, Users, X, Search, Download, CheckCircle2, Eye, ExternalLink, Loader2 } from 'lucide-react';
+import { BarChart3, BookOpen, Building2, FileText, GraduationCap, LogOut, Mail, Menu, Pencil, Plus, Trophy, Trash2, Users, X, Search, Download, CheckCircle2, Eye } from 'lucide-react';
 import logoSekolah from '../assets/logo.png';
 import { news as initialNews } from '../data/news';
 import { programs as initialPrograms } from '../data/programs';
 import { facilities as initialFacilities } from '../data/facilities';
 import { staffData as initialStaff } from '../data/staff';
 import { achievements as initialAchievements } from '../data/achievements';
-import { apiUrl, readJsonResponse } from '../lib/api';
+import { insforge } from '../lib/api';
+import { LoadingInline } from '../components/ui/LoadingScreen';
 
 type Section = 'dashboard' | 'news' | 'programs' | 'facilities' | 'staff' | 'achievements' | 'ppdb' | 'contact';
 type EditableSection = Exclude<Section, 'dashboard' | 'contact'>;
 type Item = Record<string, unknown>;
 const sessionKey = 'smkn11-admin-session';
-const tokenKey = 'smkn11-admin-token';
 
 const seed = {
   news: initialNews,
@@ -63,29 +63,37 @@ export function AdminLogin() {
     setError('');
 
     const form = new FormData(event.currentTarget);
-    const username = String(form.get('username') ?? '').trim();
+    const email = String(form.get('username') ?? '').trim();
     const password = String(form.get('password') ?? '');
 
     try {
-      const response = await fetch(apiUrl('/api/auth/login'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
+      const { data, error: signInError } = await insforge.auth.signInWithPassword({
+        email,
+        password,
       });
-      const payload = await readJsonResponse(response);
-      if (!response.ok) throw new Error(payload.message || 'Username atau kata sandi salah.');
+      if (signInError) throw signInError;
+      if (!data?.user) throw new Error('Sesi admin tidak dapat dibuat.');
+      
+      const { data: profile } = await insforge.database.from('profiles').select('role').eq('id', data.user.id).single();
+      if (profile?.role !== 'admin') {
+        await insforge.auth.signOut();
+        throw new Error('Unauthorized. Not an admin.');
+      }
 
       localStorage.setItem(sessionKey, 'true');
-      localStorage.setItem(tokenKey, payload.token);
       navigate('/admin');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Username atau kata sandi salah.');
+      setError(err instanceof Error ? err.message : 'Login gagal.');
     } finally {
       setLoading(false);
     }
   };
 
-  if (localStorage.getItem(sessionKey) && localStorage.getItem(tokenKey)) return <Navigate to="/admin" replace />;
+  useEffect(() => {
+    insforge.auth.getCurrentUser().then(({ data }) => {
+      if (data.user) navigate('/admin', { replace: true });
+    })
+  }, [navigate]);
 
   return (
     <main className="min-h-screen bg-[#FAF6F0] grid place-items-center p-4">
@@ -96,10 +104,9 @@ export function AdminLogin() {
           <p className="mt-2 text-sm text-[#23314D]">Masuk untuk mengelola konten website.</p>
         </div>
         {error && <p className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-        <label className="mb-4 block text-sm font-semibold text-[#1B2A4A]">Username<input name="username" required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2" /></label>
+        <label className="mb-4 block text-sm font-semibold text-[#1B2A4A]">Email Admin<input name="username" type="email" required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2" /></label>
         <label className="mb-6 block text-sm font-semibold text-[#1B2A4A]">Kata sandi<input name="password" type="password" required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2" /></label>
         <button disabled={loading} className="w-full rounded-lg bg-[#1B2A4A] py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-70">{loading ? 'Memeriksa...' : 'Masuk'}</button>
-        <p className="mt-4 text-center text-xs text-[#5B7088]">Demo: admin / password123</p>
       </form>
     </main>
   );
@@ -114,19 +121,20 @@ export default function Admin() {
   const [mobile, setMobile] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem(tokenKey);
-    if (!token) return;
-    Promise.all([
-      fetch(apiUrl('/api/content/news'), { headers: { Authorization: `Bearer ${token}` } }).then(r => r.ok ? r.json() : []),
-      fetch(apiUrl('/api/content/programs'), { headers: { Authorization: `Bearer ${token}` } }).then(r => r.ok ? r.json() : []),
-      fetch(apiUrl('/api/content/facilities'), { headers: { Authorization: `Bearer ${token}` } }).then(r => r.ok ? r.json() : []),
-      fetch(apiUrl('/api/content/staff'), { headers: { Authorization: `Bearer ${token}` } }).then(r => r.ok ? r.json() : []),
-      fetch(apiUrl('/api/content/achievements'), { headers: { Authorization: `Bearer ${token}` } }).then(r => r.ok ? r.json() : []),
-      fetch(apiUrl('/api/ppdb'), { headers: { Authorization: `Bearer ${token}` } }).then(r => r.ok ? r.json() : []),
-      fetch(apiUrl('/api/contact'), { headers: { Authorization: `Bearer ${token}` } }).then(r => r.ok ? r.json() : []),
-    ]).then(([news, programs, facilities, staff, achievements, ppdb, contact]) => setData({
-      news, programs, facilities, staff, achievements, ppdb: normalizePpdbApplications(ppdb), contact,
-    })).catch(() => {});
+    insforge.auth.getCurrentUser().then(({ data }) => {
+      if (!data.user) return;
+      Promise.all([
+        insforge.database.from('content_records').select('*').eq('content_type', 'news').then((r: any) => r.data?.map((d: any) => ({ ...d.data, id: d.id })) || []),
+        insforge.database.from('content_records').select('*').eq('content_type', 'programs').then((r: any) => r.data?.map((d: any) => ({ ...d.data, id: d.id })) || []),
+        insforge.database.from('content_records').select('*').eq('content_type', 'facilities').then((r: any) => r.data?.map((d: any) => ({ ...d.data, id: d.id })) || []),
+        insforge.database.from('content_records').select('*').eq('content_type', 'staff').then((r: any) => r.data?.map((d: any) => ({ ...d.data, id: d.id })) || []),
+        insforge.database.from('content_records').select('*').eq('content_type', 'achievements').then((r: any) => r.data?.map((d: any) => ({ ...d.data, id: d.id })) || []),
+        insforge.database.from('ppdb_registrations').select('*').then((r: any) => r.data?.map((d: any) => ({...d, name: d.full_name})) || []),
+        insforge.database.from('contact_messages').select('*').then((r: any) => r.data || []),
+      ]).then(([news, programs, facilities, staff, achievements, ppdb, contact]) => setData({
+        news, programs, facilities, staff, achievements, ppdb: normalizePpdbApplications(ppdb), contact,
+      })).catch(() => {});
+    })
   }, []);
 
   const menu = (Object.keys(configs) as EditableSection[]);
@@ -135,21 +143,32 @@ export default function Admin() {
   if (!localStorage.getItem(sessionKey)) return <Navigate to="/admin/login" replace />;
 
   const update = async (next: Item) => {
-    const token = localStorage.getItem(tokenKey);
-    if (!token) return false;
     try {
       const isPpdb = section === 'ppdb';
-      const endpoint = isPpdb
-        ? apiUrl(`/api/ppdb${editing ? `/${editing.id}` : ''}`)
-        : apiUrl(`/api/content/${section}${editing ? `/${editing.id}` : ''}`);
-      const response = await fetch(endpoint, {
-        method: editing ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(next),
-      });
-      const payload = await readJsonResponse(response);
-      if (!response.ok) throw new Error(payload.message || 'Gagal menyimpan data.');
-      setData(current => ({ ...current, [section]: editing ? current[section].map(item => item.id === editing.id ? payload : item) : [payload, ...current[section]] }));
+      let payload;
+      
+      if (isPpdb) {
+        if (editing) {
+          const { error, data } = await insforge.database.from('ppdb_registrations').update(next).eq('id', editing.id).select().single();
+          if (error) throw error;
+          payload = data;
+        }
+      } else {
+        const { id, ...dataToSave } = next;
+        if (editing) {
+          const { error, data } = await insforge.database.from('content_records').update({ data: dataToSave }).eq('id', editing.id).select().single();
+          if (error) throw error;
+          payload = { ...data.data, id: data.id };
+        } else {
+          const { error, data } = await insforge.database.from('content_records').insert([{ content_type: section, data: dataToSave }]).select().single();
+          if (error) throw error;
+          payload = { ...data.data, id: data.id };
+        }
+      }
+
+      if (payload) {
+        setData(current => ({ ...current, [section]: editing ? current[section].map(item => item.id === editing.id ? payload : item) : [payload, ...current[section]] }));
+      }
       return true;
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Terjadi kesalahan.');
@@ -159,16 +178,17 @@ export default function Admin() {
 
   const remove = async (id: unknown) => {
     if (!confirm('Hapus data ini?')) return;
-    const token = localStorage.getItem(tokenKey);
-    if (!token) return;
     try {
-      const endpoint = section === 'ppdb'
-        ? apiUrl(`/api/ppdb/${id}`)
-        : section === 'contact'
-          ? apiUrl(`/api/contact/${id}`)
-          : apiUrl(`/api/content/${section}/${id}`);
-      const response = await fetch(endpoint, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
-      if (!response.ok) throw new Error('Gagal menghapus data.');
+      if (section === 'ppdb') {
+        const { error } = await insforge.database.from('ppdb_registrations').delete().eq('id', id);
+        if (error) throw error;
+      } else if (section === 'contact') {
+        const { error } = await insforge.database.from('contact_messages').delete().eq('id', id);
+        if (error) throw error;
+      } else {
+        const { error } = await insforge.database.from('content_records').delete().eq('id', id);
+        if (error) throw error;
+      }
       setData(current => ({ ...current, [section]: current[section].filter(item => item.id !== id) }));
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Terjadi kesalahan.');
@@ -176,12 +196,10 @@ export default function Admin() {
   };
 
   const markRead = async (id: unknown) => {
-    const token = localStorage.getItem(tokenKey);
-    if (!token) return;
-    await fetch(apiUrl(`/api/contact/${id}/read`), { method: 'PUT', headers: { Authorization: `Bearer ${token}` } });
+    await insforge.database.from('contact_messages').update({ is_read: true }).eq('id', id);
     setData(current => ({
       ...current,
-      contact: current.contact.map(item => item.id === id ? { ...item, isRead: 1 } : item),
+      contact: current.contact.map(item => item.id === id ? { ...item, is_read: true } : item),
     }));
   };
 
@@ -200,7 +218,11 @@ export default function Admin() {
           {menu.map(key => <Nav key={key} label={configs[key].title} icon={configs[key].icon} active={section === key} onClick={() => setSection(key)} />)}
           <Nav label="Pesan Kontak" icon={Mail} active={section === 'contact'} onClick={() => setSection('contact')} />
         </nav>
-        <button onClick={() => { localStorage.removeItem(sessionKey); localStorage.removeItem(tokenKey); navigate('/admin/login'); }} className="absolute bottom-6 flex items-center gap-2 text-sm text-[#F3E8D0]"><LogOut size={18} /> Keluar</button>
+        <button onClick={async () => {
+          await insforge.auth.signOut();
+          localStorage.removeItem(sessionKey);
+          navigate('/admin/login');
+        }} className="absolute bottom-6 flex items-center gap-2 text-sm text-[#F3E8D0]"><LogOut size={18} /> Keluar</button>
       </aside>
 
       <main className="lg:ml-72">
@@ -220,7 +242,7 @@ export default function Admin() {
             <ContactMessages items={data.contact} onMarkRead={markRead} onDelete={remove} />
           )}
 
-          {section === 'ppdb' && <PPDBManagement token={localStorage.getItem(tokenKey) || ''} />}
+          {section === 'ppdb' && <PPDBManagement />}
 
           {editableSections && section !== 'ppdb' && (
             <>
@@ -335,7 +357,7 @@ function Table({ items, config, onEdit, onDelete }: { items: Item[]; config: { f
 /* ===== PPDB Management (New System) ===== */
 const ppdbStatuses = ['Menunggu Verifikasi', 'Sedang Diverifikasi', 'Perlu Perbaikan Dokumen', 'Lolos Seleksi', 'Cadangan', 'Tidak Lolos', 'Sudah Daftar Ulang'];
 
-function PPDBManagement({ token }: { token: string }) {
+function PPDBManagement() {
   const [stats, setStats] = useState<any>(null);
   const [list, setList] = useState<any[]>([]);
   const [page, setPage] = useState(1);
@@ -351,20 +373,37 @@ function PPDBManagement({ token }: { token: string }) {
   const fetchList = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: String(page), limit: '20' });
-      if (search) params.set('search', search);
-      if (statusFilter) params.set('status', statusFilter);
-      if (programFilter) params.set('program', programFilter);
-      const res = await fetch(apiUrl(`/api/ppdb/admin/list?${params}`), { headers: { Authorization: `Bearer ${token}` } });
-      const data = await res.json();
-      if (res.ok) { setList(data.data); setTotalPages(data.totalPages); setTotal(data.total); setPrograms(data.programs || []); }
+      let query = insforge.database.from('ppdb_registrations').select('*', { count: 'exact' });
+      if (search) query = query.or(`full_name.ilike.%${search}%,nisn.ilike.%${search}%,registration_number.ilike.%${search}%`);
+      if (statusFilter) query = query.eq('status', statusFilter);
+      if (programFilter) query = query.eq('program', programFilter);
+      
+      const { data, count, error } = await query
+        .order('created_at', { ascending: false })
+        .range((page - 1) * 20, page * 20 - 1);
+        
+      if (!error && data) {
+        setList(data.map((d: any) => ({ ...d, name: d.full_name })));
+        setTotal(count || 0);
+        setTotalPages(Math.ceil((count || 0) / 20));
+        
+        // Also fetch unique programs for filter
+        const { data: progs } = await insforge.database.from('content_records').select('data').eq('content_type', 'programs');
+        if (progs) setPrograms((progs as any[]).map((p: any) => p.data.name));
+      }
     } catch {} finally { setLoading(false); }
   };
 
   const fetchStats = async () => {
     try {
-      const res = await fetch(apiUrl('/api/ppdb/admin/stats'), { headers: { Authorization: `Bearer ${token}` } });
-      if (res.ok) setStats(await res.json());
+      const { data, error } = await insforge.database.from('ppdb_registrations').select('status');
+      if (error) return;
+      const dataArr = data as { status: string }[];
+      const counts: Record<string, number> = { total: dataArr.length };
+      dataArr.forEach(d => {
+        counts[d.status] = (counts[d.status] || 0) + 1;
+      });
+      setStats(counts);
     } catch {}
   };
 
@@ -390,25 +429,29 @@ function PPDBManagement({ token }: { token: string }) {
 
   const openDetail = async (id: string) => {
     try {
-      const res = await fetch(apiUrl(`/api/ppdb/admin/${id}`), { headers: { Authorization: `Bearer ${token}` } });
-      if (res.ok) setDetail(await res.json());
+    const { data: registration, error } = await insforge.database.from('ppdb_registrations').select('*').eq('id', id).single();
+      if (error) throw error;
+      
+    const { data: documents } = await insforge.database.from('ppdb_documents').select('*').eq('application_id', id).order('created_at', { ascending: true });
+    const { data: activities } = await insforge.database.from('ppdb_activity_log').select('*').eq('application_id', id).order('created_at', { ascending: false });
+      
+      setDetail({ registration, documents: documents || [], activities: activities || [] });
     } catch {}
   };
 
   const updateStatus = async (id: string, status: string, note: string) => {
-    const res = await fetch(apiUrl(`/api/ppdb/admin/${id}/status`), {
-      method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ status, note }),
-    });
-    if (res.ok) { fetchList(); fetchStats(); setDetail(null); }
+    const { error } = await insforge.database.from('ppdb_registrations').update({ status, admin_note: note }).eq('id', id);
+    if (!error) {
+      await insforge.database.from('ppdb_activity_log').insert([{ application_id: id, action: `Status diubah menjadi ${status}`, note }]);
+      fetchList(); fetchStats(); setDetail(null);
+    }
   };
 
   const verifyDoc = async (docId: string, verified: boolean, note: string) => {
-    const res = await fetch(apiUrl(`/api/ppdb/admin/documents/${docId}/verify`), {
-      method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ verified, note }),
-    });
-    if (res.ok) { if (detail) openDetail(detail.id); }
+    const { error } = await insforge.database.from('ppdb_documents').update({ verified: verified ? 1 : 0, note }).eq('id', docId);
+    if (!error) {
+      if (detail) openDetail(detail.registration.id);
+    }
   };
 
   return (
@@ -441,9 +484,13 @@ function PPDBManagement({ token }: { token: string }) {
         </select>
         <button onClick={async () => {
           try {
-            const res = await fetch(apiUrl('/api/ppdb/export/csv'), { headers: { Authorization: `Bearer ${token}` } });
-            if (!res.ok) return;
-            const blob = await res.blob();
+            // Build CSV from data
+            const { data } = await insforge.database.from('ppdb_registrations').select('*').order('created_at', { ascending: false });
+            if (!data) return;
+            const headers = ['No. Daftar', 'Nama', 'Program', 'Status', 'Tgl Daftar'];
+            const rows = data.map((d: any) => [d.registration_number, d.full_name, d.program, d.status, d.submitted_at || d.created_at].join(','));
+            const csv = [headers.join(','), ...rows].join('\n');
+            const blob = new Blob([csv], { type: 'text/csv' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a'); a.href = url; a.download = 'ppdb-export.csv'; a.click();
             URL.revokeObjectURL(url);
@@ -485,7 +532,7 @@ function PPDBManagement({ token }: { token: string }) {
               <tr><td colSpan={7} className="p-8 text-center text-[#5B7088]">Belum ada pendaftar.</td></tr>
             )}
             {loading && (
-              <tr><td colSpan={7} className="p-8 text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin text-[#C8A951]" /></td></tr>
+              <tr><td colSpan={7} className="p-8 text-center"><LoadingInline /></td></tr>
             )}
           </tbody>
         </table>
@@ -510,7 +557,6 @@ function PPDBManagement({ token }: { token: string }) {
           onClose={() => setDetail(null)}
           onUpdateStatus={updateStatus}
           onVerifyDoc={verifyDoc}
-          token={token}
         />
       )}
     </div>
@@ -530,13 +576,12 @@ function StatusBadge({ status }: { status: string }) {
   return <span className={`rounded-full px-3 py-1 text-xs font-semibold ${colors[status] || 'bg-gray-100 text-gray-600'}`}>{status}</span>;
 }
 
-function PPDBDetail({ data, onClose, onUpdateStatus, onVerifyDoc, token }: {
+function PPDBDetail({ data, onClose, onUpdateStatus, onVerifyDoc }: {
   data: any; onClose: () => void;
   onUpdateStatus: (id: string, status: string, note: string) => void;
   onVerifyDoc: (docId: string, verified: boolean, note: string) => void;
-  token: string;
 }) {
-  const [status, setStatus] = useState(data.status || '');
+  const [status, setStatus] = useState(data.registration?.status || data.status || '');
   const [note, setNote] = useState('');
 
   return (
@@ -550,28 +595,28 @@ function PPDBDetail({ data, onClose, onUpdateStatus, onVerifyDoc, token }: {
         <div className="space-y-6 p-6">
           {/* Info */}
           <div className="grid gap-4 md:grid-cols-2">
-            <div><span className="text-xs text-[#5B7088]">No. Pendaftaran</span><p className="font-mono font-bold">{data.registration_number}</p></div>
-            <div><span className="text-xs text-[#5B7088]">Nama</span><p className="font-semibold">{data.full_name || data.name}</p></div>
-            <div><span className="text-xs text-[#5B7088]">NISN</span><p>{data.nisn || '-'}</p></div>
-            <div><span className="text-xs text-[#5B7088]">NIK</span><p>{data.nik || '-'}</p></div>
-            <div><span className="text-xs text-[#5B7088]">Jenis Kelamin</span><p>{data.gender === 'L' ? 'Laki-laki' : data.gender === 'P' ? 'Perempuan' : '-'}</p></div>
-            <div><span className="text-xs text-[#5B7088]">Tempat/Tgl Lahir</span><p>{data.place_of_birth ? `${data.place_of_birth}, ${new Date(data.date_of_birth).toLocaleDateString('id-ID')}` : '-'}</p></div>
-            <div><span className="text-xs text-[#5B7088]">Agama</span><p>{data.religion || '-'}</p></div>
-            <div><span className="text-xs text-[#5B7088]">Status</span><p><StatusBadge status={data.status} /></p></div>
-            <div className="md:col-span-2"><span className="text-xs text-[#5B7088]">Alamat</span><p>{data.address || '-'}</p></div>
-            <div><span className="text-xs text-[#5B7088]">No. HP</span><p>{data.phone || data.user_phone || '-'}</p></div>
-            <div><span className="text-xs text-[#5B7088]">Email</span><p>{data.user_email || '-'}</p></div>
-            <div><span className="text-xs text-[#5B7088]">Jurusan</span><p className="font-semibold">{data.program}</p></div>
+            <div><span className="text-xs text-[#5B7088]">No. Pendaftaran</span><p className="font-mono font-bold">{data.registration?.registration_number || data.registration_number}</p></div>
+            <div><span className="text-xs text-[#5B7088]">Nama</span><p className="font-semibold">{data.registration?.full_name || data.full_name || data.name}</p></div>
+            <div><span className="text-xs text-[#5B7088]">NISN</span><p>{data.registration?.nisn || data.nisn || '-'}</p></div>
+            <div><span className="text-xs text-[#5B7088]">NIK</span><p>{data.registration?.nik || data.nik || '-'}</p></div>
+            <div><span className="text-xs text-[#5B7088]">Jenis Kelamin</span><p>{(data.registration?.gender || data.gender) === 'L' ? 'Laki-laki' : (data.registration?.gender || data.gender) === 'P' ? 'Perempuan' : '-'}</p></div>
+            <div><span className="text-xs text-[#5B7088]">Tempat/Tgl Lahir</span><p>{(data.registration?.place_of_birth || data.place_of_birth) ? `${data.registration?.place_of_birth || data.place_of_birth}, ${new Date(data.registration?.date_of_birth || data.date_of_birth).toLocaleDateString('id-ID')}` : '-'}</p></div>
+            <div><span className="text-xs text-[#5B7088]">Agama</span><p>{data.registration?.religion || data.religion || '-'}</p></div>
+            <div><span className="text-xs text-[#5B7088]">Status</span><p><StatusBadge status={data.registration?.status || data.status} /></p></div>
+            <div className="md:col-span-2"><span className="text-xs text-[#5B7088]">Alamat</span><p>{data.registration?.address || data.address || '-'}</p></div>
+            <div><span className="text-xs text-[#5B7088]">No. HP</span><p>{data.registration?.phone || data.phone || '-'}</p></div>
+            <div><span className="text-xs text-[#5B7088]">Email</span><p>{data.registration?.user_email || data.user_email || '-'}</p></div>
+            <div><span className="text-xs text-[#5B7088]">Jurusan</span><p className="font-semibold">{data.registration?.program || data.program}</p></div>
           </div>
 
           {/* Parent Data */}
           <div>
             <h3 className="mb-3 font-semibold text-[#1B2A4A]">Data Orang Tua</h3>
             <div className="grid gap-3 md:grid-cols-2 text-sm">
-              <div><span className="text-xs text-[#5B7088]">Ayah</span><p>{data.father_name || '-'} {data.father_occupation ? `(${data.father_occupation})` : ''}</p></div>
-              <div><span className="text-xs text-[#5B7088]">Ibu</span><p>{data.mother_name || '-'} {data.mother_occupation ? `(${data.mother_occupation})` : ''}</p></div>
-              <div><span className="text-xs text-[#5B7088]">Wali</span><p>{data.guardian_name || '-'}</p></div>
-              <div><span className="text-xs text-[#5B7088]">Alamat Orang Tua</span><p>{data.parent_address || '-'}</p></div>
+              <div><span className="text-xs text-[#5B7088]">Ayah</span><p>{(data.registration?.father_name || data.father_name) || '-'} {(data.registration?.father_occupation || data.father_occupation) ? `(${data.registration?.father_occupation || data.father_occupation})` : ''}</p></div>
+              <div><span className="text-xs text-[#5B7088]">Ibu</span><p>{(data.registration?.mother_name || data.mother_name) || '-'} {(data.registration?.mother_occupation || data.mother_occupation) ? `(${data.registration?.mother_occupation || data.mother_occupation})` : ''}</p></div>
+              <div><span className="text-xs text-[#5B7088]">Wali</span><p>{data.registration?.guardian_name || data.guardian_name || '-'}</p></div>
+              <div><span className="text-xs text-[#5B7088]">Alamat Orang Tua</span><p>{data.registration?.parent_address || data.parent_address || '-'}</p></div>
             </div>
           </div>
 
@@ -579,8 +624,8 @@ function PPDBDetail({ data, onClose, onUpdateStatus, onVerifyDoc, token }: {
           <div>
             <h3 className="mb-3 font-semibold text-[#1B2A4A]">Sekolah Asal</h3>
             <div className="grid gap-3 md:grid-cols-2 text-sm">
-              <div><span className="text-xs text-[#5B7088]">Sekolah</span><p>{data.previous_school || '-'}</p></div>
-              <div><span className="text-xs text-[#5B7088]">Tahun Lulus</span><p>{data.graduation_year || '-'}</p></div>
+              <div><span className="text-xs text-[#5B7088]">Sekolah</span><p>{data.registration?.previous_school || data.previous_school || '-'}</p></div>
+              <div><span className="text-xs text-[#5B7088]">Tahun Lulus</span><p>{data.registration?.graduation_year || data.graduation_year || '-'}</p></div>
             </div>
           </div>
 
@@ -601,8 +646,11 @@ function PPDBDetail({ data, onClose, onUpdateStatus, onVerifyDoc, token }: {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {doc.file_data && (
-                        <button onClick={() => { const raw = doc.file_data; const b64 = raw.indexOf('data:') === 0 ? raw.split(',')[1] : raw; const mime = doc.mime_type || 'image/jpeg'; const bin = atob(b64); const u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i); window.open(URL.createObjectURL(new Blob([u8], { type: mime })), '_blank'); }} className="rounded-lg bg-[#1B2A4A]/10 px-3 py-1 text-xs font-semibold text-[#1B2A4A] hover:bg-[#1B2A4A]/20"><Eye className="mr-1 inline h-3 w-3" />Lihat</button>
+                      {doc.file_path && (
+                        <button onClick={async () => {
+                          const { data: urlData } = await insforge.storage.from('ppdb_documents').createSignedUrl(doc.file_path, 3600);
+                          if (urlData?.signedUrl) window.open(urlData.signedUrl, '_blank');
+                        }} className="rounded-lg bg-[#1B2A4A]/10 px-3 py-1 text-xs font-semibold text-[#1B2A4A] hover:bg-[#1B2A4A]/20"><Eye className="mr-1 inline h-3 w-3" />Lihat</button>
                       )}
                       {doc.verified ? (
                         <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">Sudah</span>
@@ -628,7 +676,7 @@ function PPDBDetail({ data, onClose, onUpdateStatus, onVerifyDoc, token }: {
                 {ppdbStatuses.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
               <input value={note} onChange={e => setNote(e.target.value)} placeholder="Catatan (opsional)" className="flex-1 rounded-lg border border-[#1B2A4A]/20 px-4 py-2.5 text-sm min-w-[200px]" />
-              <button onClick={() => onUpdateStatus(data.id, status, note)} className="rounded-lg bg-[#1B2A4A] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#15203a]">Simpan</button>
+              <button onClick={() => onUpdateStatus(data.registration?.id || data.id, status, note)} className="rounded-lg bg-[#1B2A4A] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#15203a]">Simpan</button>
             </div>
           </div>
 

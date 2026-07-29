@@ -1,30 +1,40 @@
-const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3001').replace(/\/$/, '');
+import { createClient } from '@insforge/sdk';
 
-export function apiUrl(path: string) {
-  return `${API_URL}${path.startsWith('/') ? path : `/${path}`}`;
-}
+export const insforge = createClient({
+  baseUrl: import.meta.env.VITE_INSFORGE_URL,
+  anonKey: import.meta.env.VITE_INSFORGE_ANON_KEY
+});
 
+// We keep these helper methods to maintain compatibility if possible,
+// but they'll query InsForge DB instead of custom endpoints.
 export async function fetchPublicContent<T>(type: string, fallback: T): Promise<T> {
   try {
-    const response = await fetch(apiUrl(`/api/public/content/${type}`), { signal: AbortSignal.timeout(5000) });
-    if (!response.ok) throw new Error(`API ${response.status}`);
-    return await response.json() as T;
+    const { data: rows, error } = await insforge.database
+      .from('content_records')
+      .select('data')
+      .eq('content_type', type);
+
+    if (error) throw error;
+    if (rows && rows.length > 0) return rows.map(r => r.data) as T;
+    return fallback;
   } catch {
     return fallback;
   }
 }
 
-export async function readJsonResponse(response: Response) {
-  const text = await response.text();
-  if (!text) return {};
-  try { return JSON.parse(text); } catch { return { message: text }; }
-}
-
-export async function fetchPublicContentById<T>(type: string, id: string, fallback: T): Promise<T> {
+export async function fetchPublicContentById<T extends { slug?: string }>(type: string, slug: string, fallback: T): Promise<T> {
   try {
-    const response = await fetch(apiUrl(`/api/public/content/${type}/${encodeURIComponent(id)}`), { signal: AbortSignal.timeout(5000) });
-    if (!response.ok) throw new Error(`API ${response.status}`);
-    return await response.json() as T;
+    const { data: rows, error } = await insforge.database
+      .from('content_records')
+      .select('data')
+      .eq('content_type', type);
+
+    if (error) throw error;
+    if (rows && rows.length > 0) {
+      const found = rows.map(r => r.data as T).find(item => item.slug === slug);
+      if (found) return found;
+    }
+    return fallback;
   } catch {
     return fallback;
   }
