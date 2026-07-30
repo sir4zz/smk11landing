@@ -41,7 +41,7 @@ const Footer: React.FC = () => {
               <li><Link to="/akademik/program-keahlian" className="text-[#F3E8D0] hover:text-white transition-colors">Program Keahlian</Link></li>
               <li><Link to="/kesiswaan/prestasi" className="text-[#F3E8D0] hover:text-white transition-colors">Kesiswaan</Link></li>
               <li><Link to="/informasi/berita" className="text-[#F3E8D0] hover:text-white transition-colors">Berita & Pengumuman</Link></li>
-              <li><Link to="/ppdb" className="text-[#F3E8D0] hover:text-white transition-colors">Informasi PPDB</Link></li>
+              <li><Link to="/spmb" className="text-[#F3E8D0] hover:text-white transition-colors">Informasi SPMB</Link></li>
               <li><Link to="/kontak" className="text-[#F3E8D0] hover:text-white transition-colors">Hubungi Kami</Link></li>
             </ul>
           </div>

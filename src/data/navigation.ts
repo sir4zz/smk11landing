@@ -41,7 +41,7 @@ export const navigationData: NavItem[] = [
       { label: 'FAQ', href: '/informasi/faq' },
     ],
   },
-  { label: 'PPDB', href: '/ppdb', isHighlighted: true },
+  { label: 'SPMB', href: '/spmb', isHighlighted: true },
   { label: 'Kontak', href: '/kontak' },
 ];
 

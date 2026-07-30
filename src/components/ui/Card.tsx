@@ -21,7 +21,7 @@ export const Card: React.FC<CardProps> = ({
   children,
 }) => {
   const CardContent = (
-    <div className={`overflow-hidden rounded-[1.25rem] border border-[#1B2A4A]/10 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${className}`}>
+    <div className={`flex flex-col overflow-hidden rounded-[1.25rem] border border-[#1B2A4A]/10 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${className}`}>
       {children ? children : (
         <>
           {image && (

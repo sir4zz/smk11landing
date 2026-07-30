@@ -22,7 +22,7 @@ import Card from '../components/ui/Card';
 import { programs } from '../data/programs';
 import { news } from '../data/news';
 import { achievements } from '../data/achievements';
-import { fetchPublicContent, insforge } from '../lib/api';
+import { fetchPublicContent } from '../lib/api';
 
 const getProgramIcon = (slug: string) => {
   switch (slug) {
@@ -54,7 +54,7 @@ const Home: React.FC = () => {
   const [publicPrograms, setPublicPrograms] = useState(programs);
   const [publicNews, setPublicNews] = useState(news);
   const [publicAchievements, setPublicAchievements] = useState(achievements);
-  const [stats, setStats] = useState([
+  const [stats] = useState([
     { value: '1.124+', label: 'Siswa Aktif', icon: <Users className="h-6 w-6" /> },
     { value: '51+', label: 'Tenaga Pengajar', icon: <GraduationCap className="h-6 w-6" /> },
     { value: '6', label: 'Program Keahlian', icon: <BookOpen className="h-6 w-6" /> },
@@ -65,15 +65,7 @@ const Home: React.FC = () => {
     fetchPublicContent('programs', programs).then(setPublicPrograms);
     fetchPublicContent('news', news).then(setPublicNews);
     fetchPublicContent('achievements', achievements).then(setPublicAchievements);
-    // Use static stats for now (can be updated from DB later)
-    insforge.database.from('ppdb_registrations').select('*', { count: 'exact', head: true }).then(({ count }) => {
-      if (count !== null) {
-        setStats(prev => [
-          { ...prev[0], value: `${count}+` },
-          ...prev.slice(1),
-        ]);
-      }
-    }, () => {});
+    // Statistik hanya menampilkan informasi sekolah; SPMB tidak menyimpan data pendaftar di situs ini.
     const timer = window.setInterval(() => {
       setActiveImage((prev) => (prev + 1) % heroImages.length);
     }, 5000);
@@ -311,13 +303,13 @@ const Home: React.FC = () => {
           <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {publicPrograms.map((program) => (
               <Card key={program.id} image={program.image} title={program.name} description={program.shortDescription} badge={program.shortName} className="h-full">
-                <div className="p-6">
+                <div className="flex flex-col flex-1 p-6">
                   <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#FAF6F0]">
                     {getProgramIcon(program.slug)}
                   </div>
                   <h3 className="mb-3 text-xl font-semibold text-[#1B2A4A]">{program.name}</h3>
                   <p className="mb-6 text-sm font-medium leading-7 text-[#23314D]">{program.shortDescription}</p>
-                  <Link to={`/akademik/program/${program.slug}`} className="inline-flex items-center gap-2 font-semibold text-[#866D2C] transition-colors hover:text-[#1B2A4A]">
+                  <Link to={`/akademik/program/${program.slug}`} className="mt-auto inline-flex items-center gap-2 font-semibold text-[#866D2C] transition-colors hover:text-[#1B2A4A]">
                     Pelajari lebih lanjut <ArrowRight className="h-4 w-4" />
                   </Link>
                 </div>
@@ -381,12 +373,12 @@ const Home: React.FC = () => {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="overflow-hidden rounded-[2rem] bg-[#1B2A4A] p-8 text-center text-white shadow-2xl md:p-16">
             <div className="mx-auto max-w-3xl">
-              <p className="text-sm uppercase tracking-[0.3em] text-[#C8A951]">PPDB 2026/2027</p>
-              <h2 className="mt-4 text-3xl font-bold sm:text-4xl">Segera daftar dan bergabung dengan komunitas sekolah yang berkembang pesat.</h2>
-              <p className="mt-6 text-lg font-medium text-white/95">Kuota terbatas, persyaratan sederhana, dan proses pendaftaran yang jelas. Yuk, mulai langkah pertama menuju masa depan yang cerah.</p>
+              <p className="text-sm uppercase tracking-[0.3em] text-[#C8A951]">SPMB 2026/2027</p>
+              <h2 className="mt-4 text-3xl font-bold sm:text-4xl">Dapatkan informasi lengkap SPMB SMKN 11 Kabupaten Tangerang.</h2>
+              <p className="mt-6 text-lg font-medium text-white/95">Lihat persyaratan, jadwal, alur, dan tautan menuju portal resmi SPMB Provinsi Banten.</p>
               <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-                <Button as="link" href="/ppdb" variant="primary" size="lg" className="px-8">
-                  Daftar Sekarang
+                <Button as="link" href="/spmb" variant="primary" size="lg" className="px-8">
+                  Lihat Informasi SPMB
                 </Button>
                 <Button as="link" href="/kontak" variant="outline-light" size="lg" className="px-8">
                   Hubungi Kami

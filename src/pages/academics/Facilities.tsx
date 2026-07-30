@@ -38,7 +38,7 @@ const Facilities: React.FC = () => {
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           {filteredFacilities.map((facility: Facility) => (
             <Card key={facility.id} image={facility.photo} title={facility.name} description={facility.description} badge={facility.category} className="h-full">
-              <div className="p-6">
+              <div className="flex flex-col flex-1 p-6">
                 <p className="mb-3 text-xs font-semibold uppercase tracking-[0.3em] text-[#866D2C]">{facility.category}</p>
                 <h3 className="mb-3 text-xl font-semibold text-[#1B2A4A]">{facility.name}</h3>
                 <p className="text-sm leading-7 text-[#1B2A4A]/70">{facility.description}</p>

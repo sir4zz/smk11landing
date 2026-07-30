@@ -16,22 +16,12 @@ import Gallery from './pages/student/Gallery'
 import NewsList from './pages/information/NewsList'
 import NewsDetail from './pages/information/NewsDetail'
 import FAQ from './pages/information/FAQ'
-import { PpdbAuthProvider, ProtectedRoute } from './pages/ppdb/PPDBAuth'
-import Register from './pages/ppdb/Register'
-import Login from './pages/ppdb/Login'
-import Dashboard from './pages/ppdb/Dashboard'
 
 function App() {
   return (
-    <PpdbAuthProvider>
-      <Routes>
+    <Routes>
         <Route path="admin/login" element={<AdminLogin />} />
         <Route path="admin" element={<Admin />} />
-
-        {/* PPDB standalone (no layout) */}
-        <Route path="ppdb/daftar" element={<Register />} />
-        <Route path="ppdb/masuk" element={<Login />} />
-        <Route path="ppdb/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
 
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
@@ -56,15 +46,14 @@ function App() {
           <Route path="informasi/berita/:slug" element={<NewsDetail />} />
           <Route path="informasi/faq" element={<FAQ />} />
 
-          {/* Public Services */}
-          <Route path="ppdb" element={<Admissions />} />
+          {/* Public information portal */}
+          <Route path="spmb" element={<Admissions />} />
           <Route path="kontak" element={<Contact />} />
 
           {/* 404 Not Found */}
           <Route path="*" element={<NotFound />} />
         </Route>
-      </Routes>
-    </PpdbAuthProvider>
+    </Routes>
   )
 }
 

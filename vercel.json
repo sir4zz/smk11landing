@@ -1,4 +1,11 @@
 {
+  "redirects": [
+    {
+      "source": "/ppdb",
+      "destination": "/spmb",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/(.*)",

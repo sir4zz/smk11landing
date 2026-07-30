@@ -1,193 +1,305 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import PageHero from '../components/ui/PageHero';
+import React, { useEffect, useState } from 'react';
 import { SectionHeading } from '../components/ui/SectionHeading';
 import { Button } from '../components/ui/Button';
-import { ChevronDown, ChevronUp, CheckCircle2, GraduationCap, UserPlus, LogIn } from 'lucide-react';
+import { LoadingInline } from '../components/ui/LoadingScreen';
+import {
+  ChevronDown,
+  ChevronUp,
+  CheckCircle2,
+  GraduationCap,
+  ExternalLink,
+  Calendar,
+  Info,
+  Lock,
+  ArrowRight,
+} from 'lucide-react';
+import { fetchSpmbContent } from '../lib/api';
+import {
+  defaultSpmbContent,
+  scheduleCategoryLabels,
+  type SpmbContent,
+  type SpmbFaqItem,
+  type SpmbScheduleItem,
+} from '../data/spmb';
 
-const Stepper: React.FC = () => {
-  const steps = [
-    { title: 'Registrasi Online', desc: 'Isi formulir pendaftaran melalui website' },
-    { title: 'Unggah Dokumen', desc: 'Upload persyaratan administrasi' },
-    { title: 'Verifikasi Berkas', desc: 'Pengecekan dokumen oleh panitia' },
-    { title: 'Tes Seleksi', desc: 'Tes akademik dan wawancara' },
-    { title: 'Pengumuman', desc: 'Hasil seleksi diumumkan' },
-    { title: 'Daftar Ulang', desc: 'Registrasi fisik dan pembayaran' }
-  ];
+function FaqAccordion({ items }: { items: SpmbFaqItem[] }) {
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <div className="py-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="space-y-4">
+      {items.map((faq, idx) => (
+        <div key={idx} className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+          <button
+            type="button"
+            className="flex w-full items-center justify-between p-4 text-left font-medium text-[#1B2A4A] hover:bg-gray-50 focus:outline-none"
+            onClick={() => setOpenIndex(openIndex === idx ? null : idx)}
+          >
+            <span className="pr-4 text-lg font-semibold">{faq.question}</span>
+            {openIndex === idx ? (
+              <ChevronUp className="h-5 w-5 shrink-0 text-[#C8A951]" />
+            ) : (
+              <ChevronDown className="h-5 w-5 shrink-0 text-[#C8A951]" />
+            )}
+          </button>
+          {openIndex === idx && (
+            <div className="border-t border-[#1B2A4A]/10 bg-[#FAF6F0] p-4 text-[#23314D]">{faq.answer}</div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function FlowStepper({ steps }: { steps: SpmbContent['flow_steps'] }) {
+  return (
+    <div className="py-4">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {steps.map((step, idx) => (
-          <div key={idx} className="relative bg-white p-6 rounded-lg shadow-sm border-l-4 border-[#C8A951]">
-            <div className="flex items-center mb-2">
-              <div className="bg-[#1B2A4A] text-[#FAF6F0] w-8 h-8 rounded-full flex items-center justify-center font-bold mr-3">
+          <div
+            key={idx}
+            className="relative rounded-lg border-l-4 border-[#C8A951] bg-white p-6 shadow-sm"
+          >
+            <div className="mb-2 flex items-center">
+              <div className="mr-3 flex h-8 w-8 items-center justify-center rounded-full bg-[#1B2A4A] font-bold text-[#FAF6F0]">
                 {idx + 1}
               </div>
-              <h4 className="font-bold text-[#1B2A4A] text-lg">{step.title}</h4>
+              <h4 className="text-lg font-bold text-[#1B2A4A]">{step.title}</h4>
             </div>
-            <p className="text-[#23314D] ml-11">{step.desc}</p>
+            <p className="ml-11 text-[#23314D]">{step.description}</p>
+            {idx < steps.length - 1 && (
+              <ArrowRight className="absolute -right-3 top-1/2 hidden h-5 w-5 -translate-y-1/2 text-[#C8A951] lg:block" />
+            )}
           </div>
         ))}
       </div>
     </div>
   );
-};
+}
 
-const Accordion: React.FC = () => {
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
-  
-  const faqs = [
-    { q: 'Kapan pendaftaran PPDB dibuka?', a: 'Pendaftaran gelombang pertama dibuka mulai tanggal 1-30 Juni 2026 melalui website resmi sekolah.' },
-    { q: 'Apakah ada tes seleksi masuk?', a: 'Ya, terdapat tes akademik dan wawancara untuk peminatan jurusan yang dilaksanakan pada 5-10 Juli 2026.' },
-    { q: 'Dokumen apa saja yang perlu disiapkan?', a: 'Ijazah/SKL, Kartu Keluarga, Akta Kelahiran, Pas Foto, SKHUN, dan Rapor semester 1-5.' },
-    { q: 'Berapa biaya pendaftaran?', a: 'Pendaftaran PPDB SMKN 11 tidak dipungut biaya (Gratis). Biaya yang timbul hanya pada saat daftar ulang untuk seragam dan keperluan pribadi siswa.' },
-    { q: 'Apakah menerima siswa dari luar daerah?', a: 'Ya, kami menerima siswa dari luar Kabupaten Tangerang dengan kuota jalur zonasi/prestasi yang telah ditentukan dinas pendidikan.' }
-  ];
+function ScheduleSection({ schedule }: { schedule: SpmbScheduleItem[] }) {
+  const grouped = (Object.keys(scheduleCategoryLabels) as SpmbScheduleItem['category'][]).map((category) => ({
+    category,
+    label: scheduleCategoryLabels[category],
+    items: schedule.filter((item) => item.category === category),
+  }));
 
   return (
-    <div className="space-y-4">
-      {faqs.map((faq, idx) => (
-        <div key={idx} className="border border-gray-200 rounded-lg bg-white overflow-hidden">
-          <button 
-            className="w-full flex justify-between items-center p-4 text-left font-medium text-[#1B2A4A] hover:bg-gray-50 focus:outline-none"
-            onClick={() => setOpenIndex(openIndex === idx ? null : idx)}
-          >
-            <span className="font-semibold text-lg">{faq.q}</span>
-            {openIndex === idx ? <ChevronUp className="w-5 h-5 text-[#C8A951]" /> : <ChevronDown className="w-5 h-5 text-[#C8A951]" />}
-          </button>
-          {openIndex === idx && (
-            <div className="p-4 bg-[#FAF6F0] border-t border-[#1B2A4A]/10 text-[#23314D]">
-              {faq.a}
+    <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+      {grouped.map(({ category, label, items }) => (
+        <div key={category} className="rounded-xl bg-white p-6 shadow-sm">
+          <div className="mb-4 flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-[#C8A951]" />
+            <h3 className="text-lg font-bold text-[#1B2A4A]">{label}</h3>
+          </div>
+          {items.length === 0 ? (
+            <p className="text-sm text-[#5B7088]">Belum ada jadwal.</p>
+          ) : (
+            <div className="space-y-3">
+              {items.map((item, idx) => (
+                <div key={idx} className="rounded-lg bg-[#1B2A4A] p-4 text-center text-white">
+                  <p className="text-xl font-bold text-[#C8A951]">{item.date}</p>
+                  <p className="mt-1 font-semibold">{item.title}</p>
+                </div>
+              ))}
             </div>
           )}
         </div>
       ))}
     </div>
   );
-};
+}
 
-const Admissions: React.FC = () => {
-  const requirements = [
-    'Ijazah SMP / Surat Keterangan Lulus (SKL)',
-    'Kartu Keluarga (KK)',
-    'Akta Kelahiran',
-    'Pas Foto Berwarna (3x4)',
-    'SKHUN (Surat Keterangan Hasil Ujian Nasional)',
-    'Rapor SMP Semester 1 - 5'
-  ];
+function RegisterButton({ content }: { content: SpmbContent }) {
+  if (content.status === 'dibuka') {
+    return (
+      <Button as="link" href={content.portal_url} variant="primary" size="lg" className="px-8 py-4">
+        <ExternalLink className="mr-2 h-5 w-5" /> DAFTAR SPMB
+      </Button>
+    );
+  }
 
   return (
-    <div className="bg-[#FAF6F0] min-h-screen">
-     <PageHero 
-        title="Penerimaan Peserta Didik Baru (PPDB)" 
-        subtitle="Informasi lengkap pendaftaran siswa baru SMKN 11 Kabupaten Tangerang" 
-        backgroundImage="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1600&q=80"
-      />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">
+    <div className="inline-flex flex-col items-center gap-3">
+      <span className="inline-flex cursor-not-allowed items-center rounded-xl bg-[#1B2A4A]/20 px-8 py-4 text-lg font-semibold text-[#5B7088]">
+        <Lock className="mr-2 h-5 w-5" /> Pendaftaran Ditutup
+      </span>
+      <p className="max-w-md text-sm text-[#E8DCC7]">
+        Pendaftaran SPMB saat ini sedang ditutup. Silakan pantau halaman ini untuk informasi pembukaan berikutnya.
+      </p>
+    </div>
+  );
+}
 
-        {/* Banner Sistem Baru */}
-        <div className="mb-12 overflow-hidden rounded-2xl bg-gradient-to-r from-[#1B2A4A] to-[#0C1527] shadow-xl text-white">
-          <div className="flex flex-col items-center gap-6 p-8 text-center md:flex-row md:text-left md:p-10">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#C8A951]/20">
+const Admissions: React.FC = () => {
+  const [content, setContent] = useState<SpmbContent>(defaultSpmbContent);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchSpmbContent().then((data) => {
+      setContent(data);
+      setLoading(false);
+    });
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#FAF6F0]">
+        <LoadingInline />
+      </div>
+    );
+  }
+
+  const dummyImage = 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=1600&q=80';
+
+  return (
+    <div className="min-h-screen bg-[#FAF6F0]">
+      <section className="relative flex min-h-[250px] w-full items-center bg-[#1B2A4A] text-[#FAF6F0] md:min-h-[320px]">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url(${dummyImage})` }}
+        />
+        <div className="absolute inset-0 bg-[#1B2A4A]/80 bg-gradient-to-r from-[#1B2A4A]/90 to-[#1B2A4A]/60" />
+        <div className="container relative z-10 mx-auto px-4 py-10 md:py-16">
+          <h1 className="mb-4 text-3xl font-bold text-white md:text-5xl">{content.title}</h1>
+          {content.description && (
+            <p className="mb-6 max-w-2xl text-lg text-white/80 md:text-xl">{content.description}</p>
+          )}
+          <nav className="flex text-sm text-[#FAF6F0]" aria-label="Breadcrumb">
+            <ol className="inline-flex items-center space-x-1 md:space-x-3">
+              <li className="inline-flex items-center">
+                <a href="/" className="hover:text-[#C8A951] transition-colors">Beranda</a>
+              </li>
+              <li className="inline-flex items-center">
+                <span className="mx-2 text-white/50">/</span>
+                <span className="text-[#C8A951] font-medium">SPMB</span>
+              </li>
+            </ol>
+          </nav>
+        </div>
+      </section>
+
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 md:py-12 lg:px-8">
+        {/* Status SPMB */}
+        <div className="mb-8 flex flex-wrap items-center gap-4">
+          <span className="inline-flex items-center gap-2 rounded-full bg-[#C8A951]/20 px-4 py-2 text-sm font-semibold text-[#866D2C]">
+            <GraduationCap className="h-4 w-4" /> Portal Informasi SPMB
+          </span>
+          <span className="inline-flex items-center gap-2 text-sm font-medium text-[#5B7088]">
+            <span className={`h-2.5 w-2.5 rounded-full ${content.status === 'dibuka' ? 'bg-green-500' : 'bg-red-500'}`} />
+            Pendaftaran {content.status === 'dibuka' ? 'Dibuka' : 'Ditutup'}
+          </span>
+        </div>
+
+        {/* Banner */}
+        <div className="mb-12 overflow-hidden rounded-2xl bg-gradient-to-r from-[#1B2A4A] to-[#0C1527] text-white shadow-xl relative">
+          <img src={dummyImage} alt="" className="absolute inset-0 h-full w-full object-cover opacity-40" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#1B2A4A]/90 to-[#0C1527]/70" />
+          <div className="relative z-10 flex flex-col items-center gap-6 p-8 text-center md:flex-row md:p-10 md:text-left">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[#C8A951]/20">
               <GraduationCap className="h-8 w-8 text-[#C8A951]" />
             </div>
             <div className="flex-1">
-              <h3 className="text-xl font-bold text-white">PPDB Online SMKN 11 Kab. Tangerang</h3>
-              <p className="mt-1 text-[#F3E8D0]">Daftar sekarang melalui sistem PPDB online. Buat akun, lengkapi data, upload dokumen, dan pantau status pendaftaran secara real-time.</p>
+              <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider">
+                <span
+                  className={`h-2 w-2 rounded-full ${content.status === 'dibuka' ? 'bg-green-400' : 'bg-red-400'}`}
+                />
+                Pendaftaran {content.status === 'dibuka' ? 'Dibuka' : 'Ditutup'}
+              </div>
+              <h3 className="text-xl font-bold text-white">{content.banner_title || content.title}</h3>
+              <p className="mt-2 text-[#F3E8D0]">{content.banner_description}</p>
             </div>
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Button as="link" href="/ppdb/daftar" variant="primary" size="lg" className="w-full sm:w-auto">
-                <UserPlus className="mr-2 h-5 w-5" /> Buat Akun & Daftar
-              </Button>
-              <Button as="link" href="/ppdb/masuk" variant="outline-light" size="lg" className="w-full sm:w-auto">
-                <LogIn className="mr-2 h-5 w-5" /> Sudah Punya Akun
-              </Button>
+            <div className="shrink-0">
+              <RegisterButton content={content} />
             </div>
           </div>
         </div>
 
-        {/* Timeline Section */}
+        {/* Informasi SPMB */}
         <section className="mb-20">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl font-bold text-[#1B2A4A]">Jadwal PPDB Tahun Ajaran 2026/2027</h2>
-            <div className="h-1 w-24 bg-[#C8A951] mx-auto mt-4"></div>
+          <SectionHeading title="Informasi SPMB" subtitle="Penjelasan dan informasi pendaftaran terbaru" />
+          <div className="mt-8 grid gap-6 md:grid-cols-2">
+            <div className="rounded-xl bg-white p-6 shadow-sm">
+              <div className="mb-3 flex items-center gap-2">
+                <Info className="h-5 w-5 text-[#C8A951]" />
+                <h3 className="text-lg font-bold text-[#1B2A4A]">Tentang SPMB</h3>
+              </div>
+              <p className="leading-relaxed text-[#23314D]">{content.description}</p>
+            </div>
+            <div className="rounded-xl border-2 border-[#C8A951]/30 bg-[#C8A951]/5 p-6">
+              <div className="mb-3 flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-[#866D2C]" />
+                <h3 className="text-lg font-bold text-[#1B2A4A]">Informasi Pendaftaran Terbaru</h3>
+              </div>
+              <p className="leading-relaxed text-[#23314D]">{content.latest_info}</p>
+            </div>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { date: '1-30 Juni 2026', title: 'Pendaftaran Online' },
-              { date: '5-10 Juli 2026', title: 'Tes Seleksi' },
-              { date: '15 Juli 2026', title: 'Pengumuman' },
-              { date: '16-20 Juli 2026', title: 'Daftar Ulang' }
-            ].map((item, i) => (
-              <div key={i} className="bg-[#1B2A4A] text-center p-6 rounded-lg text-white">
-                <p className="text-[#C8A951] font-bold text-xl mb-2">{item.date}</p>
-                <h4 className="font-semibold">{item.title}</h4>
+        </section>
+
+        {/* Persyaratan */}
+        <section className="mb-20 rounded-xl bg-white p-8 shadow-sm">
+          <SectionHeading title="Persyaratan" subtitle="Dokumen yang perlu disiapkan calon murid" />
+          <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2">
+            {content.requirements.map((req, i) => (
+              <div
+                key={i}
+                className="flex items-start rounded-lg border border-[#1B2A4A]/10 bg-[#FAF6F0] p-4"
+              >
+                <CheckCircle2 className="mr-3 mt-0.5 h-6 w-6 shrink-0 text-[#C8A951]" />
+                <span className="font-medium text-[#23314D]">{req}</span>
               </div>
             ))}
           </div>
         </section>
 
-        {/* Alur Section */}
+        {/* Jadwal */}
         <section className="mb-20">
-          <SectionHeading title="Alur Pendaftaran" subtitle="Tahapan yang harus dilalui calon siswa" />
-          <Stepper />
-        </section>
-
-        {/* Requirements Section */}
-        <section className="mb-20 bg-white p-8 rounded-lg shadow-sm">
-          <SectionHeading title="Persyaratan Dokumen" />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
-            {requirements.map((req, i) => (
-              <div key={i} className="flex items-center">
-                <CheckCircle2 className="w-6 h-6 text-[#C8A951] mr-3" />
-                <span className="text-[#23314D] font-medium">{req}</span>
-              </div>
-            ))}
+          <SectionHeading title="Jadwal SPMB" subtitle="Tahapan pendaftaran, seleksi, pengumuman, dan daftar ulang" center />
+          <div className="mt-10">
+            <ScheduleSection schedule={content.schedule} />
           </div>
         </section>
 
-        {/* CTA Sistem Baru */}
-        <section className="mb-20 rounded-2xl border-2 border-[#C8A951]/30 bg-[#C8A951]/5 p-8 text-center md:p-12">
-          <GraduationCap className="mx-auto mb-4 h-12 w-12 text-[#C8A951]" />
-          <h2 className="text-2xl font-bold text-[#1B2A4A] md:text-3xl">Daftar Sekarang via PPDB Online</h2>
-          <p className="mx-auto mt-3 max-w-2xl text-[#23314D]">
-            Daftar melalui sistem PPDB online kami. Buat akun, lengkapi formulir, upload dokumen, dan pantau status pendaftaran langsung dari dashboard Anda.
-          </p>
-          <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <Button as="link" href="/ppdb/daftar" variant="primary" size="lg" className="px-8 py-4">
-              <UserPlus className="mr-2 h-5 w-5" /> Buat Akun & Daftar
-            </Button>
-            <Button as="link" href="/ppdb/masuk" variant="outline" size="lg" className="px-8 py-4">
-              <LogIn className="mr-2 h-5 w-5" /> Masuk ke Akun
-            </Button>
-          </div>
-        </section>
-
-        {/* FAQ Section */}
+        {/* Alur Pendaftaran */}
         <section className="mb-20">
-          <SectionHeading title="Tanya Jawab (FAQ)" subtitle="Pertanyaan yang sering diajukan seputar PPDB" center />
-          <div className="max-w-3xl mx-auto mt-10">
-            <Accordion />
+          <SectionHeading title="Alur Pendaftaran" subtitle="Langkah-langkah pendaftaran melalui portal resmi SPMB" />
+          <FlowStepper steps={content.flow_steps} />
+        </section>
+
+        {/* FAQ */}
+        <section className="mb-20">
+          <SectionHeading title="Tanya Jawab (FAQ)" subtitle="Pertanyaan umum seputar SPMB" center />
+          <div className="mx-auto mt-10 max-w-3xl">
+            <FaqAccordion items={content.faq} />
           </div>
         </section>
 
-        {/* CTA Section */}
-        <section className="text-center bg-[#1B2A4A] rounded-2xl p-12 text-white">
-          <h2 className="text-3xl font-bold mb-4">Siap Bergabung Bersama Kami?</h2>
-          <p className="text-[#E8DCC7] mb-8 max-w-2xl mx-auto">
-            Jangan lewatkan kesempatan untuk mengembangkan potensi Anda bersama SMKN 11 Kabupaten Tangerang.
-          </p>
-          <Button as="link" href="/ppdb/daftar" variant="primary" size="lg" className="text-lg px-8 py-4">
-            <UserPlus className="mr-2 h-5 w-5 inline" /> Daftar Sekarang
-          </Button>
-          <p className="mt-4 text-sm text-[#E8DCC7]">
-            Sudah punya akun? <Link to="/ppdb/masuk" className="font-semibold text-[#C8A951] hover:underline">Masuk di sini</Link>
-          </p>
+        {/* CTA */}
+        <section className="relative overflow-hidden rounded-2xl bg-[#1B2A4A] text-center text-white">
+          <img src={dummyImage} alt="Kegiatan siswa SMKN 11" className="absolute inset-0 h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#0C1527]/60 via-[#1B2A4A]/50 to-[#1B2A4A]/20" />
+          <div className="relative z-10 p-12">
+            <GraduationCap className="mx-auto mb-4 h-12 w-12 text-[#C8A951]" />
+            <h2 className="mb-4 text-3xl font-bold">Siap Bergabung Bersama Kami?</h2>
+            <p className="mx-auto mb-8 max-w-2xl text-[#E8DCC7]">
+              Daftar melalui portal resmi SPMB Provinsi Banten. Website sekolah hanya menyediakan informasi dan
+              pengarahan — seluruh proses pendaftaran dilakukan di portal pemerintah.
+            </p>
+            <RegisterButton content={content} />
+            {content.status === 'dibuka' && (
+              <p className="mt-4 text-sm text-[#E8DCC7]">
+                Anda akan diarahkan ke{' '}
+                <a
+                  href={content.portal_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold text-[#C8A951] hover:underline"
+                >
+                  portal resmi SPMB Banten
+                </a>
+              </p>
+            )}
+          </div>
         </section>
-
       </div>
     </div>
   );

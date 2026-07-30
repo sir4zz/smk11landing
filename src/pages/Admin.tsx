@@ -1,20 +1,25 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
-import { BarChart3, BookOpen, Building2, FileText, GraduationCap, LogOut, Mail, Menu, Pencil, Plus, Trophy, Trash2, Users, X, Search, Download, CheckCircle2, Eye } from 'lucide-react';
+import { BarChart3, BookOpen, Building2, FileText, GraduationCap, LogOut, Mail, Menu, Pencil, Plus, Trophy, Trash2, Users, X, Save } from 'lucide-react';
 import logoSekolah from '../assets/logo.png';
 import { news as initialNews } from '../data/news';
 import { programs as initialPrograms } from '../data/programs';
 import { facilities as initialFacilities } from '../data/facilities';
 import { staffData as initialStaff } from '../data/staff';
 import { achievements as initialAchievements } from '../data/achievements';
+import { defaultSpmbContent, type SpmbContent, type SpmbFaqItem, type SpmbFlowStep, type SpmbScheduleItem } from '../data/spmb';
 import { insforge } from '../lib/api';
 import { LoadingInline } from '../components/ui/LoadingScreen';
 
-type Section = 'dashboard' | 'news' | 'programs' | 'facilities' | 'staff' | 'achievements' | 'ppdb' | 'contact';
-type EditableSection = Exclude<Section, 'dashboard' | 'contact'>;
+type Section = 'dashboard' | 'news' | 'programs' | 'facilities' | 'staff' | 'achievements' | 'spmb' | 'contact';
+type EditableSection = Exclude<Section, 'dashboard' | 'contact' | 'spmb'>;
 type Item = Record<string, unknown>;
 const sessionKey = 'smkn11-admin-session';
+const TABLE_MAP: Record<string, string> = {
+  news: 'news', programs: 'programs', facilities: 'facilities',
+  staff: 'staff', achievements: 'achievements',
+};
 
 const seed = {
   news: initialNews,
@@ -22,10 +27,6 @@ const seed = {
   facilities: initialFacilities,
   staff: initialStaff,
   achievements: initialAchievements,
-  ppdb: [
-    { id: 'ppdb-1', name: 'Aulia Rahman', program: 'Teknik Jaringan Komputer dan Telekomunikasi', status: 'Menunggu Verifikasi', date: '2026-07-23' },
-    { id: 'ppdb-2', name: 'Nadia Putri', program: 'Desain Komunikasi Visual', status: 'Terverifikasi', date: '2026-07-22' },
-  ],
   contact: [] as Item[],
 };
 
@@ -35,21 +36,25 @@ const configs: Record<EditableSection, { title: string; icon: typeof FileText; f
   facilities: { title: 'Fasilitas', icon: Building2, fields: [{ key: 'name', label: 'Nama Fasilitas' }, { key: 'category', label: 'Kategori' }, { key: 'description', label: 'Deskripsi' }] },
   staff: { title: 'Staf & Guru', icon: Users, fields: [{ key: 'name', label: 'Nama' }, { key: 'position', label: 'Jabatan' }, { key: 'department', label: 'Unit / Departemen' }] },
   achievements: { title: 'Prestasi', icon: Trophy, fields: [{ key: 'title', label: 'Judul Prestasi' }, { key: 'event', label: 'Acara' }, { key: 'level', label: 'Tingkat' }, { key: 'rank', label: 'Peringkat' }, { key: 'year', label: 'Tahun', type: 'number' }] },
-  ppdb: { title: 'Pendaftar PPDB', icon: GraduationCap, fields: [{ key: 'name', label: 'Nama Calon Siswa' }, { key: 'program', label: 'Program Pilihan' }, { key: 'status', label: 'Status' }, { key: 'date', label: 'Tanggal', type: 'date' }] },
 };
 
-function normalizePpdbApplications(items: Array<Record<string, unknown>>) {
-  return items.map(item => ({
-    id: item.id ?? '',
-    name: item.name ?? '-',
-    program: item.program ?? '-',
-    status: item.status ?? 'Menunggu Verifikasi',
-    date: (item.date as string | undefined) ?? (item.submitted_at as string | undefined) ?? '',
-    email: item.email ?? '',
-    nisn: item.nisn ?? '',
-    phone: item.phone ?? '',
-    address: item.address ?? '',
-  }));
+function normalizeSpmbRow(row: Record<string, unknown>): SpmbContent {
+  return {
+    id: row.id as string | undefined,
+    status: (row.status as SpmbContent['status']) || 'ditutup',
+    title: String(row.title ?? defaultSpmbContent.title),
+    description: String(row.description ?? ''),
+    latest_info: String(row.latest_info ?? ''),
+    requirements: Array.isArray(row.requirements) ? (row.requirements as string[]) : [],
+    schedule: Array.isArray(row.schedule) ? (row.schedule as SpmbScheduleItem[]) : [],
+    flow_steps: Array.isArray(row.flow_steps) ? (row.flow_steps as SpmbFlowStep[]) : [],
+    faq: Array.isArray(row.faq) ? (row.faq as SpmbFaqItem[]) : [],
+    portal_url: String(row.portal_url ?? defaultSpmbContent.portal_url),
+    banner_image: String(row.banner_image ?? ''),
+    banner_title: String(row.banner_title ?? ''),
+    banner_description: String(row.banner_description ?? ''),
+    updated_at: row.updated_at as string | undefined,
+  };
 }
 
 export function AdminLogin() {
@@ -122,17 +127,20 @@ export default function Admin() {
 
   useEffect(() => {
     insforge.auth.getCurrentUser().then(({ data }) => {
-      if (!data.user) return;
+      if (!data.user) {
+        localStorage.removeItem(sessionKey);
+        navigate('/admin/login', { replace: true });
+        return;
+      }
       Promise.all([
-        insforge.database.from('content_records').select('*').eq('content_type', 'news').then((r: any) => r.data?.map((d: any) => ({ ...d.data, id: d.id })) || []),
-        insforge.database.from('content_records').select('*').eq('content_type', 'programs').then((r: any) => r.data?.map((d: any) => ({ ...d.data, id: d.id })) || []),
-        insforge.database.from('content_records').select('*').eq('content_type', 'facilities').then((r: any) => r.data?.map((d: any) => ({ ...d.data, id: d.id })) || []),
-        insforge.database.from('content_records').select('*').eq('content_type', 'staff').then((r: any) => r.data?.map((d: any) => ({ ...d.data, id: d.id })) || []),
-        insforge.database.from('content_records').select('*').eq('content_type', 'achievements').then((r: any) => r.data?.map((d: any) => ({ ...d.data, id: d.id })) || []),
-        insforge.database.from('ppdb_registrations').select('*').then((r: any) => r.data?.map((d: any) => ({...d, name: d.full_name})) || []),
+        insforge.database.from(TABLE_MAP.news).select('*').then((r: any) => r.data || []),
+        insforge.database.from(TABLE_MAP.programs).select('*').then((r: any) => r.data || []),
+        insforge.database.from(TABLE_MAP.facilities).select('*').then((r: any) => r.data || []),
+        insforge.database.from(TABLE_MAP.staff).select('*').then((r: any) => r.data || []),
+        insforge.database.from(TABLE_MAP.achievements).select('*').then((r: any) => r.data || []),
         insforge.database.from('contact_messages').select('*').then((r: any) => r.data || []),
-      ]).then(([news, programs, facilities, staff, achievements, ppdb, contact]) => setData({
-        news, programs, facilities, staff, achievements, ppdb: normalizePpdbApplications(ppdb), contact,
+      ]).then(([news, programs, facilities, staff, achievements, contact]) => setData({
+        news, programs, facilities, staff, achievements, contact,
       })).catch(() => {});
     })
   }, []);
@@ -144,26 +152,16 @@ export default function Admin() {
 
   const update = async (next: Item) => {
     try {
-      const isPpdb = section === 'ppdb';
+      const { id, ...dataToSave } = next;
       let payload;
-      
-      if (isPpdb) {
-        if (editing) {
-          const { error, data } = await insforge.database.from('ppdb_registrations').update(next).eq('id', editing.id).select().single();
-          if (error) throw error;
-          payload = data;
-        }
+      if (editing) {
+        const { error, data } = await insforge.database.from(TABLE_MAP[section as EditableSection]).update(dataToSave).eq('id', editing.id).select().single();
+        if (error) throw error;
+        payload = data;
       } else {
-        const { id, ...dataToSave } = next;
-        if (editing) {
-          const { error, data } = await insforge.database.from('content_records').update({ data: dataToSave }).eq('id', editing.id).select().single();
-          if (error) throw error;
-          payload = { ...data.data, id: data.id };
-        } else {
-          const { error, data } = await insforge.database.from('content_records').insert([{ content_type: section, data: dataToSave }]).select().single();
-          if (error) throw error;
-          payload = { ...data.data, id: data.id };
-        }
+        const { error, data } = await insforge.database.from(TABLE_MAP[section as EditableSection]).insert([dataToSave]).select().single();
+        if (error) throw error;
+        payload = data;
       }
 
       if (payload) {
@@ -179,14 +177,11 @@ export default function Admin() {
   const remove = async (id: unknown) => {
     if (!confirm('Hapus data ini?')) return;
     try {
-      if (section === 'ppdb') {
-        const { error } = await insforge.database.from('ppdb_registrations').delete().eq('id', id);
-        if (error) throw error;
-      } else if (section === 'contact') {
+      if (section === 'contact') {
         const { error } = await insforge.database.from('contact_messages').delete().eq('id', id);
         if (error) throw error;
       } else {
-        const { error } = await insforge.database.from('content_records').delete().eq('id', id);
+        const { error } = await insforge.database.from(TABLE_MAP[section]).delete().eq('id', id);
         if (error) throw error;
       }
       setData(current => ({ ...current, [section]: current[section].filter(item => item.id !== id) }));
@@ -203,8 +198,8 @@ export default function Admin() {
     }));
   };
 
-  const active = section === 'dashboard' ? null : section === 'contact' ? { title: 'Pesan Kontak', icon: Mail, fields: [] } : configs[section];
-  const editableSections = section !== 'dashboard' && section !== 'contact';
+  const active = section === 'dashboard' ? null : section === 'contact' ? { title: 'Pesan Kontak', icon: Mail, fields: [] } : section === 'spmb' ? { title: 'Kelola SPMB', icon: GraduationCap, fields: [] } : configs[section];
+  const editableSections = section !== 'dashboard' && section !== 'contact' && section !== 'spmb';
 
   return (
     <div className="min-h-screen bg-[#FAF6F0] text-[#1B2A4A]">
@@ -216,6 +211,7 @@ export default function Admin() {
         <nav className="space-y-1">
           <Nav label="Dashboard" icon={BarChart3} active={section === 'dashboard'} onClick={() => setSection('dashboard')} />
           {menu.map(key => <Nav key={key} label={configs[key].title} icon={configs[key].icon} active={section === key} onClick={() => setSection(key)} />)}
+          <Nav label="Kelola SPMB" icon={GraduationCap} active={section === 'spmb'} onClick={() => setSection('spmb')} />
           <Nav label="Pesan Kontak" icon={Mail} active={section === 'contact'} onClick={() => setSection('contact')} />
         </nav>
         <button onClick={async () => {
@@ -242,9 +238,9 @@ export default function Admin() {
             <ContactMessages items={data.contact} onMarkRead={markRead} onDelete={remove} />
           )}
 
-          {section === 'ppdb' && <PPDBManagement />}
+          {section === 'spmb' && <SPMBManagement />}
 
-          {editableSections && section !== 'ppdb' && (
+          {editableSections && (
             <>
               <div className="mb-6 flex items-center justify-between">
                 <p className="text-[#23314D]">Kelola data {active!.title.toLowerCase()}.</p>
@@ -354,7 +350,10 @@ function Table({ items, config, onEdit, onDelete }: { items: Item[]; config: { f
   );
 }
 
-/* ===== PPDB Management (New System) ===== */
+/* Legacy PPDB applicant-management code is intentionally disabled. SPMB is an
+   information portal and must not expose registration, document, or selection tools.
+
+===== PPDB Management (New System) =====
 const ppdbStatuses = ['Menunggu Verifikasi', 'Sedang Diverifikasi', 'Perlu Perbaikan Dokumen', 'Lolos Seleksi', 'Cadangan', 'Tidak Lolos', 'Sudah Daftar Ulang'];
 
 function PPDBManagement() {
@@ -388,8 +387,8 @@ function PPDBManagement() {
         setTotalPages(Math.ceil((count || 0) / 20));
         
         // Also fetch unique programs for filter
-        const { data: progs } = await insforge.database.from('content_records').select('data').eq('content_type', 'programs');
-        if (progs) setPrograms((progs as any[]).map((p: any) => p.data.name));
+        const { data: progs } = await insforge.database.from(TABLE_MAP.programs).select('name');
+        if (progs) setPrograms((progs as any[]).map((p: any) => p.name));
       }
     } catch {} finally { setLoading(false); }
   };
@@ -456,7 +455,7 @@ function PPDBManagement() {
 
   return (
     <div>
-      {/* Stats */}
+      {/* Stats * /}
       {statCards.length > 0 && (
         <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {statCards.map((s: any) => (
@@ -468,7 +467,7 @@ function PPDBManagement() {
         </div>
       )}
 
-      {/* Filter & Search */}
+      {/* Filter & Search * /}
       <div className="mb-6 flex flex-wrap items-center gap-4">
         <div className="relative w-full sm:flex-1 sm:min-w-[200px]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#23314D]/50" />
@@ -500,7 +499,7 @@ function PPDBManagement() {
         </button>
       </div>
 
-      {/* Table */}
+      {/* Table * /}
       <div className="overflow-x-auto rounded-xl bg-white shadow-sm">
         <table className="w-full text-left text-sm">
           <thead className="bg-[#FAF6F0] text-[#1B2A4A]">
@@ -538,7 +537,7 @@ function PPDBManagement() {
         </table>
       </div>
 
-      {/* Pagination */}
+      {/* Pagination * /}
       {totalPages > 1 && (
         <div className="mt-4 flex items-center justify-between text-sm">
           <span className="text-[#5B7088]">Total: {total}</span>
@@ -550,7 +549,7 @@ function PPDBManagement() {
         </div>
       )}
 
-      {/* Detail Modal */}
+      {/* Detail Modal * /}
       {detail && (
         <PPDBDetail
           data={detail}
@@ -593,7 +592,7 @@ function PPDBDetail({ data, onClose, onUpdateStatus, onVerifyDoc }: {
         </div>
 
         <div className="space-y-6 p-6">
-          {/* Info */}
+          {/* Info * /}
           <div className="grid gap-4 md:grid-cols-2">
             <div><span className="text-xs text-[#5B7088]">No. Pendaftaran</span><p className="font-mono font-bold">{data.registration?.registration_number || data.registration_number}</p></div>
             <div><span className="text-xs text-[#5B7088]">Nama</span><p className="font-semibold">{data.registration?.full_name || data.full_name || data.name}</p></div>
@@ -609,7 +608,7 @@ function PPDBDetail({ data, onClose, onUpdateStatus, onVerifyDoc }: {
             <div><span className="text-xs text-[#5B7088]">Jurusan</span><p className="font-semibold">{data.registration?.program || data.program}</p></div>
           </div>
 
-          {/* Parent Data */}
+          {/* Parent Data * /}
           <div>
             <h3 className="mb-3 font-semibold text-[#1B2A4A]">Data Orang Tua</h3>
             <div className="grid gap-3 md:grid-cols-2 text-sm">
@@ -620,7 +619,7 @@ function PPDBDetail({ data, onClose, onUpdateStatus, onVerifyDoc }: {
             </div>
           </div>
 
-          {/* Previous School */}
+          {/* Previous School * /}
           <div>
             <h3 className="mb-3 font-semibold text-[#1B2A4A]">Sekolah Asal</h3>
             <div className="grid gap-3 md:grid-cols-2 text-sm">
@@ -629,7 +628,7 @@ function PPDBDetail({ data, onClose, onUpdateStatus, onVerifyDoc }: {
             </div>
           </div>
 
-          {/* Documents */}
+          {/* Documents * /}
           <div>
             <h3 className="mb-3 font-semibold text-[#1B2A4A]">Dokumen</h3>
             {(!data.documents || data.documents.length === 0) ? (
@@ -668,7 +667,7 @@ function PPDBDetail({ data, onClose, onUpdateStatus, onVerifyDoc }: {
             )}
           </div>
 
-          {/* Update Status */}
+          {/* Update Status * /}
           <div>
             <h3 className="mb-3 font-semibold text-[#1B2A4A]">Ubah Status</h3>
             <div className="flex flex-wrap gap-3">
@@ -680,7 +679,7 @@ function PPDBDetail({ data, onClose, onUpdateStatus, onVerifyDoc }: {
             </div>
           </div>
 
-          {/* Activity Log */}
+          {/* Activity Log * /}
           {data.activities && data.activities.length > 0 && (
             <div>
               <h3 className="mb-3 font-semibold text-[#1B2A4A]">Riwayat Aktivitas</h3>
@@ -702,6 +701,122 @@ function PPDBDetail({ data, onClose, onUpdateStatus, onVerifyDoc }: {
       </div>
     </div>
   );
+}
+
+*/
+
+function SPMBManagement() {
+  const [content, setContent] = useState<SpmbContent>(defaultSpmbContent);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    const load = async () => {
+      const { data, error } = await insforge.database.from('spmb_content').select('*').limit(1).maybeSingle();
+      if (!error && data) setContent(normalizeSpmbRow(data as Record<string, unknown>));
+      setLoading(false);
+    };
+    load();
+  }, []);
+
+  const update = <K extends keyof SpmbContent>(key: K, value: SpmbContent[K]) => {
+    setContent((current) => ({ ...current, [key]: value }));
+  };
+
+  const save = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSaving(true);
+    setMessage('');
+    const { data: { user } } = await insforge.auth.getCurrentUser();
+    if (!user) {
+      setMessage('Sesi telah habis. Silakan login ulang.');
+      setSaving(false);
+      return;
+    }
+    const { id, ...payload } = content;
+    try {
+      let dbError;
+      if (id) {
+        const { error } = await insforge.database.from('spmb_content').update(payload).eq('id', id);
+        dbError = error;
+      } else {
+        const { error } = await insforge.database.from('spmb_content').insert([payload]);
+        dbError = error;
+      }
+      if (dbError) throw dbError;
+      const { data: refreshed, error: refetchError } = await insforge.database.from('spmb_content').select('*').limit(1).maybeSingle();
+      if (refetchError) throw refetchError;
+      if (!refreshed) throw new Error('Data tidak ditemukan setelah simpan.');
+      setContent(normalizeSpmbRow(refreshed as Record<string, unknown>));
+      setMessage('Informasi SPMB berhasil disimpan.');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Gagal menyimpan informasi SPMB.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) return <LoadingInline />;
+
+  return (
+    <form onSubmit={save} className="mx-auto max-w-5xl space-y-6">
+      <div className="rounded-xl bg-white p-6 shadow-sm">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-bold">Pengaturan Portal SPMB</h2>
+            <p className="mt-1 text-sm text-[#5B7088]">Semua informasi pada halaman publik diambil dari data ini.</p>
+          </div>
+          <label className="flex items-center gap-3 rounded-lg bg-[#FAF6F0] px-4 py-2 text-sm font-semibold">
+            Status pendaftaran
+            <select value={content.status} onChange={(event) => update('status', event.target.value as SpmbContent['status'])} className="rounded border border-[#1B2A4A]/20 bg-white px-2 py-1">
+              <option value="dibuka">Dibuka</option>
+              <option value="ditutup">Ditutup</option>
+            </select>
+          </label>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <Field label="Judul" value={content.title} onChange={(value) => update('title', value)} />
+          <Field label="Link pendaftaran resmi" type="url" value={content.portal_url} onChange={(value) => update('portal_url', value)} />
+          <Field label="Deskripsi" multiline value={content.description} onChange={(value) => update('description', value)} />
+          <Field label="Informasi pendaftaran terbaru" multiline value={content.latest_info} onChange={(value) => update('latest_info', value)} />
+        </div>
+      </div>
+
+      <div className="rounded-xl bg-white p-6 shadow-sm">
+        <h3 className="mb-4 text-lg font-bold">Banner SPMB</h3>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Field label="URL gambar banner" type="url" value={content.banner_image} onChange={(value) => update('banner_image', value)} />
+          <Field label="Judul banner" value={content.banner_title} onChange={(value) => update('banner_title', value)} />
+          <div className="md:col-span-2"><Field label="Deskripsi banner" multiline value={content.banner_description} onChange={(value) => update('banner_description', value)} /></div>
+        </div>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <ListField label="Persyaratan" hint="Satu persyaratan per baris." value={content.requirements.join('\n')} onChange={(value) => update('requirements', lines(value))} />
+        <ListField label="Jadwal" hint="Satu baris: kategori | tanggal | judul. Kategori: pendaftaran, seleksi, pengumuman, daftar_ulang." value={content.schedule.map((item) => `${item.category} | ${item.date} | ${item.title}`).join('\n')} onChange={(value) => update('schedule', lines(value).map((line) => { const [category = 'pendaftaran', date = '', title = ''] = line.split('|').map((part) => part.trim()); return { category: ['pendaftaran', 'seleksi', 'pengumuman', 'daftar_ulang'].includes(category) ? category as SpmbScheduleItem['category'] : 'pendaftaran', date, title }; }))} />
+        <ListField label="Alur pendaftaran" hint="Satu baris: judul | deskripsi." value={content.flow_steps.map((item) => `${item.title} | ${item.description}`).join('\n')} onChange={(value) => update('flow_steps', lines(value).map((line) => { const [title = '', ...description] = line.split('|'); return { title: title.trim(), description: description.join('|').trim() }; }))} />
+        <ListField label="FAQ" hint="Satu baris: pertanyaan | jawaban." value={content.faq.map((item) => `${item.question} | ${item.answer}`).join('\n')} onChange={(value) => update('faq', lines(value).map((line) => { const [question = '', ...answer] = line.split('|'); return { question: question.trim(), answer: answer.join('|').trim() }; }))} />
+      </div>
+
+      {message && <p className={`rounded-lg p-3 text-sm ${message.startsWith('Informasi') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>{message}</p>}
+      <div className="flex justify-end"><button disabled={saving} className="inline-flex items-center gap-2 rounded-lg bg-[#1B2A4A] px-5 py-3 font-bold text-white disabled:opacity-60"><Save size={18} /> {saving ? 'Menyimpan...' : 'Simpan Pengaturan SPMB'}</button></div>
+    </form>
+  );
+}
+
+function lines(value: string) {
+  return value.split('\n').map((item) => item.trim()).filter(Boolean);
+}
+
+function Field({ label, value, onChange, multiline = false, type = 'text' }: { label: string; value: string; onChange: (value: string) => void; multiline?: boolean; type?: string }) {
+  const className = 'mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal';
+  return <label className="block text-sm font-semibold">{label}{multiline ? <textarea value={value} onChange={(event) => onChange(event.target.value)} rows={4} className={className} /> : <input type={type} value={value} onChange={(event) => onChange(event.target.value)} className={className} />}</label>;
+}
+
+function ListField({ label, hint, value, onChange }: { label: string; hint: string; value: string; onChange: (value: string) => void }) {
+  return <label className="block rounded-xl bg-white p-6 text-sm font-semibold shadow-sm">{label}<span className="mt-1 block font-normal text-[#5B7088]">{hint}</span><textarea value={value} onChange={(event) => onChange(event.target.value)} rows={8} className="mt-3 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" /></label>;
 }
 
 function Editor({ config, item, onClose, onSave }: { config: { title: string; fields: { key: string; label: string; type?: string }[] }; item: Item | null; onClose: () => void; onSave: (item: Item) => void }) {

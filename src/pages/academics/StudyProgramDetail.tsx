@@ -126,7 +126,7 @@ const StudyProgramDetail: React.FC = () => {
                 <div className="space-y-4 border-t border-gray-600 pt-6">
                   <h4 className="font-semibold text-lg text-white">Tertarik dengan program ini?</h4>
                   <p className="text-sm text-[#E8DCC7]">Daftar sekarang melalui portal PPDB online kami.</p>
-                  <Link to="/ppdb" className="block mt-4">
+                  <Link to="/spmb" className="block mt-4">
                     <Button className="w-full bg-[#C8A951] hover:bg-[#b09444] text-[#1B2A4A] font-bold">
                       Daftar Sekarang
                     </Button>

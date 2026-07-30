@@ -44,6 +44,13 @@ export const Button: React.FC<ButtonProps> = ({
   const combinedClasses = `${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`;
 
   if (as === 'link' && href) {
+    if (/^https?:\/\//i.test(href)) {
+      return (
+        <a href={href} target="_blank" rel="noopener noreferrer" className={combinedClasses} style={style}>
+          {children}
+        </a>
+      );
+    }
     return (
       <Link to={href} className={combinedClasses} style={style}>
         {children}
