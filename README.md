@@ -63,8 +63,8 @@ smkn11-website/
 
 ```bash
 # 1. Clone
-git clone https://github.com/goonersmania11/websmkn11.git
-cd websmkn11
+git clone https://github.com/sir4zz/smk11landing.git
+cd smk11landing
 
 # 2. Install dependencies
 npm install
