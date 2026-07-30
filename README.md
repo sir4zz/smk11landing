@@ -1,15 +1,10 @@
-# 🎓 Website Resmi SMKN 11 Kabupaten Tangerang
+# Website Resmi SMKN 11 Kabupaten Tangerang
 
-Website resmi SMKN 11 Kabupaten Tangerang yang dibangun menggunakan **React + TypeScript + Vite** untuk frontend serta **Express.js + MySQL** sebagai backend API.
+Website resmi SMKN 11 Kabupaten Tangerang dibangun dengan **React + TypeScript + Vite** dan **InsForge** sebagai backend (Postgres BaaS).
 
-Website ini bertujuan untuk menyediakan informasi sekolah secara modern, responsif, dan mudah dikelola melalui halaman admin.
+## Fitur
 
----
-
-## 📌 Fitur
-
-### 🌐 Halaman Publik
-
+### Halaman Publik
 - Beranda
 - Profil Sekolah
 - Program Keahlian
@@ -17,50 +12,35 @@ Website ini bertujuan untuk menyediakan informasi sekolah secara modern, respons
 - Struktur Organisasi
 - Berita
 - Prestasi
-- PPDB
+- SPMB (Seleksi Penerimaan Murid Baru)
 - Kontak
 
-### 🔐 Admin Panel
-
-- Login Admin
+### Admin Panel
+- Login Admin (InsForge Auth)
 - Dashboard
-- Kelola Program Keahlian
-- Kelola Berita
-- Kelola Prestasi
-- Kelola PPDB
-- Kelola Struktur Organisasi
-- Kelola Fasilitas
-- Kelola Konten Website
+- Kelola Program Keahlian, Berita, Prestasi, Fasilitas, Struktur Organisasi
+- Kelola SPMB (status, banner, jadwal, alur, FAQ)
+- Kelola Pesan Kontak
 
----
-
-## 🛠️ Teknologi
+## Teknologi
 
 ### Frontend
-
-- React 19
-- TypeScript
+- React 19 + TypeScript
 - Vite
 - React Router DOM
 - Tailwind CSS
 - Lucide React
 
-### Backend
+### Backend & Infrastructure
+- **InsForge** (https://insforge.dev) — Postgres BaaS
+  - Database (PostgreSQL), Authentication, File Storage, Edge Functions
+  - Realtime, AI Gateway (OpenRouter), Email, Stripe Payments
+- SDK: `@insforge/sdk`
 
-- Express.js
-- MySQL
-- JWT Authentication
-- bcryptjs
-- dotenv
-- cors
-
----
-
-## 📂 Struktur Project
+## Struktur Project
 
 ```
 smkn11-website/
-│
 ├── src/
 │   ├── assets/
 │   ├── components/
@@ -70,180 +50,68 @@ smkn11-website/
 │   ├── pages/
 │   ├── routes/
 │   └── styles/
-│
-├── server/
-│   ├── controllers/
-│   ├── routes/
-│   ├── middleware/
-│   ├── config/
-│   └── index.js
-│
+├── migrations/          # Database migrations (SQL)
 ├── public/
+├── .env                 # VITE_INSFORGE_URL + VITE_INSFORGE_ANON_KEY
+├── .insforge/           # Project config (jangan di-commit)
+├── vercel.json
 ├── package.json
 └── README.md
 ```
 
----
-
-## ⚙️ Instalasi
-
-### 1. Clone Repository
+## Instalasi & Menjalankan
 
 ```bash
+# 1. Clone
 git clone https://github.com/goonersmania11/websmkn11.git
-```
-
-Masuk ke folder project
-
-```bash
 cd websmkn11
-```
 
----
-
-### 2. Install Dependency
-
-```bash
+# 2. Install dependencies
 npm install
-```
 
----
+# 3. Setup environment
+# Buat file .env dengan:
+# VITE_INSFORGE_URL=https://qptmh227.ap-southeast.insforge.app
+# VITE_INSFORGE_ANON_KEY=<anon-key>
 
-### 3. Konfigurasi Environment
-
-Salin file
-
-```
-.env.example
-```
-
-menjadi
-
-```
-.env
-```
-
-Lalu sesuaikan konfigurasi database.
-
-Contoh:
-
-```env
-DB_HOST=localhost
-DB_PORT=3306
-DB_NAME=smkn11
-DB_USER=root
-DB_PASSWORD=
-
-JWT_SECRET=your_secret_key
-PORT=3000
-```
-
----
-
-### 4. Jalankan Backend
-
-```bash
-npm run server
-```
-
-Backend akan berjalan pada
-
-```
-http://localhost:3000
-```
-
----
-
-### 5. Jalankan Frontend
-
-```bash
+# 4. Jalankan dev server
 npm run dev
 ```
 
-Frontend akan berjalan pada
+Frontend berjalan di `http://localhost:5173`.
 
-```
-http://localhost:5173
-```
-
----
-
-## 📦 Script
-
-Menjalankan frontend
+## Build & Deploy
 
 ```bash
-npm run dev
+npm run build          # Build production
+npx @insforge/cli deployments deploy .   # Deploy ke InsForge
 ```
 
-Menjalankan backend
+## Script
+
+| Perintah | Keterangan |
+|----------|------------|
+| `npm run dev` | Jalankan dev server |
+| `npm run build` | Build production |
+| `npm run preview` | Preview build |
+| `npm run lint` | Lint project |
+
+## Database Migrations
 
 ```bash
-npm run server
+npx @insforge/cli db migrations list     # Lihat migrasi yang sudah terpasang
+npx @insforge/cli db migrations up --all  # Jalankan migrasi pending
+npx @insforge/cli db migrations new <name> # Buat migrasi baru
 ```
 
-Build project
+## Admin
 
-```bash
-npm run build
-```
+Login di `/admin/login` menggunakan akun InsForge Auth dengan role `admin` di tabel `profiles`.
 
-Preview build
+## Deploy
 
-```bash
-npm run preview
-```
+Live: https://qptmh227.insforge.site
 
-Lint project
+## License
 
-```bash
-npm run lint
-```
-
----
-
-## 📱 Responsive
-
-Website telah dibuat responsive untuk:
-
-- Desktop
-- Laptop
-- Tablet
-- Mobile
-
----
-
-## 🔒 Authentication
-
-Admin menggunakan:
-
-- JWT (JSON Web Token)
-- Password Hashing (bcrypt)
-
----
-
-## 🗄️ Database
-
-Database menggunakan MySQL.
-
-Data yang dikelola meliputi:
-
-- Admin
-- Program Keahlian
-- Berita
-- Prestasi
-- PPDB
-- Fasilitas
-- Struktur Organisasi
-
----
-
-## 👨‍💻 Tim Pengembang
-
-Proyek ini dikembangkan sebagai Website Resmi **SMKN 11 Kabupaten Tangerang**.
-
----
-
-## 📄 License
-
-Project ini dibuat untuk kebutuhan akademik dan pengembangan Website SMKN 11 Kabupaten Tangerang.
+Dikembangkan untuk SMKN 11 Kabupaten Tangerang.
