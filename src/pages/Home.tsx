@@ -190,13 +190,16 @@ const Home: React.FC = () => {
 
               {/* Floating Badge */}
               <div className="absolute top-20 left-0 animate-bounce" style={{ animationDuration: '3s' }}>
-                <div className="flex items-center gap-4 rounded-full border border-white/20 bg-white/10 p-3 pr-6 backdrop-blur-xl shadow-2xl">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#C8A951] text-[#1B2A4A] shadow-inner">
-                    <Trophy className="h-6 w-6" />
+                <div className="flex items-center gap-4 rounded-2xl border border-[#C8A951]/50 bg-gradient-to-br from-[#23314D]/95 to-[#1B2A4A]/95 p-4 pr-6 shadow-2xl backdrop-blur-xl">
+                  <div className="relative flex h-14 w-14 shrink-0 items-center justify-center">
+                    <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#E9CE7B] to-[#C8A951] shadow-[0_0_20px_rgba(200,169,81,0.5)]" />
+                    <div className="absolute inset-[3px] rounded-full border-2 border-dashed border-[#1B2A4A]/60" />
+                    <span className="relative text-2xl font-black italic text-[#1B2A4A]">B</span>
                   </div>
-                  <div className="flex flex-col justify-center">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-white/80">Akreditasi</span>
-                    <span className="text-lg font-black text-white drop-shadow-md">(B)</span>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-[#C8A951]">Akreditasi</span>
+                    <span className="text-base font-black text-white">Peringkat B</span>
+                    <span className="text-[10px] font-semibold text-white/60">BAN-S/M</span>
                   </div>
                 </div>
               </div>
