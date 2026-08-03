@@ -1,24 +1,28 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
-import { BarChart3, BookOpen, Building2, FileText, GraduationCap, LogOut, Mail, Menu, Pencil, Plus, Trophy, Trash2, Users, X, Save } from 'lucide-react';
+import { BarChart3, BookOpen, Briefcase, Building2, CalendarDays, FileText, GraduationCap, LogOut, Mail, Menu, Pencil, Plus, Trophy, Trash2, Upload, Users, X, Save } from 'lucide-react';
 import logoSekolah from '../assets/logo.png';
 import { news as initialNews } from '../data/news';
 import { programs as initialPrograms } from '../data/programs';
 import { facilities as initialFacilities } from '../data/facilities';
 import { staffData as initialStaff } from '../data/staff';
 import { achievements as initialAchievements } from '../data/achievements';
+import { teacherActivities as initialTeacherActivities } from '../data/teacherActivities';
+import { educationStaff as initialEducationStaff } from '../data/educationStaff';
 import { defaultSpmbContent, type SpmbContent, type SpmbFaqItem, type SpmbFlowStep, type SpmbScheduleItem } from '../data/spmb';
 import { insforge } from '../lib/api';
 import { LoadingInline } from '../components/ui/LoadingScreen';
+import ImportModal from '../components/admin/ImportModal';
 
-type Section = 'dashboard' | 'news' | 'programs' | 'facilities' | 'staff' | 'achievements' | 'spmb' | 'contact';
+type Section = 'dashboard' | 'news' | 'programs' | 'facilities' | 'staff' | 'achievements' | 'teacherActivities' | 'educationStaff' | 'spmb' | 'contact';
 type EditableSection = Exclude<Section, 'dashboard' | 'contact' | 'spmb'>;
 type Item = Record<string, unknown>;
 const sessionKey = 'smkn11-admin-session';
 const TABLE_MAP: Record<string, string> = {
   news: 'news', programs: 'programs', facilities: 'facilities',
   staff: 'staff', achievements: 'achievements',
+  teacherActivities: 'teacher_activities', educationStaff: 'education_staff',
 };
 
 const seed = {
@@ -27,15 +31,19 @@ const seed = {
   facilities: initialFacilities,
   staff: initialStaff,
   achievements: initialAchievements,
+  teacherActivities: initialTeacherActivities,
+  educationStaff: initialEducationStaff,
   contact: [] as Item[],
 };
 
-const configs: Record<EditableSection, { title: string; icon: typeof FileText; fields: { key: string; label: string; type?: string }[] }> = {
-  news: { title: 'Berita', icon: FileText, fields: [{ key: 'title', label: 'Judul' }, { key: 'category', label: 'Kategori' }, { key: 'author', label: 'Penulis' }, { key: 'date', label: 'Tanggal', type: 'date' }, { key: 'excerpt', label: 'Ringkasan' }] },
-  programs: { title: 'Program Keahlian', icon: BookOpen, fields: [{ key: 'name', label: 'Nama Program' }, { key: 'shortName', label: 'Singkatan' }, { key: 'shortDescription', label: 'Deskripsi Singkat' }] },
-  facilities: { title: 'Fasilitas', icon: Building2, fields: [{ key: 'name', label: 'Nama Fasilitas' }, { key: 'category', label: 'Kategori' }, { key: 'description', label: 'Deskripsi' }] },
-  staff: { title: 'Staf & Guru', icon: Users, fields: [{ key: 'name', label: 'Nama' }, { key: 'position', label: 'Jabatan' }, { key: 'department', label: 'Unit / Departemen' }] },
-  achievements: { title: 'Prestasi', icon: Trophy, fields: [{ key: 'title', label: 'Judul Prestasi' }, { key: 'event', label: 'Acara' }, { key: 'level', label: 'Tingkat' }, { key: 'rank', label: 'Peringkat' }, { key: 'year', label: 'Tahun', type: 'number' }] },
+const configs: Record<EditableSection, { title: string; icon: typeof FileText; fields: { key: string; label: string; type?: string; multiline?: boolean }[] }> = {
+  news: { title: 'Berita', icon: FileText, fields: [{ key: 'title', label: 'Judul' }, { key: 'category', label: 'Kategori' }, { key: 'author', label: 'Penulis' }, { key: 'date', label: 'Tanggal', type: 'date' }, { key: 'excerpt', label: 'Ringkasan', multiline: true }] },
+  programs: { title: 'Program Keahlian', icon: BookOpen, fields: [{ key: 'name', label: 'Nama Program' }, { key: 'shortName', label: 'Singkatan' }, { key: 'shortDescription', label: 'Deskripsi Singkat', multiline: true }] },
+  facilities: { title: 'Fasilitas', icon: Building2, fields: [{ key: 'name', label: 'Nama Fasilitas' }, { key: 'category', label: 'Kategori' }, { key: 'description', label: 'Deskripsi', multiline: true }, { key: 'photo', label: 'URL Foto', type: 'url' }] },
+  staff: { title: 'Staf & Guru', icon: Users, fields: [{ key: 'name', label: 'Nama' }, { key: 'position', label: 'Jabatan' }, { key: 'department', label: 'Unit / Departemen' }, { key: 'photo', label: 'URL Foto', type: 'url' }, { key: 'description', label: 'Deskripsi Singkat', multiline: true }] },
+  achievements: { title: 'Prestasi', icon: Trophy, fields: [{ key: 'title', label: 'Judul Prestasi' }, { key: 'event', label: 'Acara' }, { key: 'level', label: 'Tingkat' }, { key: 'rank', label: 'Peringkat' }, { key: 'year', label: 'Tahun', type: 'number' }, { key: 'photo', label: 'URL Foto', type: 'url' }] },
+  teacherActivities: { title: 'Kegiatan Guru', icon: CalendarDays, fields: [{ key: 'title', label: 'Judul Kegiatan' }, { key: 'category', label: 'Kategori' }, { key: 'date', label: 'Tanggal', type: 'date' }, { key: 'photo', label: 'URL Foto', type: 'url' }, { key: 'description', label: 'Deskripsi', multiline: true }] },
+  educationStaff: { title: 'Tenaga Kependidikan', icon: Briefcase, fields: [{ key: 'name', label: 'Nama' }, { key: 'position', label: 'Jabatan' }, { key: 'department', label: 'Unit / Departemen' }, { key: 'photo', label: 'URL Foto', type: 'url' }] },
 };
 
 function normalizeSpmbRow(row: Record<string, unknown>): SpmbContent {
@@ -123,6 +131,7 @@ export default function Admin() {
   const [section, setSection] = useState<Section>('dashboard');
   const [editing, setEditing] = useState<Item | null>(null);
   const [open, setOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [mobile, setMobile] = useState(false);
 
   useEffect(() => {
@@ -138,9 +147,11 @@ export default function Admin() {
         insforge.database.from(TABLE_MAP.facilities).select('*').then((r: any) => r.data || []),
         insforge.database.from(TABLE_MAP.staff).select('*').then((r: any) => r.data || []),
         insforge.database.from(TABLE_MAP.achievements).select('*').then((r: any) => r.data || []),
+        insforge.database.from(TABLE_MAP.teacherActivities).select('*').then((r: any) => r.data || []),
+        insforge.database.from(TABLE_MAP.educationStaff).select('*').then((r: any) => r.data || []),
         insforge.database.from('contact_messages').select('*').then((r: any) => r.data || []),
-      ]).then(([news, programs, facilities, staff, achievements, contact]) => setData({
-        news, programs, facilities, staff, achievements, contact,
+      ]).then(([news, programs, facilities, staff, achievements, teacherActivities, educationStaff, contact]) => setData({
+        news, programs, facilities, staff, achievements, teacherActivities, educationStaff, contact,
       })).catch(() => {});
     })
   }, []);
@@ -198,6 +209,11 @@ export default function Admin() {
     }));
   };
 
+  const refresh = async (key: EditableSection) => {
+    const { data } = await insforge.database.from(TABLE_MAP[key]).select('*');
+    if (data) setData(current => ({ ...current, [key]: data as Item[] }));
+  };
+
   const active = section === 'dashboard' ? null : section === 'contact' ? { title: 'Pesan Kontak', icon: Mail, fields: [] } : section === 'spmb' ? { title: 'Kelola SPMB', icon: GraduationCap, fields: [] } : configs[section];
   const editableSections = section !== 'dashboard' && section !== 'contact' && section !== 'spmb';
 
@@ -242,9 +258,12 @@ export default function Admin() {
 
           {editableSections && (
             <>
-              <div className="mb-6 flex items-center justify-between">
+              <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                 <p className="text-[#23314D]">Kelola data {active!.title.toLowerCase()}.</p>
-                <button onClick={() => { setEditing(null); setOpen(true); }} className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-4 py-2 font-bold text-[#1B2A4A]"><Plus size={18} /> Tambah</button>
+                <div className="flex flex-wrap gap-2">
+                  <button onClick={() => setImportOpen(true)} className="inline-flex items-center gap-2 rounded-lg border-2 border-[#1B2A4A] px-4 py-2 font-bold text-[#1B2A4A] hover:bg-[#1B2A4A]/5"><Upload size={18} /> Import Excel/CSV</button>
+                  <button onClick={() => { setEditing(null); setOpen(true); }} className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-4 py-2 font-bold text-[#1B2A4A]"><Plus size={18} /> Tambah</button>
+                </div>
               </div>
               <Table items={data[section]} config={active!} onEdit={item => { setEditing(item); setOpen(true); }} onDelete={id => remove(id)} />
             </>
@@ -252,6 +271,15 @@ export default function Admin() {
 
           {open && editableSections && (
             <Editor config={active!} item={editing} onClose={() => setOpen(false)} onSave={async item => { const ok = await update(item); if (ok) setOpen(false); }} />
+          )}
+
+          {importOpen && editableSections && (
+            <ImportModal
+              config={active!}
+              table={TABLE_MAP[section as EditableSection]}
+              onClose={() => setImportOpen(false)}
+              onImported={() => refresh(section as EditableSection)}
+            />
           )}
         </div>
       </main>
@@ -337,7 +365,13 @@ function Table({ items, config, onEdit, onDelete }: { items: Item[]; config: { f
         <tbody>
           {items.map(item => (
             <tr key={String(item.id)} className="border-t border-[#1B2A4A]/10">
-              {config.fields.map(field => <td key={field.key} className="max-w-xs p-4">{String(item[field.key] ?? '-')}</td>)}
+              {config.fields.map(field => (
+                <td key={field.key} className="max-w-xs p-4">
+                  {field.key === 'photo' && item[field.key]
+                    ? <img src={String(item[field.key])} alt="" className="h-10 w-10 rounded-full object-cover" />
+                    : String(item[field.key] ?? '-')}
+                </td>
+              ))}
               <td className="p-4">
                 <button onClick={() => onEdit(item)} className="mr-3 text-[#866D2C]"><Pencil size={17} /></button>
                 <button onClick={() => onDelete(item.id)} className="text-red-600"><Trash2 size={17} /></button>
@@ -819,7 +853,7 @@ function ListField({ label, hint, value, onChange }: { label: string; hint: stri
   return <label className="block rounded-xl bg-white p-6 text-sm font-semibold shadow-sm">{label}<span className="mt-1 block font-normal text-[#5B7088]">{hint}</span><textarea value={value} onChange={(event) => onChange(event.target.value)} rows={8} className="mt-3 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" /></label>;
 }
 
-function Editor({ config, item, onClose, onSave }: { config: { title: string; fields: { key: string; label: string; type?: string }[] }; item: Item | null; onClose: () => void; onSave: (item: Item) => void }) {
+function Editor({ config, item, onClose, onSave }: { config: { title: string; fields: { key: string; label: string; type?: string; multiline?: boolean }[] }; item: Item | null; onClose: () => void; onSave: (item: Item) => void }) {
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
@@ -837,7 +871,9 @@ function Editor({ config, item, onClose, onSave }: { config: { title: string; fi
           {config.fields.map(field => (
             <label key={field.key} className="block text-sm font-semibold">
               {field.label}
-              <input name={field.key} type={field.type || 'text'} defaultValue={String(item?.[field.key] ?? '')} required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />
+              {field.multiline
+                ? <textarea name={field.key} rows={4} defaultValue={String(item?.[field.key] ?? '')} required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />
+                : <input name={field.key} type={field.type || 'text'} defaultValue={String(item?.[field.key] ?? '')} required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />}
             </label>
           ))}
         </div>

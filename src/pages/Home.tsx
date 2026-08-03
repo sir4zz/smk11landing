@@ -196,7 +196,7 @@ const Home: React.FC = () => {
                   </div>
                   <div className="flex flex-col justify-center">
                     <span className="text-[10px] font-bold uppercase tracking-widest text-white/80">Akreditasi</span>
-                    <span className="text-lg font-black text-white drop-shadow-md">UNGGUL (A)</span>
+                    <span className="text-lg font-black text-white drop-shadow-md">(B)</span>
                   </div>
                 </div>
               </div>

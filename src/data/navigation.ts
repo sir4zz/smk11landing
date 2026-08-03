@@ -25,12 +25,14 @@ export const navigationData: NavItem[] = [
     ],
   },
   {
-    label: 'Kesiswaan',
-    href: '/kesiswaan',
+    label: 'Manajemen',
+    href: '/manajemen',
     children: [
-      { label: 'Prestasi', href: '/kesiswaan/prestasi' },
-      { label: 'Ekstrakurikuler', href: '/kesiswaan/ekstrakurikuler' },
-      { label: 'Galeri', href: '/kesiswaan/galeri' },
+      { label: 'Kepala Sekolah', href: '/manajemen/kepala-sekolah' },
+      { label: 'Wakil Kepala Sekolah', href: '/manajemen/wakil-kepala-sekolah' },
+      { label: 'Kegiatan Guru', href: '/manajemen/kegiatan-guru' },
+      { label: 'Tenaga Kependidikan', href: '/manajemen/tenaga-kependidikan' },
+      { label: 'Struktur Manajemen', href: '/manajemen/struktur-manajemen' },
     ],
   },
   {

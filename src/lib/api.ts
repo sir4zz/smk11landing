@@ -12,6 +12,8 @@ const contentTable: Record<string, string> = {
   facilities: 'facilities',
   staff: 'staff',
   achievements: 'achievements',
+  teacherActivities: 'teacher_activities',
+  educationStaff: 'education_staff',
 };
 
 function normalizeContentRows<T>(type: string, rows: unknown[]): T {

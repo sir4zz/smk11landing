@@ -13,6 +13,12 @@ import Admin, { AdminLogin } from './pages/Admin'
 import Achievements from './pages/student/Achievements'
 import Extracurriculars from './pages/student/Extracurriculars'
 import Gallery from './pages/student/Gallery'
+import Management from './pages/management/Management'
+import KepalaSekolah from './pages/management/KepalaSekolah'
+import WakilKepalaSekolah from './pages/management/WakilKepalaSekolah'
+import KegiatanGuru from './pages/management/KegiatanGuru'
+import TenagaKependidikan from './pages/management/TenagaKependidikan'
+import StrukturManajemen from './pages/management/StrukturManajemen'
 import NewsList from './pages/information/NewsList'
 import NewsDetail from './pages/information/NewsDetail'
 import FAQ from './pages/information/FAQ'
@@ -40,6 +46,14 @@ function App() {
           <Route path="kesiswaan/prestasi" element={<Achievements />} />
           <Route path="kesiswaan/ekstrakurikuler" element={<Extracurriculars />} />
           <Route path="kesiswaan/galeri" element={<Gallery />} />
+
+          {/* Management */}
+          <Route path="manajemen" element={<Management />} />
+          <Route path="manajemen/kepala-sekolah" element={<KepalaSekolah />} />
+          <Route path="manajemen/wakil-kepala-sekolah" element={<WakilKepalaSekolah />} />
+          <Route path="manajemen/kegiatan-guru" element={<KegiatanGuru />} />
+          <Route path="manajemen/tenaga-kependidikan" element={<TenagaKependidikan />} />
+          <Route path="manajemen/struktur-manajemen" element={<StrukturManajemen />} />
 
           {/* Information */}
           <Route path="informasi/berita" element={<NewsList />} />

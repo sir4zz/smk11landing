@@ -4,6 +4,7 @@ export interface Staff {
   position: string;
   department: string;
   photo: string;
+  description?: string;
 }
 
 export const staffData: Staff[] = [
@@ -12,35 +13,40 @@ export const staffData: Staff[] = [
     name: 'Drs. H. Ahmad Fauzi, M.Pd.',
     position: 'Kepala Sekolah',
     department: 'Manajemen',
-    photo: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=800&q=80'
+    photo: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=800&q=80',
+    description: 'Memimpin SMKN 11 Kabupaten Tangerang dengan visi sekolah vokasi yang unggul, berkarakter, dan siap kerja, didukung tata kelola yang transparan dan partisipatif.'
   },
   {
     id: 'staff-2',
     name: 'Sri Mulyani, S.Pd., M.Si.',
     position: 'Wakil Kepala Sekolah Bid. Kurikulum',
     department: 'Kurikulum',
-    photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=800&q=80'
+    photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=800&q=80',
+    description: 'Mengoordinasikan pelaksanaan kurikulum, kegiatan belajar mengajar, serta asesmen agar mutu pembelajaran terus meningkat.'
   },
   {
     id: 'staff-3',
     name: 'Budi Santoso, S.Kom.',
     position: 'Wakil Kepala Sekolah Bid. Kesiswaan',
     department: 'Kesiswaan',
-    photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80'
+    photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80',
+    description: 'Membina pengembangan karakter, kedisiplinan, dan kegiatan kesiswaan agar murid tumbuh menjadi pribadi yang berakhlak mulia.'
   },
   {
     id: 'staff-4',
     name: 'Haryanto, S.T.',
     position: 'Wakil Kepala Sekolah Bid. Sarana Prasarana',
     department: 'Sarana Prasarana',
-    photo: 'https://images.unsplash.com/photo-1507591064344-4c6ce005b128?auto=format&fit=crop&w=800&q=80'
+    photo: 'https://images.unsplash.com/photo-1507591064344-4c6ce005b128?auto=format&fit=crop&w=800&q=80',
+    description: 'Mengelola sarana dan prasarana sekolah agar mendukung proses pembelajaran yang aman, nyaman, dan optimal.'
   },
   {
     id: 'staff-5',
     name: 'Dra. Rini Wulandari',
     position: 'Wakil Kepala Sekolah Bid. Humas & Hubin',
     department: 'Humas',
-    photo: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=800&q=80'
+    photo: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=800&q=80',
+    description: 'Menjalin kemitraan dengan dunia usaha dan industri serta membangun citra sekolah melalui hubungan masyarakat yang baik.'
   },
   {
     id: 'staff-6',
