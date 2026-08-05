@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { AlertTriangle, CheckCircle2, Download, FileSpreadsheet, Loader2, Upload, X } from 'lucide-react';
-import { insforge } from '../../lib/api';
+import { backendApi } from '../../lib/api';
 
 interface FieldConfig {
   key: string;
@@ -69,7 +69,9 @@ function exampleValue(key: string) {
     case 'author': return 'Penulis';
     case 'description':
     case 'excerpt':
-    case 'shortDescription': return 'Deskripsi singkat';
+    case 'short_description':
+    case 'shortDescription':
+      return 'Deskripsi singkat';
     default: return '';
   }
 }
@@ -142,7 +144,7 @@ export default function ImportModal({ config, table, onClose, onImported }: Impo
     const base = raw.split(/[\\/]/).pop() || raw;
     const file = photoMap.get(base.toLowerCase());
     if (!file) return raw;
-    const { data, error } = await insforge.storage.from('photos').uploadAuto(file);
+    const { data, error } = await backendApi.storage.from('photos').uploadAuto(file);
     if (error || !data) return raw;
     return data.url;
   };
@@ -158,7 +160,7 @@ export default function ImportModal({ config, table, onClose, onImported }: Impo
     const photoMap = new Map<string, File>();
     photoFiles.forEach((file) => photoMap.set(file.name.toLowerCase(), file));
 
-    const { error: authError } = await insforge.auth.getCurrentUser();
+    const { error: authError } = await backendApi.auth.getCurrentUser();
     if (authError) {
       setResult({ imported: 0, skipped: rows.length, errors: ['Sesi admin tidak valid. Silakan login ulang.'] });
       setImporting(false);
@@ -167,7 +169,7 @@ export default function ImportModal({ config, table, onClose, onImported }: Impo
 
     const usedSlugs = new Set<string>();
     if (needsSlug) {
-      const { data } = await insforge.database.from(table).select('slug');
+      const { data } = await backendApi.database.from(table).select('slug');
       ((data as { slug?: string }[]) || []).forEach((item) => {
         if (item.slug) usedSlugs.add(item.slug);
       });
@@ -204,10 +206,10 @@ export default function ImportModal({ config, table, onClose, onImported }: Impo
     for (let i = 0; i < prepared.length; i += chunkSize) {
       const batch = prepared.slice(i, i + chunkSize);
       setProgress(`Menyimpan data ${Math.min(i + chunkSize, prepared.length)}/${prepared.length}...`);
-      const { error: batchError } = await insforge.database.from(table).insert(batch);
+      const { error: batchError } = await backendApi.database.from(table).insert(batch);
       if (batchError) {
         for (const row of batch) {
-          const { error: rowError } = await insforge.database.from(table).insert([row]);
+          const { error: rowError } = await backendApi.database.from(table).insert([row]);
           if (rowError) {
             errors.push(`${String(row[primaryField] ?? '?')}: ${rowError.message}`);
             skipped += 1;
@@ -330,7 +332,7 @@ export default function ImportModal({ config, table, onClose, onImported }: Impo
               {result.errors.length > 0 && (
                 <ul className="mt-2 max-h-40 space-y-1 overflow-y-auto rounded-lg bg-white p-3 text-red-700">
                   {result.errors.slice(0, 20).map((message, i) => (
-                    <li key={i}>• {message}</li>
+                    <li key={i}>â€¢ {message}</li>
                   ))}
                   {result.errors.length > 20 && <li>...dan {result.errors.length - 20} lainnya</li>}
                 </ul>

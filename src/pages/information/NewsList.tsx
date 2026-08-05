@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import PageHero from '../../components/ui/PageHero'
-import { news, type NewsItem } from '../../data/news'
+import { news, isImportedNews, type NewsItem } from '../../data/news'
 import { fetchPublicContent } from '../../lib/api'
 import { Calendar, User, ArrowRight, Search } from 'lucide-react'
 
@@ -77,6 +77,9 @@ const NewsList: React.FC = () => {
                   className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#1B2A4A]/60 to-transparent" />
+                <span className={`absolute left-3 top-3 rounded-full px-3 py-1 text-xs font-semibold ${isImportedNews(item) ? 'bg-blue-600/90 text-white' : 'bg-[#C8A951]/90 text-[#1B2A4A]'}`}>
+                  {isImportedNews(item) ? 'Sumber Eksternal' : 'Berita Sekolah'}
+                </span>
                 <span className="absolute right-3 top-3 rounded-full bg-[#C8A951] px-3 py-1 text-xs font-semibold text-[#1B2A4A]">
                   {item.category}
                 </span>

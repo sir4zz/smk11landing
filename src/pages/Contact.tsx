@@ -4,7 +4,7 @@ import PageHero from '../components/ui/PageHero';
 import { SectionHeading } from '../components/ui/SectionHeading';
 import { Button } from '../components/ui/Button';
 import { MapPin, Phone, Mail, Clock } from 'lucide-react';
-import { insforge } from '../lib/api';
+import { backendApi } from '../lib/api';
 
 const Contact: React.FC = () => {
   const [formStatus, setFormStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -19,7 +19,7 @@ const Contact: React.FC = () => {
     const values = Object.fromEntries(new FormData(form) as any);
 
     try {
-      const { error } = await insforge.database.from('contact_messages').insert([{
+      const { error } = await backendApi.database.from('contact_messages').insert([{
         name: values.name,
         email: values.email,
         subject: values.subject,

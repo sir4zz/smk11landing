@@ -1,87 +1,138 @@
-import { createClient } from '@insforge/sdk';
 import { defaultSpmbContent, type SpmbContent } from '../data/spmb';
 
-export const insforge = createClient({
-  baseUrl: import.meta.env.VITE_INSFORGE_URL,
-  anonKey: import.meta.env.VITE_INSFORGE_ANON_KEY
-});
+const apiBaseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/$/, '') + '/api';
 
-const contentTable: Record<string, string> = {
-  news: 'news',
-  programs: 'programs',
-  facilities: 'facilities',
-  staff: 'staff',
-  achievements: 'achievements',
-  teacherActivities: 'teacher_activities',
-  educationStaff: 'education_staff',
+type ApiError = { message?: string; [key: string]: unknown } | null;
+type ApiResult<T> = Promise<{ data: T | null; error: ApiError; count?: number | null }>;
+type Filter = { key: string; value: unknown };
+
+async function request<T>(path: string, options: RequestInit = {}): ApiResult<T> {
+  try {
+    const isFormData = options.body instanceof FormData;
+    const response = await fetch(`${apiBaseUrl}${path}`, {
+      credentials: 'include',
+      ...options,
+      headers: {
+        Accept: 'application/json',
+        ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+        ...(options.headers ?? {}),
+      },
+    });
+    const body = await response.json().catch(() => null);
+    if (!response.ok) {
+      return { data: null, error: body?.error ?? body ?? { message: 'Permintaan ke server gagal.' } };
+    }
+    return { data: (body?.data ?? body) as T, error: body?.error ?? null, count: body?.count };
+  } catch {
+    return { data: null, error: { message: 'Tidak dapat terhubung ke server.' } };
+  }
+}
+
+const tablePaths: Record<string, string> = {
+  news: 'news', programs: 'programs', facilities: 'facilities', staff: 'staff', achievements: 'achievements',
+  teacher_activities: 'teacher-activities', education_staff: 'education-staff', spmb_content: 'spmb',
+  osis: 'osis', osis_members: 'osis/members', osis_activities: 'osis/activities',
+  extracurriculars: 'extracurriculars', kesemaptaan: 'kesemaptaan', kesemaptaan_activities: 'kesemaptaan/activities',
+  kesemaptaan_schedules: 'kesemaptaan/schedules', kesemaptaan_instructors: 'kesemaptaan/instructors',
+  kesemaptaan_achievements: 'kesemaptaan/achievements', mading_categories: 'mading/categories', mading_posts: 'mading/posts',
 };
 
-function normalizeContentRows<T>(type: string, rows: unknown[]): T {
-  if (type !== 'programs') return rows as T;
+class QueryBuilder {
+  private table: string;
+  private filters: Filter[] = [];
+  private orderBy?: { column: string; ascending: boolean };
+  private take?: number;
+  private singleResult = false;
+  private countRequested = false;
+  private action: 'GET' | 'POST' | 'PATCH' | 'DELETE' = 'GET';
+  private actionBody?: unknown;
 
-  return rows.map((row) => {
-    const program = row as Record<string, unknown>;
-    return {
-      ...program,
-      shortName: program.shortName ?? program.short_name,
-      shortDescription: program.shortDescription ?? program.short_description,
-      careerProspects: program.careerProspects ?? program.career_prospects,
-    };
-  }) as T;
-}
+  constructor(table: string) { this.table = table; }
 
-export async function fetchPublicContent<T>(type: string, fallback: T): Promise<T> {
-  const table = contentTable[type]
-  if (!table) return fallback
-  try {
-    const { data, error } = await insforge.database.from(table).select('*');
-    if (error) throw error;
-    if (data && data.length > 0) return normalizeContentRows<T>(type, data);
-    return fallback;
-  } catch {
-    return fallback;
+  select(_columns = '*', options?: { count?: 'exact' }): this { this.countRequested = options?.count === 'exact'; return this; }
+  eq(key: string, value: unknown): this { this.filters.push({ key, value }); return this; }
+  order(column: string, options?: { ascending?: boolean }): this { this.orderBy = { column, ascending: options?.ascending !== false }; return this; }
+  limit(value: number): this { this.take = value; return this; }
+  maybeSingle(): this { this.singleResult = true; return this; }
+  single(): this { this.singleResult = true; return this; }
+  insert(rows: Record<string, unknown>[]): this { this.action = 'POST'; this.actionBody = rows; return this; }
+  update(row: Record<string, unknown>): this { this.action = 'PATCH'; this.actionBody = row; return this; }
+  delete(): this { this.action = 'DELETE'; return this; }
+  then<TResult1 = { data: any; error: ApiError }, TResult2 = never>(onfulfilled?: ((value: { data: any; error: ApiError; count?: number | null }) => TResult1 | PromiseLike<TResult1>) | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null): Promise<TResult1 | TResult2> { return this.execute(this.action, this.actionBody).then(onfulfilled, onrejected); }
+
+  private async execute(method: string, body?: unknown): ApiResult<any> {
+    const parameters = new URLSearchParams();
+    for (const { key, value } of this.filters) parameters.set(key, String(value));
+    if (this.orderBy) parameters.set('order', `${this.orderBy.column}|${this.orderBy.ascending ? 'asc' : 'desc'}`);
+    if (this.take) parameters.set('limit', String(this.take));
+    if (this.singleResult) parameters.set('single', '1');
+    if (this.countRequested) parameters.set('count', 'exact');
+    const suffix = parameters.size ? `?${parameters}` : '';
+    const target = tablePaths[this.table] ? `/data/${this.table}${suffix}` : `/data/${this.table}${suffix}`;
+    return request(target, { method, body: body === undefined ? undefined : JSON.stringify(body) });
   }
 }
 
-export async function fetchPublicContentById<T extends { slug?: string }>(type: string, slug: string, fallback: T): Promise<T> {
-  const table = contentTable[type]
-  if (!table) return fallback
-  try {
-    const { data, error } = await insforge.database.from(table).select('*').eq('slug', slug).limit(1).maybeSingle();
-    if (error) throw error;
-    if (data) return data as T;
-    return fallback;
-  } catch {
-    return fallback;
-  }
-}
+const listeners = new Set<(event: 'signedIn' | 'signedOut') => void>();
 
-function normalizeSpmbContent(row: Record<string, unknown>): SpmbContent {
-  return {
-    id: row.id as string | undefined,
-    status: (row.status as SpmbContent['status']) || defaultSpmbContent.status,
-    title: (row.title as string) || defaultSpmbContent.title,
-    description: (row.description as string) || defaultSpmbContent.description,
-    latest_info: (row.latest_info as string) || defaultSpmbContent.latest_info,
-    requirements: Array.isArray(row.requirements) ? (row.requirements as string[]) : defaultSpmbContent.requirements,
-    schedule: Array.isArray(row.schedule) ? (row.schedule as SpmbContent['schedule']) : defaultSpmbContent.schedule,
-    flow_steps: Array.isArray(row.flow_steps) ? (row.flow_steps as SpmbContent['flow_steps']) : defaultSpmbContent.flow_steps,
-    faq: Array.isArray(row.faq) ? (row.faq as SpmbContent['faq']) : defaultSpmbContent.faq,
-    portal_url: (row.portal_url as string) || defaultSpmbContent.portal_url,
-    banner_image: (row.banner_image as string) || defaultSpmbContent.banner_image,
-    banner_title: (row.banner_title as string) || defaultSpmbContent.banner_title,
-    banner_description: (row.banner_description as string) || defaultSpmbContent.banner_description,
-    updated_at: row.updated_at as string | undefined,
-  };
-}
+export const backendApi: any = {
+  database: {
+    from: (table: string): any => new QueryBuilder(table),
+    async rpc(name: string, params: Record<string, unknown> = {}): ApiResult<any> {
+      const paths: Record<string, string> = {
+        get_my_permissions: '/auth/permissions',
+        get_student_login_email: '/auth/student-email',
+        submit_mading_post: `/mading/posts/${params.p_post_id}/submit`,
+        review_mading_post: `/mading/posts/${params.p_post_id}/review`,
+        publish_mading_post: `/mading/posts/${params.p_post_id}/publish`,
+        admin_create_student: '/admin/students',
+        admin_reset_student_pin: `/admin/students/${params.p_student_id}/reset-pin`,
+      };
+      const path = paths[name];
+      if (!path) return { data: null, error: { message: `RPC ${name} tidak tersedia.` } };
+      if (name === 'get_my_permissions') return request(path);
+      if (name === 'get_student_login_email') return request(path, { method: 'POST', body: JSON.stringify({ nisn: params.p_nisn }) });
+      if (name === 'submit_mading_post' || name === 'publish_mading_post') return request(path, { method: 'POST' });
+      if (name === 'review_mading_post') return request(path, { method: 'POST', body: JSON.stringify({ action: params.p_action, feedback: params.p_feedback }) });
+      if (name === 'admin_create_student') return request(path, { method: 'POST', body: JSON.stringify(params) });
+      return request(path, { method: 'POST', body: JSON.stringify(params) });
+    },
+  },
+  auth: {
+    async getCurrentUser() { const result = await request<{ user: { id: string; email?: string } }>('/auth/me'); return { data: result.data ? { user: result.data.user } : null, error: result.error }; },
+    async signInWithPassword(credentials: { email: string; password: string }) { const result = await request<{ user: { id: string; email?: string } }>('/auth/login', { method: 'POST', body: JSON.stringify(credentials) }); if (result.data) listeners.forEach((listener) => listener('signedIn')); return { data: result.data, error: result.error }; },
+    async signUp(credentials: { email: string; password: string; name?: string; options?: { data?: { name?: string } } }) { const result = await request<{ user: { id: string; email?: string } }>('/auth/register', { method: 'POST', body: JSON.stringify({ email: credentials.email, password: credentials.password, name: credentials.name ?? credentials.options?.data?.name }) }); if (result.data) listeners.forEach((listener) => listener('signedIn')); return { data: result.data, error: result.error }; },
+    async signOut() { const result = await request('/auth/logout', { method: 'POST' }); listeners.forEach((listener) => listener('signedOut')); return result; },
+    onAuthStateChange(listener: (event: 'signedIn' | 'signedOut') => void) { listeners.add(listener); return () => listeners.delete(listener); },
+  },
+  storage: {
+    from(_bucket: string) { return {
+      async uploadAuto(file: File) { const form = new FormData(); form.append('file', file); const result = await request<{ url: string }>('/upload', { method: 'POST', body: form }); return { data: result.data ? { url: result.data.url } : null, error: result.error }; },
+      async upload(_path: string, file: File) { const form = new FormData(); form.append('file', file); const result = await request('/upload', { method: 'POST', body: form }); return { data: result.data, error: result.error }; },
+      async remove(paths: string[]) { return request('/uploads', { method: 'DELETE', body: JSON.stringify({ paths }) }); },
+      async createSignedUrl(path: string) { return request<{ url: string }>(`/uploads/url?path=${encodeURIComponent(path)}`); },
+    }; },
+  },
+};
 
-export async function fetchSpmbContent(fallback: SpmbContent = defaultSpmbContent): Promise<SpmbContent> {
-  try {
-    const { data, error } = await insforge.database.from('spmb_content').select('*').limit(1).maybeSingle();
-    if (error) throw error;
-    if (data) return normalizeSpmbContent(data as Record<string, unknown>);
-    return fallback;
-  } catch {
-    return fallback;
-  }
-}
+const contentPath: Record<string, string> = { news: 'news', programs: 'programs', facilities: 'facilities', staff: 'staff', achievements: 'achievements', teacherActivities: 'teacher-activities', educationStaff: 'education-staff' };
+function normalizeContentRows<T>(type: string, rows: unknown[]): T { return (type === 'programs' ? rows.map((row) => { const program = row as Record<string, unknown>; return { ...program, shortName: program.shortName ?? program.short_name, shortDescription: program.shortDescription ?? program.short_description, careerProspects: program.careerProspects ?? program.career_prospects }; }) : rows) as T; }
+export async function fetchPublicContent<T>(type: string, fallback: T): Promise<T> { const path = contentPath[type]; if (!path) return fallback; const result = await request<unknown[]>(`/${path}`); return result.data?.length ? normalizeContentRows<T>(type, result.data) : fallback; }
+export async function fetchPublicContentById<T extends { slug?: string }>(type: string, slug: string, fallback: T): Promise<T> { const path = contentPath[type]; if (!path) return fallback; const result = await request<T>(`/${path}/${encodeURIComponent(slug)}`); return result.data ?? fallback; }
+function normalizeSpmbContent(row: Record<string, unknown>): SpmbContent { return { id: row.id as string | undefined, status: (row.status as SpmbContent['status']) || defaultSpmbContent.status, title: (row.title as string) || defaultSpmbContent.title, description: (row.description as string) || defaultSpmbContent.description, latest_info: (row.latest_info as string) || defaultSpmbContent.latest_info, requirements: Array.isArray(row.requirements) ? row.requirements as string[] : defaultSpmbContent.requirements, schedule: Array.isArray(row.schedule) ? row.schedule as SpmbContent['schedule'] : defaultSpmbContent.schedule, flow_steps: Array.isArray(row.flow_steps) ? row.flow_steps as SpmbContent['flow_steps'] : defaultSpmbContent.flow_steps, faq: Array.isArray(row.faq) ? row.faq as SpmbContent['faq'] : defaultSpmbContent.faq, portal_url: (row.portal_url as string) || defaultSpmbContent.portal_url, banner_image: (row.banner_image as string) || defaultSpmbContent.banner_image, banner_title: (row.banner_title as string) || defaultSpmbContent.banner_title, banner_description: (row.banner_description as string) || defaultSpmbContent.banner_description, updated_at: row.updated_at as string | undefined }; }
+export async function fetchSpmbContent(fallback: SpmbContent = defaultSpmbContent): Promise<SpmbContent> { const result = await request<Record<string, unknown>>('/spmb'); return result.data ? normalizeSpmbContent(result.data) : fallback; }
+async function fetchFallback<T>(path: string, fallback: T, nonEmpty = true): Promise<T> { const result = await request<any>(path); return result.data && (!nonEmpty || result.data.length) ? result.data as T : fallback; }
+export const fetchOsisProfile = <T>(fallback: T) => fetchFallback('/osis', fallback, false);
+export const fetchOsisMembers = <T>(fallback: T) => fetchFallback('/osis/members', fallback);
+export const fetchOsisActivities = <T>(fallback: T) => fetchFallback('/osis/activities', fallback);
+export const fetchExtracurriculars = <T>(fallback: T) => fetchFallback('/extracurriculars', fallback);
+export const fetchExtracurricularBySlug = <T>(slug: string, fallback: T) => fetchFallback(`/extracurriculars/${encodeURIComponent(slug)}`, fallback, false);
+export const fetchKesemaptaanProfile = <T>(fallback: T) => fetchFallback('/kesemaptaan', fallback, false);
+export const fetchKesemaptaanActivities = <T>(fallback: T) => fetchFallback('/kesemaptaan/activities', fallback);
+export const fetchKesemaptaanSchedules = <T>(fallback: T) => fetchFallback('/kesemaptaan/schedules', fallback);
+export const fetchKesemaptaanInstructors = <T>(fallback: T) => fetchFallback('/kesemaptaan/instructors', fallback);
+export const fetchKesemaptaanAchievements = <T>(fallback: T) => fetchFallback('/kesemaptaan/achievements', fallback);
+export const fetchMadingCategories = <T>(fallback: T) => fetchFallback('/mading/categories', fallback);
+export interface MadingPostRow extends Record<string, unknown> { id?: string; title?: string; content?: string; category_id?: string | null; author_id?: string | null; author_name?: string; author_role?: string; cover_image?: string; status?: string; feedback?: string; published_at?: string | null; created_at?: string; updated_at?: string; }
+export async function fetchMadingPosts(filter?: { status?: string; authorId?: string; categoryId?: string }): Promise<MadingPostRow[]> { const params = new URLSearchParams(); if (filter?.status) params.set('status', filter.status); if (filter?.authorId) params.set('author_id', filter.authorId); if (filter?.categoryId) params.set('category_id', filter.categoryId); const result = await request<MadingPostRow[]>(`/mading/posts${params.size ? `?${params}` : ''}`); return result.data ?? []; }
+export async function fetchMadingPublished(): Promise<MadingPostRow[]> { return fetchMadingPosts({ status: 'published' }); }

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { insforge } from '../../lib/api'
+import { backendApi } from '../../lib/api'
 import { UserPlus, Mail, Lock, Phone, ArrowRight } from 'lucide-react'
 import Button from '../../components/ui/Button'
 import logoSekolah from '../../assets/logo.png'
@@ -20,14 +20,14 @@ export default function Register() {
     const password = fd.get('password') as string
 
     try {
-      const { data: signUpData, error: signUpError } = await insforge.auth.signUp({
+      const { data: signUpData, error: signUpError } = await backendApi.auth.signUp({
         email,
         password,
         name,
       })
       if (signUpError) throw signUpError
 
-      const { error: profileError } = await insforge.database
+      const { error: profileError } = await backendApi.database
         .from('profiles')
         .update({ phone })
         .eq('id', signUpData?.user?.id ?? '')

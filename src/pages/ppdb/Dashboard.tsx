@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { usePpdbAuth } from './PPDBAuth'
-import { insforge } from '../../lib/api'
+import { backendApi } from '../../lib/api'
 import LoadingScreen, { LoadingInline } from '../../components/ui/LoadingScreen'
 import {
   LogOut, User, FileText, CheckCircle2, Clock, AlertCircle,
@@ -24,7 +24,7 @@ const statusColors: Record<string, string> = {
 }
 
 export default function Dashboard() {
-  const { user, insforgeUser, logout } = usePpdbAuth()
+  const { user, sessionUser, logout } = usePpdbAuth()
   const navigate = useNavigate()
   const [tab, setTab] = useState<Tab>('biodata')
   const [loading, setLoading] = useState(true)
@@ -45,20 +45,20 @@ export default function Dashboard() {
 
   const fetchData = async () => {
     try {
-      if (!insforgeUser) return;
-      const { data: regData } = await insforge.database.from('ppdb_registrations').select('*').eq('user_id', insforgeUser.id).maybeSingle();
+      if (!sessionUser) return;
+      const { data: regData } = await backendApi.database.from('ppdb_registrations').select('*').eq('user_id', sessionUser.id).maybeSingle();
       if (regData) {
         setRegistration(regData);
         setForm((prev: any) => ({ ...prev, ...regData }));
-        const { data: docs } = await insforge.database.from('ppdb_documents').select('*').eq('application_id', regData.id).order('created_at', { ascending: true });
+        const { data: docs } = await backendApi.database.from('ppdb_documents').select('*').eq('application_id', regData.id).order('created_at', { ascending: true });
         setDocuments(docs || []);
-        const { data: acts } = await insforge.database.from('ppdb_activity_log').select('*').eq('application_id', regData.id).order('created_at', { ascending: false }).limit(20);
+        const { data: acts } = await backendApi.database.from('ppdb_activity_log').select('*').eq('application_id', regData.id).order('created_at', { ascending: false }).limit(20);
         setActivities(acts || []);
       }
     } catch {} finally { setLoading(false) }
   }
 
-  useEffect(() => { if (insforgeUser) void fetchData() }, [insforgeUser])
+  useEffect(() => { if (sessionUser) void fetchData() }, [sessionUser])
 
   const currentStep: Step = !registration ? 'biodata' as Step
     : !registration.full_name ? 'biodata'
@@ -80,14 +80,14 @@ export default function Dashboard() {
         throw new Error('Pendaftaran sudah diproses, tidak dapat diubah.');
       }
       
-      const payload: Record<string, unknown> = { ...form, user_id: insforgeUser?.id };
+      const payload: Record<string, unknown> = { ...form, user_id: sessionUser?.id };
       
       if (registration?.id) {
-         const { error } = await insforge.database.from('ppdb_registrations').update({ ...payload, updated_at: new Date().toISOString() }).eq('id', registration.id);
+         const { error } = await backendApi.database.from('ppdb_registrations').update({ ...payload, updated_at: new Date().toISOString() }).eq('id', registration.id);
          if (error) throw error;
       } else {
          payload.registration_number = 'PPDB' + Math.floor(Math.random()*10000).toString().padStart(4,'0') + Date.now().toString().slice(-4);
-         const { error } = await insforge.database.from('ppdb_registrations').insert([payload]);
+         const { error } = await backendApi.database.from('ppdb_registrations').insert([payload]);
          if (error) throw error;
       }
       
@@ -107,23 +107,23 @@ export default function Dashboard() {
         if (existing) throw new Error('Dokumen jenis ini sudah diupload. Hapus terlebih dahulu.');
         
         const fileExt = file.name.split('.').pop();
-        const filePath = `${insforgeUser?.id}/${type}-${Date.now()}.${fileExt}`;
+        const filePath = `${sessionUser?.id}/${type}-${Date.now()}.${fileExt}`;
         
-        const { error: uploadError } = await insforge.storage.from('ppdb_documents').upload(filePath, file);
+        const { data: uploadData, error: uploadError } = await backendApi.storage.from('ppdb_documents').upload(filePath, file);
         if (uploadError) throw uploadError;
         
-        const { error: dbError } = await insforge.database.from('ppdb_documents').insert([{
+        const { error: dbError } = await backendApi.database.from('ppdb_documents').insert([{
            application_id: registration.id,
            type,
            filename: file.name,
-           file_path: filePath,
+           file_path: uploadData?.key ?? filePath,
            mime_type: file.type,
            file_size: file.size,
            verified: 0
         }]);
         if (dbError) throw dbError;
         
-        await insforge.database.from('ppdb_registrations').update({ documents_count: documents.length + 1 }).eq('id', registration.id);
+        await backendApi.database.from('ppdb_registrations').update({ documents_count: documents.length + 1 }).eq('id', registration.id);
 
         setMessage({ type: 'success', text: 'Dokumen berhasil diupload.' })
         await fetchData()
@@ -134,9 +134,9 @@ export default function Dashboard() {
   const deleteDoc = async (id: string, path: string) => {
     if (!confirm('Hapus dokumen ini?')) return
     try {
-      if (path) await insforge.storage.from('ppdb_documents').remove([path]);
-      await insforge.database.from('ppdb_documents').delete().eq('id', id);
-      await insforge.database.from('ppdb_registrations').update({ documents_count: Math.max(0, documents.length - 1) }).eq('id', registration.id);
+      if (path) await backendApi.storage.from('ppdb_documents').remove([path]);
+      await backendApi.database.from('ppdb_documents').delete().eq('id', id);
+      await backendApi.database.from('ppdb_registrations').update({ documents_count: Math.max(0, documents.length - 1) }).eq('id', registration.id);
       await fetchData()
     } catch {}
   }
@@ -148,10 +148,10 @@ export default function Dashboard() {
       if (registration.status !== 'Menunggu Verifikasi' && registration.status !== 'Perlu Perbaikan Dokumen') throw new Error(`Pendaftaran sudah dalam status "${registration.status}".`);
       if (documents.length === 0) throw new Error('Upload minimal 1 dokumen sebelum submit.');
 
-      const { error } = await insforge.database.from('ppdb_registrations').update({ status: 'Menunggu Verifikasi', submitted_at: new Date().toISOString() }).eq('id', registration.id);
+      const { error } = await backendApi.database.from('ppdb_registrations').update({ status: 'Menunggu Verifikasi', submitted_at: new Date().toISOString() }).eq('id', registration.id);
       if (error) throw error;
       
-      await insforge.database.from('ppdb_activity_log').insert([{ application_id: registration.id, action: 'Submit Pendaftaran', note: 'Pendaftaran berhasil dikirim.' }]);
+      await backendApi.database.from('ppdb_activity_log').insert([{ application_id: registration.id, action: 'Submit Pendaftaran', note: 'Pendaftaran berhasil dikirim.' }]);
 
       setMessage({ type: 'success', text: 'Pendaftaran berhasil dikirim!' })
       await fetchData()

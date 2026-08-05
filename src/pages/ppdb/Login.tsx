@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { insforge } from '../../lib/api'
+import { backendApi } from '../../lib/api'
 import { Mail, Lock, ArrowRight } from 'lucide-react'
 import Button from '../../components/ui/Button'
 import logoSekolah from '../../assets/logo.png'
@@ -17,7 +17,7 @@ export default function Login() {
       const email = fd.get('email') as string
       const password = fd.get('password') as string
       
-      const { error: signInError } = await insforge.auth.signInWithPassword({
+      const { error: signInError } = await backendApi.auth.signInWithPassword({
         email,
         password
       })

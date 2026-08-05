@@ -20,7 +20,7 @@ import SectionHeading from '../components/ui/SectionHeading';
 import StatsBar from '../components/ui/StatsBar';
 import Card from '../components/ui/Card';
 import { programs } from '../data/programs';
-import { news } from '../data/news';
+import { news, isImportedNews } from '../data/news';
 import { achievements } from '../data/achievements';
 import { fetchPublicContent } from '../lib/api';
 
@@ -343,7 +343,10 @@ const Home: React.FC = () => {
               <SectionHeading title="Berita & Informasi Terkini" subtitle="Update kegiatan, prestasi, dan berita sekolah terbaru." align="left" />
               <div className="mt-8 grid gap-6 md:grid-cols-2">
                 {publicNews.slice(0, 2).map((item) => (
-                  <Card key={item.id} image={item.thumbnail} title={item.title} description={item.excerpt} badge={item.category} link={`/informasi/berita/${item.slug}`} />
+                  <Card key={item.id} image={item.thumbnail} title={item.title} description={item.excerpt} badge={item.category}
+                    tag={isImportedNews(item) ? 'Sumber Eksternal' : 'Berita Sekolah'}
+                    tagClassName={isImportedNews(item) ? 'bg-blue-600/90 text-white' : 'bg-[#C8A951]/90 text-[#1B2A4A]'}
+                    link={`/informasi/berita/${item.slug}`} />
                 ))}
               </div>
             </div>

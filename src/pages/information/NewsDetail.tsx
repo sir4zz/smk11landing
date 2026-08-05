@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import PageHero from '../../components/ui/PageHero'
 import Button from '../../components/ui/Button'
-import { news, type NewsItem } from '../../data/news'
+import { news, isImportedNews, type NewsItem } from '../../data/news'
 import { fetchPublicContentById } from '../../lib/api'
 import { Calendar, User, ArrowLeft, Share2 } from 'lucide-react'
 
@@ -67,10 +67,30 @@ const NewsDetail: React.FC = () => {
             <User className="h-4 w-4" />
             {item.author}
           </span>
+          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${isImportedNews(item) ? 'bg-blue-600/10 text-blue-700' : 'bg-[#C8A951]/20 text-[#866D2C]'}`}>
+            {isImportedNews(item) ? 'Sumber Eksternal' : 'Berita Sekolah'}
+          </span>
           <span className="rounded-full bg-[#C8A951]/20 px-3 py-1 text-xs font-semibold text-[#866D2C]">
             {item.category}
           </span>
         </div>
+
+        {isImportedNews(item) && item.source_url && (
+          <div className="mb-8 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
+            <p className="font-semibold">Berita ini diambil dari sumber eksternal.</p>
+            <a
+              href={item.source_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1 inline-flex items-center gap-1 break-all font-medium underline underline-offset-2 hover:text-blue-600"
+            >
+              {item.source_url}
+            </a>
+            {item.source_label && item.source_label !== 'Diambil dari URL' && (
+              <p className="mt-2 text-blue-700/80">{item.source_label}</p>
+            )}
+          </div>
+        )}
 
         <div className="prose prose-lg max-w-none text-[#23314D] leading-relaxed"
           dangerouslySetInnerHTML={{ __html: item.content }}

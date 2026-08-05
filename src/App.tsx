@@ -22,12 +22,22 @@ import StrukturManajemen from './pages/management/StrukturManajemen'
 import NewsList from './pages/information/NewsList'
 import NewsDetail from './pages/information/NewsDetail'
 import FAQ from './pages/information/FAQ'
+import Osis from './pages/osis/Osis'
+import OsisExtracurriculars from './pages/osis/Extracurriculars'
+import OsisExtracurricularDetail from './pages/osis/ExtracurricularDetail'
+import Kesemaptaan from './pages/osis/Kesemaptaan'
+import Mading from './pages/mading/Mading'
+import StudentLogin from './pages/mading/StudentLogin'
+import StudentArea from './pages/mading/StudentArea'
+import { AdminRouteGuard, StudentRouteGuard } from './components/auth/RouteGuards'
 
 function App() {
   return (
     <Routes>
         <Route path="admin/login" element={<AdminLogin />} />
-        <Route path="admin" element={<Admin />} />
+        <Route element={<AdminRouteGuard />}>
+          <Route path="admin" element={<Admin />} />
+        </Route>
 
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
@@ -59,6 +69,17 @@ function App() {
           <Route path="informasi/berita" element={<NewsList />} />
           <Route path="informasi/berita/:slug" element={<NewsDetail />} />
           <Route path="informasi/faq" element={<FAQ />} />
+
+          {/* OSIS */}
+          <Route path="osis" element={<Osis />} />
+          <Route path="osis/ekstrakurikuler" element={<OsisExtracurriculars />} />
+          <Route path="osis/ekstrakurikuler/:slug" element={<OsisExtracurricularDetail />} />
+          <Route path="osis/kesemaptaan" element={<Kesemaptaan />} />
+          <Route path="mading" element={<Mading />} />
+          <Route path="mading/login" element={<StudentLogin />} />
+          <Route element={<StudentRouteGuard />}>
+            <Route path="mading/area" element={<StudentArea />} />
+          </Route>
 
           {/* Public information portal */}
           <Route path="spmb" element={<Admissions />} />

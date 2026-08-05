@@ -43,6 +43,18 @@ export const navigationData: NavItem[] = [
       { label: 'FAQ', href: '/informasi/faq' },
     ],
   },
+  {
+    label: 'OSIS',
+    href: '/osis',
+    children: [
+      { label: 'Profil OSIS', href: '/osis' },
+      { label: 'Struktur OSIS', href: '/osis#struktur' },
+      { label: 'Kegiatan OSIS', href: '/osis#kegiatan' },
+      { label: 'Ekstrakurikuler', href: '/osis/ekstrakurikuler' },
+      { label: 'Kesemaptaan', href: '/osis/kesemaptaan' },
+    ],
+  },
+  { label: 'Mading', href: '/mading' },
   { label: 'SPMB', href: '/spmb', isHighlighted: true },
   { label: 'Kontak', href: '/kontak' },
 ];

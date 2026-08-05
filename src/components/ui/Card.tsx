@@ -6,6 +6,8 @@ interface CardProps {
   title?: string;
   description?: string;
   badge?: string;
+  tag?: string;
+  tagClassName?: string;
   link?: string;
   className?: string;
   children?: React.ReactNode;
@@ -16,6 +18,8 @@ export const Card: React.FC<CardProps> = ({
   title,
   description,
   badge,
+  tag,
+  tagClassName = 'bg-[#1B2A4A]/80 text-white',
   link,
   className = '',
   children,
@@ -28,6 +32,11 @@ export const Card: React.FC<CardProps> = ({
             <div className="relative h-48 w-full overflow-hidden">
               <img src={image} alt={title} className="h-full w-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#1B2A4A]/70 to-transparent" />
+              {tag && (
+                <span className={`absolute left-3 top-3 rounded-full px-3 py-1 text-xs font-semibold ${tagClassName}`}>
+                  {tag}
+                </span>
+              )}
               {badge && (
                 <span className="absolute right-3 top-3 rounded-full bg-[#C8A951] px-3 py-1 text-xs font-semibold text-[#1B2A4A]">
                   {badge}

@@ -8,6 +8,10 @@ export interface NewsItem {
   thumbnail: string;
   category: string;
   author: string;
+  source_type?: 'manual' | 'imported';
+  source_label?: string;
+  source_note?: string;
+  source_url?: string;
 }
 
 export const newsData: NewsItem[] = [
@@ -78,5 +82,9 @@ export const newsData: NewsItem[] = [
     author: 'OSIS'
   }
 ];
+
+export function isImportedNews(item: Pick<NewsItem, 'source_type' | 'source_url'>): boolean {
+  return item.source_type === 'imported' || Boolean(item.source_url);
+}
 
 export { newsData as news };

@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
-import { BarChart3, BookOpen, Briefcase, Building2, CalendarDays, FileText, GraduationCap, LogOut, Mail, Menu, Pencil, Plus, Trophy, Trash2, Upload, Users, X, Save } from 'lucide-react';
+import { BarChart3, BookOpen, Briefcase, Building2, CalendarDays, FileText, GraduationCap, LogOut, Mail, Menu, Pencil, Plus, Trophy, Trash2, Upload, Users, X, Save, ShieldCheck, UsersRound, Dumbbell, Newspaper, UserCog } from 'lucide-react';
 import logoSekolah from '../assets/logo.png';
 import { news as initialNews } from '../data/news';
 import { programs as initialPrograms } from '../data/programs';
@@ -11,12 +11,21 @@ import { achievements as initialAchievements } from '../data/achievements';
 import { teacherActivities as initialTeacherActivities } from '../data/teacherActivities';
 import { educationStaff as initialEducationStaff } from '../data/educationStaff';
 import { defaultSpmbContent, type SpmbContent, type SpmbFaqItem, type SpmbFlowStep, type SpmbScheduleItem } from '../data/spmb';
-import { insforge } from '../lib/api';
+import { backendApi } from '../lib/api';
 import { LoadingInline } from '../components/ui/LoadingScreen';
 import ImportModal from '../components/admin/ImportModal';
+import ImageField from '../components/admin/ImageField';
+import RolePermissions from '../components/admin/RolePermissions';
+import OsisManagement from '../components/admin/OsisManagement';
+import ExtracurricularManagement from '../components/admin/ExtracurricularManagement';
+import KesemaptaanManagement from '../components/admin/KesemaptaanManagement';
+import MadingManagement from '../components/admin/MadingManagement';
+import StudentsManagement from '../components/admin/StudentsManagement';
+import { StaffAuthProvider, useStaffAuth } from '../lib/staffAuth';
+import { can, STAFF_ROLES } from '../lib/permissions';
 
-type Section = 'dashboard' | 'news' | 'programs' | 'facilities' | 'staff' | 'achievements' | 'teacherActivities' | 'educationStaff' | 'spmb' | 'contact';
-type EditableSection = Exclude<Section, 'dashboard' | 'contact' | 'spmb'>;
+type Section = 'dashboard' | 'news' | 'programs' | 'facilities' | 'staff' | 'achievements' | 'teacherActivities' | 'educationStaff' | 'spmb' | 'contact' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students';
+type EditableSection = Exclude<Section, 'dashboard' | 'contact' | 'spmb' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students'>;
 type Item = Record<string, unknown>;
 const sessionKey = 'smkn11-admin-session';
 const TABLE_MAP: Record<string, string> = {
@@ -37,13 +46,23 @@ const seed = {
 };
 
 const configs: Record<EditableSection, { title: string; icon: typeof FileText; fields: { key: string; label: string; type?: string; multiline?: boolean }[] }> = {
-  news: { title: 'Berita', icon: FileText, fields: [{ key: 'title', label: 'Judul' }, { key: 'category', label: 'Kategori' }, { key: 'author', label: 'Penulis' }, { key: 'date', label: 'Tanggal', type: 'date' }, { key: 'excerpt', label: 'Ringkasan', multiline: true }] },
-  programs: { title: 'Program Keahlian', icon: BookOpen, fields: [{ key: 'name', label: 'Nama Program' }, { key: 'shortName', label: 'Singkatan' }, { key: 'shortDescription', label: 'Deskripsi Singkat', multiline: true }] },
-  facilities: { title: 'Fasilitas', icon: Building2, fields: [{ key: 'name', label: 'Nama Fasilitas' }, { key: 'category', label: 'Kategori' }, { key: 'description', label: 'Deskripsi', multiline: true }, { key: 'photo', label: 'URL Foto', type: 'url' }] },
-  staff: { title: 'Staf & Guru', icon: Users, fields: [{ key: 'name', label: 'Nama' }, { key: 'position', label: 'Jabatan' }, { key: 'department', label: 'Unit / Departemen' }, { key: 'photo', label: 'URL Foto', type: 'url' }, { key: 'description', label: 'Deskripsi Singkat', multiline: true }] },
-  achievements: { title: 'Prestasi', icon: Trophy, fields: [{ key: 'title', label: 'Judul Prestasi' }, { key: 'event', label: 'Acara' }, { key: 'level', label: 'Tingkat' }, { key: 'rank', label: 'Peringkat' }, { key: 'year', label: 'Tahun', type: 'number' }, { key: 'photo', label: 'URL Foto', type: 'url' }] },
-  teacherActivities: { title: 'Kegiatan Guru', icon: CalendarDays, fields: [{ key: 'title', label: 'Judul Kegiatan' }, { key: 'category', label: 'Kategori' }, { key: 'date', label: 'Tanggal', type: 'date' }, { key: 'photo', label: 'URL Foto', type: 'url' }, { key: 'description', label: 'Deskripsi', multiline: true }] },
-  educationStaff: { title: 'Tenaga Kependidikan', icon: Briefcase, fields: [{ key: 'name', label: 'Nama' }, { key: 'position', label: 'Jabatan' }, { key: 'department', label: 'Unit / Departemen' }, { key: 'photo', label: 'URL Foto', type: 'url' }] },
+  news: { title: 'Berita', icon: FileText, fields: [{ key: 'title', label: 'Judul' }, { key: 'slug', label: 'Slug' }, { key: 'category', label: 'Kategori', type: 'select' }, { key: 'author', label: 'Penulis', type: 'select' }, { key: 'date', label: 'Tanggal', type: 'date' }, { key: 'excerpt', label: 'Ringkasan', multiline: true }, { key: 'content', label: 'Isi Berita', multiline: true }, { key: 'thumbnail', label: 'Gambar Sampul', type: 'image' }, { key: 'source_label', label: 'Jenis / Sumber', type: 'select' }, { key: 'source_note', label: 'Deskripsi Sumber', multiline: true }] },
+  programs: { title: 'Program Keahlian', icon: BookOpen, fields: [{ key: 'name', label: 'Nama Program' }, { key: 'slug', label: 'Slug' }, { key: 'short_name', label: 'Singkatan' }, { key: 'short_description', label: 'Deskripsi Singkat', multiline: true }, { key: 'description', label: 'Deskripsi Lengkap', multiline: true }, { key: 'image', label: 'Gambar', type: 'image' }] },
+  facilities: { title: 'Fasilitas', icon: Building2, fields: [{ key: 'name', label: 'Nama Fasilitas' }, { key: 'category', label: 'Kategori', type: 'select' }, { key: 'description', label: 'Deskripsi', multiline: true }, { key: 'photo', label: 'Foto', type: 'image' }] },
+  staff: { title: 'Staf & Guru', icon: Users, fields: [{ key: 'name', label: 'Nama' }, { key: 'position', label: 'Jabatan', type: 'select' }, { key: 'department', label: 'Unit / Departemen', type: 'select' }, { key: 'photo', label: 'Foto', type: 'image' }, { key: 'description', label: 'Deskripsi Singkat', multiline: true }] },
+  achievements: { title: 'Prestasi', icon: Trophy, fields: [{ key: 'title', label: 'Judul Prestasi' }, { key: 'event', label: 'Acara' }, { key: 'level', label: 'Tingkat', type: 'select' }, { key: 'rank', label: 'Peringkat', type: 'select' }, { key: 'year', label: 'Tahun', type: 'number' }, { key: 'photo', label: 'Foto', type: 'image' }] },
+  teacherActivities: { title: 'Kegiatan Guru', icon: CalendarDays, fields: [{ key: 'title', label: 'Judul Kegiatan' }, { key: 'category', label: 'Kategori', type: 'select' }, { key: 'date', label: 'Tanggal', type: 'date' }, { key: 'photo', label: 'Foto', type: 'image' }, { key: 'description', label: 'Deskripsi', multiline: true }] },
+  educationStaff: { title: 'Tenaga Kependidikan', icon: Briefcase, fields: [{ key: 'name', label: 'Nama' }, { key: 'position', label: 'Jabatan', type: 'select' }, { key: 'department', label: 'Unit / Departemen', type: 'select' }, { key: 'photo', label: 'Foto', type: 'image' }] },
+};
+
+const FIELD_OPTION_PRESETS: Record<string, string[]> = {
+  category: ['Informasi', 'Kegiatan', 'Prestasi', 'Pengumuman', 'Akademik', 'Fasilitas Umum', 'Keagamaan', 'Pendukung'],
+  author: ['Tim Humas', 'Admin', 'Pembina OSIS', 'Kesiswaan'],
+  source_label: ['Berita mandiri', 'Diambil dari URL', 'Rilis resmi', 'Kerja sama media'],
+  position: ['Kepala Sekolah', 'Wakil Kepala Sekolah', 'Kepala Tata Usaha', 'Guru', 'Staf Kesiswaan', 'Staf Humas', 'Laboran', 'Pustakawan', 'Operator Sekolah (Dapodik)'],
+  department: ['Manajemen', 'Kurikulum', 'Kesiswaan', 'Humas', 'Sarana Prasarana', 'Tata Usaha', 'Perpustakaan', 'Laboratorium'],
+  level: ['Kabupaten', 'Provinsi', 'Nasional', 'Internasional'],
+  rank: ['Juara 1', 'Juara 2', 'Juara 3', 'Medali Emas', 'Medali Perak', 'Medali Perunggu', 'Harapan', 'Peserta', 'Partisipasi'],
 };
 
 function normalizeSpmbRow(row: Record<string, unknown>): SpmbContent {
@@ -65,10 +84,26 @@ function normalizeSpmbRow(row: Record<string, unknown>): SpmbContent {
   };
 }
 
+type AdminLoginRole = (typeof STAFF_ROLES)[number];
+
+const ROLE_LABELS: Record<AdminLoginRole, string> = {
+  admin: 'Admin',
+  guru: 'Guru',
+  osis: 'OSIS',
+};
+
+const ROLE_HINTS: Record<AdminLoginRole, string> = {
+  admin: 'Akses penuh untuk mengelola website dan konten.',
+  guru: 'Akses terbatas untuk mengelola bagian yang diberikan admin.',
+  osis: 'Akses terbatas untuk fitur OSIS, ekstrakurikuler, kesemaptaan, dan mading.',
+};
+
 export function AdminLogin() {
   const navigate = useNavigate();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<AdminLoginRole>('admin');
+  const [step, setStep] = useState<'select' | 'form'>('select');
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -80,17 +115,17 @@ export function AdminLogin() {
     const password = String(form.get('password') ?? '');
 
     try {
-      const { data, error: signInError } = await insforge.auth.signInWithPassword({
+      const { data, error: signInError } = await backendApi.auth.signInWithPassword({
         email,
         password,
       });
       if (signInError) throw signInError;
-      if (!data?.user) throw new Error('Sesi admin tidak dapat dibuat.');
-      
-      const { data: profile } = await insforge.database.from('profiles').select('role').eq('id', data.user.id).single();
-      if (profile?.role !== 'admin') {
-        await insforge.auth.signOut();
-        throw new Error('Unauthorized. Not an admin.');
+      if (!data?.user) throw new Error('Sesi login tidak dapat dibuat.');
+
+      const { data: profile } = await backendApi.database.from('profiles').select('role').eq('id', data.user.id).single();
+      if (!profile?.role || profile.role !== selectedRole) {
+        await backendApi.auth.signOut();
+        throw new Error(`Akun ini bukan akun ${ROLE_LABELS[selectedRole].toLowerCase()}.`);
       }
 
       localStorage.setItem(sessionKey, 'true');
@@ -103,29 +138,72 @@ export function AdminLogin() {
   };
 
   useEffect(() => {
-    insforge.auth.getCurrentUser().then(({ data }) => {
+    backendApi.auth.getCurrentUser() .then(({ data }: any) => {
       if (data.user) navigate('/admin', { replace: true });
     })
   }, [navigate]);
 
   return (
     <main className="min-h-screen bg-[#FAF6F0] grid place-items-center p-4">
-      <form onSubmit={submit} className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl">
+      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-[#FAF6F0] p-2"><img src={logoSekolah} alt="Logo SMKN 11" className="h-full w-full object-contain" /></div>
-          <h1 className="text-2xl font-bold text-[#1B2A4A]">Admin SMKN 11</h1>
-          <p className="mt-2 text-sm text-[#23314D]">Masuk untuk mengelola konten website.</p>
+          <h1 className="text-2xl font-bold text-[#1B2A4A]">Login Panel SMKN 11</h1>
+          <p className="mt-2 text-sm text-[#23314D]">Pilih area login yang sesuai sebelum masuk ke panel.</p>
         </div>
+
         {error && <p className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-        <label className="mb-4 block text-sm font-semibold text-[#1B2A4A]">Email Admin<input name="username" type="email" required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2" /></label>
-        <label className="mb-6 block text-sm font-semibold text-[#1B2A4A]">Kata sandi<input name="password" type="password" required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2" /></label>
-        <button disabled={loading} className="w-full rounded-lg bg-[#1B2A4A] py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-70">{loading ? 'Memeriksa...' : 'Masuk'}</button>
-      </form>
+
+        {step === 'select' ? (
+          <div className="space-y-3">
+            {(Object.keys(ROLE_LABELS) as AdminLoginRole[]).map((role) => (
+              <button
+                key={role}
+                type="button"
+                onClick={() => {
+                  setSelectedRole(role);
+                  setStep('form');
+                }}
+                className="w-full rounded-xl border border-[#1B2A4A]/15 bg-[#FAF6F0] p-4 text-left transition-all hover:border-[#C8A951] hover:bg-[#FFF9E8]"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="font-bold text-[#1B2A4A]">Login sebagai {ROLE_LABELS[role]}</p>
+                    <p className="mt-1 text-sm text-[#5B7088]">{ROLE_HINTS[role]}</p>
+                  </div>
+                  <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#866D2C]">{ROLE_LABELS[role]}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <form onSubmit={submit}>
+            <div className="mb-4 rounded-lg border border-[#1B2A4A]/10 bg-[#FAF6F0] p-3 text-sm text-[#23314D]">
+              <p className="font-semibold text-[#1B2A4A]">Login sebagai {ROLE_LABELS[selectedRole]}</p>
+              <p className="mt-1 text-[#5B7088]">{ROLE_HINTS[selectedRole]}</p>
+            </div>
+            <label className="mb-4 block text-sm font-semibold text-[#1B2A4A]">Email {ROLE_LABELS[selectedRole]}<input name="username" type="email" required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2" /></label>
+            <label className="mb-6 block text-sm font-semibold text-[#1B2A4A]">Kata sandi<input name="password" type="password" required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2" /></label>
+            <div className="flex flex-col gap-3">
+              <button disabled={loading} className="w-full rounded-lg bg-[#1B2A4A] py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-70">{loading ? 'Memeriksa...' : `Masuk sebagai ${ROLE_LABELS[selectedRole]}`}</button>
+              <button type="button" onClick={() => setStep('select')} className="text-sm font-semibold text-[#866D2C]">â† Pilih role lain</button>
+            </div>
+          </form>
+        )}
+      </div>
     </main>
   );
 }
 
 export default function Admin() {
+  return (
+    <StaffAuthProvider>
+      <AdminPanel />
+    </StaffAuthProvider>
+  );
+}
+
+function AdminPanel() {
   const navigate = useNavigate();
   const [data, setData] = useState<Record<string, Item[]>>(seed as unknown as Record<string, Item[]>);
   const [section, setSection] = useState<Section>('dashboard');
@@ -133,44 +211,78 @@ export default function Admin() {
   const [open, setOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [mobile, setMobile] = useState(false);
+  const { role, permissions, loading: authLoading } = useStaffAuth();
+  const isAdmin = role === 'admin';
+  const canViewOsis = isAdmin || can(permissions, 'osis.view');
+  const canViewEkstra = isAdmin || can(permissions, 'extracurricular.view');
+  const canViewKesemaptaan = isAdmin || can(permissions, 'kesemaptaan.view');
+  const canViewMading = isAdmin || can(permissions, 'mading.view');
+  const canViewStudents = isAdmin || can(permissions, 'mading.edit_all');
 
   useEffect(() => {
-    insforge.auth.getCurrentUser().then(({ data }) => {
+    if (authLoading) return;
+    backendApi.auth.getCurrentUser() .then(({ data }: any) => {
       if (!data.user) {
         localStorage.removeItem(sessionKey);
         navigate('/admin/login', { replace: true });
         return;
       }
+      if (!isAdmin) return;
       Promise.all([
-        insforge.database.from(TABLE_MAP.news).select('*').then((r: any) => r.data || []),
-        insforge.database.from(TABLE_MAP.programs).select('*').then((r: any) => r.data || []),
-        insforge.database.from(TABLE_MAP.facilities).select('*').then((r: any) => r.data || []),
-        insforge.database.from(TABLE_MAP.staff).select('*').then((r: any) => r.data || []),
-        insforge.database.from(TABLE_MAP.achievements).select('*').then((r: any) => r.data || []),
-        insforge.database.from(TABLE_MAP.teacherActivities).select('*').then((r: any) => r.data || []),
-        insforge.database.from(TABLE_MAP.educationStaff).select('*').then((r: any) => r.data || []),
-        insforge.database.from('contact_messages').select('*').then((r: any) => r.data || []),
+        backendApi.database.from(TABLE_MAP.news).select('*').then((r: any) => r.data || []),
+        backendApi.database.from(TABLE_MAP.programs).select('*').then((r: any) => r.data || []),
+        backendApi.database.from(TABLE_MAP.facilities).select('*').then((r: any) => r.data || []),
+        backendApi.database.from(TABLE_MAP.staff).select('*').then((r: any) => r.data || []),
+        backendApi.database.from(TABLE_MAP.achievements).select('*').then((r: any) => r.data || []),
+        backendApi.database.from(TABLE_MAP.teacherActivities).select('*').then((r: any) => r.data || []),
+        backendApi.database.from(TABLE_MAP.educationStaff).select('*').then((r: any) => r.data || []),
+        backendApi.database.from('contact_messages').select('*').then((r: any) => r.data || []),
       ]).then(([news, programs, facilities, staff, achievements, teacherActivities, educationStaff, contact]) => setData({
         news, programs, facilities, staff, achievements, teacherActivities, educationStaff, contact,
       })).catch(() => {});
     })
-  }, []);
+  }, [authLoading, isAdmin, navigate]);
 
   const menu = (Object.keys(configs) as EditableSection[]);
   const total = useMemo(() => Object.values(data).reduce((sum, list) => sum + list.length, 0), [data]);
+  const fieldOptions = useMemo(() => {
+    if (!(section in configs)) return {};
+    const config = configs[section as EditableSection];
+    const opts: Record<string, string[]> = {};
+    for (const field of config.fields) {
+      if (field.type !== 'select') continue;
+      const set = new Set<string>(FIELD_OPTION_PRESETS[field.key] ?? []);
+      for (const row of data[section] ?? []) {
+        const value = (row as Record<string, unknown>)[field.key];
+        if (typeof value === 'string' && value.trim()) set.add(value.trim());
+      }
+      opts[field.key] = [...set];
+    }
+    return opts;
+  }, [section, data]);
 
   if (!localStorage.getItem(sessionKey)) return <Navigate to="/admin/login" replace />;
+  if (authLoading) return <div className="min-h-screen bg-[#FAF6F0]"><LoadingInline /></div>;
 
   const update = async (next: Item) => {
     try {
-      const { id, ...dataToSave } = next;
+      const normalizedNext = section === 'news'
+        ? {
+            ...next,
+            source_type: next.source_type ?? (next.source_url ? 'imported' : 'manual'),
+            source_label: String(next.source_label ?? (next.source_url ? 'Diambil dari URL' : 'Berita mandiri')),
+            source_note: String(next.source_note ?? ''),
+            source_url: String(next.source_url ?? ''),
+          }
+        : next;
+      const { id: _id, ...dataToSave } = normalizedNext;
       let payload;
       if (editing) {
-        const { error, data } = await insforge.database.from(TABLE_MAP[section as EditableSection]).update(dataToSave).eq('id', editing.id).select().single();
+        const { error, data } = await backendApi.database.from(TABLE_MAP[section as EditableSection]).update(dataToSave).eq('id', editing.id).select().single();
         if (error) throw error;
         payload = data;
       } else {
-        const { error, data } = await insforge.database.from(TABLE_MAP[section as EditableSection]).insert([dataToSave]).select().single();
+        const { error, data } = await backendApi.database.from(TABLE_MAP[section as EditableSection]).insert([dataToSave]).select().single();
         if (error) throw error;
         payload = data;
       }
@@ -189,10 +301,10 @@ export default function Admin() {
     if (!confirm('Hapus data ini?')) return;
     try {
       if (section === 'contact') {
-        const { error } = await insforge.database.from('contact_messages').delete().eq('id', id);
+        const { error } = await backendApi.database.from('contact_messages').delete().eq('id', id);
         if (error) throw error;
       } else {
-        const { error } = await insforge.database.from(TABLE_MAP[section]).delete().eq('id', id);
+        const { error } = await backendApi.database.from(TABLE_MAP[section]).delete().eq('id', id);
         if (error) throw error;
       }
       setData(current => ({ ...current, [section]: current[section].filter(item => item.id !== id) }));
@@ -202,7 +314,7 @@ export default function Admin() {
   };
 
   const markRead = async (id: unknown) => {
-    await insforge.database.from('contact_messages').update({ is_read: true }).eq('id', id);
+    await backendApi.database.from('contact_messages').update({ is_read: true }).eq('id', id);
     setData(current => ({
       ...current,
       contact: current.contact.map(item => item.id === id ? { ...item, is_read: true } : item),
@@ -210,12 +322,12 @@ export default function Admin() {
   };
 
   const refresh = async (key: EditableSection) => {
-    const { data } = await insforge.database.from(TABLE_MAP[key]).select('*');
+    const { data } = await backendApi.database.from(TABLE_MAP[key]).select('*');
     if (data) setData(current => ({ ...current, [key]: data as Item[] }));
   };
 
-  const active = section === 'dashboard' ? null : section === 'contact' ? { title: 'Pesan Kontak', icon: Mail, fields: [] } : section === 'spmb' ? { title: 'Kelola SPMB', icon: GraduationCap, fields: [] } : configs[section];
-  const editableSections = section !== 'dashboard' && section !== 'contact' && section !== 'spmb';
+  const active = section === 'dashboard' ? null : section === 'contact' ? { title: 'Pesan Kontak', icon: Mail, fields: [] } : section === 'spmb' ? { title: 'Kelola SPMB', icon: GraduationCap, fields: [] } : section === 'permissions' ? { title: 'Role & Permission', icon: ShieldCheck, fields: [] } : section === 'osis' ? { title: 'OSIS', icon: UsersRound, fields: [] } : section === 'extracurriculars' ? { title: 'Ekstrakurikuler', icon: Dumbbell, fields: [] } : section === 'kesemaptaan' ? { title: 'Kesemaptaan', icon: ShieldCheck, fields: [] } : section === 'mading' ? { title: 'Mading', icon: Newspaper, fields: [] } : section === 'students' ? { title: 'Data Siswa', icon: UserCog, fields: [] } : configs[section];
+  const editableSections = section !== 'dashboard' && section !== 'contact' && section !== 'spmb' && section !== 'permissions' && section !== 'osis' && section !== 'extracurriculars' && section !== 'kesemaptaan' && section !== 'mading' && section !== 'students';
 
   return (
     <div className="min-h-screen bg-[#FAF6F0] text-[#1B2A4A]">
@@ -225,13 +337,19 @@ export default function Admin() {
           <button className="lg:hidden" onClick={() => setMobile(false)}><X /></button>
         </div>
         <nav className="space-y-1">
-          <Nav label="Dashboard" icon={BarChart3} active={section === 'dashboard'} onClick={() => setSection('dashboard')} />
-          {menu.map(key => <Nav key={key} label={configs[key].title} icon={configs[key].icon} active={section === key} onClick={() => setSection(key)} />)}
-          <Nav label="Kelola SPMB" icon={GraduationCap} active={section === 'spmb'} onClick={() => setSection('spmb')} />
-          <Nav label="Pesan Kontak" icon={Mail} active={section === 'contact'} onClick={() => setSection('contact')} />
+          {can(permissions, 'dashboard.view') && <Nav label="Dashboard" icon={BarChart3} active={section === 'dashboard'} onClick={() => setSection('dashboard')} />}
+          {isAdmin && menu.map(key => <Nav key={key} label={configs[key].title} icon={configs[key].icon} active={section === key} onClick={() => setSection(key)} />)}
+          {isAdmin && <Nav label="Kelola SPMB" icon={GraduationCap} active={section === 'spmb'} onClick={() => setSection('spmb')} />}
+          {isAdmin && <Nav label="Pesan Kontak" icon={Mail} active={section === 'contact'} onClick={() => setSection('contact')} />}
+          {isAdmin && <Nav label="Role & Permission" icon={ShieldCheck} active={section === 'permissions'} onClick={() => setSection('permissions')} />}
+          {canViewOsis && <Nav label="OSIS" icon={UsersRound} active={section === 'osis'} onClick={() => setSection('osis')} />}
+          {canViewEkstra && <Nav label="Ekstrakurikuler" icon={Dumbbell} active={section === 'extracurriculars'} onClick={() => setSection('extracurriculars')} />}
+          {canViewKesemaptaan && <Nav label="Kesemaptaan" icon={ShieldCheck} active={section === 'kesemaptaan'} onClick={() => setSection('kesemaptaan')} />}
+          {canViewMading && <Nav label="Mading" icon={Newspaper} active={section === 'mading'} onClick={() => setSection('mading')} />}
+          {canViewStudents && <Nav label="Data Siswa" icon={UserCog} active={section === 'students'} onClick={() => setSection('students')} />}
         </nav>
         <button onClick={async () => {
-          await insforge.auth.signOut();
+          await backendApi.auth.signOut();
           localStorage.removeItem(sessionKey);
           navigate('/admin/login');
         }} className="absolute bottom-6 flex items-center gap-2 text-sm text-[#F3E8D0]"><LogOut size={18} /> Keluar</button>
@@ -256,6 +374,18 @@ export default function Admin() {
 
           {section === 'spmb' && <SPMBManagement />}
 
+          {section === 'permissions' && isAdmin && <RolePermissions />}
+
+          {section === 'osis' && canViewOsis && <OsisManagement permissions={permissions} />}
+
+          {section === 'extracurriculars' && canViewEkstra && <ExtracurricularManagement permissions={permissions} />}
+
+          {section === 'kesemaptaan' && canViewKesemaptaan && <KesemaptaanManagement permissions={permissions} />}
+
+          {section === 'mading' && canViewMading && <MadingManagement permissions={permissions} />}
+
+          {section === 'students' && canViewStudents && <StudentsManagement />}
+
           {editableSections && (
             <>
               <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -270,7 +400,7 @@ export default function Admin() {
           )}
 
           {open && editableSections && (
-            <Editor config={active!} item={editing} onClose={() => setOpen(false)} onSave={async item => { const ok = await update(item); if (ok) setOpen(false); }} />
+            <Editor section={section} config={active!} item={editing} options={fieldOptions} onClose={() => setOpen(false)} onSave={async item => { const ok = await update(item); if (ok) setOpen(false); }} />
           )}
 
           {importOpen && editableSections && (
@@ -353,6 +483,27 @@ function ContactMessages({ items, onMarkRead, onDelete }: { items: Item[]; onMar
 }
 
 function Table({ items, config, onEdit, onDelete }: { items: Item[]; config: { fields: { key: string; label: string }[] }; onEdit: (item: Item) => void; onDelete: (id: unknown) => void }) {
+  const renderCell = (field: { key: string; label: string }, item: Item) => {
+    if (field.key === 'photo' && item[field.key]) {
+      return <img src={String(item[field.key])} alt="" className="h-10 w-10 rounded-full object-cover" />;
+    }
+
+    if (field.key === 'source_label' && item.source_type === 'imported') {
+      return (
+        <div>
+          <span className="inline-flex rounded-full bg-[#C8A951]/20 px-2.5 py-1 text-xs font-semibold text-[#866D2C]">{String(item[field.key] ?? 'Diambil dari URL')}</span>
+          {item.source_note ? <p className="mt-1 text-xs text-[#5B7088]">{String(item.source_note)}</p> : null}
+        </div>
+      );
+    }
+
+    if (field.key === 'source_label') {
+      return <span className="text-[#23314D]">{String(item[field.key] ?? 'Berita mandiri')}</span>;
+    }
+
+    return String(item[field.key] ?? '-');
+  };
+
   return (
     <div className="overflow-x-auto rounded-xl bg-white shadow-sm">
       <table className="w-full text-left text-sm">
@@ -367,9 +518,7 @@ function Table({ items, config, onEdit, onDelete }: { items: Item[]; config: { f
             <tr key={String(item.id)} className="border-t border-[#1B2A4A]/10">
               {config.fields.map(field => (
                 <td key={field.key} className="max-w-xs p-4">
-                  {field.key === 'photo' && item[field.key]
-                    ? <img src={String(item[field.key])} alt="" className="h-10 w-10 rounded-full object-cover" />
-                    : String(item[field.key] ?? '-')}
+                  {renderCell(field, item)}
                 </td>
               ))}
               <td className="p-4">
@@ -406,7 +555,7 @@ function PPDBManagement() {
   const fetchList = async () => {
     setLoading(true);
     try {
-      let query = insforge.database.from('ppdb_registrations').select('*', { count: 'exact' });
+      let query = backendApi.database.from('ppdb_registrations').select('*', { count: 'exact' });
       if (search) query = query.or(`full_name.ilike.%${search}%,nisn.ilike.%${search}%,registration_number.ilike.%${search}%`);
       if (statusFilter) query = query.eq('status', statusFilter);
       if (programFilter) query = query.eq('program', programFilter);
@@ -421,7 +570,7 @@ function PPDBManagement() {
         setTotalPages(Math.ceil((count || 0) / 20));
         
         // Also fetch unique programs for filter
-        const { data: progs } = await insforge.database.from(TABLE_MAP.programs).select('name');
+        const { data: progs } = await backendApi.database.from(TABLE_MAP.programs).select('name');
         if (progs) setPrograms((progs as any[]).map((p: any) => p.name));
       }
     } catch {} finally { setLoading(false); }
@@ -429,7 +578,7 @@ function PPDBManagement() {
 
   const fetchStats = async () => {
     try {
-      const { data, error } = await insforge.database.from('ppdb_registrations').select('status');
+      const { data, error } = await backendApi.database.from('ppdb_registrations').select('status');
       if (error) return;
       const dataArr = data as { status: string }[];
       const counts: Record<string, number> = { total: dataArr.length };
@@ -462,26 +611,26 @@ function PPDBManagement() {
 
   const openDetail = async (id: string) => {
     try {
-    const { data: registration, error } = await insforge.database.from('ppdb_registrations').select('*').eq('id', id).single();
+    const { data: registration, error } = await backendApi.database.from('ppdb_registrations').select('*').eq('id', id).single();
       if (error) throw error;
       
-    const { data: documents } = await insforge.database.from('ppdb_documents').select('*').eq('application_id', id).order('created_at', { ascending: true });
-    const { data: activities } = await insforge.database.from('ppdb_activity_log').select('*').eq('application_id', id).order('created_at', { ascending: false });
+    const { data: documents } = await backendApi.database.from('ppdb_documents').select('*').eq('application_id', id).order('created_at', { ascending: true });
+    const { data: activities } = await backendApi.database.from('ppdb_activity_log').select('*').eq('application_id', id).order('created_at', { ascending: false });
       
       setDetail({ registration, documents: documents || [], activities: activities || [] });
     } catch {}
   };
 
   const updateStatus = async (id: string, status: string, note: string) => {
-    const { error } = await insforge.database.from('ppdb_registrations').update({ status, admin_note: note }).eq('id', id);
+    const { error } = await backendApi.database.from('ppdb_registrations').update({ status, admin_note: note }).eq('id', id);
     if (!error) {
-      await insforge.database.from('ppdb_activity_log').insert([{ application_id: id, action: `Status diubah menjadi ${status}`, note }]);
+      await backendApi.database.from('ppdb_activity_log').insert([{ application_id: id, action: `Status diubah menjadi ${status}`, note }]);
       fetchList(); fetchStats(); setDetail(null);
     }
   };
 
   const verifyDoc = async (docId: string, verified: boolean, note: string) => {
-    const { error } = await insforge.database.from('ppdb_documents').update({ verified: verified ? 1 : 0, note }).eq('id', docId);
+    const { error } = await backendApi.database.from('ppdb_documents').update({ verified: verified ? 1 : 0, note }).eq('id', docId);
     if (!error) {
       if (detail) openDetail(detail.registration.id);
     }
@@ -518,7 +667,7 @@ function PPDBManagement() {
         <button onClick={async () => {
           try {
             // Build CSV from data
-            const { data } = await insforge.database.from('ppdb_registrations').select('*').order('created_at', { ascending: false });
+            const { data } = await backendApi.database.from('ppdb_registrations').select('*').order('created_at', { ascending: false });
             if (!data) return;
             const headers = ['No. Daftar', 'Nama', 'Program', 'Status', 'Tgl Daftar'];
             const rows = data.map((d: any) => [d.registration_number, d.full_name, d.program, d.status, d.submitted_at || d.created_at].join(','));
@@ -681,7 +830,7 @@ function PPDBDetail({ data, onClose, onUpdateStatus, onVerifyDoc }: {
                     <div className="flex items-center gap-2">
                       {doc.file_path && (
                         <button onClick={async () => {
-                          const { data: urlData } = await insforge.storage.from('ppdb_documents').createSignedUrl(doc.file_path, 3600);
+                          const { data: urlData } = await backendApi.storage.from('ppdb_documents').createSignedUrl(doc.file_path, 3600);
                           if (urlData?.signedUrl) window.open(urlData.signedUrl, '_blank');
                         }} className="rounded-lg bg-[#1B2A4A]/10 px-3 py-1 text-xs font-semibold text-[#1B2A4A] hover:bg-[#1B2A4A]/20"><Eye className="mr-1 inline h-3 w-3" />Lihat</button>
                       )}
@@ -747,7 +896,7 @@ function SPMBManagement() {
 
   useEffect(() => {
     const load = async () => {
-      const { data, error } = await insforge.database.from('spmb_content').select('*').limit(1).maybeSingle();
+      const { data, error } = await backendApi.database.from('spmb_content').select('*').limit(1).maybeSingle();
       if (!error && data) setContent(normalizeSpmbRow(data as Record<string, unknown>));
       setLoading(false);
     };
@@ -762,7 +911,7 @@ function SPMBManagement() {
     event.preventDefault();
     setSaving(true);
     setMessage('');
-    const { data: { user } } = await insforge.auth.getCurrentUser();
+    const { data: { user } } = await backendApi.auth.getCurrentUser();
     if (!user) {
       setMessage('Sesi telah habis. Silakan login ulang.');
       setSaving(false);
@@ -772,14 +921,14 @@ function SPMBManagement() {
     try {
       let dbError;
       if (id) {
-        const { error } = await insforge.database.from('spmb_content').update(payload).eq('id', id);
+        const { error } = await backendApi.database.from('spmb_content').update(payload).eq('id', id);
         dbError = error;
       } else {
-        const { error } = await insforge.database.from('spmb_content').insert([payload]);
+        const { error } = await backendApi.database.from('spmb_content').insert([payload]);
         dbError = error;
       }
       if (dbError) throw dbError;
-      const { data: refreshed, error: refetchError } = await insforge.database.from('spmb_content').select('*').limit(1).maybeSingle();
+      const { data: refreshed, error: refetchError } = await backendApi.database.from('spmb_content').select('*').limit(1).maybeSingle();
       if (refetchError) throw refetchError;
       if (!refreshed) throw new Error('Data tidak ditemukan setelah simpan.');
       setContent(normalizeSpmbRow(refreshed as Record<string, unknown>));
@@ -853,27 +1002,355 @@ function ListField({ label, hint, value, onChange }: { label: string; hint: stri
   return <label className="block rounded-xl bg-white p-6 text-sm font-semibold shadow-sm">{label}<span className="mt-1 block font-normal text-[#5B7088]">{hint}</span><textarea value={value} onChange={(event) => onChange(event.target.value)} rows={8} className="mt-3 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" /></label>;
 }
 
-function Editor({ config, item, onClose, onSave }: { config: { title: string; fields: { key: string; label: string; type?: string; multiline?: boolean }[] }; item: Item | null; onClose: () => void; onSave: (item: Item) => void }) {
+function slugify(value: string) {
+  return value.toLowerCase().trim().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+function escapeHtml(value: string) {
+  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+const READER_FALLBACKS: { name: string; build: (url: string) => { url: string; init?: RequestInit } }[] = [
+  { name: 'Jina Reader', build: (url) => ({ url: `https://r.jina.ai/${url}`, init: { headers: { Accept: 'text/plain' } } }) },
+  { name: 'AllOrigins', build: (url) => ({ url: `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}` }) },
+  { name: 'CORSProxy', build: (url) => ({ url: `https://corsproxy.io/?url=${encodeURIComponent(url)}` }) },
+];
+
+async function fetchPageText(url: string, timeoutMs = 25000): Promise<string> {
+  const errors: string[] = [];
+  for (const fallback of READER_FALLBACKS) {
+    const { url: fetchUrl, init } = fallback.build(url);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const response = await fetch(fetchUrl, { ...init, signal: controller.signal });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const text = await response.text();
+      if (!text || !text.trim()) throw new Error('respon kosong');
+      return text;
+    } catch (error) {
+      errors.push(`${fallback.name}: ${error instanceof Error ? error.message : 'gagal'}`);
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  throw new Error(`Gagal mengambil halaman melalui semua layanan (${errors.join(' | ')})`);
+}
+
+function looksLikeHtml(text: string): boolean {
+  const head = text.trim().toLowerCase().slice(0, 4000);
+  return /^(<!doctype html|<html|<head|<body)/.test(head)
+    || head.includes('<meta')
+    || head.includes('<article')
+    || head.includes('<div');
+}
+
+function stripMarkdownInline(value: string): string {
+  return value
+    .replace(/!\[([^\]]*)\]\([^)\s]+(?:[^)]*)?\)/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)\s]+(?:[^)]*)?\)/g, '$1')
+    .replace(/\[\]\([^)]*\)/g, '')
+    .replace(/[*_~`#]/g, '')
+    .trim();
+}
+
+function isJunkParagraph(value: string): boolean {
+  return value.length < 20
+    || /^(image|gambar|foto|menu|login|beranda|kategori)\b/i.test(value)
+    || /^[A-Za-z ]+:\s*$/.test(value)
+    || /\((foto|dok|dok\.|istimewa)[^)]*\)\s*$/i.test(value)
+    || /^[A-Z][\w\u00C0-\u024F .'-]+\s-\s[A-Za-z\u00C0-\u024F]+$/.test(value)
+    || /^\w+, \d{1,2} \w+ \d{4} \d{2}:\d{2} \w{3}$/.test(value);
+}
+
+function isBadImageUrl(value: string): boolean {
+  return /favicon|logo|icon|sprite|avatar|framebar|emblem|blank/i.test(value);
+}
+
+function parseMarkdownNews(text: string, pageUrl: string) {
+  const lines = text.split(/\r?\n/).map((line) => line.trim());
+  const hasContentMarker = /^Markdown Content:\s*$/im.test(text);
+
+  let title = '';
+  const titleHeading = lines.find((line) => /^#{1,4}\s+\S/.test(line));
+  if (titleHeading) title = titleHeading.replace(/^#+\s*/, '');
+  if (!title) {
+    const titleMeta = lines.find((line) => /^Title:\s*/i.test(line));
+    if (titleMeta) title = titleMeta.replace(/^Title:\s*/i, '');
+  }
+  if (!title) {
+    const firstMeaningful = lines.find((line) => line
+      && !/^#{1,4}\s/.test(line)
+      && !/^(https?:)?\/\//i.test(line)
+      && !line.startsWith('![')
+      && !/^[A-Za-z ]+:\s*$/i.test(line)
+      && line.length <= 250);
+    if (firstMeaningful) title = firstMeaningful;
+  }
+  title = stripMarkdownInline(title) || 'Judul berita';
+
+  let thumbnail = '';
+  let excerpt = '';
+  const paragraphs: string[] = [];
+  let buffer = '';
+  let inContent = !hasContentMarker;
+  const push = () => {
+    const trimmed = buffer.replace(/\s+/g, ' ').trim();
+    if (trimmed && !isJunkParagraph(trimmed)) paragraphs.push(trimmed);
+    buffer = '';
+  };
+
+  for (const line of lines) {
+    if (!inContent) {
+      if (/^Markdown Content:\s*$/i.test(line)) inContent = true;
+      continue;
+    }
+    if (!line || line === '---') { push(); continue; }
+    if (/^Title:\s*/i.test(line) || /^URL Source:\s*/i.test(line)) continue;
+    if (/^```/.test(line)) continue;
+    if (!thumbnail) {
+      const imageMatch = line.match(/!\[([^\]]*)\]\(([^)\s]+)/);
+      if (imageMatch && imageMatch[2] && !isBadImageUrl(imageMatch[2])) {
+        try { thumbnail = new URL(imageMatch[2], pageUrl).toString(); } catch { thumbnail = imageMatch[2]; }
+      }
+    }
+    const cleaned = stripMarkdownInline(line);
+    if (!cleaned) { push(); continue; }
+    if (cleaned === title) continue;
+    if (!excerpt && cleaned.length > 60 && !isJunkParagraph(cleaned)) excerpt = cleaned;
+    buffer = buffer ? `${buffer} ${cleaned}` : cleaned;
+  }
+  push();
+
+  if (!excerpt) excerpt = paragraphs.find((paragraph) => paragraph.length > 80) ?? paragraphs[0] ?? '';
+  const content = paragraphs.length > 0
+    ? paragraphs.slice(0, 20).map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join('')
+    : `<p>${escapeHtml(text.replace(/\s+/g, ' ').slice(0, 2000) || 'Konten berita tidak tersedia.')}</p>`;
+
+  return {
+    title,
+    slug: slugify(title),
+    excerpt,
+    thumbnail,
+    author: '',
+    content,
+    category: 'Informasi',
+  };
+}
+
+function parseHtmlNews(html: string, pageUrl: string) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+
+  const title = doc.querySelector('meta[property="og:title"], meta[name="twitter:title"], meta[itemprop="headline"]')?.getAttribute('content')
+    || doc.querySelector('h1')?.textContent?.trim()
+    || doc.querySelector('title')?.textContent?.trim()
+    || 'Judul berita';
+
+  const description = doc.querySelector('meta[name="description"], meta[property="og:description"]')?.getAttribute('content')?.trim()
+    || doc.querySelector('meta[name="twitter:description"]')?.getAttribute('content')?.trim()
+    || '';
+
+  const image = doc.querySelector('meta[property="og:image"], meta[name="twitter:image"]')?.getAttribute('content')?.trim();
+  const author = doc.querySelector('meta[name="author"], meta[property="article:author"]')?.getAttribute('content')?.trim() || '';
+
+  const contentRoot = doc.querySelector('article, main, .article-content, .entry-content, .post-content, .content, .news-content') ?? doc.body;
+  const paragraphs = Array.from(contentRoot.querySelectorAll('p, li, h1, h2, h3'))
+    .map((node) => node.textContent?.trim())
+    .filter((value): value is string => Boolean(value) && value.length > 20)
+    .slice(0, 20);
+
+  const content = paragraphs.length > 0
+    ? paragraphs.map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join('')
+    : `<p>${escapeHtml(doc.body.textContent?.trim() || 'Konten berita tidak tersedia.')}</p>`;
+
+  return {
+    title,
+    slug: slugify(title),
+    excerpt: description,
+    thumbnail: image ? new URL(image, pageUrl).toString() : '',
+    author,
+    content,
+    category: doc.querySelector('meta[property="article:section"]')?.getAttribute('content')?.trim() || 'Informasi',
+  };
+}
+
+function extractNewsData(raw: string, pageUrl: string) {
+  if (looksLikeHtml(raw)) return parseHtmlNews(raw, pageUrl);
+  return parseMarkdownNews(raw, pageUrl);
+}
+
+function Editor({ config, item, onClose, onSave, section, options }: { config: { title: string; fields: { key: string; label: string; type?: string; multiline?: boolean }[] }; item: Item | null; onClose: () => void; onSave: (item: Item) => void; section?: string; options?: Record<string, string[]> }) {
+  const [sourceUrl, setSourceUrl] = useState('');
+  const [sourceMeta, setSourceMeta] = useState({ sourceType: 'manual' as 'manual' | 'imported', sourceUrl: '', sourceLabel: 'Berita mandiri', sourceNote: '' });
+  const [fetching, setFetching] = useState(false);
+  const [fetchMessage, setFetchMessage] = useState('');
+  const fieldRefs = useRef<Record<string, HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null>>({});
+  const imageFields = useMemo(() => config.fields.filter(field => field.type === 'image'), [config]);
+  const [imageValues, setImageValues] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const init: Record<string, string> = {};
+    for (const field of imageFields) init[field.key] = String(item?.[field.key] ?? '');
+    setImageValues(init);
+  }, [item, imageFields]);
+
+  useEffect(() => {
+    if (section !== 'news') return;
+
+    const currentItem = item as Record<string, unknown> | null;
+    const existingSourceUrl = typeof currentItem?.source_url === 'string' ? currentItem.source_url : '';
+    const existingSourceType = currentItem?.source_type === 'imported' || existingSourceUrl ? 'imported' : 'manual';
+    const existingSourceLabel = typeof currentItem?.source_label === 'string' && currentItem.source_label ? String(currentItem.source_label) : (existingSourceUrl ? 'Diambil dari URL' : 'Berita mandiri');
+    const existingSourceNote = typeof currentItem?.source_note === 'string' ? String(currentItem.source_note) : '';
+
+    setSourceUrl(existingSourceUrl);
+    setSourceMeta({
+      sourceType: existingSourceType,
+      sourceUrl: existingSourceUrl,
+      sourceLabel: existingSourceLabel,
+      sourceNote: existingSourceNote,
+    });
+  }, [item, section]);
+
+  const applyFieldValue = (key: string, value: string) => {
+    if (imageFields.some(field => field.key === key)) {
+      setImageValues(current => ({ ...current, [key]: value }));
+      return;
+    }
+    const field = fieldRefs.current[key];
+    if (!field) return;
+    if (field instanceof HTMLSelectElement) {
+      if (!Array.from(field.options).some(option => option.value === value)) {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = value;
+        field.add(option);
+      }
+      field.value = value;
+      return;
+    }
+    field.value = value;
+  };
+
+  const importFromUrl = async () => {
+    const value = sourceUrl.trim();
+    if (!value) {
+      setFetchMessage('Masukkan URL berita terlebih dahulu.');
+      return;
+    }
+
+    setFetching(true);
+    setFetchMessage('');
+
+    try {
+      const normalized = /^https?:\/\//i.test(value) ? value : `https://${value}`;
+      const raw = await fetchPageText(normalized);
+      const data = extractNewsData(raw, normalized);
+
+      applyFieldValue('title', data.title);
+      applyFieldValue('slug', data.slug);
+      applyFieldValue('excerpt', data.excerpt);
+      applyFieldValue('content', data.content);
+      applyFieldValue('thumbnail', data.thumbnail);
+      applyFieldValue('author', data.author || 'Tim Humas');
+      applyFieldValue('category', data.category);
+      applyFieldValue('source_label', 'Diambil dari URL');
+      applyFieldValue('source_note', `Diambil dari ${normalized}`);
+      setSourceUrl(normalized);
+      setSourceMeta({
+        sourceType: 'imported',
+        sourceUrl: normalized,
+        sourceLabel: 'Diambil dari URL',
+        sourceNote: `Diambil dari ${normalized}`,
+      });
+      setFetchMessage('Berhasil mengambil data berita dari URL.');
+    } catch (error) {
+      setFetchMessage(error instanceof Error ? error.message : 'Gagal mengambil data berita.');
+    } finally {
+      setFetching(false);
+    }
+  };
+
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    onSave({ ...item, ...Object.fromEntries(form as any) });
+    const formValues = Object.fromEntries(form as any) as Record<string, string>;
+
+    if (section === 'news') {
+      const sourceUrlValue = sourceMeta.sourceUrl || String((item as Record<string, unknown> | null)?.source_url ?? '');
+      const sourceTypeValue = sourceUrlValue ? 'imported' : 'manual';
+      const sourceLabelValue = formValues.source_label || sourceMeta.sourceLabel || (sourceUrlValue ? 'Diambil dari URL' : 'Berita mandiri');
+      const sourceNoteValue = formValues.source_note || sourceMeta.sourceNote || '';
+
+      onSave({
+        ...(item ?? {}),
+        ...formValues,
+        source_type: sourceTypeValue,
+        source_label: sourceLabelValue,
+        source_note: sourceNoteValue,
+        source_url: sourceUrlValue,
+      });
+      return;
+    }
+
+    onSave({ ...(item ?? {}), ...formValues });
   };
 
   return (
     <div className="fixed inset-0 z-40 grid place-items-center bg-black/50 p-4">
-      <form onSubmit={submit} className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl">
+      <form onSubmit={submit} className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
         <div className="mb-5 flex justify-between">
           <h2 className="text-xl font-bold">{item ? 'Ubah' : 'Tambah'} {config.title}</h2>
           <button type="button" onClick={onClose}><X /></button>
         </div>
+
+        {section === 'news' && (
+          <div className="mb-4 rounded-lg border border-[#1B2A4A]/10 bg-[#FAF6F0] p-4">
+            <label className="block text-sm font-semibold text-[#1B2A4A]">
+              Ambil berita dari URL
+              <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                <input
+                  value={sourceUrl}
+                  onChange={(event) => setSourceUrl(event.target.value)}
+                  placeholder="https://contoh.com/berita"
+                  className="w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal"
+                />
+                <button type="button" onClick={importFromUrl} disabled={fetching} className="rounded-lg bg-[#1B2A4A] px-4 py-2 font-semibold text-white disabled:opacity-60">
+                  {fetching ? 'Mengambil...' : 'Ambil data'}
+                </button>
+              </div>
+            </label>
+            {fetchMessage && <p className={`mt-2 text-sm ${fetchMessage.startsWith('Berhasil') ? 'text-green-700' : 'text-red-700'}`}>{fetchMessage}</p>}
+          </div>
+        )}
+
         <div className="space-y-4">
           {config.fields.map(field => (
-            <label key={field.key} className="block text-sm font-semibold">
+            field.type === 'image'
+              ? <div key={field.key}>
+                  <ImageField label={field.label} value={imageValues[field.key] ?? ''} onChange={(url) => setImageValues(current => ({ ...current, [field.key]: url }))} />
+                  <input type="hidden" name={field.key} value={imageValues[field.key] ?? ''} />
+                </div>
+              : <label key={field.key} className="block text-sm font-semibold">
               {field.label}
               {field.multiline
-                ? <textarea name={field.key} rows={4} defaultValue={String(item?.[field.key] ?? '')} required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />
-                : <input name={field.key} type={field.type || 'text'} defaultValue={String(item?.[field.key] ?? '')} required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />}
+                ? <textarea ref={(element) => { fieldRefs.current[field.key] = element; }} name={field.key} rows={4} defaultValue={String(item?.[field.key] ?? '')} required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />
+                : field.type === 'select'
+                  ? (() => {
+                      const currentValue = String(item?.[field.key] ?? '');
+                      const choices = [...new Set([...(options?.[field.key] ?? []), ...(currentValue ? [currentValue] : [])])];
+                      if (choices.length === 0) {
+                        return <input ref={(element) => { fieldRefs.current[field.key] = element; }} name={field.key} type="text" defaultValue={currentValue} required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />;
+                      }
+                      return (
+                        <select ref={(element) => { fieldRefs.current[field.key] = element; }} name={field.key} defaultValue={currentValue} required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 bg-white px-3 py-2 font-normal">
+                          <option value="">â€” Pilih â€”</option>
+                          {choices.map(choice => <option key={choice} value={choice}>{choice}</option>)}
+                        </select>
+                      );
+                    })()
+                  : <input ref={(element) => { fieldRefs.current[field.key] = element; }} name={field.key} type={field.type || 'text'} defaultValue={String(item?.[field.key] ?? '')} required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />}
             </label>
           ))}
         </div>
