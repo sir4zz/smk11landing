@@ -80,6 +80,50 @@ export const newsData: NewsItem[] = [
     thumbnail: '/images/news-6.jpg',
     category: 'Kegiatan',
     author: 'OSIS'
+  },
+  {
+    id: 'news-7',
+    title: 'Tim Futsal SMKN 11 Juara 1 Bupati Cup Kabupaten Tangerang 2025',
+    slug: 'juara-futsal-bupati-cup-2025',
+    date: '2025-09-20',
+    excerpt: 'Tim futsal putra SMKN 11 Kabupaten Tangerang berhasil meraih juara 1 pada Turnamen Futsal Bupati Cup Kabupaten Tangerang 2025.',
+    content: '<p>Tim futsal putra SMKN 11 Kabupaten Tangerang berhasil mengukir prestasi gemilang dengan meraih juara 1 pada Turnamen Futsal Bupati Cup Kabupaten Tangerang 2025. Turnamen yang berlangsung selama dua pekan ini diikuti oleh 24 tim SMK se-Kabupaten Tangerang.</p><p>Di partai final yang berlangsung ketat, tim futsal SMKN 11 berhasil mengalahkan tim asal SMKN 2 dengan skor akhir 3-2. Kapten tim, Reza Pratama, mencetak dua gol penentu kemenangan yang membawa tim meraih trofi juara.</p><p>Kepala Sekolah menyampaikan apresiasi tinggi kepada tim dan pelatih atas prestasi membanggakan ini. "Prestasi ini membuktikan bahwa siswa SMKN 11 tidak hanya unggul dalam akademik dan keahlian, tetapi juga dalam bidang olahraga," ujar beliau. Tim futsal berharap prestasi ini dapat memotivasi siswa lain untuk terus berprestasi di berbagai bidang.</p>',
+    thumbnail: 'https://images.unsplash.com/photo-1552664688-cf1ec3b78426?auto=format&fit=crop&w=900&q=80',
+    category: 'Prestasi',
+    author: 'Tim Humas'
+  },
+  {
+    id: 'news-8',
+    title: 'Praktik Kerja Lapangan (PKL) Siswa Kelas XI Dimulai',
+    slug: 'pkl-kelas-xi-2026',
+    date: '2026-07-01',
+    excerpt: 'Siswa kelas XI dari seluruh program keahlian memulai kegiatan Praktik Kerja Lapangan (PKL) di berbagai perusahaan mitra DUDI.',
+    content: '<p>Praktik Kerja Lapangan (PKL) bagi siswa kelas XI SMKN 11 Kabupaten Tangerang tahun pelajaran 2025/2026 resmi dimulai pada 1 Juli 2026. Kegiatan ini melibatkan ratusan siswa dari enam program keahlian yang ditempatkan di berbagai perusahaan mitra dunia usaha dan dunia industri (DUDI).</p><p>Penempatan PKL disesuaikan dengan kompetensi masing-masing jurusan. Siswa TJKT ditempatkan di perusahaan teknologi dan ISP, siswa DKV di agensi kreatif dan production house, siswa Teknik Otomotif di bengkel resmi dan dealer, siswa TITL di kontraktor listrik dan industri manufaktur, siswa MPLB di bank dan kantor, serta siswa Busana di butik dan konveksi.</p><p>Kepala Program Keahlian Hubin menyampaikan bahwa PKL merupakan momen penting bagi siswa untuk mengaplikasikan ilmu yang dipelajari di sekolah dalam dunia kerja nyata. "Melalui PKL, siswa dapat membangun jejaring dengan industri dan mempersiapkan diri untuk dunia kerja setelah lulus," tuturnya. Kegiatan PKL akan berlangsung selama tiga bulan hingga akhir September 2026.</p>',
+    thumbnail: 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=900&q=80',
+    category: 'Akademik',
+    author: 'Hubin'
+  },
+  {
+    id: 'news-9',
+    title: 'Sosialisasi Bahaya Perundungan (Bullying) dan Kenakalan Remaja',
+    slug: 'sosialisasi-anti-bullying-2026',
+    date: '2026-04-10',
+    excerpt: 'Sekolah mengadakan sosialisasi pencegahan perundungan dan kenakalan remaja yang diikuti seluruh siswa dengan narasumber dari Kepolisian.',
+    content: '<p>Dalam upaya menciptakan lingkungan sekolah yang aman dan nyaman, SMKN 11 Kabupaten Tangerang mengadakan sosialisasi pencegahan perundungan (bullying) dan kenakalan remaja pada 10 April 2026. Kegiatan ini menghadirkan narasumber dari Kepolisian Resor Kabupaten Tangerang dan diikuti oleh seluruh siswa.</p><p>Sosialisasi membahas berbagai topik penting, antara lain jenis-jenis perundungan, dampak psikologis bagi korban dan pelaku, serta cara mencegah dan melaporkan tindakan perundungan. Selain itu, narasumber juga menyampaikan materi tentang bahaya penyalahgunaan narkoba dan pentingnya hukum bagi remaja.</p><p>Kepala Sekolah dalam sambutannya menekankan pentingnya rasa hormat dan empati antar siswa. "Sekolah berkomitmen menciptakan lingkungan belajar yang bebas dari perundungan. Setiap laporan akan kami tindak lanjuti dengan serius," tegas beliau. Kegiatan ini ditutup dengan penandatanganan komitmen anti-bullying oleh perwakilan OSIS dan seluruh ketua kelas.</p>',
+    thumbnail: 'https://images.unsplash.com/photo-1521791136064-7986c5920bc6?auto=format&fit=crop&w=900&q=80',
+    category: 'Kegiatan',
+    author: 'Kesiswaan'
+  },
+  {
+    id: 'news-10',
+    title: 'SMKN 11 Kabupaten Tangerang Raih Akreditasi "A" Unggul',
+    slug: 'akreditasi-a-unggul-2025',
+    date: '2025-12-10',
+    excerpt: 'SMKN 11 Kabupaten Tangerang berhasil meraih predikat akreditasi "A" Unggul dari Badan Akreditasi Nasional Sekolah/Madrasah (BAN-S/M).',
+    content: '<p>SMKN 11 Kabupaten Tangerang berhasil meraih prestasi membanggakan dengan memperoleh predikat akreditasi "A" Unggul dari Badan Akreditasi Nasional Sekolah/Madrasah (BAN-S/M) hasil asesmen tahun 2025. Predikat ini diberikan setelah melalui proses asesmen menyeluruh terhadap delapan standar nasional pendidikan.</p><p>Asesmen akreditasi menilai berbagai aspek, mulai dari kualitas pendidik dan tenaga kependidikan, sarana prasarana, pengelolaan, pembiayaan, hingga prestasi siswa baik akademik maupun non-akademik. Sekolah mendapatkan nilai yang sangat memuaskan pada hampir seluruh komponen penilaian.</p><p>"Capaian akreditasi A Unggul ini adalah hasil kerja keras seluruh keluarga besar SMKN 11 Kabupaten Tangerang. Kami akan terus berinovasi dan meningkatkan mutu pendidikan agar lulusan semakin siap kerja dan berdaya saing tinggi," ujar Kepala Sekolah dalam rilis resmi. Predikat akreditasi A Unggul berlaku selama lima tahun dan menjadi bukti komitmen sekolah dalam menyelenggarakan pendidikan vokasi berkualitas.</p>',
+    thumbnail: 'https://images.unsplash.com/photo-1606857521015-7f7fc63a41f0?auto=format&fit=crop&w=900&q=80',
+    category: 'Pengumuman',
+    author: 'Admin'
   }
 ];
 

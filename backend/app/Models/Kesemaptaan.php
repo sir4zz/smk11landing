@@ -9,6 +9,8 @@ class Kesemaptaan extends Model
 {
     use HasUuids;
 
+    protected $table = 'kesemaptaan';
+
     public $incrementing = false;
     protected $keyType = 'string';
 

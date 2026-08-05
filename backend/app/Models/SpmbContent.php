@@ -9,6 +9,8 @@ class SpmbContent extends Model
 {
     use HasUuids;
 
+    protected $table = 'spmb_content';
+
     public $incrementing = false;
     protected $keyType = 'string';
 

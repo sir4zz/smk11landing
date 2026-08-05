@@ -10,7 +10,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('mading_categories', function (Blueprint $table) {
-            $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
+            $table->uuid('id')->primary()->default(DB::raw('(UUID())'));
             $table->string('slug', 100)->unique();
             $table->string('name', 150);
             $table->integer('sort_order')->default(0);
@@ -18,7 +18,7 @@ return new class extends Migration
         });
 
         Schema::create('mading_posts', function (Blueprint $table) {
-            $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
+            $table->uuid('id')->primary()->default(DB::raw('(UUID())'));
             $table->text('title')->default('');
             $table->text('content')->default('');
             $table->foreignUuid('category_id')->nullable()->references('id')->on('mading_categories')->onDelete('set null');
@@ -37,7 +37,7 @@ return new class extends Migration
         });
 
         Schema::create('mading_reviews', function (Blueprint $table) {
-            $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
+            $table->uuid('id')->primary()->default(DB::raw('(UUID())'));
             $table->foreignUuid('post_id')->references('id')->on('mading_posts')->onDelete('cascade');
             $table->foreignUuid('reviewer_id')->nullable()->references('id')->on('users')->onDelete('set null');
             $table->text('reviewer_name')->default('');

@@ -48,6 +48,30 @@ export const teacherActivitiesData: TeacherActivity[] = [
     description: 'Seluruh pendidik dan tenaga kependidikan bergotong royong menata lingkungan sekolah menjelang dimulainya semester genap.',
     photo: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=900&q=80',
   },
+  {
+    id: 'ta-6',
+    title: 'Pelatihan Pemanfaatan Teknologi AI dalam Pembelajaran',
+    date: '2026-04-20',
+    category: 'Workshop',
+    description: 'Guru mengikuti pelatihan pemanfaatan teknologi kecerdasan buatan (AI) untuk mendukung penyusunan bahan ajar dan asesmen yang inovatif.',
+    photo: 'https://images.unsplash.com/photo-1535223289827-42f1e9919769?auto=format&fit=crop&w=900&q=80',
+  },
+  {
+    id: 'ta-7',
+    title: 'Studi Tirah ke SMK Unggulan di Jakarta',
+    date: '2026-05-12',
+    category: 'Studi Tirah',
+    description: 'Sejumlah guru produktif melaksanakan studi tirah ke SMK unggulan di Jakarta untuk benchmarking kurikulum dan praktik industri.',
+    photo: 'https://images.unsplash.com/photo-1571260899304-425eee4c7efc?auto=format&fit=crop&w=900&q=80',
+  },
+  {
+    id: 'ta-8',
+    title: 'Rapat Koordinasi dengan Dunia Usaha dan Industri (DUDI)',
+    date: '2026-06-03',
+    category: 'Rapat',
+    description: 'Rapat koordinasi bersama perusahaan mitra untuk membahas program Praktik Kerja Lapangan (PKL) dan penyerapan lulusan tahun ajaran 2026/2027.',
+    photo: 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=900&q=80',
+  },
 ];
 
 export { teacherActivitiesData as teacherActivities };

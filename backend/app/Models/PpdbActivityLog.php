@@ -10,6 +10,8 @@ class PpdbActivityLog extends Model
 {
     use HasUuids;
 
+    protected $table = 'ppdb_activity_log';
+
     public $incrementing = false;
     protected $keyType = 'string';
 

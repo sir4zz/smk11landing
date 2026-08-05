@@ -62,6 +62,20 @@ export const facilitiesData: Facility[] = [
     description: 'Ruangan kedap suara yang dilengkapi perangkat rekaman audio visual terkini untuk memproduksi konten edukasi, siaran sekolah, dan ekskul jurnalistik.',
     category: 'Pendukung',
     photo: '/images/facilities/multimedia.jpg'
+  },
+  {
+    id: 'fac-9',
+    name: 'Laboratorium Listrik & Otomasi',
+    description: 'Laboratorium khusus jurusan TITL yang dilengkapi panel instalasi listrik, trainer motor listrik, modul PLC (Programmable Logic Controller), dan peralatan K3 standar industri untuk praktik otomasi.',
+    category: 'Akademik',
+    photo: '/images/facilities/lab-listrik.jpg'
+  },
+  {
+    id: 'fac-10',
+    name: 'Ruang Praktik Busana & Atelier',
+    description: 'Ruang praktik menjahit jurusan Busana yang dilengkapi mesin jahit industri, mesin obras, mesin neci, manekin (dress form), dan peralatan pembuatan pola untuk produksi fashion.',
+    category: 'Akademik',
+    photo: '/images/facilities/praktik-busana.jpg'
   }
 ];
 

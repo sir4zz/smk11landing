@@ -53,42 +53,48 @@ export const staffData: Staff[] = [
     name: 'Eko Prasetyo, S.Kom.',
     position: 'Kepala Program Keahlian TJKT',
     department: 'Teknik Jaringan Komputer dan Telekomunikasi',
-    photo: 'https://images.unsplash.com/photo-1504593811423-6dd665756598?auto=format&fit=crop&w=800&q=80'
+    photo: 'https://images.unsplash.com/photo-1504593811423-6dd665756598?auto=format&fit=crop&w=800&q=80',
+    description: 'Memimpin pengembangan kurikulum dan praktik industri jurusan TJKT agar lulusan siap kerja di bidang jaringan dan telekomunikasi.'
   },
   {
     id: 'staff-7',
     name: 'Anita Rahmawati, S.Kom., M.Kom.',
     position: 'Kepala Program Keahlian DKV',
     department: 'Desain Komunikasi Visual',
-    photo: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=800&q=80'
+    photo: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=800&q=80',
+    description: 'Mengarahkan pembelajaran kreatif jurusan DKV dengan fokus pada desain grafis, multimedia, dan produksi konten digital.'
   },
   {
     id: 'staff-8',
     name: 'Asep Saepudin, S.Pd.T.',
     position: 'Kepala Program Keahlian Teknik Otomotif',
     department: 'Teknik Otomotif',
-    photo: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=800&q=80'
+    photo: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=800&q=80',
+    description: 'Mengelola praktik otomotif standar industri dan menjalin kemitraan dengan bengkel resmi untuk peningkatan kompetensi siswa.'
   },
   {
     id: 'staff-9',
     name: 'Deni Setiawan, S.T.',
     position: 'Kepala Program Keahlian TITL',
     department: 'Teknik Ketenagalistrikan',
-    photo: 'https://images.unsplash.com/photo-1544723795-3fb6469f5b39?auto=format&fit=crop&w=800&q=80'
+    photo: 'https://images.unsplash.com/photo-1544723795-3fb6469f5b39?auto=format&fit=crop&w=800&q=80',
+    description: 'Mengembangkan kompetensi instalasi listrik dan otomasi industri siswa TITL dengan dukungan peralatan praktik terkini.'
   },
   {
     id: 'staff-10',
     name: 'Siti Aminah, S.E.',
     position: 'Kepala Program Keahlian MPLB',
     department: 'Manajemen Perkantoran dan Layanan Bisnis',
-    photo: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80'
+    photo: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80',
+    description: 'Membina kompetensi administrasi perkantoran dan layanan bisnis siswa MPLB melalui praktik bank mini dan magang industri.'
   },
   {
     id: 'staff-11',
     name: 'Nurhayati, S.Pd.',
     position: 'Kepala Program Keahlian Busana',
     department: 'Busana',
-    photo: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=800&q=80'
+    photo: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=800&q=80',
+    description: 'Membimbing siswa jurusan Busana dalam mengembangkan keterampilan desain, menjahit, dan kewirausahaan bidang fashion.'
   }
 ];
 

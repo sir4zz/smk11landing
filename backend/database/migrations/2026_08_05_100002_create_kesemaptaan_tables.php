@@ -10,7 +10,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('kesemaptaan', function (Blueprint $table) {
-            $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
+            $table->uuid('id')->primary()->default(DB::raw('(UUID())'));
             $table->text('title')->default('');
             $table->text('description')->default('');
             $table->text('photo')->default('');
@@ -18,7 +18,7 @@ return new class extends Migration
         });
 
         Schema::create('kesemaptaan_activities', function (Blueprint $table) {
-            $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
+            $table->uuid('id')->primary()->default(DB::raw('(UUID())'));
             $table->text('title')->default('');
             $table->text('description')->default('');
             $table->date('activity_date')->nullable();
@@ -28,7 +28,7 @@ return new class extends Migration
         });
 
         Schema::create('kesemaptaan_schedules', function (Blueprint $table) {
-            $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
+            $table->uuid('id')->primary()->default(DB::raw('(UUID())'));
             $table->text('day')->default('');
             $table->text('time')->default('');
             $table->text('place')->default('');
@@ -36,7 +36,7 @@ return new class extends Migration
         });
 
         Schema::create('kesemaptaan_instructors', function (Blueprint $table) {
-            $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
+            $table->uuid('id')->primary()->default(DB::raw('(UUID())'));
             $table->text('name')->default('');
             $table->text('role')->default('');
             $table->text('photo')->default('');
@@ -45,7 +45,7 @@ return new class extends Migration
         });
 
         Schema::create('kesemaptaan_achievements', function (Blueprint $table) {
-            $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
+            $table->uuid('id')->primary()->default(DB::raw('(UUID())'));
             $table->text('name')->default('');
             $table->text('year')->default('');
             $table->text('description')->default('');

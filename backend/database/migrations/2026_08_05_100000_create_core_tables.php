@@ -22,7 +22,7 @@ return new class extends Migration
 
         // CONTENT RECORDS (legacy fallback container)
         Schema::create('content_records', function (Blueprint $table) {
-            $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
+            $table->uuid('id')->primary()->default(DB::raw('(UUID())'));
             $table->text('content_type');
             $table->jsonb('data');
             $table->timestamps();
@@ -30,7 +30,7 @@ return new class extends Migration
 
         // CONTACT MESSAGES
         Schema::create('contact_messages', function (Blueprint $table) {
-            $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
+            $table->uuid('id')->primary()->default(DB::raw('(UUID())'));
             $table->text('name');
             $table->text('email');
             $table->text('subject');
@@ -41,10 +41,10 @@ return new class extends Migration
 
         // NEWS
         Schema::create('news', function (Blueprint $table) {
-            $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
+            $table->uuid('id')->primary()->default(DB::raw('(UUID())'));
             $table->text('title');
             $table->text('slug')->unique();
-            $table->date('date')->default(DB::raw('CURRENT_DATE'));
+            $table->date('date')->default(DB::raw('(CURRENT_DATE)'));
             $table->text('excerpt')->default('');
             $table->text('content')->default('');
             $table->text('thumbnail')->default('');
@@ -59,7 +59,7 @@ return new class extends Migration
 
         // PROGRAMS
         Schema::create('programs', function (Blueprint $table) {
-            $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
+            $table->uuid('id')->primary()->default(DB::raw('(UUID())'));
             $table->text('name');
             $table->text('slug')->unique();
             $table->text('short_name')->default('');
@@ -75,7 +75,7 @@ return new class extends Migration
 
         // FACILITIES
         Schema::create('facilities', function (Blueprint $table) {
-            $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
+            $table->uuid('id')->primary()->default(DB::raw('(UUID())'));
             $table->text('name');
             $table->text('description')->default('');
             $table->text('category')->default('');
@@ -85,7 +85,7 @@ return new class extends Migration
 
         // STAFF
         Schema::create('staff', function (Blueprint $table) {
-            $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
+            $table->uuid('id')->primary()->default(DB::raw('(UUID())'));
             $table->text('name');
             $table->text('position')->default('');
             $table->text('department')->default('');
@@ -96,10 +96,10 @@ return new class extends Migration
 
         // ACHIEVEMENTS
         Schema::create('achievements', function (Blueprint $table) {
-            $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
+            $table->uuid('id')->primary()->default(DB::raw('(UUID())'));
             $table->text('title');
             $table->text('event')->default('');
-            $table->integer('year')->default(DB::raw('EXTRACT(YEAR FROM CURRENT_DATE)'));
+            $table->integer('year')->default(DB::raw('(EXTRACT(YEAR FROM CURRENT_DATE))'));
             $table->text('level')->default('');
             $table->text('rank')->default('');
             $table->jsonb('students')->default('[]');
@@ -109,9 +109,9 @@ return new class extends Migration
 
         // TEACHER ACTIVITIES
         Schema::create('teacher_activities', function (Blueprint $table) {
-            $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
+            $table->uuid('id')->primary()->default(DB::raw('(UUID())'));
             $table->text('title');
-            $table->date('date')->default(DB::raw('CURRENT_DATE'));
+            $table->date('date')->default(DB::raw('(CURRENT_DATE)'));
             $table->text('category')->default('');
             $table->text('description')->default('');
             $table->text('photo')->default('');
@@ -120,7 +120,7 @@ return new class extends Migration
 
         // EDUCATION STAFF
         Schema::create('education_staff', function (Blueprint $table) {
-            $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
+            $table->uuid('id')->primary()->default(DB::raw('(UUID())'));
             $table->text('name');
             $table->text('position')->default('');
             $table->text('department')->default('');
@@ -130,7 +130,7 @@ return new class extends Migration
 
         // SPMB CONTENT (single-row config)
         Schema::create('spmb_content', function (Blueprint $table) {
-            $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
+            $table->uuid('id')->primary()->default(DB::raw('(UUID())'));
             $table->string('status', 20)->default('ditutup');
             $table->text('title')->default('Seleksi Penerimaan Murid Baru (SPMB)');
             $table->text('description')->default('');
@@ -148,7 +148,7 @@ return new class extends Migration
 
         // ROLES
         Schema::create('roles', function (Blueprint $table) {
-            $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
+            $table->uuid('id')->primary()->default(DB::raw('(UUID())'));
             $table->string('slug', 50)->unique();
             $table->string('name', 100);
             $table->timestamp('created_at')->useCurrent();
@@ -156,7 +156,7 @@ return new class extends Migration
 
         // PERMISSIONS
         Schema::create('permissions', function (Blueprint $table) {
-            $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
+            $table->uuid('id')->primary()->default(DB::raw('(UUID())'));
             $table->string('slug', 100)->unique();
             $table->string('name', 150);
             $table->string('module', 100)->default('');
@@ -165,7 +165,7 @@ return new class extends Migration
 
         // ROLE PERMISSIONS
         Schema::create('role_permissions', function (Blueprint $table) {
-            $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
+            $table->uuid('id')->primary()->default(DB::raw('(UUID())'));
             $table->foreignUuid('role_id')->references('id')->on('roles')->onDelete('cascade');
             $table->foreignUuid('permission_id')->references('id')->on('permissions')->onDelete('cascade');
             $table->unique(['role_id', 'permission_id']);

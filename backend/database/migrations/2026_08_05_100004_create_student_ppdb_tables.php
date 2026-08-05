@@ -32,7 +32,7 @@ return new class extends Migration
 
         // PPDB
         Schema::create('ppdb_registrations', function (Blueprint $table) {
-            $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
+            $table->uuid('id')->primary()->default(DB::raw('(UUID())'));
             $table->foreignUuid('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->text('registration_number')->nullable();
             $table->text('full_name')->nullable();
@@ -63,7 +63,7 @@ return new class extends Migration
         });
 
         Schema::create('ppdb_documents', function (Blueprint $table) {
-            $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
+            $table->uuid('id')->primary()->default(DB::raw('(UUID())'));
             $table->foreignUuid('application_id')->references('id')->on('ppdb_registrations')->onDelete('cascade');
             $table->text('type')->nullable();
             $table->text('filename')->nullable();
@@ -76,7 +76,7 @@ return new class extends Migration
         });
 
         Schema::create('ppdb_activity_log', function (Blueprint $table) {
-            $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
+            $table->uuid('id')->primary()->default(DB::raw('(UUID())'));
             $table->foreignUuid('application_id')->references('id')->on('ppdb_registrations')->onDelete('cascade');
             $table->text('action')->nullable();
             $table->text('note')->nullable();

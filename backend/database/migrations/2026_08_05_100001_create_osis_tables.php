@@ -11,7 +11,7 @@ return new class extends Migration
     {
         // OSIS profile (single row)
         Schema::create('osis', function (Blueprint $table) {
-            $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
+            $table->uuid('id')->primary()->default(DB::raw('(UUID())'));
             $table->text('name')->default('');
             $table->text('description')->default('');
             $table->text('period')->default('');
@@ -20,7 +20,7 @@ return new class extends Migration
         });
 
         Schema::create('osis_members', function (Blueprint $table) {
-            $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
+            $table->uuid('id')->primary()->default(DB::raw('(UUID())'));
             $table->foreignUuid('osis_id')->nullable()->references('id')->on('osis')->onDelete('cascade');
             $table->text('name')->default('');
             $table->text('position')->default('');
@@ -31,7 +31,7 @@ return new class extends Migration
         });
 
         Schema::create('osis_activities', function (Blueprint $table) {
-            $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
+            $table->uuid('id')->primary()->default(DB::raw('(UUID())'));
             $table->text('title')->default('');
             $table->text('description')->default('');
             $table->text('photo')->default('');
@@ -42,7 +42,7 @@ return new class extends Migration
 
         // EXTRACURRICULARS
         Schema::create('extracurriculars', function (Blueprint $table) {
-            $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
+            $table->uuid('id')->primary()->default(DB::raw('(UUID())'));
             $table->text('name')->default('');
             $table->text('slug')->unique();
             $table->text('category')->default('');

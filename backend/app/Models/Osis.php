@@ -10,6 +10,8 @@ class Osis extends Model
 {
     use HasUuids;
 
+    protected $table = 'osis';
+
     public $incrementing = false;
     protected $keyType = 'string';
 
