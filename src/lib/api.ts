@@ -14,10 +14,43 @@ export function resolveImageUrl(url: string): string {
 export { apiBaseUrl };
 
 type ApiError = { message?: string; [key: string]: unknown } | null;
-type ApiResult<T> = Promise<{ data: T | null; error: ApiError; count?: number | null; meta?: unknown }>;
+type ApiResponse<T> = { data: T | null; error: ApiError; count?: number | null; meta?: unknown };
+type ApiResult<T> = Promise<ApiResponse<T>>;
 type Filter = { key: string; value: unknown };
 
+const PUBLIC_CACHE_TTL = 60_000;
+const responseCache = new Map<string, { expiresAt: number; value: ApiResponse<unknown> }>();
+const pendingRequests = new Map<string, Promise<ApiResponse<unknown>>>();
+
+function canCache(path: string, method: string): boolean {
+  return method === 'GET'
+    && !path.startsWith('/auth/')
+    && !path.startsWith('/admin/')
+    && !path.startsWith('/data/')
+    && !path.startsWith('/me')
+    && !path.startsWith('/upload')
+    && !path.startsWith('/uploads');
+}
+
+function clearCache(): void {
+  responseCache.clear();
+}
+
 async function request<T>(path: string, options: RequestInit = {}): ApiResult<T> {
+  const method = (options.method ?? 'GET').toUpperCase();
+  const cacheable = canCache(path, method);
+  const cacheKey = `${method}:${path}`;
+  if (cacheable) {
+    const cached = responseCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) return cached.value as ApiResponse<T>;
+    responseCache.delete(cacheKey);
+    const pending = pendingRequests.get(cacheKey);
+    if (pending) return pending as Promise<ApiResponse<T>>;
+  } else if (method !== 'GET') {
+    clearCache();
+  }
+
+  const run = (async (): Promise<ApiResponse<T>> => {
   try {
     const isFormData = options.body instanceof FormData;
     const response = await fetch(`${apiBaseUrl}${path}`, {
@@ -33,10 +66,19 @@ async function request<T>(path: string, options: RequestInit = {}): ApiResult<T>
     if (!response.ok) {
       return { data: null, error: body?.error ?? body ?? { message: 'Permintaan ke server gagal.' } };
     }
-    return { data: (body?.data ?? body) as T, error: body?.error ?? null, count: body?.count, meta: body?.meta };
+    const result = { data: (body?.data ?? body) as T, error: body?.error ?? null, count: body?.count, meta: body?.meta };
+    if (cacheable) responseCache.set(cacheKey, { expiresAt: Date.now() + PUBLIC_CACHE_TTL, value: result });
+    return result;
   } catch {
     return { data: null, error: { message: 'Tidak dapat terhubung ke server.' } };
   }
+  })();
+
+  if (cacheable) {
+    pendingRequests.set(cacheKey, run as Promise<ApiResponse<unknown>>);
+    run.finally(() => pendingRequests.delete(cacheKey));
+  }
+  return run;
 }
 
 const tablePaths: Record<string, string> = {
