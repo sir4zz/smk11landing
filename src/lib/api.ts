@@ -186,6 +186,16 @@ export const fetchKesemaptaanSchedules = <T>(fallback: T) => fetchFallback('/kes
 export const fetchKesemaptaanInstructors = <T>(fallback: T) => fetchFallback('/kesemaptaan/instructors', fallback);
 export const fetchKesemaptaanAchievements = <T>(fallback: T) => fetchFallback('/kesemaptaan/achievements', fallback);
 export const fetchMadingCategories = <T>(fallback: T) => fetchFallback('/mading/categories', fallback);
+
+// ---------- FAQ ----------
+export interface FaqRow {
+  id?: string;
+  question: string;
+  answer: string;
+  category: string;
+  sort_order?: number;
+}
+export const fetchFaqs = <T>(fallback: T) => fetchFallback('/faqs', fallback);
 export interface MadingPostRow extends Record<string, unknown> { id?: string; title?: string; content?: string; category_id?: string | null; author_id?: string | null; author_name?: string; author_role?: string; cover_image?: string; status?: string; feedback?: string; ai_assisted?: boolean; published_at?: string | null; created_at?: string; updated_at?: string; }
 export async function fetchMadingPosts(filter?: { status?: string; authorId?: string; categoryId?: string }): Promise<MadingPostRow[]> { const params = new URLSearchParams(); if (filter?.status) params.set('status', filter.status); if (filter?.authorId) params.set('author_id', filter.authorId); if (filter?.categoryId) params.set('category_id', filter.categoryId); const result = await request<MadingPostRow[]>(`/mading/posts${params.size ? `?${params}` : ''}`); return result.data ?? []; }
 export async function fetchMadingPublished(): Promise<MadingPostRow[]> { return fetchMadingPosts({ status: 'published' }); }

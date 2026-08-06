@@ -1,17 +1,23 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import PageHero from '../../components/ui/PageHero'
 import SectionHeading from '../../components/ui/SectionHeading'
 import { faq } from '../../data/faq'
+import { fetchFaqs, type FaqRow } from '../../lib/api'
 import { ChevronDown, Search } from 'lucide-react'
 
 const FAQ: React.FC = () => {
+  const [items, setItems] = useState<FaqRow[]>(faq)
   const [openId, setOpenId] = useState<string | null>(null)
   const [filter, setFilter] = useState<string>('Semua')
   const [search, setSearch] = useState('')
 
-  const categories = ['Semua', ...new Set(faq.map((f) => f.category))]
+  useEffect(() => {
+    fetchFaqs(faq).then((rows) => setItems(rows))
+  }, [])
 
-  const filtered = faq.filter((f) => {
+  const categories = ['Semua', ...new Set(items.map((f) => f.category))]
+
+  const filtered = items.filter((f) => {
     if (filter !== 'Semua' && f.category !== filter) return false
     if (search) {
       const q = search.toLowerCase()
