@@ -11,7 +11,7 @@ import { achievements as initialAchievements } from '../data/achievements';
 import { teacherActivities as initialTeacherActivities } from '../data/teacherActivities';
 import { educationStaff as initialEducationStaff } from '../data/educationStaff';
 import { defaultSpmbContent, type SpmbContent, type SpmbFaqItem, type SpmbFlowStep, type SpmbScheduleItem } from '../data/spmb';
-import { backendApi } from '../lib/api';
+import { backendApi, apiBaseUrl } from '../lib/api';
 import { LoadingInline } from '../components/ui/LoadingScreen';
 import ImportModal from '../components/admin/ImportModal';
 import ImageField from '../components/admin/ImageField';
@@ -180,7 +180,7 @@ function AdminPanel() {
   useEffect(() => {
     if (authLoading) return;
     backendApi.auth.getCurrentUser() .then(({ data }: any) => {
-      if (!data.user) {
+      if (!data || !data.user) {
         localStorage.removeItem(sessionKey);
         navigate('/admin/login', { replace: true });
         return;
@@ -971,8 +971,13 @@ function escapeHtml(value: string) {
 }
 
 const READER_FALLBACKS: { name: string; build: (url: string) => { url: string; init?: RequestInit } }[] = [
-  { name: 'Jina Reader', build: (url) => ({ url: `https://r.jina.ai/${url}`, init: { headers: { Accept: 'text/plain' } } }) },
-  { name: 'AllOrigins', build: (url) => ({ url: `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}` }) },
+  {
+    name: 'Proxy Lokal',
+    build: (url) => ({
+      url: `${apiBaseUrl}/admin/proxy/fetch?url=${encodeURIComponent(url)}`,
+      init: { credentials: 'include' },
+    }),
+  },
   { name: 'CORSProxy', build: (url) => ({ url: `https://corsproxy.io/?url=${encodeURIComponent(url)}` }) },
 ];
 
@@ -986,8 +991,18 @@ async function fetchPageText(url: string, timeoutMs = 25000): Promise<string> {
       const response = await fetch(fetchUrl, { ...init, signal: controller.signal });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const text = await response.text();
-      if (!text || !text.trim()) throw new Error('respon kosong');
-      return text;
+      let raw = text;
+      if (text.trim().startsWith('{')) {
+        try {
+          const parsed = JSON.parse(text);
+          if (parsed?.error) throw new Error(parsed.error.message ?? 'Gagal');
+          if (typeof parsed?.data?.text === 'string') raw = parsed.data.text;
+        } catch (error) {
+          if (!(error instanceof SyntaxError)) throw error;
+        }
+      }
+      if (!raw || !raw.trim()) throw new Error('respon kosong');
+      return raw;
     } catch (error) {
       errors.push(`${fallback.name}: ${error instanceof Error ? error.message : 'gagal'}`);
     } finally {
