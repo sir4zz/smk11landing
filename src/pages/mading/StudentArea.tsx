@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { ChangeEvent, ReactNode } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { Compass, BookMarked, PenLine, UserRound, LogOut, Loader2, Send, Save, CheckCircle2, XCircle, Clock, Eye, X, Sparkles } from 'lucide-react';
+import { Compass, BookMarked, PenLine, UserRound, LogOut, Loader2, Send, Save, CheckCircle2, XCircle, Clock, Eye, X, Sparkles, KeyRound } from 'lucide-react';
 import { backendApi } from '../../lib/api';
+import { myProfileApi, type MyProfilePayload } from '../../lib/api';
 import type { MadingPostRow } from '../../lib/api';
 import PageHero from '../../components/ui/PageHero';
 import AIContentAssistant, { AiNote } from '../../components/mading/AIContentAssistant';
+import ImageField from '../../components/admin/ImageField';
 import { MADING_STATUSES } from '../../data/mading';
 
 const studentSessionKey = 'smkn11-student-session';
@@ -46,9 +48,17 @@ export default function StudentArea() {
         navigate('/mading/login', { replace: true });
         return;
       }
-      const { data: student } = await backendApi.database.from('students').select('nisn, name, class, major').eq('id', data.user.id).maybeSingle();
+      const { data: me } = await myProfileApi.show();
       if (cancelled) return;
-      if (student) setProfile(student as StudentProfile);
+      if (me) {
+        setProfile({
+          nisn: me.student?.nisn ?? '',
+          name: me.name,
+          class: me.student?.class ?? '',
+          major: me.student?.major ?? '',
+          email: me.email,
+        });
+      }
       setLoading(false);
     })();
     return () => { cancelled = true; };
@@ -81,7 +91,7 @@ export default function StudentArea() {
     <div className="min-h-screen bg-[#FAF6F0]">
       <PageHero
         title={`Halo, ${profile?.name ?? 'Siswa'}`}
-        subtitle={profile ? `${profile.class} Â· ${profile.major}` : 'Area siswa Mading SMKN 11'}
+        subtitle={profile ? `${profile.class} · ${profile.major}` : 'Area siswa Mading SMKN 11'}
         breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Mading', href: '/mading' }, { label: 'Area Siswa' }]}
       />
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
@@ -160,7 +170,7 @@ function ExploreTab() {
                 <h3 className="mt-2 font-bold text-[#1B2A4A]">{post.title}</h3>
                 {post.ai_assisted && <div className="mt-1.5"><AiNote /></div>}
                 <p className="mt-2 line-clamp-4 text-sm leading-6 text-[#23314D]">{post.content}</p>
-                <p className="mt-3 text-xs font-medium text-[#5B7088]">{post.author_name} Â· {post.published_at ? new Date(post.published_at).toLocaleDateString('id-ID') : '-'}</p>
+                <p className="mt-3 text-xs font-medium text-[#5B7088]">{post.author_name} · {post.published_at ? new Date(post.published_at).toLocaleDateString('id-ID') : '-'}</p>
               </article>
             );
           })}
@@ -256,7 +266,7 @@ function MyWorksTab({ userId }: { userId: string }) {
                     <StatusPill status={post.status ?? 'draft'} />
                     {post.ai_assisted && <AiNote />}
                   </div>
-                  <p className="mt-1 text-xs font-medium text-[#5B7088]">{catName(categories, post.category_id)} Â· {post.created_at ? new Date(post.created_at).toLocaleDateString('id-ID') : '-'}</p>
+                  <p className="mt-1 text-xs font-medium text-[#5B7088]">{catName(categories, post.category_id)} · {post.created_at ? new Date(post.created_at).toLocaleDateString('id-ID') : '-'}</p>
                 </div>
               </div>
               <p className="mt-2 line-clamp-3 text-sm leading-6 text-[#23314D]">{post.content}</p>
@@ -406,25 +416,211 @@ function CreateTab({ userId, name }: { userId: string; name: string }) {
 }
 
 function ProfileTab({ profile }: { profile: StudentProfile | null }) {
-  if (!profile) return <Empty text="Data profil tidak ditemukan." />;
-  const items = [
-    { label: 'NISN', value: profile.nisn },
-    { label: 'Nama', value: profile.name },
-    { label: 'Kelas', value: profile.class },
-    { label: 'Jurusan', value: profile.major },
-    { label: 'Email Akun', value: profile.email ?? '-' },
+  const [me, setMe] = useState<MyProfilePayload | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+  const [values, setValues] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    let active = true;
+    myProfileApi.show().then(({ data, error }) => {
+      if (!active) return;
+      if (data) {
+        setMe(data);
+        setValues({
+          photo: data.photo ?? '',
+          name: data.name ?? '',
+          email: data.email ?? '',
+          phone: data.phone ?? '',
+          bio: data.bio ?? '',
+          address: data.address ?? '',
+          instagram: data.social?.instagram ?? '',
+          facebook: data.social?.facebook ?? '',
+          twitter: data.social?.twitter ?? '',
+          tiktok: data.social?.tiktok ?? '',
+          youtube: data.social?.youtube ?? '',
+          linkedin: data.social?.linkedin ?? '',
+          website: data.social?.website ?? '',
+          github: data.social?.github ?? '',
+          class: data.student?.class ?? '',
+          major: data.student?.major ?? '',
+          achievements: (data.student?.achievements ?? []).join('\n'),
+        });
+      } else {
+        setMsg({ type: 'err', text: error?.message ?? 'Gagal memuat profil.' });
+      }
+      setLoading(false);
+    });
+    return () => { active = false; };
+  }, []);
+
+  const flash = (type: 'ok' | 'err', text: string) => {
+    setMsg({ type, text });
+    setTimeout(() => setMsg(null), 5000);
+  };
+
+  const set = (key: string) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setValues((v) => ({ ...v, [key]: e.target.value }));
+
+  const save = async () => {
+    const name = values.name?.trim() ?? '';
+    if (name.length < 2) {
+      flash('err', 'Nama wajib diisi.');
+      return;
+    }
+    setSaving(true);
+    setMsg(null);
+    const splitLines = (value: string) => (value ?? '').split('\n').map((s) => s.trim()).filter(Boolean);
+    const payload: Record<string, unknown> = {
+      photo: values.photo ?? '',
+      name,
+      email: (values.email ?? '').trim(),
+      phone: (values.phone ?? '').trim(),
+      bio: (values.bio ?? '').trim(),
+      address: (values.address ?? '').trim(),
+      instagram: (values.instagram ?? '').trim(),
+      facebook: (values.facebook ?? '').trim(),
+      twitter: (values.twitter ?? '').trim(),
+      tiktok: (values.tiktok ?? '').trim(),
+      youtube: (values.youtube ?? '').trim(),
+      linkedin: (values.linkedin ?? '').trim(),
+      website: (values.website ?? '').trim(),
+      github: (values.github ?? '').trim(),
+      class: (values.class ?? '').trim(),
+      major: (values.major ?? '').trim(),
+      achievements: splitLines(values.achievements),
+    };
+    const { error } = await myProfileApi.updateProfile(payload);
+    setSaving(false);
+    if (error) {
+      flash('err', error.message ?? 'Gagal menyimpan profil.');
+      return;
+    }
+    flash('ok', 'Profil berhasil diperbarui.');
+  };
+
+  const socials: { key: string; label: string }[] = [
+    { key: 'instagram', label: 'Instagram' },
+    { key: 'facebook', label: 'Facebook' },
+    { key: 'twitter', label: 'X (Twitter)' },
+    { key: 'tiktok', label: 'TikTok' },
+    { key: 'youtube', label: 'YouTube' },
+    { key: 'linkedin', label: 'LinkedIn' },
+    { key: 'website', label: 'Website Pribadi' },
+    { key: 'github', label: 'GitHub' },
   ];
+
+  if (loading) {
+    return (
+      <Section title="Profil">
+        <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin text-[#C8A951]" /></div>
+      </Section>
+    );
+  }
+
+  if (!profile && !me) return <Empty text="Data profil tidak ditemukan." />;
+
   return (
-    <Section title="Profil">
-      <div className="max-w-xl rounded-2xl bg-white p-6 shadow-sm">
-        {items.map((it) => (
-          <div key={it.label} className="flex items-center justify-between border-b border-[#1B2A4A]/10 py-3 text-sm">
-            <span className="font-semibold text-[#5B7088]">{it.label}</span>
-            <span className="font-bold text-[#1B2A4A]">{it.value}</span>
+    <Section title="Profil Saya">
+      {msg && <p className={`mb-4 rounded-lg p-3 text-sm ${msg.type === 'ok' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>{msg.text}</p>}
+      <div className="max-w-2xl space-y-5">
+        <div className="rounded-2xl bg-white p-6 shadow-sm">
+          <div className="mb-4 flex flex-wrap items-center gap-3">
+            <div>
+              <p className="text-sm font-bold text-[#1B2A4A]">{me?.name ?? profile?.name}</p>
+              <p className="text-sm text-[#5B7088]">NISN {me?.student?.nisn ?? profile?.nisn ?? '-'}</p>
+            </div>
           </div>
-        ))}
+          <div className="mb-4 rounded-lg bg-[#FAF6F0] p-3 text-xs text-[#5B7088]">
+            Kelas, jurusan, prestasi, bio, dan media sosial yang diisi akan tampil di halaman profil publik.
+          </div>
+          <ImageField label="Foto Profil" value={values.photo ?? ''} onChange={(url) => setValues((v) => ({ ...v, photo: url }))} hint="Direkomendasikan foto persegi (1:1)." />
+        </div>
+
+        <div className="rounded-2xl bg-white p-6 shadow-sm">
+          <h3 className="mb-4 font-bold text-[#1B2A4A]">Data Dasar</h3>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Nama Lengkap" value={values.name ?? ''} onChange={set('name')} />
+            <Field label="Email" type="email" value={values.email ?? ''} onChange={set('email')} />
+            <Field label="Nomor Telepon" value={values.phone ?? ''} onChange={set('phone')} />
+            <Field label="Kelas" value={values.class ?? ''} onChange={set('class')} />
+            <Field label="Jurusan" value={values.major ?? ''} onChange={set('major')} />
+            <div className="sm:col-span-2"><Field label="Bio / Tentang Saya" multiline value={values.bio ?? ''} onChange={set('bio')} /></div>
+            <div className="sm:col-span-2"><Field label="Alamat (Opsional)" multiline value={values.address ?? ''} onChange={set('address')} /></div>
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-white p-6 shadow-sm">
+          <h3 className="mb-4 font-bold text-[#1B2A4A]">Prestasi &amp; Karya</h3>
+          <Field label="Prestasi" multiline value={values.achievements ?? ''} onChange={set('achievements')} hint="Satu prestasi per baris." />
+        </div>
+
+        <div className="rounded-2xl bg-white p-6 shadow-sm">
+          <h3 className="mb-4 font-bold text-[#1B2A4A]">Media Sosial</h3>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {socials.map((s) => (
+              <Field key={s.key} label={s.label} value={values[s.key] ?? ''} onChange={set(s.key)} />
+            ))}
+          </div>
+        </div>
+
+        <div className="flex justify-end">
+          <button onClick={save} disabled={saving} className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-6 py-2.5 font-bold text-[#1B2A4A] disabled:opacity-60">
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Simpan Profil
+          </button>
+        </div>
+
+        <ChangePinCard />
       </div>
     </Section>
+  );
+}
+
+function ChangePinCard() {
+  const [current, setCurrent] = useState('');
+  const [next, setNext] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+
+  const submit = async () => {
+    setSaving(true);
+    setMsg(null);
+    if (next.length < 4) {
+      setMsg({ type: 'err', text: 'PIN baru minimal 4 karakter.' });
+      setSaving(false);
+      return;
+    }
+    if (next !== confirm) {
+      setMsg({ type: 'err', text: 'Konfirmasi PIN baru tidak cocok.' });
+      setSaving(false);
+      return;
+    }
+    const { error } = await myProfileApi.updatePassword({ current_password: current, new_password: next });
+    setSaving(false);
+    if (error) {
+      setMsg({ type: 'err', text: error.message ?? 'Gagal mengubah PIN.' });
+      return;
+    }
+    setCurrent('');
+    setNext('');
+    setConfirm('');
+    setMsg({ type: 'ok', text: 'PIN berhasil diubah.' });
+  };
+
+  return (
+    <div className="rounded-2xl bg-white p-6 shadow-sm">
+      <h3 className="mb-4 font-bold text-[#1B2A4A]">Ubah PIN Login</h3>
+      {msg && <p className={`mb-4 rounded-lg p-3 text-sm ${msg.type === 'ok' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>{msg.text}</p>}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Field label="PIN Saat Ini" type="password" value={current} onChange={(e) => setCurrent(e.target.value)} />
+        <Field label="PIN Baru" type="password" value={next} onChange={(e) => setNext(e.target.value)} />
+        <Field label="Ulangi PIN Baru" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+      </div>
+      <button onClick={submit} disabled={saving} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#1B2A4A] px-5 py-2.5 font-bold text-white disabled:opacity-60">
+        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />} Ganti PIN
+      </button>
+    </div>
   );
 }
 
@@ -459,11 +655,12 @@ function StatusPill({ status }: { status: string }) {
   return <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${conf.cls}`}><Icon className="h-3 w-3" /> {conf.label}</span>;
 }
 
-function Field({ label, value, onChange, multiline = false }: { label: string; value: string; onChange: (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void; multiline?: boolean }) {
+function Field({ label, value, onChange, multiline = false, type = 'text', hint }: { label: string; value: string; onChange: (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void; multiline?: boolean; type?: string; hint?: string }) {
   const className = 'mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal';
   return (
     <label className="block text-sm font-semibold">{label}
-      {multiline ? <textarea value={value} onChange={onChange} rows={10} className={className} /> : <input value={value} onChange={onChange} className={className} />}
+      {multiline ? <textarea value={value} onChange={onChange} rows={4} className={className} /> : <input value={value} type={type} onChange={onChange} className={className} />}
+      {hint && <span className="mt-1 block text-xs font-normal text-[#5B7088]">{hint}</span>}
     </label>
   );
 }

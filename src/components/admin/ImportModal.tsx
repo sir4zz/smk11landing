@@ -332,7 +332,7 @@ export default function ImportModal({ config, table, onClose, onImported }: Impo
               {result.errors.length > 0 && (
                 <ul className="mt-2 max-h-40 space-y-1 overflow-y-auto rounded-lg bg-white p-3 text-red-700">
                   {result.errors.slice(0, 20).map((message, i) => (
-                    <li key={i}>â€¢ {message}</li>
+                    <li key={i}>• {message}</li>
                   ))}
                   {result.errors.length > 20 && <li>...dan {result.errors.length - 20} lainnya</li>}
                 </ul>

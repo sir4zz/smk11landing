@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+<<<<<<< HEAD
 import { BarChart3, BookOpen, Briefcase, Building2, CalendarDays, FileText, GraduationCap, LogOut, Mail, Menu, Pencil, Plus, Trophy, Trash2, Upload, Users, X, Save, ShieldCheck, UsersRound, Dumbbell, Newspaper, UserCog, Camera } from 'lucide-react';
+=======
+import { BarChart3, BookOpen, Briefcase, Building2, CalendarDays, FileText, GraduationCap, LogOut, Mail, Menu, Pencil, Plus, Trophy, Trash2, Upload, Users, X, Save, ShieldCheck, UsersRound, Dumbbell, Newspaper, UserCog, UserRound } from 'lucide-react';
+>>>>>>> 51372e5d571e39f4957628aee67a8b99046eae21
 import logoSekolah from '../assets/logo.png';
 import { news as initialNews } from '../data/news';
 import { programs as initialPrograms } from '../data/programs';
@@ -11,7 +15,7 @@ import { achievements as initialAchievements } from '../data/achievements';
 import { teacherActivities as initialTeacherActivities } from '../data/teacherActivities';
 import { educationStaff as initialEducationStaff } from '../data/educationStaff';
 import { defaultSpmbContent, type SpmbContent, type SpmbFaqItem, type SpmbFlowStep, type SpmbScheduleItem } from '../data/spmb';
-import { backendApi } from '../lib/api';
+import { backendApi, apiBaseUrl } from '../lib/api';
 import { LoadingInline } from '../components/ui/LoadingScreen';
 import ImportModal from '../components/admin/ImportModal';
 import ImageField from '../components/admin/ImageField';
@@ -23,11 +27,17 @@ import MadingManagement from '../components/admin/MadingManagement';
 import GalleryManagement from '../components/admin/GalleryManagement';
 import StudentsManagement from '../components/admin/StudentsManagement';
 import AccountsManagement from '../components/admin/AccountsManagement';
+import MyProfile from '../components/admin/MyProfile';
 import { StaffAuthProvider, useStaffAuth } from '../lib/staffAuth';
 import { can, STAFF_ROLES } from '../lib/permissions';
 
+<<<<<<< HEAD
 type Section = 'dashboard' | 'news' | 'programs' | 'facilities' | 'staff' | 'achievements' | 'teacherActivities' | 'educationStaff' | 'spmb' | 'contact' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'gallery';
 type EditableSection = Exclude<Section, 'dashboard' | 'contact' | 'spmb' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'gallery'>;
+=======
+type Section = 'dashboard' | 'news' | 'programs' | 'facilities' | 'staff' | 'achievements' | 'teacherActivities' | 'educationStaff' | 'spmb' | 'contact' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'myProfile';
+type EditableSection = Exclude<Section, 'dashboard' | 'contact' | 'spmb' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'myProfile'>;
+>>>>>>> 51372e5d571e39f4957628aee67a8b99046eae21
 type Item = Record<string, unknown>;
 const sessionKey = 'smkn11-admin-session';
 const TABLE_MAP: Record<string, string> = {
@@ -97,11 +107,11 @@ export function AdminLogin() {
     setError('');
 
     const form = new FormData(event.currentTarget);
-    const email = String(form.get('email') ?? '').trim();
+    const identifier = String(form.get('identifier') ?? '').trim();
     const password = String(form.get('password') ?? '');
 
     try {
-      const { data, error: signInError } = await backendApi.auth.signInWithPassword({ email, password });
+      const { data, error: signInError } = await backendApi.auth.signInWithPassword({ identifier, password });
       if (signInError) throw signInError;
       if (!data?.user) throw new Error('Sesi login tidak dapat dibuat.');
 
@@ -112,7 +122,11 @@ export function AdminLogin() {
       }
 
       localStorage.setItem(sessionKey, 'true');
-      navigate('/admin');
+      if (data.must_change_password) {
+        navigate('/admin/ubah-password');
+      } else {
+        navigate('/admin');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login gagal.');
     } finally {
@@ -127,7 +141,7 @@ export function AdminLogin() {
       if (cancelled || !data?.user) return;
       const { data: profile } = await backendApi.database.from('profiles').select('role').eq('id', data.user.id).single();
       if (!cancelled && profile?.role && (STAFF_ROLES as readonly string[]).includes(profile.role)) {
-        navigate('/admin', { replace: true });
+        navigate(data.mustChangePassword ? '/admin/ubah-password' : '/admin', { replace: true });
       }
     })();
     return () => { cancelled = true; };
@@ -139,13 +153,13 @@ export function AdminLogin() {
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-[#FAF6F0] p-2"><img src={logoSekolah} alt="Logo SMKN 11" className="h-full w-full object-contain" /></div>
           <h1 className="text-2xl font-bold text-[#1B2A4A]">Login Panel SMKN 11</h1>
-          <p className="mt-2 text-sm text-[#23314D]">Masuk menggunakan akun admin, guru, atau OSIS.</p>
+          <p className="mt-2 text-sm text-[#23314D]">Masuk menggunakan email (admin), NIP/NUPTK/ID Guru, atau ID Anggota OSIS.</p>
         </div>
 
         {error && <p className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
 
         <form onSubmit={submit}>
-          <label className="mb-4 block text-sm font-semibold text-[#1B2A4A]">Email<input name="email" type="email" required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2" placeholder="nama@smkn11.sch.id" /></label>
+          <label className="mb-4 block text-sm font-semibold text-[#1B2A4A]">Email / NIP / ID Anggota<input name="identifier" required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2" placeholder="email@smkn11.sch.id, NIP, atau ID Anggota" /></label>
           <label className="mb-6 block text-sm font-semibold text-[#1B2A4A]">Kata sandi<input name="password" type="password" required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2" /></label>
           <button disabled={loading} className="w-full rounded-lg bg-[#1B2A4A] py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-70">{loading ? 'Memeriksa...' : 'Masuk ke Panel'}</button>
         </form>
@@ -170,7 +184,7 @@ function AdminPanel() {
   const [open, setOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [mobile, setMobile] = useState(false);
-  const { role, permissions, loading: authLoading } = useStaffAuth();
+  const { role, permissions, loading: authLoading, mustChangePassword } = useStaffAuth();
   const isAdmin = role === 'admin';
   const canViewOsis = isAdmin || can(permissions, 'osis.view');
   const canViewEkstra = isAdmin || can(permissions, 'extracurricular.view');
@@ -181,8 +195,13 @@ function AdminPanel() {
 
   useEffect(() => {
     if (authLoading) return;
+    if (mustChangePassword) navigate('/admin/ubah-password', { replace: true });
+  }, [authLoading, mustChangePassword, navigate]);
+
+  useEffect(() => {
+    if (authLoading) return;
     backendApi.auth.getCurrentUser() .then(({ data }: any) => {
-      if (!data.user) {
+      if (!data || !data.user) {
         localStorage.removeItem(sessionKey);
         navigate('/admin/login', { replace: true });
         return;
@@ -285,16 +304,41 @@ function AdminPanel() {
     if (data) setData(current => ({ ...current, [key]: data as Item[] }));
   };
 
+<<<<<<< HEAD
   const active = section === 'dashboard' ? null : section === 'contact' ? { title: 'Pesan Kontak', icon: Mail, fields: [] } : section === 'spmb' ? { title: 'Kelola SPMB', icon: GraduationCap, fields: [] } : section === 'permissions' ? { title: 'Role & Permission', icon: ShieldCheck, fields: [] } : section === 'osis' ? { title: 'OSIS', icon: UsersRound, fields: [] } : section === 'extracurriculars' ? { title: 'Ekstrakurikuler', icon: Dumbbell, fields: [] } : section === 'kesemaptaan' ? { title: 'Kesemaptaan', icon: ShieldCheck, fields: [] } : section === 'mading' ? { title: 'Mading', icon: Newspaper, fields: [] } : section === 'students' ? { title: 'Data Siswa', icon: UserCog, fields: [] } : section === 'accounts' ? { title: 'Kelola Akun', icon: Users, fields: [] } : section === 'gallery' ? { title: 'Galeri', icon: Camera, fields: [] } : configs[section];
   const editableSections = section !== 'dashboard' && section !== 'contact' && section !== 'spmb' && section !== 'permissions' && section !== 'osis' && section !== 'extracurriculars' && section !== 'kesemaptaan' && section !== 'mading' && section !== 'students' && section !== 'accounts' && section !== 'gallery';
+=======
+  const active = section === 'dashboard' ? null : section === 'myProfile' ? { title: 'Profil Saya', icon: UserRound, fields: [] } : section === 'contact' ? { title: 'Pesan Kontak', icon: Mail, fields: [] } : section === 'spmb' ? { title: 'Kelola SPMB', icon: GraduationCap, fields: [] } : section === 'permissions' ? { title: 'Role & Permission', icon: ShieldCheck, fields: [] } : section === 'osis' ? { title: 'OSIS', icon: UsersRound, fields: [] } : section === 'extracurriculars' ? { title: 'Ekstrakurikuler', icon: Dumbbell, fields: [] } : section === 'kesemaptaan' ? { title: 'Kesemaptaan', icon: ShieldCheck, fields: [] } : section === 'mading' ? { title: 'Mading', icon: Newspaper, fields: [] } : section === 'students' ? { title: 'Data Siswa', icon: UserCog, fields: [] } : section === 'accounts' ? { title: 'Kelola Akun', icon: Users, fields: [] } : configs[section];
+  const editableSections = section !== 'dashboard' && section !== 'myProfile' && section !== 'contact' && section !== 'spmb' && section !== 'permissions' && section !== 'osis' && section !== 'extracurriculars' && section !== 'kesemaptaan' && section !== 'mading' && section !== 'students' && section !== 'accounts';
+
+  const navGroups: { label: string; items: { key: Section; label: string; icon: typeof FileText; visible: boolean }[] }[] = [
+    { label: 'Menu', items: [{ key: 'dashboard', label: 'Dashboard', icon: BarChart3, visible: can(permissions, 'dashboard.view') }] },
+    { label: 'Akun Saya', items: [{ key: 'myProfile', label: 'Profil Saya', icon: UserRound, visible: true }] },
+    { label: 'Konten', items: menu.map((key) => ({ key: key as Section, label: configs[key].title, icon: configs[key].icon, visible: isAdmin })) },
+    { label: 'Modul Sekolah', items: [
+      { key: 'spmb', label: 'Kelola SPMB', icon: GraduationCap, visible: isAdmin },
+      { key: 'osis', label: 'OSIS', icon: UsersRound, visible: canViewOsis },
+      { key: 'extracurriculars', label: 'Ekstrakurikuler', icon: Dumbbell, visible: canViewEkstra },
+      { key: 'kesemaptaan', label: 'Kesemaptaan', icon: ShieldCheck, visible: canViewKesemaptaan },
+      { key: 'mading', label: 'Mading', icon: Newspaper, visible: canViewMading },
+      { key: 'students', label: 'Data Siswa', icon: UserCog, visible: canViewStudents },
+    ]},
+    { label: 'Sistem', items: [
+      { key: 'contact', label: 'Pesan Kontak', icon: Mail, visible: isAdmin },
+      { key: 'permissions', label: 'Role & Permission', icon: ShieldCheck, visible: isAdmin },
+      { key: 'accounts', label: 'Kelola Akun', icon: Users, visible: isAdmin },
+    ]},
+  ];
+>>>>>>> 51372e5d571e39f4957628aee67a8b99046eae21
 
   return (
     <div className="min-h-screen bg-[#FAF6F0] text-[#1B2A4A]">
-      <aside className={`${mobile ? 'translate-x-0' : '-translate-x-full'} fixed inset-y-0 left-0 z-30 w-72 bg-[#1B2A4A] p-5 text-white transition-transform lg:translate-x-0`}>
-        <div className="mb-8 flex items-center justify-between">
+      <aside className={`${mobile ? 'translate-x-0' : '-translate-x-full'} fixed inset-y-0 left-0 z-30 flex w-72 flex-col bg-[#1B2A4A] p-5 text-white transition-transform lg:translate-x-0`}>
+        <div className="mb-4 flex shrink-0 items-center justify-between">
           <span className="flex items-center gap-2 font-bold"><img src={logoSekolah} alt="Logo SMKN 11" className="h-7 w-auto" style={{ height: '28px', width: 'auto', objectFit: 'contain' }} /> ADMIN SMKN 11</span>
           <button className="lg:hidden" onClick={() => setMobile(false)}><X /></button>
         </div>
+<<<<<<< HEAD
         <nav className="space-y-1">
           {can(permissions, 'dashboard.view') && <Nav label="Dashboard" icon={BarChart3} active={section === 'dashboard'} onClick={() => setSection('dashboard')} />}
           {isAdmin && menu.map(key => <Nav key={key} label={configs[key].title} icon={configs[key].icon} active={section === key} onClick={() => setSection(key)} />)}
@@ -308,12 +352,29 @@ function AdminPanel() {
           {canViewGallery && <Nav label="Galeri" icon={Camera} active={section === 'gallery'} onClick={() => setSection('gallery')} />}
           {canViewStudents && <Nav label="Data Siswa" icon={UserCog} active={section === 'students'} onClick={() => setSection('students')} />}
           {isAdmin && <Nav label="Kelola Akun" icon={Users} active={section === 'accounts'} onClick={() => setSection('accounts')} />}
+=======
+        <nav className="min-h-0 flex-1 overflow-y-auto">
+          {navGroups.map((group) => {
+            const visibleItems = group.items.filter((item) => item.visible);
+            if (visibleItems.length === 0) return null;
+            return (
+              <div key={group.label}>
+                <p className="px-3 pb-1 pt-4 text-[10px] font-bold uppercase tracking-widest text-[#F3E8D0]/50">{group.label}</p>
+                <div className="space-y-1">
+                  {visibleItems.map((item) => (
+                    <Nav key={item.key} label={item.label} icon={item.icon} active={section === item.key} onClick={() => setSection(item.key)} />
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+>>>>>>> 51372e5d571e39f4957628aee67a8b99046eae21
         </nav>
         <button onClick={async () => {
           await backendApi.auth.signOut();
           localStorage.removeItem(sessionKey);
           navigate('/admin/login');
-        }} className="absolute bottom-6 flex items-center gap-2 text-sm text-[#F3E8D0]"><LogOut size={18} /> Keluar</button>
+        }} className="mt-4 -mx-5 flex shrink-0 items-center gap-2 border-t border-white/10 px-5 pt-3 text-sm text-[#F3E8D0]"><LogOut size={18} /> Keluar</button>
       </aside>
 
       <main className="lg:ml-72">
@@ -326,8 +387,10 @@ function AdminPanel() {
           <Link to="/" className="text-sm font-semibold text-[#866D2C]">Lihat Website</Link>
         </header>
 
-        <div className="p-5 md:p-8">
+        <div className="mx-auto w-full max-w-6xl p-5 md:p-8">
           {section === 'dashboard' && <Dashboard data={data} total={total} />}
+
+          {section === 'myProfile' && <MyProfile />}
 
           {section === 'contact' && (
             <ContactMessages items={data.contact} onMarkRead={markRead} onDelete={remove} />
@@ -383,7 +446,7 @@ function AdminPanel() {
 }
 
 function Nav({ label, icon: Icon, active, onClick }: { label: string; icon: typeof FileText; active: boolean; onClick: () => void }) {
-  return <button onClick={onClick} className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm ${active ? 'bg-[#C8A951] font-bold text-[#1B2A4A]' : 'text-[#F3E8D0] hover:bg-white/10'}`}><Icon size={18} />{label}</button>;
+  return <button onClick={onClick} className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm ${active ? 'bg-[#C8A951] font-bold text-[#1B2A4A]' : 'text-[#F3E8D0] hover:bg-white/10'}`}><Icon size={18} />{label}</button>;
 }
 
 function Dashboard({ data, total }: { data: Record<string, Item[]>; total: number }) {
@@ -976,8 +1039,13 @@ function escapeHtml(value: string) {
 }
 
 const READER_FALLBACKS: { name: string; build: (url: string) => { url: string; init?: RequestInit } }[] = [
-  { name: 'Jina Reader', build: (url) => ({ url: `https://r.jina.ai/${url}`, init: { headers: { Accept: 'text/plain' } } }) },
-  { name: 'AllOrigins', build: (url) => ({ url: `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}` }) },
+  {
+    name: 'Proxy Lokal',
+    build: (url) => ({
+      url: `${apiBaseUrl}/admin/proxy/fetch?url=${encodeURIComponent(url)}`,
+      init: { credentials: 'include' },
+    }),
+  },
   { name: 'CORSProxy', build: (url) => ({ url: `https://corsproxy.io/?url=${encodeURIComponent(url)}` }) },
 ];
 
@@ -991,8 +1059,18 @@ async function fetchPageText(url: string, timeoutMs = 25000): Promise<string> {
       const response = await fetch(fetchUrl, { ...init, signal: controller.signal });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const text = await response.text();
-      if (!text || !text.trim()) throw new Error('respon kosong');
-      return text;
+      let raw = text;
+      if (text.trim().startsWith('{')) {
+        try {
+          const parsed = JSON.parse(text);
+          if (parsed?.error) throw new Error(parsed.error.message ?? 'Gagal');
+          if (typeof parsed?.data?.text === 'string') raw = parsed.data.text;
+        } catch (error) {
+          if (!(error instanceof SyntaxError)) throw error;
+        }
+      }
+      if (!raw || !raw.trim()) throw new Error('respon kosong');
+      return raw;
     } catch (error) {
       errors.push(`${fallback.name}: ${error instanceof Error ? error.message : 'gagal'}`);
     } finally {
@@ -1310,7 +1388,7 @@ function Editor({ config, item, onClose, onSave, section, options }: { config: {
                       }
                       return (
                         <select ref={(element) => { fieldRefs.current[field.key] = element; }} name={field.key} defaultValue={currentValue} required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 bg-white px-3 py-2 font-normal">
-                          <option value="">â€” Pilih â€”</option>
+                          <option value="">— Pilih —</option>
                           {choices.map(choice => <option key={choice} value={choice}>{choice}</option>)}
                         </select>
                       );

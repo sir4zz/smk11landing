@@ -111,14 +111,14 @@ export default function KesemaptaanManagement({ permissions }: Props) {
 
       {tab === 'schedules' && (
         <SimpleList
-          items={schedules.map((s) => ({ id: String(s.id), title: s.day, subtitle: `${s.time} â€” ${s.place}` }))}
+          items={schedules.map((s) => ({ id: String(s.id), title: s.day, subtitle: `${s.time} — ${s.place}` }))}
           canCreate={can(permissions, 'kesemaptaan.create')}
           canEdit={can(permissions, 'kesemaptaan.edit')}
           canDelete={can(permissions, 'kesemaptaan.delete')}
           label="Jadwal"
           onSave={async (item) => {
             const payload = { day: item.title, time: '', place: '' };
-            const parts = item.subtitle.split('â€”');
+            const parts = item.subtitle.split('—');
             payload.time = (parts[0] ?? '').trim();
             payload.place = (parts[1] ?? '').trim();
             if (item.id) {
@@ -166,13 +166,13 @@ export default function KesemaptaanManagement({ permissions }: Props) {
 
       {tab === 'achievements' && (
         <SimpleList
-          items={achievements.map((a) => ({ id: String(a.id), title: a.name, subtitle: `${a.year} â€” ${a.description}` }))}
+          items={achievements.map((a) => ({ id: String(a.id), title: a.name, subtitle: `${a.year} — ${a.description}` }))}
           canCreate={can(permissions, 'kesemaptaan.create')}
           canEdit={can(permissions, 'kesemaptaan.edit')}
           canDelete={can(permissions, 'kesemaptaan.delete')}
           label="Prestasi"
           onSave={async (item) => {
-            const parts = item.subtitle.split('â€”');
+            const parts = item.subtitle.split('—');
             const payload = { name: item.title, year: (parts[0] ?? '').trim(), description: (parts[1] ?? '').trim(), documentation: [] };
             if (item.id) {
               const { error } = await backendApi.database.from('kesemaptaan_achievements').update(payload).eq('id', item.id);

@@ -25,12 +25,17 @@ import NewsList from './pages/information/NewsList'
 import NewsDetail from './pages/information/NewsDetail'
 import FAQ from './pages/information/FAQ'
 import Osis from './pages/osis/Osis'
+import OsisStruktur from './pages/osis/OsisStruktur'
+import OsisKegiatan from './pages/osis/OsisKegiatan'
 import OsisExtracurriculars from './pages/osis/Extracurriculars'
 import OsisExtracurricularDetail from './pages/osis/ExtracurricularDetail'
 import Kesemaptaan from './pages/osis/Kesemaptaan'
 import Mading from './pages/mading/Mading'
 import StudentLogin from './pages/mading/StudentLogin'
 import StudentArea from './pages/mading/StudentArea'
+import MustChangePassword from './pages/admin/MustChangePassword'
+import ProfileDirectory from './pages/profiles/ProfileDirectory'
+import ProfilePage from './pages/profiles/ProfilePage'
 import { AdminRouteGuard, StudentRouteGuard } from './components/auth/RouteGuards'
 
 function App() {
@@ -39,6 +44,7 @@ function App() {
         <Route path="admin/login" element={<AdminLogin />} />
         <Route element={<AdminRouteGuard />}>
           <Route path="admin" element={<Admin />} />
+          <Route path="admin/ubah-password" element={<MustChangePassword />} />
         </Route>
 
         <Route path="/" element={<Layout />}>
@@ -48,6 +54,9 @@ function App() {
           <Route path="profil/sejarah" element={<History />} />
           <Route path="profil/visi-misi" element={<VisionMission />} />
           <Route path="profil/struktur-organisasi" element={<OrganizationStructure />} />
+          <Route path="profil/direktori" element={<ProfileDirectory />} />
+          <Route path="profil/guru/:id" element={<ProfilePage />} />
+          <Route path="profil/osis/:id" element={<ProfilePage />} />
 
           {/* Academics */}
           <Route path="akademik/program-keahlian" element={<StudyPrograms />} />
@@ -78,6 +87,8 @@ function App() {
 
           {/* OSIS */}
           <Route path="osis" element={<Osis />} />
+          <Route path="osis/struktur" element={<OsisStruktur />} />
+          <Route path="osis/kegiatan" element={<OsisKegiatan />} />
           <Route path="osis/ekstrakurikuler" element={<OsisExtracurriculars />} />
           <Route path="osis/ekstrakurikuler/:slug" element={<OsisExtracurricularDetail />} />
           <Route path="osis/kesemaptaan" element={<Kesemaptaan />} />

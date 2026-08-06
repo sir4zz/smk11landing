@@ -9,10 +9,16 @@ use App\Http\Controllers\ExtracurricularController;
 use App\Http\Controllers\KesemaptaanController;
 use App\Http\Controllers\MadingAiController;
 use App\Http\Controllers\MadingController;
+use App\Http\Controllers\MyProfileController;
 use App\Http\Controllers\OsisController;
 use App\Http\Controllers\PpdbController;
 use App\Http\Controllers\ProfileController;
+<<<<<<< HEAD
 use App\Http\Controllers\GalleryController;
+=======
+use App\Http\Controllers\ProxyController;
+use App\Http\Controllers\PublicProfileController;
+>>>>>>> 51372e5d571e39f4957628aee67a8b99046eae21
 use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\SpmbController;
 use App\Http\Controllers\StudentController;
@@ -33,6 +39,12 @@ Route::post('/auth/logout', [AuthController::class, 'logout']);
 Route::get('/auth/me', [AuthController::class, 'me']);
 Route::get('/auth/permissions', [AuthController::class, 'permissions']);
 Route::post('/auth/student-email', [StudentAuthController::class, 'studentEmail']);
+
+// ---------- PUBLIC PROFILES ----------
+Route::get('/public/directory', [PublicProfileController::class, 'directory']);
+Route::get('/public/guru/{identifier}', [PublicProfileController::class, 'guru']);
+Route::get('/public/siswa/{identifier}', [PublicProfileController::class, 'siswa']);
+Route::get('/public/osis/{identifier}', [PublicProfileController::class, 'osis']);
 
 // ---------- PROFILES ----------
 Route::get('/profiles/{id}', [ProfileController::class, 'show']);
@@ -93,6 +105,11 @@ Route::delete('/data/{table}', [DataController::class, 'destroy']);
 // AUTHENTICATED (SPA session)
 // ============================================================
 Route::middleware('auth:sanctum')->group(function () {
+    // Self-service profile management
+    Route::get('/me', [MyProfileController::class, 'show']);
+    Route::patch('/me/profile', [MyProfileController::class, 'updateProfile']);
+    Route::patch('/me/password', [MyProfileController::class, 'updatePassword']);
+
     // Mading workflow
     Route::post('/mading/posts', [MadingController::class, 'store']);
     Route::patch('/mading/posts/{id}', [MadingController::class, 'update']);
@@ -162,6 +179,9 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
         Route::patch('/'.$path.'/{id}', [ContentCrudController::class, 'update'])->defaults('type', $type);
         Route::delete('/'.$path.'/{id}', [ContentCrudController::class, 'destroy'])->defaults('type', $type);
     }
+
+    // News URL importer (fetches remote article pages server-side to avoid CORS)
+    Route::get('/proxy/fetch', [ProxyController::class, 'fetch']);
 
     // SPMB
     Route::post('/spmb', [SpmbController::class, 'store']);
