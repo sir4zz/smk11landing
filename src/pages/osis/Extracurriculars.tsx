@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import PageHero from '../../components/ui/PageHero';
 import SectionHeading from '../../components/ui/SectionHeading';
 import { LoadingInline } from '../../components/ui/LoadingScreen';
-import { fetchExtracurriculars } from '../../lib/api';
+import { fetchExtracurriculars, resolveImageUrl } from '../../lib/api';
 import { extracurriculars } from '../../data/extracurriculars';
 import { User, Clock, Link } from 'lucide-react';
 
@@ -98,7 +98,7 @@ const Extracurriculars: React.FC = () => {
               >
                 <div className="h-48 w-full flex-shrink-0 overflow-hidden sm:h-auto sm:w-56">
                   {ekskul.photo ? (
-                    <img src={ekskul.photo} alt={ekskul.name} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                    <img src={resolveImageUrl(ekskul.photo)} alt={ekskul.name} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
                   ) : (
                     <div className="grid h-full w-full place-items-center bg-[#FAF6F0]" />
                   )}

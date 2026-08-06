@@ -11,7 +11,7 @@ import { achievements as initialAchievements } from '../data/achievements';
 import { teacherActivities as initialTeacherActivities } from '../data/teacherActivities';
 import { educationStaff as initialEducationStaff } from '../data/educationStaff';
 import { defaultSpmbContent, type SpmbContent, type SpmbFaqItem, type SpmbFlowStep, type SpmbScheduleItem } from '../data/spmb';
-import { backendApi, apiBaseUrl } from '../lib/api';
+import { backendApi, apiBaseUrl, resolveImageUrl } from '../lib/api';
 import { LoadingInline } from '../components/ui/LoadingScreen';
 import ImportModal from '../components/admin/ImportModal';
 import ImageField from '../components/admin/ImageField';
@@ -484,7 +484,11 @@ function ContactMessages({ items, onMarkRead, onDelete }: { items: Item[]; onMar
 function Table({ items, config, onEdit, onDelete }: { items: Item[]; config: { fields: { key: string; label: string }[] }; onEdit: (item: Item) => void; onDelete: (id: unknown) => void }) {
   const renderCell = (field: { key: string; label: string }, item: Item) => {
     if (field.key === 'photo' && item[field.key]) {
-      return <img src={String(item[field.key])} alt="" className="h-10 w-10 rounded-full object-cover" />;
+      return <img src={resolveImageUrl(String(item[field.key]))} alt="" className="h-10 w-10 rounded-full object-cover" />;
+    }
+
+    if (['image', 'thumbnail'].includes(field.key) && item[field.key]) {
+      return <img src={resolveImageUrl(String(item[field.key]))} alt="" className="h-10 w-16 rounded object-cover" />;
     }
 
     if (field.key === 'source_label' && item.source_type === 'imported') {

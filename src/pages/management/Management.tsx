@@ -5,7 +5,7 @@ import SectionHeading from '../../components/ui/SectionHeading';
 import { staffData, type Staff } from '../../data/staff';
 import { teacherActivities, type TeacherActivity } from '../../data/teacherActivities';
 import { educationStaff, type EducationStaff } from '../../data/educationStaff';
-import { fetchPublicContent } from '../../lib/api';
+import { fetchPublicContent, resolveImageUrl } from '../../lib/api';
 import { ArrowRight, Briefcase, CalendarDays, Network, User, Users } from 'lucide-react';
 import { PersonAvatar, formatDate } from './ManagementShared';
 
@@ -98,7 +98,7 @@ const Management: React.FC = () => {
             {latestActivities.map((activity) => (
               <div key={activity.id} className="overflow-hidden rounded-2xl border border-[#1B2A4A]/10 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
                 <div className="relative h-44 w-full overflow-hidden">
-                  <img src={activity.photo} alt={activity.title} className="h-full w-full object-cover" />
+                  <img src={resolveImageUrl(activity.photo)} alt={activity.title} className="h-full w-full object-cover" />
                   <span className="absolute right-3 top-3 rounded-full bg-[#C8A951] px-3 py-1 text-xs font-semibold text-[#1B2A4A]">{activity.category}</span>
                 </div>
                 <div className="p-6">

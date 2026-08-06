@@ -7,7 +7,7 @@ const apiOrigin = (import.meta.env.VITE_API_URL || 'http://localhost:8000').repl
 export function resolveImageUrl(url: string): string {
   if (!url) return '';
   if (/^https?:\/\//.test(url)) return url;
-  if (url.startsWith('/')) return `${apiOrigin}${url}`;
+  if (url.startsWith('/')) return apiOrigin ? `${apiOrigin}${url}` : url;
   return url;
 }
 

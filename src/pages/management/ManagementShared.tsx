@@ -1,4 +1,5 @@
 import { User } from 'lucide-react';
+import { resolveImageUrl } from '../../lib/api';
 
 const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
@@ -21,7 +22,7 @@ interface PersonAvatarProps {
 
 export function PersonAvatar({ photo, name, className = '', iconClassName = 'h-12 w-12' }: PersonAvatarProps) {
   if (photo) {
-    return <img src={photo} alt={name ?? ''} className={className} />;
+    return <img src={resolveImageUrl(photo)} alt={name ?? ''} className={className} />;
   }
   return (
     <div className={`flex items-center justify-center bg-[#1B2A4A] text-[#C8A951] ${className}`}>

@@ -17,9 +17,13 @@ class UploadController extends Controller
 
         $key = 'photos/'.now()->format('Y/m').'/'.uniqid().'-'.preg_replace('/[^a-zA-Z0-9._-]/', '-', $file->getClientOriginalName());
 
-        $file->storeAs('public', $key);
+        Storage::disk('public')->putFileAs(
+            dirname($key),
+            $file,
+            basename($key),
+        );
 
-        $url = Storage::url($key);
+        $url = Storage::disk('public')->url($key);
 
         return response()->json([
             'data' => [
