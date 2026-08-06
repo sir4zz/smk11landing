@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
-import { Plus, Trash2, X, Loader2, KeyRound, Search, FileSpreadsheet, Pencil, Users, ShieldCheck } from 'lucide-react';
+import { Plus, Trash2, X, Loader2, KeyRound, Search, Upload, Pencil, Users, ShieldCheck } from 'lucide-react';
 import { accountsApi, type AccountRole, type AccountRow } from '../../lib/api';
+import AccountImportModal from './AccountImportModal';
 
 const ROLE_LABELS: Record<AccountRole, string> = { admin: 'Admin', guru: 'Guru', osis: 'OSIS', student: 'Siswa' };
 const ROLE_BADGES: Record<AccountRole, string> = {
@@ -12,9 +13,9 @@ const ROLE_BADGES: Record<AccountRole, string> = {
 };
 
 const ROLE_HINTS: Record<AccountRole, string> = {
-  admin: 'Akses penuh ke seluruh panel pengelolaan.',
-  guru: 'Akses sesuai permission yang diberikan admin.',
-  osis: 'Akses untuk fitur OSIS, ekstrakurikuler, kesemaptaan, dan mading.',
+  admin: 'Login menggunakan email + password.',
+  guru: 'Login menggunakan NIP, NUPTK, atau ID Guru yang dibuat sistem.',
+  osis: 'Login menggunakan ID Anggota yang dibuat sistem atau NISN.',
   student: 'Login ke Mading menggunakan NISN + PIN.',
 };
 
@@ -23,13 +24,29 @@ interface FormValues {
   name: string;
   email: string;
   password: string;
+  nip: string;
+  nuptk: string;
+  subject: string;
+  position: string;
+  division: string;
   nisn: string;
   class: string;
   major: string;
   pin: string;
+  status: 'active' | 'inactive';
+  must_change_password: boolean;
+  achievements: string;
+  certifications: string;
+  work_programs: string;
 }
 
-const emptyForm = (role: AccountRole = 'guru'): FormValues => ({ role, name: '', email: '', password: '', nisn: '', class: '', major: '', pin: '' });
+const emptyForm = (role: AccountRole = 'guru'): FormValues => ({
+  role, name: '', email: '', password: '',
+  nip: '', nuptk: '', subject: '', position: '', division: '',
+  nisn: '', class: '', major: '', pin: '',
+  status: 'active', must_change_password: false,
+  achievements: '', certifications: '', work_programs: '',
+});
 
 export default function AccountsManagement() {
   const [accounts, setAccounts] = useState<AccountRow[]>([]);
@@ -41,6 +58,7 @@ export default function AccountsManagement() {
   const [editing, setEditing] = useState<AccountRow | null>(null);
   const [form, setForm] = useState<FormValues>(emptyForm());
   const [saving, setSaving] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
   const load = useCallback(async () => {
     const { data, error } = await accountsApi.list();
@@ -58,7 +76,12 @@ export default function AccountsManagement() {
   const filtered = useMemo(() => accounts.filter((acc) => {
     const matchesRole = !roleFilter || acc.role === roleFilter;
     const q = search.toLowerCase();
-    const matchesSearch = !q || acc.name.toLowerCase().includes(q) || acc.email.toLowerCase().includes(q) || (acc.nisn ?? '').toLowerCase().includes(q);
+    const ids = [
+      acc.nisn ?? '',
+      acc.guru?.nip ?? '', acc.guru?.nuptk ?? '', acc.guru?.teacher_id ?? '',
+      acc.osis?.member_id ?? '', acc.osis?.nisn ?? '',
+    ].join(' ').toLowerCase();
+    const matchesSearch = !q || acc.name.toLowerCase().includes(q) || acc.email.toLowerCase().includes(q) || ids.includes(q);
     return matchesRole && matchesSearch;
   }), [accounts, roleFilter, search]);
 
@@ -75,15 +98,25 @@ export default function AccountsManagement() {
       name: account.name,
       email: account.email,
       password: '',
-      nisn: account.nisn ?? '',
+      nip: account.guru?.nip ?? '',
+      nuptk: account.guru?.nuptk ?? '',
+      subject: account.guru?.subject ?? '',
+      position: account.guru?.position ?? account.osis?.position ?? '',
+      division: account.osis?.division ?? '',
+      nisn: account.nisn ?? account.osis?.nisn ?? '',
       class: account.class ?? '',
       major: account.major ?? '',
       pin: '',
+      status: account.status === 'inactive' ? 'inactive' : 'active',
+      must_change_password: Boolean(account.must_change_password),
+      achievements: (account.achievements ?? []).join('\n'),
+      certifications: (account.guru?.certifications ?? []).join('\n'),
+      work_programs: (account.osis?.work_programs ?? []).join('\n'),
     });
     setCreating(true);
   };
 
-  const setField = (key: keyof FormValues) => (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setForm((v) => ({ ...v, [key]: e.target.value }));
+  const setField = (key: keyof FormValues) => (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setForm((v) => ({ ...v, [key]: e.target.value }));
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -96,28 +129,55 @@ export default function AccountsManagement() {
       setSaving(false);
       return;
     }
+    const splitLines = (value: string) => value.split('\n').map((s) => s.trim()).filter(Boolean);
 
     try {
+      let payload: Record<string, unknown>;
+      let error;
+
       if (form.role === 'student') {
         const nisn = form.nisn.trim();
         if (nisn.length < 4) throw new Error('NISN tidak valid (minimal 4 karakter).');
         const needsPin = form.pin.length < 4 && !(editing && editing.role === 'student');
         if (needsPin) throw new Error('PIN minimal 4 karakter.');
-        const payload = { role: 'student', name, nisn, class: form.class.trim(), major: form.major.trim() } as Record<string, unknown>;
+        payload = {
+          role: 'student', name, nisn,
+          class: form.class.trim(), major: form.major.trim(),
+          achievements: splitLines(form.achievements),
+          status: form.status, must_change_password: form.must_change_password,
+        };
         if (form.pin) payload.pin = form.pin;
-        const { error } = editing ? await accountsApi.update(editing.id, payload) : await accountsApi.create(payload);
-        if (error) throw new Error(error.message ?? 'Gagal menyimpan akun.');
+        const result = editing ? await accountsApi.update(editing.id, payload) : await accountsApi.create(payload);
+        error = result.error;
       } else {
         const email = form.email.trim().toLowerCase();
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Email wajib diisi dengan benar.');
         const needsPassword = form.password.length < 6 && !editing;
         if (needsPassword) throw new Error('Password minimal 6 karakter.');
-        const payload: Record<string, unknown> = { role: form.role, name, email };
+        payload = {
+          role: form.role, name, email,
+          status: form.status, must_change_password: form.must_change_password,
+        };
         if (form.password) payload.password = form.password;
-        const { error } = editing ? await accountsApi.update(editing.id, payload) : await accountsApi.create(payload);
-        if (error) throw new Error(error.message ?? 'Gagal menyimpan akun.');
+        if (form.role === 'guru') {
+          payload.nip = form.nip.trim();
+          payload.nuptk = form.nuptk.trim();
+          payload.subject = form.subject.trim();
+          payload.position = form.position.trim();
+          payload.achievements = splitLines(form.achievements);
+          payload.certifications = splitLines(form.certifications);
+        } else if (form.role === 'osis') {
+          payload.nisn = form.nisn.trim();
+          payload.division = form.division.trim();
+          payload.position = form.position.trim();
+          payload.achievements = splitLines(form.achievements);
+          payload.work_programs = splitLines(form.work_programs);
+        }
+        const result = editing ? await accountsApi.update(editing.id, payload) : await accountsApi.create(payload);
+        error = result.error;
       }
 
+      if (error) throw new Error(error.message ?? 'Gagal menyimpan akun.');
       await load();
       setCreating(false);
       flash('ok', editing ? 'Akun berhasil diperbarui.' : `Akun ${ROLE_LABELS[form.role].toLowerCase()} berhasil dibuat.`);
@@ -154,39 +214,14 @@ export default function AccountsManagement() {
     flash('ok', 'Akun dihapus.');
   };
 
-  const exportExcel = async () => {
-    const { data } = await accountsApi.list();
-    if (!data) { flash('err', 'Gagal mengambil data untuk ekspor.'); return; }
-    try {
-      const XLSX = await import('xlsx');
-      const rows = data.map((acc, i) => ({
-        No: i + 1,
-        Nama: acc.name,
-        Email: acc.email,
-        Role: ROLE_LABELS[acc.role],
-        NISN: acc.role === 'student' ? acc.nisn ?? '' : '-',
-        Kelas: acc.role === 'student' ? acc.class ?? '' : '-',
-        Jurusan: acc.role === 'student' ? acc.major ?? '' : '-',
-        'Dibuat': acc.created_at ? new Date(acc.created_at).toLocaleDateString('id-ID') : '',
-      }));
-      const ws = XLSX.utils.json_to_sheet(rows);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Akun');
-      XLSX.writeFile(wb, `akun-smkn11-${new Date().toISOString().slice(0, 10)}.xlsx`);
-      flash('ok', `Berhasil mengekspor ${data.length} akun ke Excel.`);
-    } catch {
-      flash('err', 'Gagal membuat file Excel.');
-    }
-  };
-
   if (loading) return <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-[#C8A951]" /></div>;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-[#23314D]">Kelola semua akun login: admin, guru, OSIS, dan siswa. Buat akun manual atau ekspor ke Excel.</p>
+        <p className="text-[#23314D]">Kelola semua akun login: admin, guru, OSIS, dan siswa. Guru/OSIS dapat login memakai identitas yang ditentukan sistem.</p>
         <div className="flex flex-wrap gap-2">
-          <button onClick={exportExcel} className="inline-flex items-center gap-2 rounded-lg border-2 border-[#1B2A4A] px-4 py-2 font-bold text-[#1B2A4A] hover:bg-[#1B2A4A]/5"><FileSpreadsheet size={18} /> Export Excel</button>
+          <button onClick={() => setImportOpen(true)} className="inline-flex items-center gap-2 rounded-lg border-2 border-[#1B2A4A] px-4 py-2 font-bold text-[#1B2A4A] hover:bg-[#1B2A4A]/5"><Upload size={18} /> Import Excel/CSV</button>
           <button onClick={openCreate} className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-4 py-2 font-bold text-[#1B2A4A]"><Plus size={18} /> Tambah Akun</button>
         </div>
       </div>
@@ -196,7 +231,7 @@ export default function AccountsManagement() {
       <div className="flex flex-wrap gap-3">
         <div className="relative w-full sm:flex-1 sm:min-w-[220px]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#23314D]/50" />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Cari nama / email / NISN..." className="w-full rounded-lg border border-[#1B2A4A]/20 bg-white py-2 pl-10 pr-4 text-sm" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Cari nama / email / NISN / NIP / ID..." className="w-full rounded-lg border border-[#1B2A4A]/20 bg-white py-2 pl-10 pr-4 text-sm" />
         </div>
         <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value as AccountRole | '')} className="rounded-lg border border-[#1B2A4A]/20 bg-white px-4 py-2 text-sm">
           <option value="">Semua Role</option>
@@ -211,12 +246,13 @@ export default function AccountsManagement() {
               <th className="p-4">Akun</th>
               <th className="p-4">Role</th>
               <th className="p-4">Detail</th>
+              <th className="p-4">Status</th>
               <th className="p-4">Dibuat</th>
               <th className="p-4">Aksi</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 && <tr><td colSpan={5} className="p-8 text-center text-[#5B7088]">Tidak ada akun yang cocok.</td></tr>}
+            {filtered.length === 0 && <tr><td colSpan={6} className="p-8 text-center text-[#5B7088]">Tidak ada akun yang cocok.</td></tr>}
             {filtered.map((account) => (
               <tr key={account.id} className="border-t border-[#1B2A4A]/10">
                 <td className="p-4">
@@ -232,9 +268,22 @@ export default function AccountsManagement() {
                 </td>
                 <td className="p-4"><span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${ROLE_BADGES[account.role]}`}>{ROLE_LABELS[account.role]}</span></td>
                 <td className="p-4 text-[#23314D]">
-                  {account.role === 'student'
-                    ? <div className="font-mono text-xs"><p>NISN {account.nisn || '-'}</p><p className="text-[#5B7088]">{account.class || '-'} · {account.major || '-'}</p></div>
-                    : <span className="text-[#5B7088]">—</span>}
+                  {account.role === 'student' && (
+                    <div className="font-mono text-xs"><p>NISN {account.nisn || '-'}</p><p className="text-[#5B7088]">{account.class || '-'} · {account.major || '-'}</p></div>
+                  )}
+                  {account.role === 'guru' && account.guru && (
+                    <div className="font-mono text-xs"><p>ID Guru {account.guru.teacher_id || '-'}</p><p className="text-[#5B7088]">{account.guru.nip ? `NIP ${account.guru.nip}` : ''}{account.guru.nip && account.guru.nuptk ? ' · ' : ''}{account.guru.nuptk ? `NUPTK ${account.guru.nuptk}` : ''}</p><p className="text-[#5B7088]">{[account.guru.position, account.guru.subject].filter(Boolean).join(' · ')}</p></div>
+                  )}
+                  {account.role === 'osis' && account.osis && (
+                    <div className="font-mono text-xs"><p>ID Anggota {account.osis.member_id || '-'}</p><p className="text-[#5B7088]">{account.osis.nisn ? `NISN ${account.osis.nisn}` : ''}</p><p className="text-[#5B7088]">{[account.osis.division, account.osis.position].filter(Boolean).join(' · ')}</p></div>
+                  )}
+                  {account.role === 'admin' && <span className="text-[#5B7088]">Akses penuh</span>}
+                  {account.must_change_password && <p className="mt-1 text-xs font-semibold text-amber-600">Wajib ganti password saat login</p>}
+                </td>
+                <td className="p-4">
+                  <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${account.status === 'inactive' ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
+                    {account.status === 'inactive' ? 'Nonaktif' : 'Aktif'}
+                  </span>
                 </td>
                 <td className="p-4 text-[#23314D]/70">{account.created_at ? new Date(account.created_at).toLocaleDateString('id-ID') : '-'}</td>
                 <td className="p-4 whitespace-nowrap">
@@ -250,7 +299,7 @@ export default function AccountsManagement() {
 
       {creating && (
         <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/50 p-4">
-          <form onSubmit={submit} className="my-8 w-full max-w-xl rounded-xl bg-white p-6 shadow-xl">
+          <form onSubmit={submit} className="my-8 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
             <div className="mb-5 flex justify-between">
               <h2 className="text-xl font-bold text-[#1B2A4A]">{editing ? 'Ubah Akun' : 'Tambah Akun'}</h2>
               <button type="button" onClick={() => setCreating(false)}><X /></button>
@@ -272,7 +321,7 @@ export default function AccountsManagement() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2"><Field label="Nama Lengkap" value={form.name} onChange={setField('name')} /></div>
 
-              {form.role === 'student' ? (
+              {form.role === 'student' && (
                 <>
                   <Field label="NISN" value={form.nisn} onChange={setField('nisn')} placeholder="cth. 0061234567" />
                   <Field label="Kelas" value={form.class} onChange={setField('class')} placeholder="cth. X TJKT 1" />
@@ -283,7 +332,26 @@ export default function AccountsManagement() {
                     </label>
                   </div>
                 </>
-              ) : (
+              )}
+
+              {form.role === 'guru' && (
+                <>
+                  <Field label="NIP (Opsional)" value={form.nip} onChange={setField('nip')} placeholder="NIP, jika tersedia" />
+                  <Field label="NUPTK (Opsional)" value={form.nuptk} onChange={setField('nuptk')} placeholder="NUPTK, jika tersedia" />
+                  <Field label="Mata Pelajaran" value={form.subject} onChange={setField('subject')} placeholder="cth. Matematika" />
+                  <Field label="Jabatan (Opsional)" value={form.position} onChange={setField('position')} placeholder="cth. Wali Kelas" />
+                </>
+              )}
+
+              {form.role === 'osis' && (
+                <>
+                  <Field label="NISN (Opsional)" value={form.nisn} onChange={setField('nisn')} placeholder="cth. 0061234567" />
+                  <Field label="Divisi" value={form.division} onChange={setField('division')} placeholder="cth. Divisi Kreativitas" />
+                  <Field label="Jabatan" value={form.position} onChange={setField('position')} placeholder="cth. Ketua" />
+                </>
+              )}
+
+              {(form.role === 'admin' || form.role === 'guru' || form.role === 'osis') && (
                 <>
                   <div className="sm:col-span-2"><Field label="Email" type="email" value={form.email} onChange={setField('email')} placeholder="cth. nama@smkn11.sch.id" /></div>
                   <div className="sm:col-span-2">
@@ -293,6 +361,35 @@ export default function AccountsManagement() {
                   </div>
                 </>
               )}
+
+              {form.role === 'guru' && (
+                <div className="sm:col-span-2"><TextareaField label="Prestasi" value={form.achievements} onChange={setField('achievements')} hint="Satu prestasi per baris." /></div>
+              )}
+              {form.role === 'guru' && (
+                <div className="sm:col-span-2"><TextareaField label="Sertifikasi" value={form.certifications} onChange={setField('certifications')} hint="Satu sertifikasi per baris." /></div>
+              )}
+              {form.role === 'osis' && (
+                <div className="sm:col-span-2"><TextareaField label="Prestasi" value={form.achievements} onChange={setField('achievements')} hint="Satu prestasi per baris." /></div>
+              )}
+              {form.role === 'osis' && (
+                <div className="sm:col-span-2"><TextareaField label="Program Kerja" value={form.work_programs} onChange={setField('work_programs')} hint="Satu program kerja per baris." /></div>
+              )}
+              {form.role === 'student' && (
+                <div className="sm:col-span-2"><TextareaField label="Prestasi" value={form.achievements} onChange={setField('achievements')} hint="Satu prestasi per baris." /></div>
+              )}
+
+              <div className="sm:col-span-2 grid gap-4 sm:grid-cols-2">
+                <label className="block text-sm font-semibold">Status Akun
+                  <select value={form.status} onChange={setField('status')} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal">
+                    <option value="active">Aktif</option>
+                    <option value="inactive">Nonaktif</option>
+                  </select>
+                </label>
+                <label className="flex items-end pb-2 text-sm font-semibold">
+                  <input type="checkbox" checked={form.must_change_password} onChange={(e) => setForm((v) => ({ ...v, must_change_password: e.target.checked }))} className="mr-2 h-4 w-4 accent-[#1B2A4A]" />
+                  Wajib ganti password saat login pertama
+                </label>
+              </div>
             </div>
 
             <div className="mt-6 flex justify-end gap-3">
@@ -304,14 +401,27 @@ export default function AccountsManagement() {
           </form>
         </div>
       )}
+
+      {importOpen && (
+        <AccountImportModal onClose={() => setImportOpen(false)} onImported={() => void load()} />
+      )}
     </div>
   );
 }
 
-function Field({ label, value, onChange, placeholder, type = 'text' }: { label: string; value: string; onChange: (e: ChangeEvent<HTMLInputElement>) => void; placeholder?: string; type?: string }) {
+function Field({ label, value, onChange, placeholder, type = 'text' }: { label: string; value: string; onChange: (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void; placeholder?: string; type?: string }) {
   return (
     <label className="block text-sm font-semibold">{label}
       <input value={value} type={type} onChange={onChange} placeholder={placeholder} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />
+    </label>
+  );
+}
+
+function TextareaField({ label, value, onChange, hint }: { label: string; value: string; onChange: (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void; hint?: string }) {
+  return (
+    <label className="block text-sm font-semibold">{label}
+      <textarea value={value} onChange={onChange} rows={3} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />
+      {hint && <span className="mt-1 block text-xs font-normal text-[#5B7088]">{hint}</span>}
     </label>
   );
 }

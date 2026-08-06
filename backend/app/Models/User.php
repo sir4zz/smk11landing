@@ -49,6 +49,16 @@ class User extends Authenticatable
         return $this->hasOne(Student::class, 'id', 'id');
     }
 
+    public function guru(): HasOne
+    {
+        return $this->hasOne(Guru::class, 'id', 'id');
+    }
+
+    public function osisAccount(): HasOne
+    {
+        return $this->hasOne(OsisAccount::class, 'id', 'id');
+    }
+
     public function madingPosts(): HasMany
     {
         return $this->hasMany(MadingPost::class, 'author_id');

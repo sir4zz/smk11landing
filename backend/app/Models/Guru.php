@@ -5,9 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 
-class Student extends Model
+class Guru extends Model
 {
     use HasUuids;
 
@@ -16,21 +15,19 @@ class Student extends Model
 
     protected $fillable = [
         'id',
-        'nisn',
-        'name',
-        'class',
-        'major',
+        'nip',
+        'nuptk',
+        'teacher_id',
+        'subject',
+        'position',
         'achievements',
+        'certifications',
     ];
 
     protected $casts = [
         'achievements' => 'array',
+        'certifications' => 'array',
     ];
-
-    public function account(): HasOne
-    {
-        return $this->hasOne(StudentAccount::class, 'student_id');
-    }
 
     public function user(): BelongsTo
     {

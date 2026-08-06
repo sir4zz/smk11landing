@@ -31,6 +31,9 @@ import Kesemaptaan from './pages/osis/Kesemaptaan'
 import Mading from './pages/mading/Mading'
 import StudentLogin from './pages/mading/StudentLogin'
 import StudentArea from './pages/mading/StudentArea'
+import MustChangePassword from './pages/admin/MustChangePassword'
+import ProfileDirectory from './pages/profiles/ProfileDirectory'
+import ProfilePage from './pages/profiles/ProfilePage'
 import { AdminRouteGuard, StudentRouteGuard } from './components/auth/RouteGuards'
 
 function App() {
@@ -39,6 +42,7 @@ function App() {
         <Route path="admin/login" element={<AdminLogin />} />
         <Route element={<AdminRouteGuard />}>
           <Route path="admin" element={<Admin />} />
+          <Route path="admin/ubah-password" element={<MustChangePassword />} />
         </Route>
 
         <Route path="/" element={<Layout />}>
@@ -48,6 +52,9 @@ function App() {
           <Route path="profil/sejarah" element={<History />} />
           <Route path="profil/visi-misi" element={<VisionMission />} />
           <Route path="profil/struktur-organisasi" element={<OrganizationStructure />} />
+          <Route path="profil/direktori" element={<ProfileDirectory />} />
+          <Route path="profil/guru/:id" element={<ProfilePage />} />
+          <Route path="profil/osis/:id" element={<ProfilePage />} />
 
           {/* Academics */}
           <Route path="akademik/program-keahlian" element={<StudyPrograms />} />

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { BarChart3, BookOpen, Briefcase, Building2, CalendarDays, FileText, GraduationCap, LogOut, Mail, Menu, Pencil, Plus, Trophy, Trash2, Upload, Users, X, Save, ShieldCheck, UsersRound, Dumbbell, Newspaper, UserCog } from 'lucide-react';
+import { BarChart3, BookOpen, Briefcase, Building2, CalendarDays, FileText, GraduationCap, LogOut, Mail, Menu, Pencil, Plus, Trophy, Trash2, Upload, Users, X, Save, ShieldCheck, UsersRound, Dumbbell, Newspaper, UserCog, UserRound } from 'lucide-react';
 import logoSekolah from '../assets/logo.png';
 import { news as initialNews } from '../data/news';
 import { programs as initialPrograms } from '../data/programs';
@@ -22,11 +22,12 @@ import KesemaptaanManagement from '../components/admin/KesemaptaanManagement';
 import MadingManagement from '../components/admin/MadingManagement';
 import StudentsManagement from '../components/admin/StudentsManagement';
 import AccountsManagement from '../components/admin/AccountsManagement';
+import MyProfile from '../components/admin/MyProfile';
 import { StaffAuthProvider, useStaffAuth } from '../lib/staffAuth';
 import { can, STAFF_ROLES } from '../lib/permissions';
 
-type Section = 'dashboard' | 'news' | 'programs' | 'facilities' | 'staff' | 'achievements' | 'teacherActivities' | 'educationStaff' | 'spmb' | 'contact' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts';
-type EditableSection = Exclude<Section, 'dashboard' | 'contact' | 'spmb' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts'>;
+type Section = 'dashboard' | 'news' | 'programs' | 'facilities' | 'staff' | 'achievements' | 'teacherActivities' | 'educationStaff' | 'spmb' | 'contact' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'myProfile';
+type EditableSection = Exclude<Section, 'dashboard' | 'contact' | 'spmb' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'myProfile'>;
 type Item = Record<string, unknown>;
 const sessionKey = 'smkn11-admin-session';
 const TABLE_MAP: Record<string, string> = {
@@ -96,11 +97,11 @@ export function AdminLogin() {
     setError('');
 
     const form = new FormData(event.currentTarget);
-    const email = String(form.get('email') ?? '').trim();
+    const identifier = String(form.get('identifier') ?? '').trim();
     const password = String(form.get('password') ?? '');
 
     try {
-      const { data, error: signInError } = await backendApi.auth.signInWithPassword({ email, password });
+      const { data, error: signInError } = await backendApi.auth.signInWithPassword({ identifier, password });
       if (signInError) throw signInError;
       if (!data?.user) throw new Error('Sesi login tidak dapat dibuat.');
 
@@ -111,7 +112,11 @@ export function AdminLogin() {
       }
 
       localStorage.setItem(sessionKey, 'true');
-      navigate('/admin');
+      if (data.must_change_password) {
+        navigate('/admin/ubah-password');
+      } else {
+        navigate('/admin');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login gagal.');
     } finally {
@@ -126,7 +131,7 @@ export function AdminLogin() {
       if (cancelled || !data?.user) return;
       const { data: profile } = await backendApi.database.from('profiles').select('role').eq('id', data.user.id).single();
       if (!cancelled && profile?.role && (STAFF_ROLES as readonly string[]).includes(profile.role)) {
-        navigate('/admin', { replace: true });
+        navigate(data.mustChangePassword ? '/admin/ubah-password' : '/admin', { replace: true });
       }
     })();
     return () => { cancelled = true; };
@@ -138,13 +143,13 @@ export function AdminLogin() {
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-[#FAF6F0] p-2"><img src={logoSekolah} alt="Logo SMKN 11" className="h-full w-full object-contain" /></div>
           <h1 className="text-2xl font-bold text-[#1B2A4A]">Login Panel SMKN 11</h1>
-          <p className="mt-2 text-sm text-[#23314D]">Masuk menggunakan akun admin, guru, atau OSIS.</p>
+          <p className="mt-2 text-sm text-[#23314D]">Masuk menggunakan email (admin), NIP/NUPTK/ID Guru, atau ID Anggota OSIS.</p>
         </div>
 
         {error && <p className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
 
         <form onSubmit={submit}>
-          <label className="mb-4 block text-sm font-semibold text-[#1B2A4A]">Email<input name="email" type="email" required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2" placeholder="nama@smkn11.sch.id" /></label>
+          <label className="mb-4 block text-sm font-semibold text-[#1B2A4A]">Email / NIP / ID Anggota<input name="identifier" required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2" placeholder="email@smkn11.sch.id, NIP, atau ID Anggota" /></label>
           <label className="mb-6 block text-sm font-semibold text-[#1B2A4A]">Kata sandi<input name="password" type="password" required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2" /></label>
           <button disabled={loading} className="w-full rounded-lg bg-[#1B2A4A] py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-70">{loading ? 'Memeriksa...' : 'Masuk ke Panel'}</button>
         </form>
@@ -169,13 +174,18 @@ function AdminPanel() {
   const [open, setOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [mobile, setMobile] = useState(false);
-  const { role, permissions, loading: authLoading } = useStaffAuth();
+  const { role, permissions, loading: authLoading, mustChangePassword } = useStaffAuth();
   const isAdmin = role === 'admin';
   const canViewOsis = isAdmin || can(permissions, 'osis.view');
   const canViewEkstra = isAdmin || can(permissions, 'extracurricular.view');
   const canViewKesemaptaan = isAdmin || can(permissions, 'kesemaptaan.view');
   const canViewMading = isAdmin || can(permissions, 'mading.view');
   const canViewStudents = isAdmin || can(permissions, 'mading.edit_all');
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (mustChangePassword) navigate('/admin/ubah-password', { replace: true });
+  }, [authLoading, mustChangePassword, navigate]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -283,11 +293,12 @@ function AdminPanel() {
     if (data) setData(current => ({ ...current, [key]: data as Item[] }));
   };
 
-  const active = section === 'dashboard' ? null : section === 'contact' ? { title: 'Pesan Kontak', icon: Mail, fields: [] } : section === 'spmb' ? { title: 'Kelola SPMB', icon: GraduationCap, fields: [] } : section === 'permissions' ? { title: 'Role & Permission', icon: ShieldCheck, fields: [] } : section === 'osis' ? { title: 'OSIS', icon: UsersRound, fields: [] } : section === 'extracurriculars' ? { title: 'Ekstrakurikuler', icon: Dumbbell, fields: [] } : section === 'kesemaptaan' ? { title: 'Kesemaptaan', icon: ShieldCheck, fields: [] } : section === 'mading' ? { title: 'Mading', icon: Newspaper, fields: [] } : section === 'students' ? { title: 'Data Siswa', icon: UserCog, fields: [] } : section === 'accounts' ? { title: 'Kelola Akun', icon: Users, fields: [] } : configs[section];
-  const editableSections = section !== 'dashboard' && section !== 'contact' && section !== 'spmb' && section !== 'permissions' && section !== 'osis' && section !== 'extracurriculars' && section !== 'kesemaptaan' && section !== 'mading' && section !== 'students' && section !== 'accounts';
+  const active = section === 'dashboard' ? null : section === 'myProfile' ? { title: 'Profil Saya', icon: UserRound, fields: [] } : section === 'contact' ? { title: 'Pesan Kontak', icon: Mail, fields: [] } : section === 'spmb' ? { title: 'Kelola SPMB', icon: GraduationCap, fields: [] } : section === 'permissions' ? { title: 'Role & Permission', icon: ShieldCheck, fields: [] } : section === 'osis' ? { title: 'OSIS', icon: UsersRound, fields: [] } : section === 'extracurriculars' ? { title: 'Ekstrakurikuler', icon: Dumbbell, fields: [] } : section === 'kesemaptaan' ? { title: 'Kesemaptaan', icon: ShieldCheck, fields: [] } : section === 'mading' ? { title: 'Mading', icon: Newspaper, fields: [] } : section === 'students' ? { title: 'Data Siswa', icon: UserCog, fields: [] } : section === 'accounts' ? { title: 'Kelola Akun', icon: Users, fields: [] } : configs[section];
+  const editableSections = section !== 'dashboard' && section !== 'myProfile' && section !== 'contact' && section !== 'spmb' && section !== 'permissions' && section !== 'osis' && section !== 'extracurriculars' && section !== 'kesemaptaan' && section !== 'mading' && section !== 'students' && section !== 'accounts';
 
   const navGroups: { label: string; items: { key: Section; label: string; icon: typeof FileText; visible: boolean }[] }[] = [
     { label: 'Menu', items: [{ key: 'dashboard', label: 'Dashboard', icon: BarChart3, visible: can(permissions, 'dashboard.view') }] },
+    { label: 'Akun Saya', items: [{ key: 'myProfile', label: 'Profil Saya', icon: UserRound, visible: true }] },
     { label: 'Konten', items: menu.map((key) => ({ key: key as Section, label: configs[key].title, icon: configs[key].icon, visible: isAdmin })) },
     { label: 'Modul Sekolah', items: [
       { key: 'spmb', label: 'Kelola SPMB', icon: GraduationCap, visible: isAdmin },
@@ -346,6 +357,8 @@ function AdminPanel() {
 
         <div className="mx-auto w-full max-w-6xl p-5 md:p-8">
           {section === 'dashboard' && <Dashboard data={data} total={total} />}
+
+          {section === 'myProfile' && <MyProfile />}
 
           {section === 'contact' && (
             <ContactMessages items={data.contact} onMarkRead={markRead} onDelete={remove} />

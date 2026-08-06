@@ -101,8 +101,8 @@ export const backendApi: any = {
     },
   },
   auth: {
-    async getCurrentUser() { const result = await request<{ user: { id: string; email?: string } }>('/auth/me'); return { data: result.data ? { user: result.data.user } : null, error: result.error }; },
-    async signInWithPassword(credentials: { email: string; password: string }) { const result = await request<{ user: { id: string; email?: string } }>('/auth/login', { method: 'POST', body: JSON.stringify(credentials) }); if (result.data) listeners.forEach((listener) => listener('signedIn')); return { data: result.data, error: result.error }; },
+    async getCurrentUser() { const result = await request<any>('/auth/me'); return { data: result.data ? { user: result.data.user, role: result.data.role, status: result.data.status, mustChangePassword: result.data.must_change_password, permissions: result.data.permissions } : null, error: result.error }; },
+    async signInWithPassword(credentials: { email?: string; password: string; identifier?: string }) { const body: Record<string, string> = { password: credentials.password }; if (credentials.identifier) body.identifier = credentials.identifier; else if (credentials.email) body.email = credentials.email; const result = await request<{ user: { id: string; email?: string }; role?: string; must_change_password?: boolean }>('/auth/login', { method: 'POST', body: JSON.stringify(body) }); if (result.data) listeners.forEach((listener) => listener('signedIn')); return { data: result.data, error: result.error }; },
     async signUp(credentials: { email: string; password: string; name?: string; options?: { data?: { name?: string } } }) { const result = await request<{ user: { id: string; email?: string } }>('/auth/register', { method: 'POST', body: JSON.stringify({ email: credentials.email, password: credentials.password, name: credentials.name ?? credentials.options?.data?.name }) }); if (result.data) listeners.forEach((listener) => listener('signedIn')); return { data: result.data, error: result.error }; },
     async signOut() { const result = await request('/auth/logout', { method: 'POST' }); listeners.forEach((listener) => listener('signedOut')); return result; },
     onAuthStateChange(listener: (event: 'signedIn' | 'signedOut') => void) { listeners.add(listener); return () => listeners.delete(listener); },
@@ -188,6 +188,11 @@ export interface AccountRow {
   nisn?: string;
   class?: string;
   major?: string;
+  status?: string;
+  must_change_password?: boolean;
+  achievements?: string[];
+  guru?: { nip?: string; nuptk?: string; teacher_id?: string; subject?: string; position?: string; certifications?: string[] } | null;
+  osis?: { member_id?: string; nisn?: string; division?: string; position?: string; work_programs?: string[] } | null;
   created_at?: string;
 }
 
@@ -207,5 +212,99 @@ export const accountsApi = {
   },
   remove(id: string): ApiResult<null> {
     return request<null>(`/admin/accounts/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  },
+};
+
+// ---------- SELF-SERVICE PROFILE (guru / siswa / osis / admin) ----------
+export interface MyProfileSocial {
+  instagram?: string;
+  facebook?: string;
+  twitter?: string;
+  tiktok?: string;
+  youtube?: string;
+  linkedin?: string;
+  website?: string;
+  github?: string;
+}
+
+export interface MyProfilePayload {
+  id: string;
+  role: string;
+  status: string;
+  must_change_password: boolean;
+  name: string;
+  email: string;
+  phone: string;
+  photo: string;
+  bio: string;
+  address: string;
+  social: MyProfileSocial;
+  guru?: { nip?: string; nuptk?: string; teacher_id?: string; subject?: string; position?: string; achievements?: string[]; certifications?: string[] } | null;
+  osis?: { member_id?: string; nisn?: string; division?: string; position?: string; achievements?: string[]; work_programs?: string[] } | null;
+  student?: { nisn?: string; class?: string; major?: string; achievements?: string[] } | null;
+}
+
+export const myProfileApi = {
+  show(): ApiResult<MyProfilePayload> {
+    return request<MyProfilePayload>('/me');
+  },
+  updateProfile(payload: Record<string, unknown>): ApiResult<MyProfilePayload> {
+    return request<MyProfilePayload>('/me/profile', { method: 'PATCH', body: JSON.stringify(payload) });
+  },
+  updatePassword(payload: { current_password: string; new_password: string }): ApiResult<{ must_change_password: boolean }> {
+    return request<{ must_change_password: boolean }>('/me/password', { method: 'PATCH', body: JSON.stringify(payload) });
+  },
+};
+
+// ---------- PUBLIC PROFILES ----------
+export type PublicProfileType = 'guru' | 'siswa' | 'osis';
+
+export interface PublicProfile {
+  role: string;
+  slug: string;
+  name: string;
+  photo: string;
+  bio: string;
+  email: string;
+  phone: string;
+  address: string;
+  social: MyProfileSocial;
+  achievements?: string[];
+  certifications?: string[];
+  subject?: string;
+  position?: string;
+  class?: string;
+  major?: string;
+  nisn?: string;
+  member_id?: string;
+  division?: string;
+  work_programs?: string[];
+  works?: { title: string; content: string; cover_image?: string; category_id?: string | null; published_at?: string }[];
+}
+
+export interface PublicDirectoryEntry {
+  role: 'guru' | 'siswa' | 'osis';
+  slug: string;
+  name: string;
+  photo: string;
+  position?: string;
+  subject?: string;
+  class?: string;
+  major?: string;
+  division?: string;
+}
+
+export interface PublicDirectory {
+  gurus: PublicDirectoryEntry[];
+  siswa: PublicDirectoryEntry[];
+  osis: PublicDirectoryEntry[];
+}
+
+export const publicProfileApi = {
+  get(type: PublicProfileType, slug: string): ApiResult<PublicProfile> {
+    return request<PublicProfile>(`/public/${type}/${encodeURIComponent(slug)}`);
+  },
+  directory(): ApiResult<PublicDirectory> {
+    return request<PublicDirectory>('/public/directory');
   },
 };

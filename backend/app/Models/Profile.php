@@ -20,11 +20,25 @@ class Profile extends Model
         'name',
         'phone',
         'email',
+        'photo',
+        'bio',
+        'address',
+        'instagram',
+        'facebook',
+        'twitter',
+        'tiktok',
+        'youtube',
+        'linkedin',
+        'website',
+        'github',
+        'status',
+        'must_change_password',
         'updated_at',
     ];
 
     protected $casts = [
         'updated_at' => 'datetime',
+        'must_change_password' => 'boolean',
     ];
 
     public function user(): BelongsTo
