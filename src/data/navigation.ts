@@ -41,9 +41,10 @@ export const navigationData: NavItem[] = [
     children: [
       { label: 'Berita', href: '/informasi/berita' },
       { label: 'FAQ', href: '/informasi/faq' },
+      { label: 'Galeri', href: '/galeri' },
     ],
   },
-  { label: 'Galeri', href: '/galeri' },
+  //{ label: 'Galeri', href: '/galeri' },
   {
     label: 'OSIS',
     href: '/osis',

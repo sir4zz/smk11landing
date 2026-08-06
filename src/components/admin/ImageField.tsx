@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { ImageIcon, Loader2, X } from 'lucide-react';
-import { backendApi } from '../../lib/api';
+import { backendApi, resolveImageUrl } from '../../lib/api';
 
 interface ImageFieldProps {
   label: string;
@@ -38,7 +38,7 @@ export default function ImageField({ label, value, onChange, hint, disabled = fa
       <div className="mt-1 overflow-hidden rounded-lg border border-[#1B2A4A]/20 bg-white">
         {value ? (
           <div className="relative">
-            <img src={value} alt="" className="h-40 w-full object-cover" />
+            <img src={resolveImageUrl(value)} alt="" className="h-40 w-full object-cover" />
             {!disabled && (
               <button
                 type="button"

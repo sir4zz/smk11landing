@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\StudentAuthController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ContentCrudController;
 use App\Http\Controllers\ExtracurricularController;
+use App\Http\Controllers\FaqController;
 use App\Http\Controllers\KesemaptaanController;
 use App\Http\Controllers\MadingAiController;
 use App\Http\Controllers\MadingController;
@@ -80,6 +81,9 @@ Route::get('/kesemaptaan/achievements', [KesemaptaanController::class, 'achievem
 // ---------- MADING ----------
 Route::get('/mading/categories', [MadingController::class, 'categories']);
 Route::get('/mading/posts', [MadingController::class, 'index']);
+
+// ---------- FAQ ----------
+Route::get('/faqs', [FaqController::class, 'index']);
 
 // ---------- CONTACT ----------
 Route::post('/contact', [ContactController::class, 'store']);
