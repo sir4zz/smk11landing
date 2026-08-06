@@ -161,7 +161,7 @@ function ExtracurricularForm({ item, onClose, onSave, categories = [] }: { item:
           <Field label="Nama Ekstrakurikuler" {...f('name')} />
           <label className="block text-sm font-semibold">Kategori
             <select value={String(values.category ?? '')} onChange={(e) => setValues((v) => ({ ...v, category: e.target.value }))} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal">
-              <option value="">â€” Pilih â€”</option>
+              <option value="">— Pilih —</option>
               {categories.map((category) => <option key={category} value={category}>{category}</option>)}
             </select>
           </label>

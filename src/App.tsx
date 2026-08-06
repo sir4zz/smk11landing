@@ -23,6 +23,8 @@ import NewsList from './pages/information/NewsList'
 import NewsDetail from './pages/information/NewsDetail'
 import FAQ from './pages/information/FAQ'
 import Osis from './pages/osis/Osis'
+import OsisStruktur from './pages/osis/OsisStruktur'
+import OsisKegiatan from './pages/osis/OsisKegiatan'
 import OsisExtracurriculars from './pages/osis/Extracurriculars'
 import OsisExtracurricularDetail from './pages/osis/ExtracurricularDetail'
 import Kesemaptaan from './pages/osis/Kesemaptaan'
@@ -72,6 +74,8 @@ function App() {
 
           {/* OSIS */}
           <Route path="osis" element={<Osis />} />
+          <Route path="osis/struktur" element={<OsisStruktur />} />
+          <Route path="osis/kegiatan" element={<OsisKegiatan />} />
           <Route path="osis/ekstrakurikuler" element={<OsisExtracurriculars />} />
           <Route path="osis/ekstrakurikuler/:slug" element={<OsisExtracurricularDetail />} />
           <Route path="osis/kesemaptaan" element={<Kesemaptaan />} />

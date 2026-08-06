@@ -286,31 +286,52 @@ function AdminPanel() {
   const active = section === 'dashboard' ? null : section === 'contact' ? { title: 'Pesan Kontak', icon: Mail, fields: [] } : section === 'spmb' ? { title: 'Kelola SPMB', icon: GraduationCap, fields: [] } : section === 'permissions' ? { title: 'Role & Permission', icon: ShieldCheck, fields: [] } : section === 'osis' ? { title: 'OSIS', icon: UsersRound, fields: [] } : section === 'extracurriculars' ? { title: 'Ekstrakurikuler', icon: Dumbbell, fields: [] } : section === 'kesemaptaan' ? { title: 'Kesemaptaan', icon: ShieldCheck, fields: [] } : section === 'mading' ? { title: 'Mading', icon: Newspaper, fields: [] } : section === 'students' ? { title: 'Data Siswa', icon: UserCog, fields: [] } : section === 'accounts' ? { title: 'Kelola Akun', icon: Users, fields: [] } : configs[section];
   const editableSections = section !== 'dashboard' && section !== 'contact' && section !== 'spmb' && section !== 'permissions' && section !== 'osis' && section !== 'extracurriculars' && section !== 'kesemaptaan' && section !== 'mading' && section !== 'students' && section !== 'accounts';
 
+  const navGroups: { label: string; items: { key: Section; label: string; icon: typeof FileText; visible: boolean }[] }[] = [
+    { label: 'Menu', items: [{ key: 'dashboard', label: 'Dashboard', icon: BarChart3, visible: can(permissions, 'dashboard.view') }] },
+    { label: 'Konten', items: menu.map((key) => ({ key: key as Section, label: configs[key].title, icon: configs[key].icon, visible: isAdmin })) },
+    { label: 'Modul Sekolah', items: [
+      { key: 'spmb', label: 'Kelola SPMB', icon: GraduationCap, visible: isAdmin },
+      { key: 'osis', label: 'OSIS', icon: UsersRound, visible: canViewOsis },
+      { key: 'extracurriculars', label: 'Ekstrakurikuler', icon: Dumbbell, visible: canViewEkstra },
+      { key: 'kesemaptaan', label: 'Kesemaptaan', icon: ShieldCheck, visible: canViewKesemaptaan },
+      { key: 'mading', label: 'Mading', icon: Newspaper, visible: canViewMading },
+      { key: 'students', label: 'Data Siswa', icon: UserCog, visible: canViewStudents },
+    ]},
+    { label: 'Sistem', items: [
+      { key: 'contact', label: 'Pesan Kontak', icon: Mail, visible: isAdmin },
+      { key: 'permissions', label: 'Role & Permission', icon: ShieldCheck, visible: isAdmin },
+      { key: 'accounts', label: 'Kelola Akun', icon: Users, visible: isAdmin },
+    ]},
+  ];
+
   return (
     <div className="min-h-screen bg-[#FAF6F0] text-[#1B2A4A]">
-      <aside className={`${mobile ? 'translate-x-0' : '-translate-x-full'} fixed inset-y-0 left-0 z-30 w-72 bg-[#1B2A4A] p-5 text-white transition-transform lg:translate-x-0`}>
-        <div className="mb-8 flex items-center justify-between">
+      <aside className={`${mobile ? 'translate-x-0' : '-translate-x-full'} fixed inset-y-0 left-0 z-30 flex w-72 flex-col bg-[#1B2A4A] p-5 text-white transition-transform lg:translate-x-0`}>
+        <div className="mb-4 flex shrink-0 items-center justify-between">
           <span className="flex items-center gap-2 font-bold"><img src={logoSekolah} alt="Logo SMKN 11" className="h-7 w-auto" style={{ height: '28px', width: 'auto', objectFit: 'contain' }} /> ADMIN SMKN 11</span>
           <button className="lg:hidden" onClick={() => setMobile(false)}><X /></button>
         </div>
-        <nav className="space-y-1">
-          {can(permissions, 'dashboard.view') && <Nav label="Dashboard" icon={BarChart3} active={section === 'dashboard'} onClick={() => setSection('dashboard')} />}
-          {isAdmin && menu.map(key => <Nav key={key} label={configs[key].title} icon={configs[key].icon} active={section === key} onClick={() => setSection(key)} />)}
-          {isAdmin && <Nav label="Kelola SPMB" icon={GraduationCap} active={section === 'spmb'} onClick={() => setSection('spmb')} />}
-          {isAdmin && <Nav label="Pesan Kontak" icon={Mail} active={section === 'contact'} onClick={() => setSection('contact')} />}
-          {isAdmin && <Nav label="Role & Permission" icon={ShieldCheck} active={section === 'permissions'} onClick={() => setSection('permissions')} />}
-          {canViewOsis && <Nav label="OSIS" icon={UsersRound} active={section === 'osis'} onClick={() => setSection('osis')} />}
-          {canViewEkstra && <Nav label="Ekstrakurikuler" icon={Dumbbell} active={section === 'extracurriculars'} onClick={() => setSection('extracurriculars')} />}
-          {canViewKesemaptaan && <Nav label="Kesemaptaan" icon={ShieldCheck} active={section === 'kesemaptaan'} onClick={() => setSection('kesemaptaan')} />}
-          {canViewMading && <Nav label="Mading" icon={Newspaper} active={section === 'mading'} onClick={() => setSection('mading')} />}
-          {canViewStudents && <Nav label="Data Siswa" icon={UserCog} active={section === 'students'} onClick={() => setSection('students')} />}
-          {isAdmin && <Nav label="Kelola Akun" icon={Users} active={section === 'accounts'} onClick={() => setSection('accounts')} />}
+        <nav className="min-h-0 flex-1 overflow-y-auto">
+          {navGroups.map((group) => {
+            const visibleItems = group.items.filter((item) => item.visible);
+            if (visibleItems.length === 0) return null;
+            return (
+              <div key={group.label}>
+                <p className="px-3 pb-1 pt-4 text-[10px] font-bold uppercase tracking-widest text-[#F3E8D0]/50">{group.label}</p>
+                <div className="space-y-1">
+                  {visibleItems.map((item) => (
+                    <Nav key={item.key} label={item.label} icon={item.icon} active={section === item.key} onClick={() => setSection(item.key)} />
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </nav>
         <button onClick={async () => {
           await backendApi.auth.signOut();
           localStorage.removeItem(sessionKey);
           navigate('/admin/login');
-        }} className="absolute bottom-6 flex items-center gap-2 text-sm text-[#F3E8D0]"><LogOut size={18} /> Keluar</button>
+        }} className="mt-4 -mx-5 flex shrink-0 items-center gap-2 border-t border-white/10 px-5 pt-3 text-sm text-[#F3E8D0]"><LogOut size={18} /> Keluar</button>
       </aside>
 
       <main className="lg:ml-72">
@@ -323,7 +344,7 @@ function AdminPanel() {
           <Link to="/" className="text-sm font-semibold text-[#866D2C]">Lihat Website</Link>
         </header>
 
-        <div className="p-5 md:p-8">
+        <div className="mx-auto w-full max-w-6xl p-5 md:p-8">
           {section === 'dashboard' && <Dashboard data={data} total={total} />}
 
           {section === 'contact' && (
@@ -378,7 +399,7 @@ function AdminPanel() {
 }
 
 function Nav({ label, icon: Icon, active, onClick }: { label: string; icon: typeof FileText; active: boolean; onClick: () => void }) {
-  return <button onClick={onClick} className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm ${active ? 'bg-[#C8A951] font-bold text-[#1B2A4A]' : 'text-[#F3E8D0] hover:bg-white/10'}`}><Icon size={18} />{label}</button>;
+  return <button onClick={onClick} className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm ${active ? 'bg-[#C8A951] font-bold text-[#1B2A4A]' : 'text-[#F3E8D0] hover:bg-white/10'}`}><Icon size={18} />{label}</button>;
 }
 
 function Dashboard({ data, total }: { data: Record<string, Item[]>; total: number }) {
@@ -1320,7 +1341,7 @@ function Editor({ config, item, onClose, onSave, section, options }: { config: {
                       }
                       return (
                         <select ref={(element) => { fieldRefs.current[field.key] = element; }} name={field.key} defaultValue={currentValue} required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 bg-white px-3 py-2 font-normal">
-                          <option value="">â€” Pilih â€”</option>
+                          <option value="">— Pilih —</option>
                           {choices.map(choice => <option key={choice} value={choice}>{choice}</option>)}
                         </select>
                       );
