@@ -43,6 +43,7 @@ export const navigationData: NavItem[] = [
       { label: 'FAQ', href: '/informasi/faq' },
     ],
   },
+  { label: 'Galeri', href: '/galeri' },
   {
     label: 'OSIS',
     href: '/osis',

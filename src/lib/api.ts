@@ -2,10 +2,21 @@ import { defaultSpmbContent, type SpmbContent } from '../data/spmb';
 
 const apiBaseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/$/, '') + '/api';
 
+<<<<<<< HEAD
+const apiOrigin = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/$/, '');
+
+export function resolveImageUrl(url: string): string {
+  if (!url) return '';
+  if (/^https?:\/\//.test(url)) return url;
+  if (url.startsWith('/')) return `${apiOrigin}${url}`;
+  return url;
+}
+=======
 export { apiBaseUrl };
+>>>>>>> 51372e5d571e39f4957628aee67a8b99046eae21
 
 type ApiError = { message?: string; [key: string]: unknown } | null;
-type ApiResult<T> = Promise<{ data: T | null; error: ApiError; count?: number | null }>;
+type ApiResult<T> = Promise<{ data: T | null; error: ApiError; count?: number | null; meta?: unknown }>;
 type Filter = { key: string; value: unknown };
 
 async function request<T>(path: string, options: RequestInit = {}): ApiResult<T> {
@@ -24,7 +35,7 @@ async function request<T>(path: string, options: RequestInit = {}): ApiResult<T>
     if (!response.ok) {
       return { data: null, error: body?.error ?? body ?? { message: 'Permintaan ke server gagal.' } };
     }
-    return { data: (body?.data ?? body) as T, error: body?.error ?? null, count: body?.count };
+    return { data: (body?.data ?? body) as T, error: body?.error ?? null, count: body?.count, meta: body?.meta };
   } catch {
     return { data: null, error: { message: 'Tidak dapat terhubung ke server.' } };
   }
@@ -215,6 +226,100 @@ export const accountsApi = {
   },
 };
 
+<<<<<<< HEAD
+// ---------- GALLERY ----------
+export interface GalleryImageRow {
+  id?: string;
+  gallery_id?: string;
+  image: string;
+  caption?: string;
+  sort_order?: number;
+  created_at?: string;
+}
+
+export interface GalleryRow {
+  id: string;
+  title: string;
+  slug: string;
+  description?: string;
+  category?: string;
+  event_date?: string | null;
+  location?: string;
+  cover_image: string;
+  is_published?: boolean;
+  images?: GalleryImageRow[];
+  images_count?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface GalleryMeta {
+  total: number;
+  page: number;
+  limit: number;
+  last_page: number;
+}
+
+export const GALLERY_CATEGORIES = ['Akademik', 'Kegiatan', 'Olahraga', 'Seni', 'Keagamaan', 'Lomba', 'Prestasi', 'Lainnya'];
+
+export async function fetchGalleries(params?: {
+  year?: string;
+  category?: string;
+  page?: number;
+  limit?: number;
+}): Promise<{ rows: GalleryRow[]; meta: GalleryMeta }> {
+  const q = new URLSearchParams();
+  if (params?.year) q.set('year', params.year);
+  if (params?.category) q.set('category', params.category);
+  if (params?.page) q.set('page', String(params.page));
+  if (params?.limit) q.set('limit', String(params.limit));
+  const suffix = q.size ? `?${q}` : '';
+  const result = await request<GalleryRow[]>(`/galleries${suffix}`);
+  return result.data
+    ? { rows: result.data, meta: (result.meta as GalleryMeta) ?? { total: 0, page: 1, limit: 9, last_page: 1 } }
+    : { rows: [], meta: { total: 0, page: 1, limit: 9, last_page: 1 } };
+}
+
+export async function fetchGalleryCategories(): Promise<string[]> {
+  const result = await request<string[]>('/gallery/categories');
+  return result.data ?? [];
+}
+
+export async function fetchGalleryBySlug(slug: string): Promise<GalleryRow | null> {
+  const result = await request<GalleryRow>(`/galleries/${encodeURIComponent(slug)}`);
+  return result.data ?? null;
+}
+
+export const galleryAdminApi = {
+  list(params?: { search?: string; category?: string; page?: number; limit?: number }): ApiResult<GalleryRow[]> {
+    const q = new URLSearchParams();
+    if (params?.search) q.set('search', params.search);
+    if (params?.category) q.set('category', params.category);
+    if (params?.page) q.set('page', String(params.page));
+    if (params?.limit) q.set('limit', String(params.limit ?? 10));
+    const suffix = q.size ? `?${q}` : '';
+    return request<GalleryRow[]>(`/admin/galleries${suffix}`);
+  },
+  create(payload: FormData): ApiResult<GalleryRow> {
+    return request<GalleryRow>('/admin/galleries', { method: 'POST', body: payload });
+  },
+  update(id: string, payload: FormData): ApiResult<GalleryRow> {
+    return request<GalleryRow>(`/admin/galleries/${encodeURIComponent(id)}`, { method: 'PATCH', body: payload });
+  },
+  remove(id: string): ApiResult<null> {
+    return request<null>(`/admin/galleries/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  },
+  addImages(id: string, images: File[]): ApiResult<GalleryRow> {
+    const form = new FormData();
+    images.forEach((file) => form.append('images[]', file));
+    return request<GalleryRow>(`/admin/galleries/${encodeURIComponent(id)}/images`, { method: 'POST', body: form });
+  },
+  removeImage(imageId: string): ApiResult<null> {
+    return request<null>(`/admin/gallery-images/${encodeURIComponent(imageId)}`, { method: 'DELETE' });
+  },
+  reorder(images: { id: string; sort_order: number }[]): ApiResult<null> {
+    return request<null>('/admin/gallery-images/reorder', { method: 'PUT', body: JSON.stringify({ images }) });
+=======
 // ---------- SELF-SERVICE PROFILE (guru / siswa / osis / admin) ----------
 export interface MyProfileSocial {
   instagram?: string;
@@ -306,5 +411,6 @@ export const publicProfileApi = {
   },
   directory(): ApiResult<PublicDirectory> {
     return request<PublicDirectory>('/public/directory');
+>>>>>>> 51372e5d571e39f4957628aee67a8b99046eae21
   },
 };

@@ -49,6 +49,12 @@ export const PERMISSION_CATALOG: PermissionDef[] = [
   { slug: 'spmb.delete', name: 'Delete', module: 'spmb' },
   { slug: 'spmb.verify', name: 'Verify', module: 'spmb' },
 
+  { slug: 'gallery.view', name: 'View', module: 'gallery' },
+  { slug: 'gallery.create', name: 'Create', module: 'gallery' },
+  { slug: 'gallery.edit', name: 'Edit', module: 'gallery' },
+  { slug: 'gallery.delete', name: 'Delete', module: 'gallery' },
+  { slug: 'gallery.publish', name: 'Publish', module: 'gallery' },
+
   { slug: 'management.view', name: 'View', module: 'management' },
 ];
 
@@ -60,6 +66,7 @@ export const PERMISSION_MODULES: { key: string; label: string }[] = [
   { key: 'kesemaptaan', label: 'Kesemaptaan' },
   { key: 'mading', label: 'Mading' },
   { key: 'spmb', label: 'SPMB' },
+  { key: 'gallery', label: 'Galeri' },
   { key: 'management', label: 'Manajemen' },
 ];
 

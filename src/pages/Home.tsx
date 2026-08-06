@@ -14,6 +14,10 @@ import {
   Trophy,
   Building2,
   MapPin,
+  Sparkles,
+  Camera,
+  Calendar,
+  ArrowRight as ArrowRightIcon,
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import SectionHeading from '../components/ui/SectionHeading';
@@ -22,7 +26,7 @@ import Card from '../components/ui/Card';
 import { programs } from '../data/programs';
 import { news, isImportedNews } from '../data/news';
 import { achievements } from '../data/achievements';
-import { fetchPublicContent } from '../lib/api';
+import { fetchPublicContent, fetchGalleries, resolveImageUrl, type GalleryRow } from '../lib/api';
 
 const getProgramIcon = (slug: string) => {
   switch (slug) {
@@ -54,6 +58,8 @@ const Home: React.FC = () => {
   const [publicPrograms, setPublicPrograms] = useState(programs);
   const [publicNews, setPublicNews] = useState(news);
   const [publicAchievements, setPublicAchievements] = useState(achievements);
+  const [gallery, setGallery] = useState<GalleryRow[]>([]);
+  const [galleryLoading, setGalleryLoading] = useState(true);
   const [stats] = useState([
     { value: '1.124+', label: 'Siswa Aktif', icon: <Users className="h-6 w-6" /> },
     { value: '51+', label: 'Tenaga Pengajar', icon: <GraduationCap className="h-6 w-6" /> },
@@ -65,6 +71,10 @@ const Home: React.FC = () => {
     fetchPublicContent('programs', programs).then(setPublicPrograms);
     fetchPublicContent('news', news).then(setPublicNews);
     fetchPublicContent('achievements', achievements).then(setPublicAchievements);
+    fetchGalleries({ page: 1, limit: 8 })
+      .then(({ rows }) => setGallery(rows))
+      .catch(() => {})
+      .finally(() => setGalleryLoading(false));
     // Statistik hanya menampilkan informasi sekolah; SPMB tidak menyimpan data pendaftar di situs ini.
     const timer = window.setInterval(() => {
       setActiveImage((prev) => (prev + 1) % heroImages.length);
@@ -372,6 +382,60 @@ const Home: React.FC = () => {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section className="bg-[#FAF6F0] py-16 md:py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <SectionHeading title="Galeri Kegiatan" subtitle="Dokumentasi momen dan kegiatan sekolah dalam galeri foto." align="left" />
+            <Link to="/galeri" className="mb-8 inline-flex items-center gap-2 font-semibold text-[#866D2C] transition-colors hover:text-[#1B2A4A]">
+              Lihat Semua Galeri <ArrowRightIcon className="h-4 w-4" />
+            </Link>
+          </div>
+
+          {galleryLoading ? (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="aspect-[4/3] animate-pulse rounded-[1.25rem] bg-[#1B2A4A]/10" />
+              ))}
+            </div>
+          ) : gallery.length === 0 ? (
+            <div className="grid place-items-center rounded-[1.25rem] border border-dashed border-[#1B2A4A]/20 bg-white py-16 text-center">
+              <Camera className="h-10 w-10 text-[#866D2C]" />
+              <p className="mt-3 text-[#5B7088]">Galeri masih kosong. Segera hadir dokumentasi kegiatan kami.</p>
+            </div>
+          ) : (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {gallery.slice(0, 4).map((item) => (
+                <Link
+                  key={item.id}
+                  to={`/galeri/${item.slug}`}
+                  className="group relative block aspect-[4/3] overflow-hidden rounded-[1.25rem] bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                >
+                  <img
+                    src={resolveImageUrl(item.cover_image)}
+                    alt={item.title}
+                    loading="lazy"
+                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#1B2A4A]/90 via-[#1B2A4A]/20 to-transparent opacity-80 transition-opacity duration-300 group-hover:opacity-100" />
+                  <span className="absolute left-3 top-3 rounded-full bg-[#C8A951]/95 px-3 py-1 text-xs font-semibold text-[#1B2A4A]">
+                    {item.category ?? 'Kegiatan'}
+                  </span>
+                  <div className="absolute inset-x-0 bottom-0 p-4">
+                    <h3 className="text-base font-bold leading-snug text-white">{item.title}</h3>
+                    <p className="mt-1 flex items-center gap-1.5 text-xs font-medium text-white/80">
+                      <Calendar className="h-3.5 w-3.5" />
+                      {item.event_date ? new Date(item.event_date).toLocaleDateString('id-ID', { year: 'numeric', month: 'long' }) : 'Kegiatan'}
+                      <Sparkles className="ml-1 h-3.5 w-3.5 text-[#C8A951]" />
+                      <span>{item.images_count ?? 0} foto</span>
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
