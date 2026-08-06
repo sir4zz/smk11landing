@@ -100,6 +100,7 @@ return new class extends Migration
             $table->text('title');
             $table->text('event')->default('');
             $table->integer('year')->default(DB::raw('(EXTRACT(YEAR FROM CURRENT_DATE))'));
+            ## $table->integer('year')->default(date('Y')); ##use this if using sqlite
             $table->text('level')->default('');
             $table->text('rank')->default('');
             $table->jsonb('students')->default('[]');
