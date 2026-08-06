@@ -1,11 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-<<<<<<< HEAD
-import { BarChart3, BookOpen, Briefcase, Building2, CalendarDays, FileText, GraduationCap, LogOut, Mail, Menu, Pencil, Plus, Trophy, Trash2, Upload, Users, X, Save, ShieldCheck, UsersRound, Dumbbell, Newspaper, UserCog, Camera } from 'lucide-react';
-=======
-import { BarChart3, BookOpen, Briefcase, Building2, CalendarDays, FileText, GraduationCap, LogOut, Mail, Menu, Pencil, Plus, Trophy, Trash2, Upload, Users, X, Save, ShieldCheck, UsersRound, Dumbbell, Newspaper, UserCog, UserRound } from 'lucide-react';
->>>>>>> 51372e5d571e39f4957628aee67a8b99046eae21
+import { BarChart3, BookOpen, Briefcase, Building2, CalendarDays, FileText, GraduationCap, LogOut, Mail, Menu, Pencil, Plus, Trophy, Trash2, Upload, Users, X, Save, ShieldCheck, UsersRound, Dumbbell, Newspaper, UserCog, Camera, UserRound } from 'lucide-react';
 import logoSekolah from '../assets/logo.png';
 import { news as initialNews } from '../data/news';
 import { programs as initialPrograms } from '../data/programs';
@@ -31,13 +27,8 @@ import MyProfile from '../components/admin/MyProfile';
 import { StaffAuthProvider, useStaffAuth } from '../lib/staffAuth';
 import { can, STAFF_ROLES } from '../lib/permissions';
 
-<<<<<<< HEAD
-type Section = 'dashboard' | 'news' | 'programs' | 'facilities' | 'staff' | 'achievements' | 'teacherActivities' | 'educationStaff' | 'spmb' | 'contact' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'gallery';
-type EditableSection = Exclude<Section, 'dashboard' | 'contact' | 'spmb' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'gallery'>;
-=======
-type Section = 'dashboard' | 'news' | 'programs' | 'facilities' | 'staff' | 'achievements' | 'teacherActivities' | 'educationStaff' | 'spmb' | 'contact' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'myProfile';
-type EditableSection = Exclude<Section, 'dashboard' | 'contact' | 'spmb' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'myProfile'>;
->>>>>>> 51372e5d571e39f4957628aee67a8b99046eae21
+type Section = 'dashboard' | 'news' | 'programs' | 'facilities' | 'staff' | 'achievements' | 'teacherActivities' | 'educationStaff' | 'spmb' | 'contact' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'gallery' | 'myProfile';
+type EditableSection = Exclude<Section, 'dashboard' | 'contact' | 'spmb' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'gallery' | 'myProfile'>;
 type Item = Record<string, unknown>;
 const sessionKey = 'smkn11-admin-session';
 const TABLE_MAP: Record<string, string> = {
@@ -304,12 +295,8 @@ function AdminPanel() {
     if (data) setData(current => ({ ...current, [key]: data as Item[] }));
   };
 
-<<<<<<< HEAD
-  const active = section === 'dashboard' ? null : section === 'contact' ? { title: 'Pesan Kontak', icon: Mail, fields: [] } : section === 'spmb' ? { title: 'Kelola SPMB', icon: GraduationCap, fields: [] } : section === 'permissions' ? { title: 'Role & Permission', icon: ShieldCheck, fields: [] } : section === 'osis' ? { title: 'OSIS', icon: UsersRound, fields: [] } : section === 'extracurriculars' ? { title: 'Ekstrakurikuler', icon: Dumbbell, fields: [] } : section === 'kesemaptaan' ? { title: 'Kesemaptaan', icon: ShieldCheck, fields: [] } : section === 'mading' ? { title: 'Mading', icon: Newspaper, fields: [] } : section === 'students' ? { title: 'Data Siswa', icon: UserCog, fields: [] } : section === 'accounts' ? { title: 'Kelola Akun', icon: Users, fields: [] } : section === 'gallery' ? { title: 'Galeri', icon: Camera, fields: [] } : configs[section];
-  const editableSections = section !== 'dashboard' && section !== 'contact' && section !== 'spmb' && section !== 'permissions' && section !== 'osis' && section !== 'extracurriculars' && section !== 'kesemaptaan' && section !== 'mading' && section !== 'students' && section !== 'accounts' && section !== 'gallery';
-=======
-  const active = section === 'dashboard' ? null : section === 'myProfile' ? { title: 'Profil Saya', icon: UserRound, fields: [] } : section === 'contact' ? { title: 'Pesan Kontak', icon: Mail, fields: [] } : section === 'spmb' ? { title: 'Kelola SPMB', icon: GraduationCap, fields: [] } : section === 'permissions' ? { title: 'Role & Permission', icon: ShieldCheck, fields: [] } : section === 'osis' ? { title: 'OSIS', icon: UsersRound, fields: [] } : section === 'extracurriculars' ? { title: 'Ekstrakurikuler', icon: Dumbbell, fields: [] } : section === 'kesemaptaan' ? { title: 'Kesemaptaan', icon: ShieldCheck, fields: [] } : section === 'mading' ? { title: 'Mading', icon: Newspaper, fields: [] } : section === 'students' ? { title: 'Data Siswa', icon: UserCog, fields: [] } : section === 'accounts' ? { title: 'Kelola Akun', icon: Users, fields: [] } : configs[section];
-  const editableSections = section !== 'dashboard' && section !== 'myProfile' && section !== 'contact' && section !== 'spmb' && section !== 'permissions' && section !== 'osis' && section !== 'extracurriculars' && section !== 'kesemaptaan' && section !== 'mading' && section !== 'students' && section !== 'accounts';
+  const active = section === 'dashboard' ? null : section === 'myProfile' ? { title: 'Profil Saya', icon: UserRound, fields: [] } : section === 'contact' ? { title: 'Pesan Kontak', icon: Mail, fields: [] } : section === 'spmb' ? { title: 'Kelola SPMB', icon: GraduationCap, fields: [] } : section === 'permissions' ? { title: 'Role & Permission', icon: ShieldCheck, fields: [] } : section === 'osis' ? { title: 'OSIS', icon: UsersRound, fields: [] } : section === 'extracurriculars' ? { title: 'Ekstrakurikuler', icon: Dumbbell, fields: [] } : section === 'kesemaptaan' ? { title: 'Kesemaptaan', icon: ShieldCheck, fields: [] } : section === 'mading' ? { title: 'Mading', icon: Newspaper, fields: [] } : section === 'students' ? { title: 'Data Siswa', icon: UserCog, fields: [] } : section === 'accounts' ? { title: 'Kelola Akun', icon: Users, fields: [] } : section === 'gallery' ? { title: 'Galeri', icon: Camera, fields: [] } : configs[section];
+  const editableSections = section !== 'dashboard' && section !== 'myProfile' && section !== 'contact' && section !== 'spmb' && section !== 'permissions' && section !== 'osis' && section !== 'extracurriculars' && section !== 'kesemaptaan' && section !== 'mading' && section !== 'students' && section !== 'accounts' && section !== 'gallery';
 
   const navGroups: { label: string; items: { key: Section; label: string; icon: typeof FileText; visible: boolean }[] }[] = [
     { label: 'Menu', items: [{ key: 'dashboard', label: 'Dashboard', icon: BarChart3, visible: can(permissions, 'dashboard.view') }] },
@@ -321,6 +308,7 @@ function AdminPanel() {
       { key: 'extracurriculars', label: 'Ekstrakurikuler', icon: Dumbbell, visible: canViewEkstra },
       { key: 'kesemaptaan', label: 'Kesemaptaan', icon: ShieldCheck, visible: canViewKesemaptaan },
       { key: 'mading', label: 'Mading', icon: Newspaper, visible: canViewMading },
+      { key: 'gallery', label: 'Galeri', icon: Camera, visible: canViewGallery },
       { key: 'students', label: 'Data Siswa', icon: UserCog, visible: canViewStudents },
     ]},
     { label: 'Sistem', items: [
@@ -329,7 +317,6 @@ function AdminPanel() {
       { key: 'accounts', label: 'Kelola Akun', icon: Users, visible: isAdmin },
     ]},
   ];
->>>>>>> 51372e5d571e39f4957628aee67a8b99046eae21
 
   return (
     <div className="min-h-screen bg-[#FAF6F0] text-[#1B2A4A]">
@@ -338,22 +325,7 @@ function AdminPanel() {
           <span className="flex items-center gap-2 font-bold"><img src={logoSekolah} alt="Logo SMKN 11" className="h-7 w-auto" style={{ height: '28px', width: 'auto', objectFit: 'contain' }} /> ADMIN SMKN 11</span>
           <button className="lg:hidden" onClick={() => setMobile(false)}><X /></button>
         </div>
-<<<<<<< HEAD
-        <nav className="space-y-1">
-          {can(permissions, 'dashboard.view') && <Nav label="Dashboard" icon={BarChart3} active={section === 'dashboard'} onClick={() => setSection('dashboard')} />}
-          {isAdmin && menu.map(key => <Nav key={key} label={configs[key].title} icon={configs[key].icon} active={section === key} onClick={() => setSection(key)} />)}
-          {isAdmin && <Nav label="Kelola SPMB" icon={GraduationCap} active={section === 'spmb'} onClick={() => setSection('spmb')} />}
-          {isAdmin && <Nav label="Pesan Kontak" icon={Mail} active={section === 'contact'} onClick={() => setSection('contact')} />}
-          {isAdmin && <Nav label="Role & Permission" icon={ShieldCheck} active={section === 'permissions'} onClick={() => setSection('permissions')} />}
-          {canViewOsis && <Nav label="OSIS" icon={UsersRound} active={section === 'osis'} onClick={() => setSection('osis')} />}
-          {canViewEkstra && <Nav label="Ekstrakurikuler" icon={Dumbbell} active={section === 'extracurriculars'} onClick={() => setSection('extracurriculars')} />}
-          {canViewKesemaptaan && <Nav label="Kesemaptaan" icon={ShieldCheck} active={section === 'kesemaptaan'} onClick={() => setSection('kesemaptaan')} />}
-          {canViewMading && <Nav label="Mading" icon={Newspaper} active={section === 'mading'} onClick={() => setSection('mading')} />}
-          {canViewGallery && <Nav label="Galeri" icon={Camera} active={section === 'gallery'} onClick={() => setSection('gallery')} />}
-          {canViewStudents && <Nav label="Data Siswa" icon={UserCog} active={section === 'students'} onClick={() => setSection('students')} />}
-          {isAdmin && <Nav label="Kelola Akun" icon={Users} active={section === 'accounts'} onClick={() => setSection('accounts')} />}
-=======
-        <nav className="min-h-0 flex-1 overflow-y-auto">
+<nav className="min-h-0 flex-1 overflow-y-auto">
           {navGroups.map((group) => {
             const visibleItems = group.items.filter((item) => item.visible);
             if (visibleItems.length === 0) return null;
@@ -368,7 +340,6 @@ function AdminPanel() {
               </div>
             );
           })}
->>>>>>> 51372e5d571e39f4957628aee67a8b99046eae21
         </nav>
         <button onClick={async () => {
           await backendApi.auth.signOut();

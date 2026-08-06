@@ -2,7 +2,6 @@ import { defaultSpmbContent, type SpmbContent } from '../data/spmb';
 
 const apiBaseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/$/, '') + '/api';
 
-<<<<<<< HEAD
 const apiOrigin = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/$/, '');
 
 export function resolveImageUrl(url: string): string {
@@ -11,9 +10,8 @@ export function resolveImageUrl(url: string): string {
   if (url.startsWith('/')) return `${apiOrigin}${url}`;
   return url;
 }
-=======
+
 export { apiBaseUrl };
->>>>>>> 51372e5d571e39f4957628aee67a8b99046eae21
 
 type ApiError = { message?: string; [key: string]: unknown } | null;
 type ApiResult<T> = Promise<{ data: T | null; error: ApiError; count?: number | null; meta?: unknown }>;
@@ -226,7 +224,6 @@ export const accountsApi = {
   },
 };
 
-<<<<<<< HEAD
 // ---------- GALLERY ----------
 export interface GalleryImageRow {
   id?: string;
@@ -319,7 +316,9 @@ export const galleryAdminApi = {
   },
   reorder(images: { id: string; sort_order: number }[]): ApiResult<null> {
     return request<null>('/admin/gallery-images/reorder', { method: 'PUT', body: JSON.stringify({ images }) });
-=======
+  },
+};
+
 // ---------- SELF-SERVICE PROFILE (guru / siswa / osis / admin) ----------
 export interface MyProfileSocial {
   instagram?: string;
@@ -411,6 +410,5 @@ export const publicProfileApi = {
   },
   directory(): ApiResult<PublicDirectory> {
     return request<PublicDirectory>('/public/directory');
->>>>>>> 51372e5d571e39f4957628aee67a8b99046eae21
   },
 };

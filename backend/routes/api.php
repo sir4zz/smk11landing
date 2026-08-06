@@ -13,12 +13,9 @@ use App\Http\Controllers\MyProfileController;
 use App\Http\Controllers\OsisController;
 use App\Http\Controllers\PpdbController;
 use App\Http\Controllers\ProfileController;
-<<<<<<< HEAD
 use App\Http\Controllers\GalleryController;
-=======
 use App\Http\Controllers\ProxyController;
 use App\Http\Controllers\PublicProfileController;
->>>>>>> 51372e5d571e39f4957628aee67a8b99046eae21
 use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\SpmbController;
 use App\Http\Controllers\StudentController;
