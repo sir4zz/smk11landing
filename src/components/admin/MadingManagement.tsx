@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ChangeEvent } from 'react';
-import { Plus, Pencil, Trash2, X, Save, Loader2, Search, CheckCircle2, XCircle, Send, Eye } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Save, Loader2, Search, CheckCircle2, XCircle, Send, Eye, Sparkles } from 'lucide-react';
 import { backendApi } from '../../lib/api';
 import type { MadingPostRow } from '../../lib/api';
 import { can } from '../../lib/permissions';
 import { MADING_STATUSES } from '../../data/mading';
 import ImageField from './ImageField';
+import AIContentAssistant from '../mading/AIContentAssistant';
 
 interface Props {
   permissions: string[];
@@ -251,6 +252,7 @@ export default function MadingManagement({ permissions }: Props) {
         <MadingForm
           item={editing}
           categories={categories}
+          permissions={permissions}
           onClose={() => setOpen(false)}
           onSave={async (record) => {
             const ok = await save({ ...record, id: editing?.id });
@@ -305,8 +307,11 @@ function StatusBadge({ status }: { status: string }) {
   return <span className={`rounded-full px-3 py-1 text-xs font-semibold ${map[status] ?? map.draft}`}>{MADING_STATUSES[status as keyof typeof MADING_STATUSES] ?? status}</span>;
 }
 
-function MadingForm({ item, categories, onClose, onSave }: { item: PostItem | null; categories: { id: string; name: string }[]; onClose: () => void; onSave: (r: PostItem) => void }) {
-  const [values, setValues] = useState<PostItem>(item ?? { title: '', content: '', category_id: '', author_name: '', author_role: 'guru', cover_image: '', status: 'draft', feedback: '' });
+function MadingForm({ item, categories, permissions, onClose, onSave }: { item: PostItem | null; categories: { id: string; name: string }[]; permissions: string[]; onClose: () => void; onSave: (r: PostItem) => void }) {
+  const [values, setValues] = useState<PostItem>(item ?? { title: '', content: '', category_id: '', author_name: '', author_role: 'guru', cover_image: '', status: 'draft', feedback: '', ai_assisted: false });
+  const [aiOpen, setAiOpen] = useState(false);
+  const canUseAi = can(permissions, 'mading.ai_generate');
+  const [aiAssisted, setAiAssisted] = useState<boolean>(Boolean(values.ai_assisted));
 
   const f = (key: keyof PostItem, type = 'text') => ({
     type,
@@ -321,6 +326,7 @@ function MadingForm({ item, categories, onClose, onSave }: { item: PostItem | nu
           <h2 className="text-xl font-bold text-[#1B2A4A]">{item ? 'Ubah' : 'Buat'} Konten Mading</h2>
           <button onClick={onClose}><X /></button>
         </div>
+        {aiAssisted && <p className="mb-4 rounded-lg bg-[#C8A951]/10 p-3 text-sm text-[#866D2C]">Konten ini dibuat dengan bantuan AI dan tetap harus melalui proses review sebelum dipublikasikan.</p>}
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2"><Field label="Judul" {...f('title')} /></div>
           <label className="block text-sm font-semibold">Kategori
@@ -333,11 +339,27 @@ function MadingForm({ item, categories, onClose, onSave }: { item: PostItem | nu
           <div className="sm:col-span-2"><Field label="Isi Karya" multiline {...f('content')} /></div>
           <div className="sm:col-span-2"><ImageField label="Cover (opsional)" value={String(values.cover_image ?? '')} onChange={(url) => setValues((v) => ({ ...v, cover_image: url }))} /></div>
         </div>
+        {canUseAi && (
+          <div className="mt-4">
+            <button onClick={() => setAiOpen(true)} className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951]/15 px-4 py-2 text-sm font-bold text-[#866D2C] hover:bg-[#C8A951]/25"><Sparkles className="h-4 w-4" /> Bantu dengan AI</button>
+          </div>
+        )}
         <div className="mt-6 flex justify-end gap-3">
           <button onClick={onClose} className="px-4 py-2 text-[#5B7088]">Batal</button>
-          <button onClick={() => onSave(values)} className="inline-flex items-center gap-2 rounded-lg bg-[#1B2A4A] px-4 py-2 font-bold text-white"><Save className="h-4 w-4" /> Simpan</button>
+          <button onClick={() => onSave({ ...values, ai_assisted: aiAssisted })} className="inline-flex items-center gap-2 rounded-lg bg-[#1B2A4A] px-4 py-2 font-bold text-white"><Save className="h-4 w-4" /> Simpan</button>
         </div>
       </div>
+      <AIContentAssistant
+        open={aiOpen}
+        onClose={() => setAiOpen(false)}
+        categories={categories}
+        editorContent={String(values.content ?? '')}
+        editorCategoryId={String(values.category_id ?? '')}
+        onUseResult={(r) => {
+          setValues((v) => ({ ...v, title: r.title, content: r.content, category_id: r.category_id }));
+          setAiAssisted(true);
+        }}
+      />
     </div>
   );
 }

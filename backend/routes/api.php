@@ -1,11 +1,13 @@
 <?php
 
+use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\StudentAuthController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ContentCrudController;
 use App\Http\Controllers\ExtracurricularController;
 use App\Http\Controllers\KesemaptaanController;
+use App\Http\Controllers\MadingAiController;
 use App\Http\Controllers\MadingController;
 use App\Http\Controllers\OsisController;
 use App\Http\Controllers\PpdbController;
@@ -93,6 +95,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/mading/posts/{id}/review', [MadingController::class, 'review']);
     Route::post('/mading/posts/{id}/publish', [MadingController::class, 'publish']);
 
+    // Mading AI Content Assistant. Access: students by default; staff must have
+    // the mading.ai_generate permission (checked inside the controller).
+    Route::post('/mading/ai/generate', [MadingAiController::class, 'generate']);
+    Route::post('/mading/ai/improve', [MadingAiController::class, 'improve']);
+    Route::post('/mading/ai/shorten', [MadingAiController::class, 'shorten']);
+    Route::post('/mading/ai/expand', [MadingAiController::class, 'expand']);
+    Route::post('/mading/ai/change-style', [MadingAiController::class, 'changeStyle']);
+    Route::post('/mading/ai/generate-ideas', [MadingAiController::class, 'generateIdeas']);
+
     // Upload
     Route::post('/upload', [UploadController::class, 'upload']);
 });
@@ -177,4 +188,10 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::get('/permissions', [RolePermissionController::class, 'permissions']);
     Route::get('/roles/{roleId}/permissions', [RolePermissionController::class, 'rolePermissions']);
     Route::post('/roles/{roleId}/permissions', [RolePermissionController::class, 'syncRolePermissions']);
+
+    // Account management (admin, guru, osis, siswa)
+    Route::get('/accounts', [AccountController::class, 'index']);
+    Route::post('/accounts', [AccountController::class, 'store']);
+    Route::patch('/accounts/{id}', [AccountController::class, 'update']);
+    Route::delete('/accounts/{id}', [AccountController::class, 'destroy']);
 });

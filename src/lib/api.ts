@@ -133,6 +133,77 @@ export const fetchKesemaptaanSchedules = <T>(fallback: T) => fetchFallback('/kes
 export const fetchKesemaptaanInstructors = <T>(fallback: T) => fetchFallback('/kesemaptaan/instructors', fallback);
 export const fetchKesemaptaanAchievements = <T>(fallback: T) => fetchFallback('/kesemaptaan/achievements', fallback);
 export const fetchMadingCategories = <T>(fallback: T) => fetchFallback('/mading/categories', fallback);
-export interface MadingPostRow extends Record<string, unknown> { id?: string; title?: string; content?: string; category_id?: string | null; author_id?: string | null; author_name?: string; author_role?: string; cover_image?: string; status?: string; feedback?: string; published_at?: string | null; created_at?: string; updated_at?: string; }
+export interface MadingPostRow extends Record<string, unknown> { id?: string; title?: string; content?: string; category_id?: string | null; author_id?: string | null; author_name?: string; author_role?: string; cover_image?: string; status?: string; feedback?: string; ai_assisted?: boolean; published_at?: string | null; created_at?: string; updated_at?: string; }
 export async function fetchMadingPosts(filter?: { status?: string; authorId?: string; categoryId?: string }): Promise<MadingPostRow[]> { const params = new URLSearchParams(); if (filter?.status) params.set('status', filter.status); if (filter?.authorId) params.set('author_id', filter.authorId); if (filter?.categoryId) params.set('category_id', filter.categoryId); const result = await request<MadingPostRow[]>(`/mading/posts${params.size ? `?${params}` : ''}`); return result.data ?? []; }
 export async function fetchMadingPublished(): Promise<MadingPostRow[]> { return fetchMadingPosts({ status: 'published' }); }
+
+// ---------- MADING AI CONTENT ASSISTANT ----------
+export type MadingContentType = 'Puisi' | 'Cerpen' | 'Artikel' | 'Pantun' | 'Esai' | 'Opini' | 'Motivasi' | 'Edukasi' | 'Tips' | 'Pengumuman' | 'Konten Kreatif';
+export type MadingAiLength = 'Pendek' | 'Sedang' | 'Panjang';
+export type MadingAiStyle = 'Formal' | 'Santai' | 'Inspiratif' | 'Edukatif' | 'Persuasif' | 'Kreatif';
+
+export interface MadingAiDraft { title: string; content: string; category: string; excerpt: string; }
+export interface MadingAiIdea { title: string; description: string; category: string; }
+
+export const MADING_AI_CONTENT_TYPES: MadingContentType[] = ['Puisi', 'Cerpen', 'Artikel', 'Pantun', 'Esai', 'Opini', 'Motivasi', 'Edukasi', 'Tips', 'Pengumuman', 'Konten Kreatif'];
+export const MADING_AI_LENGTHS: MadingAiLength[] = ['Pendek', 'Sedang', 'Panjang'];
+export const MADING_AI_STYLES: MadingAiStyle[] = ['Formal', 'Santai', 'Inspiratif', 'Edukatif', 'Persuasif', 'Kreatif'];
+
+async function madingAiRequest<T>(path: string, body: Record<string, unknown>): ApiResult<T> {
+  return request<T>(path, { method: 'POST', body: JSON.stringify(body) });
+}
+
+export const madingAiApi = {
+  generate(input: { content_type: MadingContentType; topic: string; style?: string; length?: MadingAiLength; context?: string }): ApiResult<MadingAiDraft> {
+    return madingAiRequest<MadingAiDraft>('/mading/ai/generate', input);
+  },
+  improve(input: { content: string; content_type?: string; style?: string }): ApiResult<MadingAiDraft> {
+    return madingAiRequest<MadingAiDraft>('/mading/ai/improve', input);
+  },
+  shorten(input: { content: string; content_type?: string }): ApiResult<MadingAiDraft> {
+    return madingAiRequest<MadingAiDraft>('/mading/ai/shorten', input);
+  },
+  expand(input: { content: string; content_type?: string; style?: string }): ApiResult<MadingAiDraft> {
+    return madingAiRequest<MadingAiDraft>('/mading/ai/expand', input);
+  },
+  changeStyle(input: { content: string; style: string; content_type?: string }): ApiResult<MadingAiDraft> {
+    return madingAiRequest<MadingAiDraft>('/mading/ai/change-style', input);
+  },
+  generateIdeas(input: { topic: string; target?: string }): ApiResult<{ ideas: MadingAiIdea[] }> {
+    return madingAiRequest<{ ideas: MadingAiIdea[] }>('/mading/ai/generate-ideas', input);
+  },
+};
+
+// ---------- ACCOUNT MANAGEMENT (admin) ----------
+export type AccountRole = 'admin' | 'guru' | 'osis' | 'student';
+
+export interface AccountRow {
+  id: string;
+  email: string;
+  name: string;
+  role: AccountRole;
+  phone?: string;
+  nisn?: string;
+  class?: string;
+  major?: string;
+  created_at?: string;
+}
+
+export const accountsApi = {
+  list(params?: { role?: AccountRole | ''; search?: string }): ApiResult<AccountRow[]> {
+    const q = new URLSearchParams();
+    if (params?.role) q.set('role', params.role);
+    if (params?.search) q.set('search', params.search);
+    const suffix = q.size ? `?${q}` : '';
+    return request<AccountRow[]>(`/admin/accounts${suffix}`);
+  },
+  create(payload: Record<string, unknown>): ApiResult<AccountRow> {
+    return request<AccountRow>('/admin/accounts', { method: 'POST', body: JSON.stringify(payload) });
+  },
+  update(id: string, payload: Record<string, unknown>): ApiResult<AccountRow> {
+    return request<AccountRow>(`/admin/accounts/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(payload) });
+  },
+  remove(id: string): ApiResult<null> {
+    return request<null>(`/admin/accounts/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  },
+};

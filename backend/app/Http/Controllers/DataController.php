@@ -143,7 +143,7 @@ class DataController extends Controller
     }
     private function serialize(string $table, $row): array {
         $data = $row->toArray();
-        if ($table === 'mading_posts') $data['mading_categories'] = $data['category'] ? ['name' => $data['category']['name']] : null;
+        if ($table === 'mading_posts') $data['mading_categories'] = !empty($data['category']) ? ['name' => $data['category']['name']] : null;
         return $data;
     }
 }

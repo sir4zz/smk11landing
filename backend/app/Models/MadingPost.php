@@ -25,10 +25,12 @@ class MadingPost extends Model
         'status',
         'feedback',
         'published_at',
+        'ai_assisted',
     ];
 
     protected $casts = [
         'published_at' => 'datetime',
+        'ai_assisted' => 'boolean',
     ];
 
     public function category(): BelongsTo

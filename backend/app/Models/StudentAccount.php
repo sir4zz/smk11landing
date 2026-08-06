@@ -14,6 +14,7 @@ class StudentAccount extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
+        'id',
         'student_id',
         'email',
         'status',

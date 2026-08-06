@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { ChangeEvent, ReactNode } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { Compass, BookMarked, PenLine, UserRound, LogOut, Loader2, Send, Save, CheckCircle2, XCircle, Clock, Eye, X } from 'lucide-react';
+import { Compass, BookMarked, PenLine, UserRound, LogOut, Loader2, Send, Save, CheckCircle2, XCircle, Clock, Eye, X, Sparkles } from 'lucide-react';
 import { backendApi } from '../../lib/api';
 import type { MadingPostRow } from '../../lib/api';
 import PageHero from '../../components/ui/PageHero';
+import AIContentAssistant, { AiNote } from '../../components/mading/AIContentAssistant';
 import { MADING_STATUSES } from '../../data/mading';
 
 const studentSessionKey = 'smkn11-student-session';
@@ -53,7 +54,6 @@ export default function StudentArea() {
     return () => { cancelled = true; };
   }, [navigate]);
 
-  if (!localStorage.getItem(studentSessionKey)) return <Navigate to="/mading/login" replace />;
   if (loading) {
     return (
       <div className="min-h-screen bg-[#FAF6F0]">
@@ -158,6 +158,7 @@ function ExploreTab() {
               <article key={String(post.id)} className="rounded-2xl border border-[#1B2A4A]/10 bg-white p-5 shadow-sm">
                 <span className="inline-block rounded-full bg-[#FAF6F0] px-3 py-1 text-xs font-semibold text-[#866D2C]">{rel?.name ?? catName(categories, post.category_id)}</span>
                 <h3 className="mt-2 font-bold text-[#1B2A4A]">{post.title}</h3>
+                {post.ai_assisted && <div className="mt-1.5"><AiNote /></div>}
                 <p className="mt-2 line-clamp-4 text-sm leading-6 text-[#23314D]">{post.content}</p>
                 <p className="mt-3 text-xs font-medium text-[#5B7088]">{post.author_name} Â· {post.published_at ? new Date(post.published_at).toLocaleDateString('id-ID') : '-'}</p>
               </article>
@@ -176,6 +177,8 @@ function MyWorksTab({ userId }: { userId: string }) {
   const [editingValues, setEditingValues] = useState({ title: '', content: '', category_id: '', cover_image: '' });
   const [savingEdit, setSavingEdit] = useState(false);
   const [editMsg, setEditMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiAssisted, setAiAssisted] = useState(false);
   const categories = useCategories();
 
   const load = useCallback(async () => {
@@ -205,6 +208,7 @@ function MyWorksTab({ userId }: { userId: string }) {
       category_id: String(post.category_id ?? ''),
       cover_image: String(post.cover_image ?? ''),
     });
+    setAiAssisted(Boolean(post.ai_assisted));
   };
 
   const saveEdit = async (status: 'draft' | 'pending_review') => {
@@ -221,6 +225,7 @@ function MyWorksTab({ userId }: { userId: string }) {
       cover_image: editingValues.cover_image.trim(),
       status,
       feedback: status === 'pending_review' ? '' : (editingPost.feedback ?? ''),
+      ai_assisted: aiAssisted || undefined,
     };
     const { error } = await backendApi.database.from('mading_posts').update(payload).eq('id', editingPost.id);
     setSavingEdit(false);
@@ -249,6 +254,7 @@ function MyWorksTab({ userId }: { userId: string }) {
                   <div className="flex flex-wrap items-center gap-2">
                     <h3 className="font-bold text-[#1B2A4A]">{post.title}</h3>
                     <StatusPill status={post.status ?? 'draft'} />
+                    {post.ai_assisted && <AiNote />}
                   </div>
                   <p className="mt-1 text-xs font-medium text-[#5B7088]">{catName(categories, post.category_id)} Â· {post.created_at ? new Date(post.created_at).toLocaleDateString('id-ID') : '-'}</p>
                 </div>
@@ -275,6 +281,7 @@ function MyWorksTab({ userId }: { userId: string }) {
               <h3 className="text-xl font-bold text-[#1B2A4A]">Edit Karya</h3>
               <button onClick={() => setEditingPost(null)}><X className="h-5 w-5" /></button>
             </div>
+            {aiAssisted && <p className="mb-4 rounded-lg bg-[#C8A951]/10 p-3 text-sm text-[#866D2C]">Karya ini dibuat dengan bantuan AI dan tetap harus melalui review Guru/Admin.</p>}
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block text-sm font-semibold">Jenis Karya
                 <select value={editingValues.category_id} onChange={(e) => setEditingValues((v) => ({ ...v, category_id: e.target.value }))} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal">
@@ -288,11 +295,25 @@ function MyWorksTab({ userId }: { userId: string }) {
               <div className="sm:col-span-2"><Field label="Isi Karya" multiline value={editingValues.content} onChange={(e) => setEditingValues((v) => ({ ...v, content: e.target.value }))} /></div>
               <div className="sm:col-span-2"><Field label="URL Cover (opsional)" value={editingValues.cover_image} onChange={(e) => setEditingValues((v) => ({ ...v, cover_image: e.target.value }))} /></div>
             </div>
+            <div className="mt-4">
+              <button onClick={() => setAiOpen(true)} className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951]/15 px-4 py-2 text-sm font-bold text-[#866D2C] hover:bg-[#C8A951]/25"><Sparkles className="h-4 w-4" /> Bantu dengan AI</button>
+            </div>
             <div className="mt-6 flex flex-wrap justify-end gap-3">
               <button onClick={() => saveEdit('draft')} disabled={savingEdit} className="inline-flex items-center gap-2 rounded-lg border-2 border-[#1B2A4A] px-4 py-2 font-bold text-[#1B2A4A] disabled:opacity-60"><Save className="h-4 w-4" /> Simpan Draft</button>
               <button onClick={() => saveEdit('pending_review')} disabled={savingEdit} className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-4 py-2 font-bold text-[#1B2A4A] disabled:opacity-60">{savingEdit ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Kirim untuk Review</button>
             </div>
           </div>
+          <AIContentAssistant
+            open={aiOpen}
+            onClose={() => setAiOpen(false)}
+            categories={categories}
+            editorContent={editingValues.content}
+            editorCategoryId={editingValues.category_id}
+            onUseResult={(r) => {
+              setEditingValues((v) => ({ ...v, title: r.title, content: r.content, category_id: r.category_id }));
+              setAiAssisted(true);
+            }}
+          />
         </div>
       )}
     </Section>
@@ -303,6 +324,8 @@ function CreateTab({ userId, name }: { userId: string; name: string }) {
   const categories = useCategories();
   const [msg, setMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
   const [saving, setSaving] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiAssisted, setAiAssisted] = useState(false);
   const [values, setValues] = useState({ title: '', content: '', category_id: '', cover_image: '' });
 
   const flash = (type: 'ok' | 'err', text: string) => {
@@ -325,10 +348,12 @@ function CreateTab({ userId, name }: { userId: string; name: string }) {
       author_name: name,
       author_role: 'siswa',
       status,
+      ai_assisted: aiAssisted || undefined,
     };
     const r = await backendApi.database.from('mading_posts').insert([payload]);
     if (r.error) { flash('err', r.error.message); setSaving(false); return; }
     setValues({ title: '', content: '', category_id: '', cover_image: '' });
+    setAiAssisted(false);
     setSaving(false);
     flash('ok', status === 'draft' ? 'Draft tersimpan.' : 'Karya dikirim untuk review. Tunggu persetujuan Guru/Admin.');
   };
@@ -343,6 +368,7 @@ function CreateTab({ userId, name }: { userId: string; name: string }) {
     <Section title="Buat Karya">
       {msg && <p className={`mb-4 rounded-lg p-3 text-sm ${msg.type === 'ok' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>{msg.text}</p>}
       <div className="rounded-2xl bg-white p-6 shadow-sm">
+        {aiAssisted && <p className="mb-4 rounded-lg bg-[#C8A951]/10 p-3 text-sm text-[#866D2C]">Karya ini dibuat dengan bantuan AI dan tetap harus melalui review Guru/Admin sebelum dipublikasikan.</p>}
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="block text-sm font-semibold">Jenis Karya
             <select value={values.category_id} onChange={(e) => setValues((v) => ({ ...v, category_id: e.target.value }))} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal">
@@ -356,11 +382,25 @@ function CreateTab({ userId, name }: { userId: string; name: string }) {
           <div className="sm:col-span-2"><Field label="Isi Karya" multiline value={values.content} onChange={(e) => setValues((v) => ({ ...v, content: e.target.value }))} /></div>
           <div className="sm:col-span-2"><Field label="URL Cover (opsional)" value={values.cover_image} onChange={(e) => setValues((v) => ({ ...v, cover_image: e.target.value }))} /></div>
         </div>
+        <div className="mt-4">
+          <button onClick={() => setAiOpen(true)} className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951]/15 px-4 py-2 text-sm font-bold text-[#866D2C] hover:bg-[#C8A951]/25"><Sparkles className="h-4 w-4" /> Bantu dengan AI</button>
+        </div>
         <div className="mt-6 flex flex-wrap justify-end gap-3">
           <button onClick={() => save('draft')} disabled={saving} className="inline-flex items-center gap-2 rounded-lg border-2 border-[#1B2A4A] px-4 py-2 font-bold text-[#1B2A4A] disabled:opacity-60"><Save className="h-4 w-4" /> Simpan Draft</button>
           <button onClick={() => save('pending_review')} disabled={saving} className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-4 py-2 font-bold text-[#1B2A4A] disabled:opacity-60">{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Kirim untuk Review</button>
         </div>
       </div>
+      <AIContentAssistant
+        open={aiOpen}
+        onClose={() => setAiOpen(false)}
+        categories={categories}
+        editorContent={values.content}
+        editorCategoryId={values.category_id}
+        onUseResult={(r) => {
+          setValues((v) => ({ ...v, title: r.title, content: r.content, category_id: r.category_id }));
+          setAiAssisted(true);
+        }}
+      />
     </Section>
   );
 }

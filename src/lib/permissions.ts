@@ -41,6 +41,7 @@ export const PERMISSION_CATALOG: PermissionDef[] = [
   { slug: 'mading.submit_review', name: 'Submit Review', module: 'mading' },
   { slug: 'mading.review', name: 'Review', module: 'mading' },
   { slug: 'mading.publish', name: 'Publish', module: 'mading' },
+  { slug: 'mading.ai_generate', name: 'AI Content Assistant', module: 'mading' },
 
   { slug: 'spmb.view', name: 'View', module: 'spmb' },
   { slug: 'spmb.create', name: 'Create', module: 'spmb' },

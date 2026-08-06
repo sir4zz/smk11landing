@@ -5,6 +5,7 @@ import { LoadingInline } from '../../components/ui/LoadingScreen';
 import { fetchMadingPublished, fetchMadingCategories, type MadingPostRow } from '../../lib/api';
 import { defaultMadingCategories, defaultMadingPosts, type MadingCategory, type MadingPost } from '../../data/mading';
 import { PenLine, Calendar, User } from 'lucide-react';
+import { AiNote } from '../../components/mading/AIContentAssistant';
 
 type Post = MadingPostRow & { category?: string };
 
@@ -90,6 +91,7 @@ const Mading: React.FC = () => {
                 <div className="flex flex-1 flex-col p-6">
                   <span className="mb-3 inline-block w-fit rounded-full bg-[#FAF6F0] px-3 py-1 text-xs font-semibold text-[#866D2C]">{post.category}</span>
                   <h3 className="text-lg font-bold text-[#1B2A4A] line-clamp-2">{post.title}</h3>
+                  {post.ai_assisted && <div className="mt-1.5"><AiNote /></div>}
                   <p className="mt-2 line-clamp-3 text-sm leading-6 text-[#23314D]">{post.content}</p>
                   <div className="mt-4 flex flex-wrap items-center gap-3 text-xs font-medium text-[#5B7088]">
                     <span className="flex items-center gap-1"><User className="h-3.5 w-3.5 text-[#C8A951]" /> {post.author_name || 'Anonim'}</span>

@@ -14,9 +14,14 @@ export default function StudentLogin() {
   const [alreadyIn, setAlreadyIn] = useState(false);
 
   useEffect(() => {
-    backendApi.auth.getCurrentUser() .then(({ data }: any) => {
-      if (data.user) setAlreadyIn(true);
-    });
+    let cancelled = false;
+    (async () => {
+      const { data } = await backendApi.auth.getCurrentUser();
+      if (cancelled || !data?.user) return;
+      const { data: prof } = await backendApi.database.from('profiles').select('role').eq('id', data.user.id).single();
+      if (!cancelled && prof?.role === 'student') setAlreadyIn(true);
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   if (alreadyIn) return <Navigate to="/mading/area" replace />;

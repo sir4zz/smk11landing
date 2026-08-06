@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { BarChart3, BookOpen, Briefcase, Building2, CalendarDays, FileText, GraduationCap, LogOut, Mail, Menu, Pencil, Plus, Trophy, Trash2, Upload, Users, X, Save, ShieldCheck, UsersRound, Dumbbell, Newspaper, UserCog } from 'lucide-react';
 import logoSekolah from '../assets/logo.png';
 import { news as initialNews } from '../data/news';
@@ -21,11 +21,12 @@ import ExtracurricularManagement from '../components/admin/ExtracurricularManage
 import KesemaptaanManagement from '../components/admin/KesemaptaanManagement';
 import MadingManagement from '../components/admin/MadingManagement';
 import StudentsManagement from '../components/admin/StudentsManagement';
+import AccountsManagement from '../components/admin/AccountsManagement';
 import { StaffAuthProvider, useStaffAuth } from '../lib/staffAuth';
 import { can, STAFF_ROLES } from '../lib/permissions';
 
-type Section = 'dashboard' | 'news' | 'programs' | 'facilities' | 'staff' | 'achievements' | 'teacherActivities' | 'educationStaff' | 'spmb' | 'contact' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students';
-type EditableSection = Exclude<Section, 'dashboard' | 'contact' | 'spmb' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students'>;
+type Section = 'dashboard' | 'news' | 'programs' | 'facilities' | 'staff' | 'achievements' | 'teacherActivities' | 'educationStaff' | 'spmb' | 'contact' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts';
+type EditableSection = Exclude<Section, 'dashboard' | 'contact' | 'spmb' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts'>;
 type Item = Record<string, unknown>;
 const sessionKey = 'smkn11-admin-session';
 const TABLE_MAP: Record<string, string> = {
@@ -84,26 +85,10 @@ function normalizeSpmbRow(row: Record<string, unknown>): SpmbContent {
   };
 }
 
-type AdminLoginRole = (typeof STAFF_ROLES)[number];
-
-const ROLE_LABELS: Record<AdminLoginRole, string> = {
-  admin: 'Admin',
-  guru: 'Guru',
-  osis: 'OSIS',
-};
-
-const ROLE_HINTS: Record<AdminLoginRole, string> = {
-  admin: 'Akses penuh untuk mengelola website dan konten.',
-  guru: 'Akses terbatas untuk mengelola bagian yang diberikan admin.',
-  osis: 'Akses terbatas untuk fitur OSIS, ekstrakurikuler, kesemaptaan, dan mading.',
-};
-
 export function AdminLogin() {
   const navigate = useNavigate();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<AdminLoginRole>('admin');
-  const [step, setStep] = useState<'select' | 'form'>('select');
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -111,21 +96,18 @@ export function AdminLogin() {
     setError('');
 
     const form = new FormData(event.currentTarget);
-    const email = String(form.get('username') ?? '').trim();
+    const email = String(form.get('email') ?? '').trim();
     const password = String(form.get('password') ?? '');
 
     try {
-      const { data, error: signInError } = await backendApi.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { data, error: signInError } = await backendApi.auth.signInWithPassword({ email, password });
       if (signInError) throw signInError;
       if (!data?.user) throw new Error('Sesi login tidak dapat dibuat.');
 
       const { data: profile } = await backendApi.database.from('profiles').select('role').eq('id', data.user.id).single();
-      if (!profile?.role || profile.role !== selectedRole) {
+      if (!profile?.role || !(STAFF_ROLES as readonly string[]).includes(profile.role)) {
         await backendApi.auth.signOut();
-        throw new Error(`Akun ini bukan akun ${ROLE_LABELS[selectedRole].toLowerCase()}.`);
+        throw new Error('Akun ini bukan akun admin, guru, atau OSIS.');
       }
 
       localStorage.setItem(sessionKey, 'true');
@@ -138,9 +120,16 @@ export function AdminLogin() {
   };
 
   useEffect(() => {
-    backendApi.auth.getCurrentUser() .then(({ data }: any) => {
-      if (data.user) navigate('/admin', { replace: true });
-    })
+    let cancelled = false;
+    (async () => {
+      const { data } = await backendApi.auth.getCurrentUser();
+      if (cancelled || !data?.user) return;
+      const { data: profile } = await backendApi.database.from('profiles').select('role').eq('id', data.user.id).single();
+      if (!cancelled && profile?.role && (STAFF_ROLES as readonly string[]).includes(profile.role)) {
+        navigate('/admin', { replace: true });
+      }
+    })();
+    return () => { cancelled = true; };
   }, [navigate]);
 
   return (
@@ -149,47 +138,16 @@ export function AdminLogin() {
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-[#FAF6F0] p-2"><img src={logoSekolah} alt="Logo SMKN 11" className="h-full w-full object-contain" /></div>
           <h1 className="text-2xl font-bold text-[#1B2A4A]">Login Panel SMKN 11</h1>
-          <p className="mt-2 text-sm text-[#23314D]">Pilih area login yang sesuai sebelum masuk ke panel.</p>
+          <p className="mt-2 text-sm text-[#23314D]">Masuk menggunakan akun admin, guru, atau OSIS.</p>
         </div>
 
         {error && <p className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
 
-        {step === 'select' ? (
-          <div className="space-y-3">
-            {(Object.keys(ROLE_LABELS) as AdminLoginRole[]).map((role) => (
-              <button
-                key={role}
-                type="button"
-                onClick={() => {
-                  setSelectedRole(role);
-                  setStep('form');
-                }}
-                className="w-full rounded-xl border border-[#1B2A4A]/15 bg-[#FAF6F0] p-4 text-left transition-all hover:border-[#C8A951] hover:bg-[#FFF9E8]"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="font-bold text-[#1B2A4A]">Login sebagai {ROLE_LABELS[role]}</p>
-                    <p className="mt-1 text-sm text-[#5B7088]">{ROLE_HINTS[role]}</p>
-                  </div>
-                  <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#866D2C]">{ROLE_LABELS[role]}</span>
-                </div>
-              </button>
-            ))}
-          </div>
-        ) : (
-          <form onSubmit={submit}>
-            <div className="mb-4 rounded-lg border border-[#1B2A4A]/10 bg-[#FAF6F0] p-3 text-sm text-[#23314D]">
-              <p className="font-semibold text-[#1B2A4A]">Login sebagai {ROLE_LABELS[selectedRole]}</p>
-              <p className="mt-1 text-[#5B7088]">{ROLE_HINTS[selectedRole]}</p>
-            </div>
-            <label className="mb-4 block text-sm font-semibold text-[#1B2A4A]">Email {ROLE_LABELS[selectedRole]}<input name="username" type="email" required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2" /></label>
-            <label className="mb-6 block text-sm font-semibold text-[#1B2A4A]">Kata sandi<input name="password" type="password" required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2" /></label>
-            <div className="flex flex-col gap-3">
-              <button disabled={loading} className="w-full rounded-lg bg-[#1B2A4A] py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-70">{loading ? 'Memeriksa...' : `Masuk sebagai ${ROLE_LABELS[selectedRole]}`}</button>
-              <button type="button" onClick={() => setStep('select')} className="text-sm font-semibold text-[#866D2C]">â† Pilih role lain</button>
-            </div>
-          </form>
-        )}
+        <form onSubmit={submit}>
+          <label className="mb-4 block text-sm font-semibold text-[#1B2A4A]">Email<input name="email" type="email" required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2" placeholder="nama@smkn11.sch.id" /></label>
+          <label className="mb-6 block text-sm font-semibold text-[#1B2A4A]">Kata sandi<input name="password" type="password" required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2" /></label>
+          <button disabled={loading} className="w-full rounded-lg bg-[#1B2A4A] py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-70">{loading ? 'Memeriksa...' : 'Masuk ke Panel'}</button>
+        </form>
       </div>
     </main>
   );
@@ -261,7 +219,6 @@ function AdminPanel() {
     return opts;
   }, [section, data]);
 
-  if (!localStorage.getItem(sessionKey)) return <Navigate to="/admin/login" replace />;
   if (authLoading) return <div className="min-h-screen bg-[#FAF6F0]"><LoadingInline /></div>;
 
   const update = async (next: Item) => {
@@ -326,8 +283,8 @@ function AdminPanel() {
     if (data) setData(current => ({ ...current, [key]: data as Item[] }));
   };
 
-  const active = section === 'dashboard' ? null : section === 'contact' ? { title: 'Pesan Kontak', icon: Mail, fields: [] } : section === 'spmb' ? { title: 'Kelola SPMB', icon: GraduationCap, fields: [] } : section === 'permissions' ? { title: 'Role & Permission', icon: ShieldCheck, fields: [] } : section === 'osis' ? { title: 'OSIS', icon: UsersRound, fields: [] } : section === 'extracurriculars' ? { title: 'Ekstrakurikuler', icon: Dumbbell, fields: [] } : section === 'kesemaptaan' ? { title: 'Kesemaptaan', icon: ShieldCheck, fields: [] } : section === 'mading' ? { title: 'Mading', icon: Newspaper, fields: [] } : section === 'students' ? { title: 'Data Siswa', icon: UserCog, fields: [] } : configs[section];
-  const editableSections = section !== 'dashboard' && section !== 'contact' && section !== 'spmb' && section !== 'permissions' && section !== 'osis' && section !== 'extracurriculars' && section !== 'kesemaptaan' && section !== 'mading' && section !== 'students';
+  const active = section === 'dashboard' ? null : section === 'contact' ? { title: 'Pesan Kontak', icon: Mail, fields: [] } : section === 'spmb' ? { title: 'Kelola SPMB', icon: GraduationCap, fields: [] } : section === 'permissions' ? { title: 'Role & Permission', icon: ShieldCheck, fields: [] } : section === 'osis' ? { title: 'OSIS', icon: UsersRound, fields: [] } : section === 'extracurriculars' ? { title: 'Ekstrakurikuler', icon: Dumbbell, fields: [] } : section === 'kesemaptaan' ? { title: 'Kesemaptaan', icon: ShieldCheck, fields: [] } : section === 'mading' ? { title: 'Mading', icon: Newspaper, fields: [] } : section === 'students' ? { title: 'Data Siswa', icon: UserCog, fields: [] } : section === 'accounts' ? { title: 'Kelola Akun', icon: Users, fields: [] } : configs[section];
+  const editableSections = section !== 'dashboard' && section !== 'contact' && section !== 'spmb' && section !== 'permissions' && section !== 'osis' && section !== 'extracurriculars' && section !== 'kesemaptaan' && section !== 'mading' && section !== 'students' && section !== 'accounts';
 
   return (
     <div className="min-h-screen bg-[#FAF6F0] text-[#1B2A4A]">
@@ -347,6 +304,7 @@ function AdminPanel() {
           {canViewKesemaptaan && <Nav label="Kesemaptaan" icon={ShieldCheck} active={section === 'kesemaptaan'} onClick={() => setSection('kesemaptaan')} />}
           {canViewMading && <Nav label="Mading" icon={Newspaper} active={section === 'mading'} onClick={() => setSection('mading')} />}
           {canViewStudents && <Nav label="Data Siswa" icon={UserCog} active={section === 'students'} onClick={() => setSection('students')} />}
+          {isAdmin && <Nav label="Kelola Akun" icon={Users} active={section === 'accounts'} onClick={() => setSection('accounts')} />}
         </nav>
         <button onClick={async () => {
           await backendApi.auth.signOut();
@@ -385,6 +343,8 @@ function AdminPanel() {
           {section === 'mading' && canViewMading && <MadingManagement permissions={permissions} />}
 
           {section === 'students' && canViewStudents && <StudentsManagement />}
+
+          {section === 'accounts' && isAdmin && <AccountsManagement />}
 
           {editableSections && (
             <>

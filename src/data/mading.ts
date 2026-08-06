@@ -27,6 +27,7 @@ export interface MadingPost {
   cover_image: string;
   status: MadingPostStatus;
   feedback: string;
+  ai_assisted?: boolean;
   published_at?: string | null;
   created_at?: string;
   updated_at?: string;
