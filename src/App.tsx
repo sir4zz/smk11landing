@@ -13,6 +13,8 @@ import Admin, { AdminLogin } from './pages/Admin'
 import Achievements from './pages/student/Achievements'
 import Extracurriculars from './pages/student/Extracurriculars'
 import Gallery from './pages/student/Gallery'
+import GalleryList from './pages/gallery/GalleryList'
+import GalleryDetail from './pages/gallery/GalleryDetail'
 import Management from './pages/management/Management'
 import KepalaSekolah from './pages/management/KepalaSekolah'
 import WakilKepalaSekolah from './pages/management/WakilKepalaSekolah'
@@ -56,6 +58,10 @@ function App() {
           <Route path="kesiswaan/prestasi" element={<Achievements />} />
           <Route path="kesiswaan/ekstrakurikuler" element={<Extracurriculars />} />
           <Route path="kesiswaan/galeri" element={<Gallery />} />
+
+          {/* Gallery */}
+          <Route path="galeri" element={<GalleryList />} />
+          <Route path="galeri/:slug" element={<GalleryDetail />} />
 
           {/* Management */}
           <Route path="manajemen" element={<Management />} />

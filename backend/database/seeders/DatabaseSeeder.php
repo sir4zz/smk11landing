@@ -72,6 +72,12 @@ class DatabaseSeeder extends Seeder
             ['spmb.delete', 'SPMB - Hapus', 'spmb'],
             ['spmb.verify', 'SPMB - Verifikasi', 'spmb'],
 
+            ['gallery.view', 'Galeri - Lihat', 'gallery'],
+            ['gallery.create', 'Galeri - Buat', 'gallery'],
+            ['gallery.edit', 'Galeri - Ubah', 'gallery'],
+            ['gallery.delete', 'Galeri - Hapus', 'gallery'],
+            ['gallery.publish', 'Galeri - Publikasi', 'gallery'],
+
             ['management.view', 'Manajemen - Lihat', 'management'],
         ];
 
@@ -98,6 +104,7 @@ class DatabaseSeeder extends Seeder
             'management.view',
             'osis.view',
             'spmb.view',
+            'gallery.view',
         ];
 
         $osisSlugs = [
@@ -109,6 +116,7 @@ class DatabaseSeeder extends Seeder
             'mading.view', 'mading.create', 'mading.edit_own', 'mading.submit_review',
             'mading.review', 'mading.publish',
             'spmb.view',
+            'gallery.view', 'gallery.create', 'gallery.edit', 'gallery.publish',
         ];
 
         foreach ([['guru', $guruSlugs], ['osis', $osisSlugs]] as [$roleSlug, $slugs]) {

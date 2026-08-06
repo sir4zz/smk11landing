@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { BarChart3, BookOpen, Briefcase, Building2, CalendarDays, FileText, GraduationCap, LogOut, Mail, Menu, Pencil, Plus, Trophy, Trash2, Upload, Users, X, Save, ShieldCheck, UsersRound, Dumbbell, Newspaper, UserCog } from 'lucide-react';
+import { BarChart3, BookOpen, Briefcase, Building2, CalendarDays, FileText, GraduationCap, LogOut, Mail, Menu, Pencil, Plus, Trophy, Trash2, Upload, Users, X, Save, ShieldCheck, UsersRound, Dumbbell, Newspaper, UserCog, Camera } from 'lucide-react';
 import logoSekolah from '../assets/logo.png';
 import { news as initialNews } from '../data/news';
 import { programs as initialPrograms } from '../data/programs';
@@ -20,13 +20,14 @@ import OsisManagement from '../components/admin/OsisManagement';
 import ExtracurricularManagement from '../components/admin/ExtracurricularManagement';
 import KesemaptaanManagement from '../components/admin/KesemaptaanManagement';
 import MadingManagement from '../components/admin/MadingManagement';
+import GalleryManagement from '../components/admin/GalleryManagement';
 import StudentsManagement from '../components/admin/StudentsManagement';
 import AccountsManagement from '../components/admin/AccountsManagement';
 import { StaffAuthProvider, useStaffAuth } from '../lib/staffAuth';
 import { can, STAFF_ROLES } from '../lib/permissions';
 
-type Section = 'dashboard' | 'news' | 'programs' | 'facilities' | 'staff' | 'achievements' | 'teacherActivities' | 'educationStaff' | 'spmb' | 'contact' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts';
-type EditableSection = Exclude<Section, 'dashboard' | 'contact' | 'spmb' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts'>;
+type Section = 'dashboard' | 'news' | 'programs' | 'facilities' | 'staff' | 'achievements' | 'teacherActivities' | 'educationStaff' | 'spmb' | 'contact' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'gallery';
+type EditableSection = Exclude<Section, 'dashboard' | 'contact' | 'spmb' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'gallery'>;
 type Item = Record<string, unknown>;
 const sessionKey = 'smkn11-admin-session';
 const TABLE_MAP: Record<string, string> = {
@@ -176,6 +177,7 @@ function AdminPanel() {
   const canViewKesemaptaan = isAdmin || can(permissions, 'kesemaptaan.view');
   const canViewMading = isAdmin || can(permissions, 'mading.view');
   const canViewStudents = isAdmin || can(permissions, 'mading.edit_all');
+  const canViewGallery = isAdmin || can(permissions, 'gallery.view');
 
   useEffect(() => {
     if (authLoading) return;
@@ -283,8 +285,8 @@ function AdminPanel() {
     if (data) setData(current => ({ ...current, [key]: data as Item[] }));
   };
 
-  const active = section === 'dashboard' ? null : section === 'contact' ? { title: 'Pesan Kontak', icon: Mail, fields: [] } : section === 'spmb' ? { title: 'Kelola SPMB', icon: GraduationCap, fields: [] } : section === 'permissions' ? { title: 'Role & Permission', icon: ShieldCheck, fields: [] } : section === 'osis' ? { title: 'OSIS', icon: UsersRound, fields: [] } : section === 'extracurriculars' ? { title: 'Ekstrakurikuler', icon: Dumbbell, fields: [] } : section === 'kesemaptaan' ? { title: 'Kesemaptaan', icon: ShieldCheck, fields: [] } : section === 'mading' ? { title: 'Mading', icon: Newspaper, fields: [] } : section === 'students' ? { title: 'Data Siswa', icon: UserCog, fields: [] } : section === 'accounts' ? { title: 'Kelola Akun', icon: Users, fields: [] } : configs[section];
-  const editableSections = section !== 'dashboard' && section !== 'contact' && section !== 'spmb' && section !== 'permissions' && section !== 'osis' && section !== 'extracurriculars' && section !== 'kesemaptaan' && section !== 'mading' && section !== 'students' && section !== 'accounts';
+  const active = section === 'dashboard' ? null : section === 'contact' ? { title: 'Pesan Kontak', icon: Mail, fields: [] } : section === 'spmb' ? { title: 'Kelola SPMB', icon: GraduationCap, fields: [] } : section === 'permissions' ? { title: 'Role & Permission', icon: ShieldCheck, fields: [] } : section === 'osis' ? { title: 'OSIS', icon: UsersRound, fields: [] } : section === 'extracurriculars' ? { title: 'Ekstrakurikuler', icon: Dumbbell, fields: [] } : section === 'kesemaptaan' ? { title: 'Kesemaptaan', icon: ShieldCheck, fields: [] } : section === 'mading' ? { title: 'Mading', icon: Newspaper, fields: [] } : section === 'students' ? { title: 'Data Siswa', icon: UserCog, fields: [] } : section === 'accounts' ? { title: 'Kelola Akun', icon: Users, fields: [] } : section === 'gallery' ? { title: 'Galeri', icon: Camera, fields: [] } : configs[section];
+  const editableSections = section !== 'dashboard' && section !== 'contact' && section !== 'spmb' && section !== 'permissions' && section !== 'osis' && section !== 'extracurriculars' && section !== 'kesemaptaan' && section !== 'mading' && section !== 'students' && section !== 'accounts' && section !== 'gallery';
 
   return (
     <div className="min-h-screen bg-[#FAF6F0] text-[#1B2A4A]">
@@ -303,6 +305,7 @@ function AdminPanel() {
           {canViewEkstra && <Nav label="Ekstrakurikuler" icon={Dumbbell} active={section === 'extracurriculars'} onClick={() => setSection('extracurriculars')} />}
           {canViewKesemaptaan && <Nav label="Kesemaptaan" icon={ShieldCheck} active={section === 'kesemaptaan'} onClick={() => setSection('kesemaptaan')} />}
           {canViewMading && <Nav label="Mading" icon={Newspaper} active={section === 'mading'} onClick={() => setSection('mading')} />}
+          {canViewGallery && <Nav label="Galeri" icon={Camera} active={section === 'gallery'} onClick={() => setSection('gallery')} />}
           {canViewStudents && <Nav label="Data Siswa" icon={UserCog} active={section === 'students'} onClick={() => setSection('students')} />}
           {isAdmin && <Nav label="Kelola Akun" icon={Users} active={section === 'accounts'} onClick={() => setSection('accounts')} />}
         </nav>
@@ -341,6 +344,8 @@ function AdminPanel() {
           {section === 'kesemaptaan' && canViewKesemaptaan && <KesemaptaanManagement permissions={permissions} />}
 
           {section === 'mading' && canViewMading && <MadingManagement permissions={permissions} />}
+
+          {section === 'gallery' && canViewGallery && <GalleryManagement />}
 
           {section === 'students' && canViewStudents && <StudentsManagement />}
 

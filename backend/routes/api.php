@@ -12,6 +12,7 @@ use App\Http\Controllers\MadingController;
 use App\Http\Controllers\OsisController;
 use App\Http\Controllers\PpdbController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\GalleryController;
 use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\SpmbController;
 use App\Http\Controllers\StudentController;
@@ -73,6 +74,11 @@ Route::get('/mading/posts', [MadingController::class, 'index']);
 
 // ---------- CONTACT ----------
 Route::post('/contact', [ContactController::class, 'store']);
+
+// ---------- GALLERY ----------
+Route::get('/galleries', [GalleryController::class, 'index']);
+Route::get('/gallery/categories', [GalleryController::class, 'categories']);
+Route::get('/galleries/{slug}', [GalleryController::class, 'show']);
 Route::get('/uploads/url', [UploadController::class, 'url'])->middleware('auth:sanctum');
 Route::delete('/uploads', [UploadController::class, 'destroy'])->middleware('auth:sanctum');
 
@@ -122,6 +128,15 @@ Route::middleware(['auth:sanctum', 'staff'])->group(function () {
     Route::post('/admin/students', [StudentController::class, 'store'])->middleware('permission:mading.edit_all');
     Route::post('/admin/students/{studentId}/reset-pin', [StudentController::class, 'resetPin'])->middleware('permission:mading.edit_all');
     Route::delete('/admin/students/{studentId}', [StudentController::class, 'destroy'])->middleware('permission:mading.edit_all');
+
+    // Gallery management
+    Route::get('/admin/galleries', [GalleryController::class, 'adminIndex'])->middleware('permission:gallery.view');
+    Route::post('/admin/galleries', [GalleryController::class, 'store'])->middleware('permission:gallery.create');
+    Route::patch('/admin/galleries/{id}', [GalleryController::class, 'update'])->middleware('permission:gallery.edit');
+    Route::delete('/admin/galleries/{id}', [GalleryController::class, 'destroy'])->middleware('permission:gallery.delete');
+    Route::post('/admin/galleries/{id}/images', [GalleryController::class, 'storeImages'])->middleware('permission:gallery.edit');
+    Route::delete('/admin/gallery-images/{id}', [GalleryController::class, 'destroyImage'])->middleware('permission:gallery.edit');
+    Route::put('/admin/gallery-images/reorder', [GalleryController::class, 'reorderImages'])->middleware('permission:gallery.edit');
 
     // Contact messages (admin only in the UI, but keep staff-readable list)
     Route::get('/contact', [ContactController::class, 'index'])->middleware('admin');
