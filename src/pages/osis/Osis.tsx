@@ -1,44 +1,44 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import PageHero from '../../components/ui/PageHero';
 import SectionHeading from '../../components/ui/SectionHeading';
 import { LoadingInline } from '../../components/ui/LoadingScreen';
-import { fetchOsisProfile, fetchOsisMembers, fetchOsisActivities } from '../../lib/api';
-import { defaultOsisProfile, defaultOsisMembers, defaultOsisActivities } from '../../data/osis';
-import type { OsisProfile, OsisMember, OsisActivity } from '../../data/osis';
-import { Users, CalendarDays, Award, Target, Sparkles } from 'lucide-react';
+import { fetchOsisProfile } from '../../lib/api';
+import { defaultOsisProfile } from '../../data/osis';
+import type { OsisProfile } from '../../data/osis';
+import { ArrowRight, BookOpen, CalendarDays, Dumbbell, Eye, Globe, Heart, Megaphone, Palette, Sparkles, Target, Users } from 'lucide-react';
 import logoSekolah from '../../assets/logo.png';
 
-const positionOrder = ['Ketua', 'Wakil Ketua', 'Sekretaris', 'Bendahara', 'Ketua Bidang'];
+const misiList = [
+  'Membina keimanan dan ketaqwaan siswa terhadap Tuhan Yang Maha Esa.',
+  'Mengembangkan potensi, minat, dan bakat siswa melalui kegiatan yang positif.',
+  'Menumbuhkan jiwa kepemimpinan, kedisiplinan, dan tanggung jawab siswa.',
+  'Menjalin kerja sama dan komunikasi yang baik antara siswa, guru, dan sekolah.',
+  'Meningkatkan kreativitas dan kepedulian sosial di lingkungan sekolah maupun masyarakat.',
+];
+
+const bidangSeksi: { name: string; desc: string; icon: typeof Heart }[] = [
+  { name: 'Pembinaan Karakter', desc: 'Pembinaan kedisiplinan dan penguatan karakter siswa.', icon: Heart },
+  { name: 'Seni & Kreativitas', desc: 'Wadah pengembangan seni, budaya, dan kreativitas siswa.', icon: Palette },
+  { name: 'Olahraga', desc: 'Pembinaan minat dan bakat siswa di bidang olahraga.', icon: Dumbbell },
+  { name: 'Keagamaan', desc: 'Pembinaan kegiatan keagamaan dan kerohanian siswa.', icon: BookOpen },
+  { name: 'Wawasan & Teknologi', desc: 'Pengembangan wawasan kebangsaan dan literasi teknologi.', icon: Globe },
+  { name: 'Humas & Publikasi', desc: 'Publikasi kegiatan dan hubungan masyarakat OSIS.', icon: Megaphone },
+];
 
 const Osis: React.FC = () => {
   const [profile, setProfile] = useState<OsisProfile>(defaultOsisProfile);
-  const [members, setMembers] = useState<OsisMember[]>(defaultOsisMembers);
-  const [activities, setActivities] = useState<OsisActivity[]>(defaultOsisActivities);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
-    Promise.all([
-      fetchOsisProfile(defaultOsisProfile),
-      fetchOsisMembers(defaultOsisMembers),
-      fetchOsisActivities(defaultOsisActivities),
-    ]).then(([p, m, a]) => {
+    fetchOsisProfile(defaultOsisProfile).then((data) => {
       if (!active) return;
-      setProfile(p);
-      setMembers(m);
-      setActivities(a.filter((item) => item.status === 'published'));
+      setProfile(data);
       setLoading(false);
     });
     return () => { active = false; };
   }, []);
-
-  const sortedMembers = [...members].sort((a, b) => {
-    const ia = positionOrder.indexOf(a.position);
-    const ib = positionOrder.indexOf(b.position);
-    return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib) || a.sort_order - b.sort_order;
-  });
-  const leaders = sortedMembers.filter((m) => positionOrder.slice(0, 4).includes(m.position));
-  const divisions = sortedMembers.filter((m) => !positionOrder.slice(0, 4).includes(m.position) || m.position === 'Ketua Bidang');
 
   if (loading) {
     return (
@@ -76,84 +76,92 @@ const Osis: React.FC = () => {
             <p className="mt-4 leading-relaxed text-[#23314D]">{profile.description}</p>
           </div>
         </div>
-      </section>
 
-      {/* Struktur OSIS */}
-      <section id="struktur" className="bg-[#1B2A4A] py-16 md:py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <SectionHeading title="Struktur Organisasi" subtitle="Pengurus inti dan bidang OSIS SMKN 11" align="center" />
-          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {leaders.map((member) => (
-              <div key={member.id} className="rounded-2xl bg-white/5 p-6 text-center backdrop-blur transition-all hover:-translate-y-1 hover:bg-white/10">
-                <div className="mx-auto mb-4 grid h-20 w-20 place-items-center overflow-hidden rounded-full border-2 border-[#C8A951]/60 bg-[#1B2A4A]/40">
-                  {member.photo ? (
-                    <img src={member.photo} alt={member.name} className="h-full w-full object-cover" />
-                  ) : (
-                    <Users className="h-8 w-8 text-[#C8A951]" />
-                  )}
-                </div>
-                <h4 className="font-bold text-white">{member.name}</h4>
-                <p className="mt-1 text-sm font-semibold text-[#C8A951]">{member.position}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-12">
-            <h4 className="mb-6 text-center text-lg font-bold text-[#F3E8D0]">Bidang / Seksi</h4>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {divisions.map((member) => (
-                <div key={member.id} className="flex items-center gap-4 rounded-xl bg-white/5 p-4">
-                  <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-full bg-[#C8A951]/20">
-                    {member.photo ? <img src={member.photo} alt={member.name} className="h-full w-full object-cover" /> : <Target className="h-5 w-5 text-[#C8A951]" />}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="truncate font-bold text-white">{member.name}</p>
-                    <p className="truncate text-sm text-[#F3E8D0]">{member.division || member.position}</p>
-                  </div>
-                </div>
-              ))}
+        {/* Visi & Misi */}
+        <div className="mt-16 grid gap-6 lg:grid-cols-2">
+          <div className="rounded-2xl bg-[#1B2A4A] p-8 text-white shadow-sm">
+            <div className="mb-4 grid h-12 w-12 place-items-center rounded-xl bg-[#C8A951]/20">
+              <Eye className="h-6 w-6 text-[#C8A951]" />
             </div>
-            {divisions.length === 0 && (
-              <p className="text-center text-sm text-[#F3E8D0]/70">Belum ada data bidang/seksi.</p>
-            )}
+            <h3 className="text-xl font-bold text-[#F3E8D0]">Visi</h3>
+            <p className="mt-3 leading-relaxed text-[#E8DCC7]">
+              Mewujudkan OSIS SMKN 11 yang religius, berkarakter, kreatif, dan berdaya saing melalui pembinaan
+              siswa yang berlandaskan iman dan taqwa serta menguasai ilmu pengetahuan dan teknologi.
+            </p>
+          </div>
+          <div className="rounded-2xl border border-[#1B2A4A]/10 bg-white p-8 shadow-sm">
+            <div className="mb-4 grid h-12 w-12 place-items-center rounded-xl bg-[#C8A951]/20">
+              <Target className="h-6 w-6 text-[#866D2C]" />
+            </div>
+            <h3 className="text-xl font-bold text-[#1B2A4A]">Misi</h3>
+            <ul className="mt-3 space-y-2.5">
+              {misiList.map((misi) => (
+                <li key={misi} className="flex gap-2 text-sm leading-6 text-[#23314D]">
+                  <Sparkles className="mt-1 h-4 w-4 shrink-0 text-[#C8A951]" />
+                  {misi}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </section>
 
-      {/* Kegiatan OSIS */}
-      <section id="kegiatan" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 md:py-20">
-        <SectionHeading title="Kegiatan OSIS" subtitle="Aktivitas dan program yang dijalankan oleh OSIS SMKN 11" align="center" />
-        {activities.length === 0 ? (
-          <div className="mt-10 py-16 text-center">
-            <Sparkles className="mx-auto h-12 w-12 text-[#C8A951]/40" />
-            <p className="mt-4 text-lg font-medium text-[#23314D]">Belum ada kegiatan yang dipublikasikan</p>
-          </div>
-        ) : (
-          <div className="mt-10 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {activities.map((activity) => (
-              <article key={activity.id} className="group overflow-hidden rounded-2xl border border-[#1B2A4A]/10 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
-                <div className="relative h-48 overflow-hidden">
-                  {activity.photo ? (
-                    <img src={activity.photo} alt={activity.title} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
-                  ) : (
-                    <div className="grid h-full w-full place-items-center bg-[#FAF6F0]"><Award className="h-12 w-12 text-[#C8A951]/40" /></div>
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#1B2A4A]/70 to-transparent" />
+      {/* Bidang / Seksi */}
+      <section className="bg-[#FAF6F0] py-16 md:py-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <SectionHeading title="Bidang Seksi & Program Kerja" subtitle="Ruang kerja OSIS dalam mengembangkan potensi siswa" align="center" />
+          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {bidangSeksi.map((item) => {
+              const Icon = item.icon;
+              return (
+                <div key={item.name} className="rounded-2xl border border-[#1B2A4A]/10 bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md">
+                  <div className="mb-4 grid h-12 w-12 place-items-center rounded-xl bg-[#1B2A4A]">
+                    <Icon className="h-6 w-6 text-[#C8A951]" />
+                  </div>
+                  <h4 className="font-bold text-[#1B2A4A]">{item.name}</h4>
+                  <p className="mt-2 text-sm leading-6 text-[#23314D]">{item.desc}</p>
                 </div>
-                <div className="p-6">
-                  {activity.activity_date && (
-                    <span className="mb-3 flex items-center gap-1.5 text-xs font-semibold text-[#866D2C]">
-                      <CalendarDays className="h-3.5 w-3.5" />
-                      {new Date(activity.activity_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
-                    </span>
-                  )}
-                  <h3 className="text-lg font-bold text-[#1B2A4A]">{activity.title}</h3>
-                  <p className="mt-2 line-clamp-3 text-sm leading-6 text-[#23314D]">{activity.description}</p>
-                </div>
-              </article>
-            ))}
+              );
+            })}
           </div>
-        )}
+        </div>
+      </section>
+
+      {/* CTA Struktur & Kegiatan */}
+      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 md:py-20">
+        <SectionHeading title="Jelajahi OSIS" subtitle="Kenali lebih dekat struktur kepengurusan dan kegiatan kami" align="center" />
+        <div className="mt-10 grid gap-6 md:grid-cols-2">
+          <Link
+            to="/osis/struktur"
+            className="group flex items-center justify-between gap-4 rounded-2xl bg-[#1B2A4A] p-8 text-white shadow-sm transition-all hover:-translate-y-1 hover:bg-[#15203a]"
+          >
+            <div className="flex items-center gap-4">
+              <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-[#C8A951]/20">
+                <Users className="h-7 w-7 text-[#C8A951]" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-[#F3E8D0]">Struktur OSIS</h3>
+                <p className="mt-1 text-sm text-[#E8DCC7]">Pengurus inti dan bidang seksi OSIS</p>
+              </div>
+            </div>
+            <ArrowRight className="h-6 w-6 text-[#C8A951] transition-transform group-hover:translate-x-1" />
+          </Link>
+          <Link
+            to="/osis/kegiatan"
+            className="group flex items-center justify-between gap-4 rounded-2xl border border-[#1B2A4A]/10 bg-white p-8 text-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
+          >
+            <div className="flex items-center gap-4">
+              <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-[#C8A951]/20">
+                <CalendarDays className="h-7 w-7 text-[#866D2C]" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-[#1B2A4A]">Kegiatan OSIS</h3>
+                <p className="mt-1 text-sm text-[#23314D]">Aktivitas dan program yang sudah berjalan</p>
+              </div>
+            </div>
+            <ArrowRight className="h-6 w-6 text-[#866D2C] transition-transform group-hover:translate-x-1" />
+          </Link>
+        </div>
       </section>
     </div>
   );

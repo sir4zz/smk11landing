@@ -2,6 +2,8 @@ import { defaultSpmbContent, type SpmbContent } from '../data/spmb';
 
 const apiBaseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/$/, '') + '/api';
 
+export { apiBaseUrl };
+
 type ApiError = { message?: string; [key: string]: unknown } | null;
 type ApiResult<T> = Promise<{ data: T | null; error: ApiError; count?: number | null }>;
 type Filter = { key: string; value: unknown };

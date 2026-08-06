@@ -68,7 +68,7 @@ class DataController extends Controller
     public function store(Request $request, string $table)
     {
         $this->authorizeWrite($table, $request->user()); $model = $this->model($table);
-        $rows = $request->all(); if (!array_is_list($rows)) $rows = [$rows]; $created = [];
+        $rows = $this->requestBody($request); if (!array_is_list($rows)) $rows = [$rows]; $created = [];
         foreach ($rows as $payload) {
             $payload = $this->payload($model, $payload);
             if ($table === 'mading_posts') $payload = $this->mading->guardInsert($request->user(), $payload);
@@ -90,7 +90,7 @@ class DataController extends Controller
     {
         $this->authorizeWrite($table, $request->user()); $model = $this->model($table); $query = $model::query();
         foreach ($request->query() as $key => $value) if (in_array($key, (new $model)->getFillable(), true) || $key === 'id') $query->where($key, $value);
-        $row = $query->firstOrFail(); $payload = $this->payload($model, $request->all());
+        $row = $query->firstOrFail(); $payload = $this->payload($model, $this->requestBody($request));
         if ($table === 'mading_posts') $payload = $this->mading->guardUpdate($request->user(), $row, $payload);
         if ($table === 'ppdb_registrations' && $row->user_id !== $request->user()?->id && !$this->permissions->isAdmin($request->user())) abort(403);
         if ($table === 'ppdb_documents' && $row->application->user_id !== $request->user()?->id && !$this->permissions->isAdmin($request->user())) abort(403);
@@ -116,6 +116,10 @@ class DataController extends Controller
     }
 
     private function model(string $table): string { abort_unless(isset(self::MODELS[$table]), 404); return self::MODELS[$table]; }
+    private function requestBody(Request $request): array {
+        if ($request->isJson()) return $request->json()->all();
+        return $request->except(['single', 'order', 'limit', 'count']);
+    }
     private function payload(string $model, array $payload): array { return collect($payload)->only((new $model)->getFillable())->except(['id','created_at','updated_at','user_id'])->all(); }
     private function authorizeRead(string $table, $user): void {
         if (in_array($table, self::PUBLIC, true)) return;

@@ -48,8 +48,8 @@ export const navigationData: NavItem[] = [
     href: '/osis',
     children: [
       { label: 'Profil OSIS', href: '/osis' },
-      { label: 'Struktur OSIS', href: '/osis#struktur' },
-      { label: 'Kegiatan OSIS', href: '/osis#kegiatan' },
+      { label: 'Struktur OSIS', href: '/osis/struktur' },
+      { label: 'Kegiatan OSIS', href: '/osis/kegiatan' },
       { label: 'Ekstrakurikuler', href: '/osis/ekstrakurikuler' },
       { label: 'Kesemaptaan', href: '/osis/kesemaptaan' },
     ],

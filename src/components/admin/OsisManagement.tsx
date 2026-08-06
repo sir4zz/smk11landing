@@ -231,7 +231,7 @@ function OsisMemberForm({ item, onClose, onSave }: { item: OsisMember | null; on
         <Field label="Nama" {...f('name')} />
         <label className="block text-sm font-semibold">Jabatan
           <select value={String(values.position ?? '')} onChange={(e) => setValues((v) => ({ ...v, position: e.target.value }))} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal">
-            <option value="">â€” Pilih â€”</option>
+            <option value="">— Pilih —</option>
             {(['Ketua', 'Wakil Ketua', 'Sekretaris', 'Bendahara', 'Ketua Bidang'] as const).map((p) => <option key={p} value={p}>{p}</option>)}
           </select>
         </label>

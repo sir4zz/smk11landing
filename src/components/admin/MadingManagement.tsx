@@ -375,7 +375,7 @@ function ReviewModal({ post, onClose, onApprove, onReject }: { post: PostItem; o
           <button onClick={onClose}><X /></button>
         </div>
         <div className="rounded-xl bg-[#FAF6F0] p-4">
-          <p className="text-xs font-semibold text-[#5B7088]">{post.category} Â· {post.author_role} Â· {post.author_name}</p>
+          <p className="text-xs font-semibold text-[#5B7088]">{post.category} · {post.author_role} · {post.author_name}</p>
           <h3 className="mt-1 text-lg font-bold text-[#1B2A4A]">{post.title}</h3>
           <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[#23314D]">{post.content}</p>
         </div>

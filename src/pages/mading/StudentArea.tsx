@@ -81,7 +81,7 @@ export default function StudentArea() {
     <div className="min-h-screen bg-[#FAF6F0]">
       <PageHero
         title={`Halo, ${profile?.name ?? 'Siswa'}`}
-        subtitle={profile ? `${profile.class} Â· ${profile.major}` : 'Area siswa Mading SMKN 11'}
+        subtitle={profile ? `${profile.class} · ${profile.major}` : 'Area siswa Mading SMKN 11'}
         breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Mading', href: '/mading' }, { label: 'Area Siswa' }]}
       />
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
@@ -160,7 +160,7 @@ function ExploreTab() {
                 <h3 className="mt-2 font-bold text-[#1B2A4A]">{post.title}</h3>
                 {post.ai_assisted && <div className="mt-1.5"><AiNote /></div>}
                 <p className="mt-2 line-clamp-4 text-sm leading-6 text-[#23314D]">{post.content}</p>
-                <p className="mt-3 text-xs font-medium text-[#5B7088]">{post.author_name} Â· {post.published_at ? new Date(post.published_at).toLocaleDateString('id-ID') : '-'}</p>
+                <p className="mt-3 text-xs font-medium text-[#5B7088]">{post.author_name} · {post.published_at ? new Date(post.published_at).toLocaleDateString('id-ID') : '-'}</p>
               </article>
             );
           })}
@@ -256,7 +256,7 @@ function MyWorksTab({ userId }: { userId: string }) {
                     <StatusPill status={post.status ?? 'draft'} />
                     {post.ai_assisted && <AiNote />}
                   </div>
-                  <p className="mt-1 text-xs font-medium text-[#5B7088]">{catName(categories, post.category_id)} Â· {post.created_at ? new Date(post.created_at).toLocaleDateString('id-ID') : '-'}</p>
+                  <p className="mt-1 text-xs font-medium text-[#5B7088]">{catName(categories, post.category_id)} · {post.created_at ? new Date(post.created_at).toLocaleDateString('id-ID') : '-'}</p>
                 </div>
               </div>
               <p className="mt-2 line-clamp-3 text-sm leading-6 text-[#23314D]">{post.content}</p>
