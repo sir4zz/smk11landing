@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { BarChart3, BookOpen, Briefcase, Building2, CalendarDays, FileText, GraduationCap, LogOut, Mail, Menu, Pencil, Plus, Trophy, Trash2, Upload, Users, X, Save, ShieldCheck, UsersRound, Dumbbell, Newspaper, UserCog, Camera, UserRound } from 'lucide-react';
 import logoSekolah from '../assets/logo.png';
 import { news as initialNews } from '../data/news';
@@ -30,6 +30,27 @@ import { can, STAFF_ROLES } from '../lib/permissions';
 type Section = 'dashboard' | 'news' | 'programs' | 'facilities' | 'staff' | 'achievements' | 'teacherActivities' | 'educationStaff' | 'spmb' | 'contact' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'gallery' | 'myProfile';
 type EditableSection = Exclude<Section, 'dashboard' | 'contact' | 'spmb' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'gallery' | 'myProfile'>;
 type Item = Record<string, unknown>;
+const ADMIN_SECTION_PATHS: Record<Section, string> = {
+  dashboard: '/admin',
+  myProfile: '/admin/profil',
+  news: '/admin/berita',
+  programs: '/admin/program-keahlian',
+  facilities: '/admin/fasilitas',
+  staff: '/admin/staf-guru',
+  achievements: '/admin/prestasi',
+  teacherActivities: '/admin/kegiatan-guru',
+  educationStaff: '/admin/tenaga-kependidikan',
+  spmb: '/admin/spmb',
+  contact: '/admin/pesan-kontak',
+  permissions: '/admin/role-permission',
+  osis: '/admin/osis',
+  extracurriculars: '/admin/ekstrakurikuler',
+  kesemaptaan: '/admin/kesemaptaan',
+  mading: '/admin/mading',
+  students: '/admin/data-siswa',
+  accounts: '/admin/akun',
+  gallery: '/admin/galeri',
+};
 const sessionKey = 'smkn11-admin-session';
 const TABLE_MAP: Record<string, string> = {
   news: 'news', programs: 'programs', facilities: 'facilities',
@@ -169,6 +190,7 @@ export default function Admin() {
 
 function AdminPanel() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [data, setData] = useState<Record<string, Item[]>>(seed as unknown as Record<string, Item[]>);
   const [section, setSection] = useState<Section>('dashboard');
   const [editing, setEditing] = useState<Item | null>(null);
@@ -183,6 +205,14 @@ function AdminPanel() {
   const canViewMading = isAdmin || can(permissions, 'mading.view');
   const canViewStudents = isAdmin || can(permissions, 'mading.edit_all');
   const canViewGallery = isAdmin || can(permissions, 'gallery.view');
+
+  useEffect(() => {
+    const nextSection = (Object.entries(ADMIN_SECTION_PATHS).find(([, path]) => path === location.pathname)?.[0] ?? 'dashboard') as Section;
+    setSection(nextSection);
+    if (location.pathname !== ADMIN_SECTION_PATHS[nextSection]) {
+      navigate(ADMIN_SECTION_PATHS.dashboard, { replace: true });
+    }
+  }, [location.pathname, navigate]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -334,7 +364,7 @@ function AdminPanel() {
                 <p className="px-3 pb-1 pt-4 text-[10px] font-bold uppercase tracking-widest text-[#F3E8D0]/50">{group.label}</p>
                 <div className="space-y-1">
                   {visibleItems.map((item) => (
-                    <Nav key={item.key} label={item.label} icon={item.icon} active={section === item.key} onClick={() => setSection(item.key)} />
+                    <Nav key={item.key} label={item.label} icon={item.icon} active={section === item.key} onClick={() => { navigate(ADMIN_SECTION_PATHS[item.key]); setMobile(false); }} />
                   ))}
                 </div>
               </div>

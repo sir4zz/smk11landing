@@ -43,7 +43,7 @@ function App() {
     <Routes>
         <Route path="admin/login" element={<AdminLogin />} />
         <Route element={<AdminRouteGuard />}>
-          <Route path="admin" element={<Admin />} />
+          <Route path="admin/*" element={<Admin />} />
           <Route path="admin/ubah-password" element={<MustChangePassword />} />
         </Route>
 
