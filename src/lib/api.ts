@@ -199,9 +199,9 @@ export const backendApi: any = {
     onAuthStateChange(listener: (event: 'signedIn' | 'signedOut') => void) { listeners.add(listener); return () => listeners.delete(listener); },
   },
   storage: {
-    from(_bucket: string) { return {
-      async uploadAuto(file: File) { const form = new FormData(); form.append('file', file); const result = await request<{ url: string }>('/upload', { method: 'POST', body: form }); return { data: result.data ? { url: result.data.url } : null, error: result.error }; },
-      async upload(_path: string, file: File) { const form = new FormData(); form.append('file', file); const result = await request('/upload', { method: 'POST', body: form }); return { data: result.data, error: result.error }; },
+    from(bucket: string) { return {
+      async uploadAuto(file: File) { const form = new FormData(); form.append('file', file); form.append('bucket', bucket); const result = await request<{ url: string }>('/upload', { method: 'POST', body: form }); return { data: result.data ? { url: result.data.url } : null, error: result.error }; },
+      async upload(_path: string, file: File) { const form = new FormData(); form.append('file', file); form.append('bucket', bucket); const result = await request('/upload', { method: 'POST', body: form }); return { data: result.data, error: result.error }; },
       async remove(paths: string[]) { return request('/uploads', { method: 'DELETE', body: JSON.stringify({ paths }) }); },
       async createSignedUrl(path: string) { return request<{ url: string }>(`/uploads/url?path=${encodeURIComponent(path)}`); },
     }; },
