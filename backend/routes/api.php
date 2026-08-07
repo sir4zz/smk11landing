@@ -15,6 +15,7 @@ use App\Http\Controllers\OsisController;
 use App\Http\Controllers\PpdbController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\GalleryController;
+use App\Http\Controllers\JobVacancyController;
 use App\Http\Controllers\ProxyController;
 use App\Http\Controllers\PublicProfileController;
 use App\Http\Controllers\RolePermissionController;
@@ -95,6 +96,10 @@ Route::get('/galleries/{slug}', [GalleryController::class, 'show']);
 Route::get('/uploads/url', [UploadController::class, 'url'])->middleware('auth:sanctum');
 Route::delete('/uploads', [UploadController::class, 'destroy'])->middleware('auth:sanctum');
 
+// ---------- BKK / JOB VACANCIES ----------
+Route::get('/jobs', [JobVacancyController::class, 'index']);
+Route::get('/jobs/{slug}', [JobVacancyController::class, 'show']);
+
 // Compatibility REST resources for the existing React CRUD layer. They are
 // backed by Laravel models and authorization.
 Route::get('/data/{table}', [DataController::class, 'index']);
@@ -163,6 +168,12 @@ Route::middleware(['auth:sanctum', 'staff'])->group(function () {
     Route::get('/contact', [ContactController::class, 'index'])->middleware('admin');
     Route::patch('/contact/{id}/read', [ContactController::class, 'markRead'])->middleware('admin');
     Route::delete('/contact/{id}', [ContactController::class, 'destroy'])->middleware('admin');
+
+    // BKK / Job vacancy management
+    Route::get('/admin/jobs', [JobVacancyController::class, 'adminIndex'])->middleware('permission:job.view');
+    Route::post('/admin/jobs', [JobVacancyController::class, 'store'])->middleware('permission:job.create');
+    Route::put('/admin/jobs/{id}', [JobVacancyController::class, 'update'])->middleware('permission:job.edit');
+    Route::delete('/admin/jobs/{id}', [JobVacancyController::class, 'destroy'])->middleware('permission:job.delete');
 });
 
 // ============================================================

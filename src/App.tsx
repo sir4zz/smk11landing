@@ -33,6 +33,8 @@ import Kesemaptaan from './pages/osis/Kesemaptaan'
 import Mading from './pages/mading/Mading'
 import StudentLogin from './pages/mading/StudentLogin'
 import StudentArea from './pages/mading/StudentArea'
+import BkkList from './pages/bkk/BkkList'
+import BkkDetail from './pages/bkk/BkkDetail'
 import MustChangePassword from './pages/admin/MustChangePassword'
 import ProfileDirectory from './pages/profiles/ProfileDirectory'
 import ProfilePage from './pages/profiles/ProfilePage'
@@ -97,6 +99,10 @@ function App() {
           <Route element={<StudentRouteGuard />}>
             <Route path="mading/area" element={<StudentArea />} />
           </Route>
+
+          {/* BKK (Bursa Kerja Khusus) */}
+          <Route path="bkk" element={<BkkList />} />
+          <Route path="bkk/:slug" element={<BkkDetail />} />
 
           {/* Public information portal */}
           <Route path="spmb" element={<Admissions />} />

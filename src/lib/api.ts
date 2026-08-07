@@ -516,3 +516,103 @@ export const publicProfileApi = {
     return request<PublicDirectory>('/public/directory');
   },
 };
+
+// ---------- BKK / JOB VACANCIES ----------
+export type JobStatus = 'open' | 'closing' | 'closed';
+export type JobEmploymentType = 'full_time' | 'contract' | 'internship';
+
+export interface JobVacancyRow {
+  id: string;
+  company_name: string;
+  company_logo: string;
+  position: string;
+  slug: string;
+  company_description?: string;
+  job_description?: string;
+  responsibilities?: string;
+  requirements?: string;
+  benefits?: string;
+  education?: string;
+  experience?: string;
+  major?: string;
+  city?: string;
+  location?: string;
+  employment_type: JobEmploymentType;
+  registration_link?: string;
+  hr_contact?: string;
+  deadline?: string | null;
+  status: JobStatus;
+  is_published?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export const JOB_STATUS_LABELS: Record<JobStatus, string> = {
+  open: 'Dibuka',
+  closing: 'Segera Ditutup',
+  closed: 'Ditutup',
+};
+
+export const JOB_EMPLOYMENT_LABELS: Record<JobEmploymentType, string> = {
+  full_time: 'Full Time',
+  contract: 'Kontrak',
+  internship: 'Magang',
+};
+
+export interface JobListMeta {
+  total: number;
+  page: number;
+  limit: number;
+  last_page: number;
+}
+
+export async function fetchJobVacancies(params?: {
+  search?: string;
+  major?: string;
+  city?: string;
+  employment_type?: string;
+  status?: string;
+  page?: number;
+  limit?: number;
+}): Promise<{ rows: JobVacancyRow[]; meta: JobListMeta }> {
+  const q = new URLSearchParams();
+  if (params?.search) q.set('search', params.search);
+  if (params?.major) q.set('major', params.major);
+  if (params?.city) q.set('city', params.city);
+  if (params?.employment_type) q.set('employment_type', params.employment_type);
+  if (params?.status) q.set('status', params.status);
+  if (params?.page) q.set('page', String(params.page));
+  if (params?.limit) q.set('limit', String(params.limit));
+  const suffix = q.size ? `?${q}` : '';
+  const result = await request<JobVacancyRow[]>(`/jobs${suffix}`);
+  return result.data
+    ? { rows: result.data, meta: (result.meta as JobListMeta) ?? { total: 0, page: 1, limit: 9, last_page: 1 } }
+    : { rows: [], meta: { total: 0, page: 1, limit: 9, last_page: 1 } };
+}
+
+export async function fetchJobVacancyBySlug(slug: string): Promise<JobVacancyRow | null> {
+  const result = await request<JobVacancyRow>(`/jobs/${encodeURIComponent(slug)}`);
+  return result.data ?? null;
+}
+
+export const jobAdminApi = {
+  list(params?: { search?: string; status?: string; employment_type?: string; page?: number; limit?: number }): ApiResult<JobVacancyRow[]> {
+    const q = new URLSearchParams();
+    if (params?.search) q.set('search', params.search);
+    if (params?.status) q.set('status', params.status);
+    if (params?.employment_type) q.set('employment_type', params.employment_type);
+    if (params?.page) q.set('page', String(params.page));
+    if (params?.limit) q.set('limit', String(params.limit ?? 10));
+    const suffix = q.size ? `?${q}` : '';
+    return request<JobVacancyRow[]>(`/admin/jobs${suffix}`);
+  },
+  create(payload: Record<string, unknown>): ApiResult<JobVacancyRow> {
+    return request<JobVacancyRow>('/admin/jobs', { method: 'POST', body: JSON.stringify(payload) });
+  },
+  update(id: string, payload: Record<string, unknown>): ApiResult<JobVacancyRow> {
+    return request<JobVacancyRow>(`/admin/jobs/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(payload) });
+  },
+  remove(id: string): ApiResult<null> {
+    return request<null>(`/admin/jobs/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  },
+};

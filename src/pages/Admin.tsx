@@ -21,14 +21,15 @@ import ExtracurricularManagement from '../components/admin/ExtracurricularManage
 import KesemaptaanManagement from '../components/admin/KesemaptaanManagement';
 import MadingManagement from '../components/admin/MadingManagement';
 import GalleryManagement from '../components/admin/GalleryManagement';
+import BkkManagement from '../components/admin/BkkManagement';
 import StudentsManagement from '../components/admin/StudentsManagement';
 import AccountsManagement from '../components/admin/AccountsManagement';
 import MyProfile from '../components/admin/MyProfile';
 import { StaffAuthProvider, useStaffAuth } from '../lib/staffAuth';
 import { can, STAFF_ROLES } from '../lib/permissions';
 
-type Section = 'dashboard' | 'news' | 'programs' | 'facilities' | 'staff' | 'achievements' | 'teacherActivities' | 'educationStaff' | 'spmb' | 'contact' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'gallery' | 'myProfile';
-type EditableSection = Exclude<Section, 'dashboard' | 'contact' | 'spmb' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'gallery' | 'myProfile'>;
+type Section = 'dashboard' | 'news' | 'programs' | 'facilities' | 'staff' | 'achievements' | 'teacherActivities' | 'educationStaff' | 'spmb' | 'contact' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'gallery' | 'bkk' | 'myProfile';
+type EditableSection = Exclude<Section, 'dashboard' | 'contact' | 'spmb' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'gallery' | 'bkk' | 'myProfile'>;
 type Item = Record<string, unknown>;
 const ADMIN_SECTION_PATHS: Record<Section, string> = {
   dashboard: '/admin',
@@ -50,6 +51,7 @@ const ADMIN_SECTION_PATHS: Record<Section, string> = {
   students: '/admin/data-siswa',
   accounts: '/admin/akun',
   gallery: '/admin/galeri',
+  bkk: '/admin/bkk',
 };
 const sessionKey = 'smkn11-admin-session';
 const TABLE_MAP: Record<string, string> = {
@@ -205,6 +207,7 @@ function AdminPanel() {
   const canViewMading = isAdmin || can(permissions, 'mading.view');
   const canViewStudents = isAdmin || can(permissions, 'mading.edit_all');
   const canViewGallery = isAdmin || can(permissions, 'gallery.view');
+  const canViewBkk = isAdmin || can(permissions, 'job.view');
 
   useEffect(() => {
     const nextSection = (Object.entries(ADMIN_SECTION_PATHS).find(([, path]) => path === location.pathname)?.[0] ?? 'dashboard') as Section;
@@ -325,8 +328,8 @@ function AdminPanel() {
     if (data) setData(current => ({ ...current, [key]: data as Item[] }));
   };
 
-  const active = section === 'dashboard' ? null : section === 'myProfile' ? { title: 'Profil Saya', icon: UserRound, fields: [] } : section === 'contact' ? { title: 'Pesan Kontak', icon: Mail, fields: [] } : section === 'spmb' ? { title: 'Kelola SPMB', icon: GraduationCap, fields: [] } : section === 'permissions' ? { title: 'Role & Permission', icon: ShieldCheck, fields: [] } : section === 'osis' ? { title: 'OSIS', icon: UsersRound, fields: [] } : section === 'extracurriculars' ? { title: 'Ekstrakurikuler', icon: Dumbbell, fields: [] } : section === 'kesemaptaan' ? { title: 'Kesemaptaan', icon: ShieldCheck, fields: [] } : section === 'mading' ? { title: 'Mading', icon: Newspaper, fields: [] } : section === 'students' ? { title: 'Data Siswa', icon: UserCog, fields: [] } : section === 'accounts' ? { title: 'Kelola Akun', icon: Users, fields: [] } : section === 'gallery' ? { title: 'Galeri', icon: Camera, fields: [] } : configs[section];
-  const editableSections = section !== 'dashboard' && section !== 'myProfile' && section !== 'contact' && section !== 'spmb' && section !== 'permissions' && section !== 'osis' && section !== 'extracurriculars' && section !== 'kesemaptaan' && section !== 'mading' && section !== 'students' && section !== 'accounts' && section !== 'gallery';
+  const active = section === 'dashboard' ? null : section === 'myProfile' ? { title: 'Profil Saya', icon: UserRound, fields: [] } : section === 'contact' ? { title: 'Pesan Kontak', icon: Mail, fields: [] } : section === 'spmb' ? { title: 'Kelola SPMB', icon: GraduationCap, fields: [] } : section === 'permissions' ? { title: 'Role & Permission', icon: ShieldCheck, fields: [] } : section === 'osis' ? { title: 'OSIS', icon: UsersRound, fields: [] } : section === 'extracurriculars' ? { title: 'Ekstrakurikuler', icon: Dumbbell, fields: [] } : section === 'kesemaptaan' ? { title: 'Kesemaptaan', icon: ShieldCheck, fields: [] } : section === 'mading' ? { title: 'Mading', icon: Newspaper, fields: [] } : section === 'students' ? { title: 'Data Siswa', icon: UserCog, fields: [] } : section === 'accounts' ? { title: 'Kelola Akun', icon: Users, fields: [] } : section === 'gallery' ? { title: 'Galeri', icon: Camera, fields: [] } : section === 'bkk' ? { title: 'BKK (Bursa Kerja Khusus)', icon: Briefcase, fields: [] } : configs[section];
+  const editableSections = section !== 'dashboard' && section !== 'myProfile' && section !== 'contact' && section !== 'spmb' && section !== 'permissions' && section !== 'osis' && section !== 'extracurriculars' && section !== 'kesemaptaan' && section !== 'mading' && section !== 'students' && section !== 'accounts' && section !== 'gallery' && section !== 'bkk';
 
   const navGroups: { label: string; items: { key: Section; label: string; icon: typeof FileText; visible: boolean }[] }[] = [
     { label: 'Menu', items: [{ key: 'dashboard', label: 'Dashboard', icon: BarChart3, visible: can(permissions, 'dashboard.view') }] },
@@ -338,6 +341,7 @@ function AdminPanel() {
       { key: 'extracurriculars', label: 'Ekstrakurikuler', icon: Dumbbell, visible: canViewEkstra },
       { key: 'kesemaptaan', label: 'Kesemaptaan', icon: ShieldCheck, visible: canViewKesemaptaan },
       { key: 'mading', label: 'Mading', icon: Newspaper, visible: canViewMading },
+      { key: 'bkk', label: 'BKK', icon: Briefcase, visible: canViewBkk },
       { key: 'gallery', label: 'Galeri', icon: Camera, visible: canViewGallery },
       { key: 'students', label: 'Data Siswa', icon: UserCog, visible: canViewStudents },
     ]},
@@ -408,6 +412,8 @@ function AdminPanel() {
           {section === 'kesemaptaan' && canViewKesemaptaan && <KesemaptaanManagement permissions={permissions} />}
 
           {section === 'mading' && canViewMading && <MadingManagement permissions={permissions} />}
+
+          {section === 'bkk' && canViewBkk && <BkkManagement permissions={permissions} />}
 
           {section === 'gallery' && canViewGallery && <GalleryManagement />}
 
