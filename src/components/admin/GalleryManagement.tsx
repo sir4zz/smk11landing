@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Camera, GripVertical, ImagePlus, Images, Loader2, Pencil, Plus, Search, Trash2, Upload, X, Calendar, CheckCircle2 } from 'lucide-react';
+import { Camera, GripVertical, ImagePlus, Images, Loader2, Pencil, Plus, Search, Trash2, Upload, X, Calendar, CheckCircle2, ChevronUp, ChevronDown, Link } from 'lucide-react';
 import {
-  galleryAdminApi, resolveImageUrl,
+  galleryAdminApi, resolveImageUrl, youtubeThumbnailUrl,
   GALLERY_CATEGORIES,
-  type GalleryRow, type GalleryImageRow, type GalleryMeta,
+  type GalleryRow, type GalleryImageRow, type GalleryVideoRow, type GalleryMeta,
 } from '../../lib/api';
 
 const PAGE_SIZE = 100;
@@ -174,6 +174,11 @@ function GalleryForm({ existing, onCancel, onDone }: { existing: GalleryRow | nu
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  const [savedVideos, setSavedVideos] = useState<GalleryVideoRow[]>(existing?.videos ?? []);
+  const [draftVideos, setDraftVideos] = useState<{ key: string; youtube_url: string; title: string }[]>([]);
+  const [videoUrlInput, setVideoUrlInput] = useState('');
+  const [videoTitleInput, setVideoTitleInput] = useState('');
+
   const allImages: GalleryImageDisplay[] = useMemo(() => {
     const existingMapped = existingImages.map((im) => ({ key: `e-${im.id}`, url: im.image }));
     return [...existingMapped, ...newImages];
@@ -183,6 +188,10 @@ function GalleryForm({ existing, onCancel, onDone }: { existing: GalleryRow | nu
     setExistingImages(existing?.images ?? []);
     setNewImages([]);
     setCoverFile(null);
+    setSavedVideos(existing?.videos ?? []);
+    setDraftVideos([]);
+    setVideoUrlInput('');
+    setVideoTitleInput('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [existing?.id]);
 
@@ -246,6 +255,38 @@ function GalleryForm({ existing, onCancel, onDone }: { existing: GalleryRow | nu
     setDragIndex(null);
   };
 
+  const addVideoDraft = () => {
+    const url = videoUrlInput.trim();
+    if (!url) return;
+    setDraftVideos((prev) => [
+      ...prev,
+      { key: `v-${Date.now()}`, youtube_url: url, title: videoTitleInput.trim() },
+    ]);
+    setVideoUrlInput('');
+    setVideoTitleInput('');
+  };
+
+  const removeVideo = async (video: GalleryVideoRow) => {
+    if (video.id && video.id.startsWith('local-')) {
+      setDraftVideos((prev) => prev.filter((v) => v.key !== video.id));
+      return;
+    }
+    if (!confirm('Hapus video ini?')) return;
+    const { error } = await galleryAdminApi.removeVideo(video.id);
+    if (error) { setMessage({ type: 'error', text: 'Gagal menghapus video.' }); return; }
+    setSavedVideos((prev) => prev.filter((v) => v.id !== video.id));
+  };
+
+  const moveVideo = async (index: number, dir: -1 | 1) => {
+    const to = index + dir;
+    if (to < 0 || to >= savedVideos.length) return;
+    const reordered = [...savedVideos];
+    const [moved] = reordered.splice(index, 1);
+    reordered.splice(to, 0, moved);
+    setSavedVideos(reordered);
+    galleryAdminApi.reorderVideos(reordered.map((v, i) => ({ id: v.id, sort_order: i })));
+  };
+
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setPublishing(true);
@@ -272,6 +313,9 @@ function GalleryForm({ existing, onCancel, onDone }: { existing: GalleryRow | nu
       if (coverFile) form.append('cover_image', coverFile);
       const { error } = await galleryAdminApi.update(existing.id, form);
       if (error) { setMessage({ type: 'error', text: 'Gagal menyimpan album.' }); setPublishing(false); return; }
+      if (draftVideos.length) {
+        await galleryAdminApi.addVideos(existing.id, draftVideos.map((v) => ({ youtube_url: v.youtube_url, title: v.title })));
+      }
       setPublishing(false);
       onDone();
       return;
@@ -292,8 +336,12 @@ function GalleryForm({ existing, onCancel, onDone }: { existing: GalleryRow | nu
     form.append('cover_image', coverFile);
     files.forEach((f) => form.append('images[]', f));
 
-    const { error } = await galleryAdminApi.create(form);
-    if (error) { setMessage({ type: 'error', text: 'Gagal membuat album.' }); setPublishing(false); return; }
+    const created = await galleryAdminApi.create(form);
+    if (created.error) { setMessage({ type: 'error', text: 'Gagal membuat album.' }); setPublishing(false); return; }
+    const newId = created.data?.id;
+    if (newId && draftVideos.length) {
+      await galleryAdminApi.addVideos(newId, draftVideos.map((d) => ({ youtube_url: d.youtube_url, title: d.title })));
+    }
     setPublishing(false);
     onDone();
   };
@@ -329,6 +377,48 @@ function GalleryForm({ existing, onCancel, onDone }: { existing: GalleryRow | nu
             <span className="text-sm font-semibold text-[#1B2A4A]">Lokasi</span>
             <input value={location} onChange={(e) => setLocation(e.target.value)} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2.5 text-sm" placeholder="Contoh: Lapangan SMKN 11" />
           </label>
+
+          <div className="md:col-span-2 rounded-xl border border-[#1B2A4A]/15 bg-slate-50/60 p-4">
+            <div className="flex items-center gap-2">
+              <Link className="h-4 w-4 text-[#1B2A4A]" />
+              <span className="text-sm font-semibold text-[#1B2A4A]">Video YouTube</span>
+            </div>
+            <p className="mt-1 text-xs text-[#5B7088]">Video diambil dari link YouTube, tidak diunggah ke server. Bisa lebih dari satu.</p>
+
+            {(savedVideos.length + draftVideos.length) === 0 && (
+              <p className="mt-3 text-sm text-[#5B7088]">Belum ada video.</p>
+            )}
+
+            {savedVideos.map((video, i) => (
+              <div key={video.id} className="mt-3 flex items-center gap-3 rounded-lg border border-[#1B2A4A]/15 bg-white p-2">
+                <img src={youtubeThumbnailUrl(video.youtube_url)} alt="" className="h-14 w-20 rounded object-cover" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-[#1B2A4A]">{video.title || 'Video tanpa judul'}</p>
+                  <p className="truncate text-xs text-[#5B7088]">{video.youtube_url}</p>
+                </div>
+                <button type="button" onClick={() => moveVideo(i, -1)} disabled={i === 0} className="rounded p-1 text-[#5B7088] hover:text-[#1B2A4A] disabled:opacity-30"><ChevronUp className="h-4 w-4" /></button>
+                <button type="button" onClick={() => moveVideo(i, 1)} disabled={i === savedVideos.length - 1} className="rounded p-1 text-[#5B7088] hover:text-[#1B2A4A] disabled:opacity-30"><ChevronDown className="h-4 w-4" /></button>
+                <button type="button" onClick={() => removeVideo(video)} className="rounded bg-red-600 p-1.5 text-white hover:bg-red-700"><Trash2 className="h-4 w-4" /></button>
+              </div>
+            ))}
+
+            {draftVideos.map((video) => (
+              <div key={video.key} className="mt-3 flex items-center gap-3 rounded-lg border border-dashed border-[#1B2A4A]/20 bg-white p-2">
+                <img src={youtubeThumbnailUrl(video.youtube_url) || ''} alt="" className="h-14 w-20 rounded object-cover" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-[#1B2A4A]">{video.title || 'Video baru (belum disimpan)'}</p>
+                  <p className="truncate text-xs text-[#5B7088]">{video.youtube_url}</p>
+                </div>
+                <button type="button" onClick={() => setDraftVideos((prev) => prev.filter((v) => v.key !== video.key))} className="rounded bg-red-600 p-1.5 text-white hover:bg-red-700"><X className="h-4 w-4" /></button>
+              </div>
+            ))}
+
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_2fr_auto]">
+              <input value={videoTitleInput} onChange={(e) => setVideoTitleInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addVideoDraft(); } }} className="rounded-lg border border-[#1B2A4A]/20 px-3 py-2 text-sm" placeholder="Judul video (opsional)" />
+              <input value={videoUrlInput} onChange={(e) => setVideoUrlInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addVideoDraft(); } }} className="rounded-lg border border-[#1B2A4A]/20 px-3 py-2 text-sm" placeholder="Tempel link YouTube, contoh: https://youtu.be/xxxx atau https://www.youtube.com/watch?v=xxxx" />
+              <button type="button" onClick={addVideoDraft} className="rounded-lg bg-[#1B2A4A] px-4 py-2 text-sm font-bold text-white hover:bg-[#2B3D66]"><Plus className="h-4 w-4" /></button>
+            </div>
+          </div>
 
           <label className="block md:col-span-2">
             <span className="text-sm font-semibold text-[#1B2A4A]">Deskripsi</span>

@@ -81,7 +81,7 @@ const FAQ: React.FC = () => {
               className="overflow-hidden rounded-2xl border border-[#1B2A4A]/10 bg-white shadow-sm transition-all"
             >
               <button
-                onClick={() => toggle(item.id)}
+                onClick={() => item.id && toggle(item.id)}
                 className="flex w-full items-center justify-between px-6 py-5 text-left transition-colors hover:bg-[#FAF6F0]"
               >
                 <div className="flex-1 pr-4">

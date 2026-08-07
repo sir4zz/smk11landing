@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Calendar, Image as ImageIcon, MapPin, Images } from 'lucide-react';
+import { Calendar, Image as ImageIcon, MapPin, Images, Play } from 'lucide-react';
 import PageHero from '../../components/ui/PageHero';
 import { fetchGalleries, fetchGalleryCategories, resolveImageUrl, GALLERY_CATEGORIES, type GalleryRow, type GalleryMeta } from '../../lib/api';
 
@@ -58,6 +58,11 @@ function GalleryCard({ gallery, index }: { gallery: GalleryRow; index: number })
         <span className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-black/40 px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm">
           <Images className="h-3.5 w-3.5" /> {gallery.images_count ?? 0}
         </span>
+        {gallery.videos_count && gallery.videos_count > 0 ? (
+          <span className="absolute bottom-3 right-3 flex items-center gap-1 rounded-full bg-[#C8A951] px-2.5 py-1 text-xs font-bold text-[#1B2A4A] shadow">
+            <Play className="h-3 w-3" /> Video
+          </span>
+        ) : null}
 
         <div className="absolute inset-x-0 bottom-0 p-5">
           <h3 className="text-lg font-bold leading-snug text-white drop-shadow">{gallery.title}</h3>

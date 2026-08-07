@@ -7,8 +7,37 @@ const apiOrigin = (import.meta.env.VITE_API_URL || 'http://localhost:8000').repl
 export function resolveImageUrl(url: string): string {
   if (!url) return '';
   if (/^https?:\/\//.test(url)) return url;
-  if (url.startsWith('/')) return apiOrigin ? `${apiOrigin}${url}` : url;
+  if (url.startsWith('/')) return `${apiOrigin}${url}`;
   return url;
+}
+
+export function youtubeVideoId(url: string): string | null {
+  if (!url) return null;
+  const patterns = [
+    /(?:youtube\.com\/(?:watch|embed|shorts|live)\/)([\w-]{11})/,
+    /youtube\.com\/watch\?.*v=([\w-]{11})/,
+    /youtube\.com\/v\/([\w-]{11})/,
+    /youtu\.be\/([\w-]{11})/,
+  ];
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) return match[1];
+  }
+  try {
+    const videoId = new URL(url).searchParams.get('v');
+    if (videoId && /^[\w-]{11}$/.test(videoId)) return videoId;
+  } catch { /* ignore */ }
+  return null;
+}
+
+export function youtubeEmbedUrl(url: string): string {
+  const id = youtubeVideoId(url);
+  return id ? `https://www.youtube.com/embed/${id}` : '';
+}
+
+export function youtubeThumbnailUrl(url: string): string {
+  const id = youtubeVideoId(url);
+  return id ? `https://img.youtube.com/vi/${id}/hqdefault.jpg` : '';
 }
 
 export { apiBaseUrl };
@@ -286,6 +315,15 @@ export interface GalleryImageRow {
   created_at?: string;
 }
 
+export interface GalleryVideoRow {
+  id: string;
+  gallery_id?: string;
+  youtube_url: string;
+  title?: string;
+  sort_order?: number;
+  created_at?: string;
+}
+
 export interface GalleryRow {
   id: string;
   title: string;
@@ -297,7 +335,9 @@ export interface GalleryRow {
   cover_image: string;
   is_published?: boolean;
   images?: GalleryImageRow[];
+  videos?: GalleryVideoRow[];
   images_count?: number;
+  videos_count?: number;
   created_at?: string;
   updated_at?: string;
 }
@@ -368,6 +408,18 @@ export const galleryAdminApi = {
   },
   reorder(images: { id: string; sort_order: number }[]): ApiResult<null> {
     return request<null>('/admin/gallery-images/reorder', { method: 'PUT', body: JSON.stringify({ images }) });
+  },
+  addVideos(id: string, videos: { youtube_url: string; title?: string }[]): ApiResult<GalleryRow> {
+    return request<GalleryRow>(`/admin/galleries/${encodeURIComponent(id)}/videos`, {
+      method: 'POST',
+      body: JSON.stringify({ videos }),
+    });
+  },
+  removeVideo(videoId: string): ApiResult<null> {
+    return request<null>(`/admin/gallery-videos/${encodeURIComponent(videoId)}`, { method: 'DELETE' });
+  },
+  reorderVideos(videos: { id: string; sort_order: number }[]): ApiResult<null> {
+    return request<null>('/admin/gallery-videos/reorder', { method: 'PUT', body: JSON.stringify({ videos }) });
   },
 };
 
