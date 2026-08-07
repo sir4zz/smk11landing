@@ -26,8 +26,8 @@ const FAQ: React.FC = () => {
     return true
   })
 
-  const toggle = (id: string) => {
-    setOpenId(openId === id ? null : id)
+  const toggle = (id: string | undefined) => {
+    setOpenId(openId === id ? null : id ?? null)
   }
 
   return (
