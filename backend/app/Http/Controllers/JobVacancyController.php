@@ -289,10 +289,20 @@ class JobVacancyController extends Controller
         if (empty($url)) {
             return;
         }
-        $prefix = '/storage/';
-        if (str_starts_with($url, $prefix)) {
-            Storage::disk('public')->delete(substr($url, strlen($prefix)));
+        // Tangani baik URL absolut (http://host/storage/...) maupun relatif (/storage/...).
+        $path = (string) parse_url($url, PHP_URL_PATH);
+        if ($path === '') {
+            return;
         }
+        $base = (string) parse_url(Storage::disk('public')->url('/'), PHP_URL_PATH);
+        if ($base !== '' && str_starts_with($path, $base)) {
+            $path = substr($path, strlen($base));
+        }
+        $path = ltrim($path, '/');
+        if ($path === '') {
+            return;
+        }
+        Storage::disk('public')->delete($path);
     }
 
     protected function uniqueSlug(string $slug, ?string $ignoreId = null): string
