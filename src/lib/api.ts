@@ -6,7 +6,18 @@ const apiOrigin = (import.meta.env.VITE_API_URL || 'http://localhost:8000').repl
 
 export function resolveImageUrl(url: string): string {
   if (!url) return '';
-  if (/^https?:\/\//.test(url)) return url;
+  if (/^https?:\/\//.test(url)) {
+    try {
+      const parsed = new URL(url);
+      // File storage selalu disajikan dari origin backend (apiOrigin). URL absolut
+      // yang dihasilkan UploadController berbasis APP_URL bisa salah host (mis. di
+      // dev APP_URL=localhost), jadi tulis ulang origin-nya agar gambar selalu tampil.
+      if (parsed.pathname.startsWith('/storage/')) {
+        return `${apiOrigin}${parsed.pathname}${parsed.search}`;
+      }
+    } catch { /* ignore */ }
+    return url;
+  }
   if (url.startsWith('/')) return `${apiOrigin}${url}`;
   return url;
 }
@@ -534,7 +545,7 @@ export interface JobVacancyRow {
   benefits?: string;
   education?: string;
   experience?: string;
-  major?: string;
+  major?: string[];
   city?: string;
   location?: string;
   employment_type: JobEmploymentType;

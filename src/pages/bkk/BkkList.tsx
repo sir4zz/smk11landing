@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import PageHero from '../../components/ui/PageHero'
 import { jobs as fallbackJobs } from '../../data/jobs'
+import { programs as fallbackPrograms, type Program } from '../../data/programs'
+import { fetchPublicContent } from '../../lib/api'
 import {
   fetchJobVacancies,
   resolveImageUrl,
@@ -45,9 +47,11 @@ const BkkList: React.FC = () => {
   useEffect(() => {
     fetchJobVacancies({ limit: 500 })
       .then(({ rows: all }) => {
-        setMajorOptions([...new Set(all.map((r) => r.major).filter(Boolean))] as string[])
         setCityOptions([...new Set(all.map((r) => r.city).filter(Boolean))] as string[])
       })
+      .catch(() => {})
+    fetchPublicContent<Program[]>('programs', fallbackPrograms)
+      .then((progs) => setMajorOptions(progs.map((p) => p.shortName).filter(Boolean)))
       .catch(() => {})
   }, [])
 

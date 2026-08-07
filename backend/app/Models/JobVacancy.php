@@ -46,5 +46,6 @@ class JobVacancy extends Model
     protected $casts = [
         'deadline' => 'date',
         'is_published' => 'boolean',
+        'major' => 'array',
     ];
 }

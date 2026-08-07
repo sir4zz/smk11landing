@@ -137,7 +137,7 @@ const BkkDetail: React.FC = () => {
             <Meta icon={GraduationCap} label="Pendidikan" value={job.education || '-'} />
           </div>
           <div className="grid grid-cols-1 gap-3 px-6 pb-6 sm:grid-cols-2 lg:grid-cols-4">
-            <Meta icon={UserRound} label="Jurusan Diterima" value={job.major || '-'} />
+            <Meta icon={UserRound} label="Jurusan Diterima" value={job.major && job.major.length ? job.major.join(', ') : '-'} />
             <Meta icon={UserRound} label="Pengalaman" value={job.experience || '-'} />
             <Meta icon={Phone} label="Kontak HR" value={job.hr_contact || '-'} />
             <Meta icon={Link2} label="Kode" value={job.id ? job.id.slice(0, 8).toUpperCase() : '-'} />

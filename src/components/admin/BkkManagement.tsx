@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { Plus, Pencil, Trash2, X, Save, Loader2, Search, ChevronLeft, ChevronRight, Building2 } from 'lucide-react';
+import { programs as fallbackPrograms } from '../../data/programs';
+import { fetchPublicContent } from '../../lib/api';
 import {
   jobAdminApi,
   resolveImageUrl,
@@ -41,6 +43,14 @@ export default function BkkManagement({ permissions }: Props) {
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<JobVacancyRow | null>(null);
+
+  const [programs, setPrograms] = useState<{ name: string; shortName: string }[]>([]);
+
+  useEffect(() => {
+    fetchPublicContent<{ name: string; shortName: string }[]>('programs', fallbackPrograms)
+      .then((rows) => setPrograms(rows.filter((r) => r.shortName)))
+      .catch(() => {});
+  }, []);
 
   const load = useCallback(async () => {
     const { data, error, meta } = await jobAdminApi.list({
@@ -225,6 +235,7 @@ export default function BkkManagement({ permissions }: Props) {
       {open && (
         <JobForm
           item={editing}
+          programs={programs}
           onClose={() => setOpen(false)}
           onSave={async (record) => {
             const ok = await save({ ...record, id: editing?.id });
@@ -236,7 +247,7 @@ export default function BkkManagement({ permissions }: Props) {
   );
 }
 
-function JobForm({ item, onClose, onSave }: { item: JobVacancyRow | null; onClose: () => void; onSave: (r: Partial<JobVacancyRow>) => void }) {
+function JobForm({ item, programs, onClose, onSave }: { item: JobVacancyRow | null; programs: { name: string; shortName: string }[]; onClose: () => void; onSave: (r: Partial<JobVacancyRow>) => void }) {
   const [values, setValues] = useState<Record<string, string>>({
     company_name: item?.company_name ?? '',
     company_logo: item?.company_logo ?? '',
@@ -248,7 +259,6 @@ function JobForm({ item, onClose, onSave }: { item: JobVacancyRow | null; onClos
     benefits: item?.benefits ?? '',
     education: item?.education ?? '',
     experience: item?.experience ?? '',
-    major: item?.major ?? '',
     city: item?.city ?? '',
     location: item?.location ?? '',
     employment_type: item?.employment_type ?? 'full_time',
@@ -258,6 +268,11 @@ function JobForm({ item, onClose, onSave }: { item: JobVacancyRow | null; onClos
     status: item?.status ?? 'open',
   });
   const [isPublished, setIsPublished] = useState<boolean>(Boolean(item?.is_published));
+  const [majors, setMajors] = useState<string[]>(item?.major ?? []);
+
+  const toggleMajor = (shortName: string) => {
+    setMajors((prev) => (prev.includes(shortName) ? prev.filter((m) => m !== shortName) : [...prev, shortName]));
+  };
 
   const set = (key: string) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setValues((v) => ({ ...v, [key]: e.target.value }));
@@ -283,7 +298,29 @@ function JobForm({ item, onClose, onSave }: { item: JobVacancyRow | null; onClos
           <div className="sm:col-span-2"><Field label="Benefit (satu baris per item)" multiline value={values.benefits} onChange={set('benefits')} /></div>
           <Field label="Pendidikan Minimal" value={values.education} onChange={set('education')} />
           <Field label="Pengalaman" value={values.experience} onChange={set('experience')} />
-          <Field label="Jurusan yang Diterima" value={values.major} onChange={set('major')} />
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-semibold">Jurusan yang Diterima
+              <span className={`mt-1 block overflow-hidden rounded-lg border border-[#1B2A4A]/20 bg-white p-1`}>
+                <div className="grid max-h-56 grid-cols-2 gap-1 overflow-y-auto sm:grid-cols-3">
+                  {programs.length === 0 && <p className="col-span-full p-3 text-xs text-[#5B7088]">Memuat daftar jurusan...</p>}
+                  {programs.map((program) => (
+                    <label
+                      key={program.shortName}
+                      className={`flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${majors.includes(program.shortName) ? 'bg-[#C8A951]/20 text-[#1B2A4A]' : 'bg-[#FAF6F0] text-[#23314D] hover:bg-[#F1E9DB]'}`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={majors.includes(program.shortName)}
+                        onChange={() => toggleMajor(program.shortName)}
+                        className="h-3.5 w-3.5 accent-[#1B2A4A]"
+                      />
+                      <span className="truncate">{program.shortName}<span className="ml-1 hidden font-normal text-[#5B7088] lg:inline">{program.name}</span></span>
+                    </label>
+                  ))}
+                </div>
+              </span>
+            </label>
+          </div>
           <Field label="Kota" value={values.city} onChange={set('city')} />
           <Field label="Lokasi (Alamat Detail)" value={values.location} onChange={set('location')} />
           <label className="block text-sm font-semibold">Tipe Pekerjaan
@@ -318,6 +355,7 @@ function JobForm({ item, onClose, onSave }: { item: JobVacancyRow | null; onClos
             onClick={() =>
               onSave({
                 ...values,
+                major: majors,
                 employment_type: values.employment_type as JobEmploymentType,
                 status: values.status as JobStatus,
                 is_published: isPublished,

@@ -155,15 +155,18 @@ class JobVacancyController extends Controller
 
         $payload = $this->validatedPayload($request, $job);
 
-        if (array_key_exists('company_name', $data) || array_key_exists('position', $data)) {
-            if (empty($payload['company_name']) || empty($payload['position'])) {
-                throw ValidationException::withMessages(['company_name' => 'Nama perusahaan dan posisi wajib diisi.']);
-            }
+        if (array_key_exists('company_name', $data) && empty($payload['company_name'])) {
+            throw ValidationException::withMessages(['company_name' => 'Nama perusahaan wajib diisi.']);
+        }
+        if (array_key_exists('position', $data) && empty($payload['position'])) {
+            throw ValidationException::withMessages(['position' => 'Posisi wajib diisi.']);
         }
 
         if (array_key_exists('slug', $data) && ! empty($data['slug'])) {
             $payload['slug'] = $this->uniqueSlug($data['slug'], $job->id);
-        } elseif (! array_key_exists('slug', $data) && ($data['company_name'] ?? null) !== $job->company_name) {
+        } elseif (array_key_exists('company_name', $data)
+            && ! empty($data['company_name'])
+            && $data['company_name'] !== $job->company_name) {
             $payload['slug'] = $this->uniqueSlug(Str::slug($data['company_name'].'-'.($data['position'] ?? $job->position)), $job->id);
         }
 
@@ -208,7 +211,7 @@ class JobVacancyController extends Controller
             'benefits' => 'nullable|string',
             'education' => 'nullable|string',
             'experience' => 'nullable|string',
-            'major' => 'nullable|string',
+            'major' => 'nullable',
             'city' => 'nullable|string',
             'location' => 'nullable|string',
             'registration_link' => 'nullable|string',
@@ -235,8 +238,23 @@ class JobVacancyController extends Controller
         if (array_key_exists('is_published', $payload)) {
             $payload['is_published'] = ! empty($payload['is_published']);
         }
+        if (array_key_exists('major', $payload)) {
+            $payload['major'] = $this->normalizeMajors($payload['major']);
+        }
 
         return $payload;
+    }
+
+    protected function normalizeMajors($value): array
+    {
+        if (is_string($value)) {
+            return $value === '' ? [] : array_values(array_filter(array_map('trim', explode(',', $value))));
+        }
+        if (! is_array($value)) {
+            return [];
+        }
+
+        return array_values(array_filter(array_map('trim', $value)));
     }
 
     protected function resolveLogo(Request $request): string
