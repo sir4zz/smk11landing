@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Gallery;
 use App\Models\GalleryImage;
+use App\Models\GalleryVideo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -21,7 +22,8 @@ class GalleryController extends Controller
     {
         $query = Gallery::query()
             ->where('is_published', true)
-            ->withCount('images');
+            ->withCount('images')
+            ->withCount('videos');
 
         if ($request->filled('year')) {
             $query->whereYear('event_date', (int) $request->query('year'));
@@ -60,7 +62,9 @@ class GalleryController extends Controller
             ->where('slug', $slug)
             ->where('is_published', true)
             ->with('images')
+            ->with('videos')
             ->withCount('images')
+            ->withCount('videos')
             ->first();
 
         if (! $row) {
@@ -88,7 +92,7 @@ class GalleryController extends Controller
 
     public function adminIndex(Request $request)
     {
-        $query = Gallery::query()->with('images')->withCount('images');
+        $query = Gallery::query()->with('images')->with('videos')->withCount('images')->withCount('videos');
 
         if ($request->filled('search')) {
             $search = $request->query('search');
@@ -155,7 +159,7 @@ class GalleryController extends Controller
 
         $this->syncImages($gallery, $data['images'] ?? [], $request);
 
-        return response()->json(['data' => $gallery->fresh()->load('images'), 'error' => null], 201);
+        return response()->json(['data' => $gallery->fresh()->load('images')->load('videos'), 'error' => null], 201);
     }
 
     public function update(Request $request, string $id)
@@ -192,10 +196,10 @@ class GalleryController extends Controller
             $gallery->update($payload);
         }
 
-        // Foto album dikelola lewat endpoint khusus (storeImages / destroyImage / reorderImages),
-        // jadi update di sini tidak boleh mengganti / menghapus foto yang sudah ada.
+        // Foto & video album dikelola lewat endpoint khusus (storeImages / storeVideos / destroy* / reorder*),
+        // jadi update di sini tidak boleh mengganti / menghapus konten yang sudah ada.
 
-        return response()->json(['data' => $gallery->fresh()->load('images'), 'error' => null]);
+        return response()->json(['data' => $gallery->fresh()->load('images')->load('videos'), 'error' => null]);
     }
 
     public function destroy(string $id)
@@ -256,6 +260,62 @@ class GalleryController extends Controller
 
         $this->deleteFileFromUrl($image->image);
         $image->delete();
+
+        return response()->json(['data' => null, 'error' => null]);
+    }
+
+    public function storeVideos(Request $request, string $id)
+    {
+        $gallery = Gallery::findOrFail($id);
+
+        $videos = $request->input('videos');
+        if (! is_array($videos) || empty($videos)) {
+            throw ValidationException::withMessages(['videos' => 'Minimal satu video diperlukan.']);
+        }
+
+        $added = 0;
+        $maxOrder = (int) $gallery->videos()->max('sort_order');
+
+        foreach ($videos as $video) {
+            $url = is_string($video) ? $video : ($video['youtube_url'] ?? '');
+            if (empty($url)) {
+                continue;
+            }
+            $gallery->videos()->create([
+                'youtube_url' => trim($url),
+                'title' => is_array($video) ? trim($video['title'] ?? '') : '',
+                'sort_order' => ++$maxOrder,
+            ]);
+            $added++;
+        }
+
+        return response()->json([
+            'data' => $gallery->fresh()->load('videos'),
+            'error' => null,
+        ], $added ? 201 : 200);
+    }
+
+    public function destroyVideo(string $id)
+    {
+        GalleryVideo::findOrFail($id)->delete();
+
+        return response()->json(['data' => null, 'error' => null]);
+    }
+
+    public function reorderVideos(Request $request)
+    {
+        $request->validate([
+            'videos' => ['required', 'array'],
+        ]);
+
+        foreach ($request->input('videos') as $item) {
+            if (empty($item['id']) || ! array_key_exists('sort_order', $item)) {
+                continue;
+            }
+            GalleryVideo::query()
+                ->where('id', $item['id'])
+                ->update(['sort_order' => (int) $item['sort_order']]);
+        }
 
         return response()->json(['data' => null, 'error' => null]);
     }

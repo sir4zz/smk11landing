@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Calendar, ChevronLeft, ChevronRight, Images, MapPin, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Calendar, ChevronLeft, ChevronRight, Images, MapPin, Play, X } from 'lucide-react';
 import PageHero from '../../components/ui/PageHero';
-import { fetchGalleryBySlug, resolveImageUrl, type GalleryRow } from '../../lib/api';
+import { fetchGalleryBySlug, resolveImageUrl, youtubeEmbedUrl, type GalleryRow } from '../../lib/api';
 
 export default function GalleryDetail() {
   const { slug } = useParams<{ slug: string }>();
@@ -91,6 +91,10 @@ export default function GalleryDetail() {
     ? new Date(gallery.event_date).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
     : '';
 
+  const videos = (gallery.videos ?? [])
+    .map((v) => ({ ...v, embed: youtubeEmbedUrl(v.youtube_url) }))
+    .filter((v) => v.embed);
+
   return (
     <div className="min-h-screen bg-[#FAF6F0]">
       {/* Hero */}
@@ -119,6 +123,9 @@ export default function GalleryDetail() {
                 <span className="flex items-center gap-1.5 text-white/85"><MapPin className="h-4 w-4" /> {gallery.location}</span>
               )}
               <span className="flex items-center gap-1.5 text-white/85"><Images className="h-4 w-4" /> {images.length} foto</span>
+              {videos.length > 0 && (
+                <span className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 font-semibold text-white backdrop-blur-sm"><Play className="h-3.5 w-3.5" /> {videos.length} video</span>
+              )}
             </div>
             <h1 className="max-w-3xl text-3xl font-bold leading-tight text-white md:text-5xl">{gallery.title}</h1>
             {gallery.description && (
@@ -127,6 +134,33 @@ export default function GalleryDetail() {
           </motion.div>
         </div>
       </div>
+
+      {/* Video */}
+      {videos.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 pt-12 sm:px-6 lg:px-8">
+          <div className={`${
+            videos.length > 1 ? 'grid grid-cols-1 gap-5 md:grid-cols-2' : ''
+          }`}>
+            {videos.map((video, index) => (
+              <div key={video.id} className="overflow-hidden rounded-[1.25rem] bg-white p-2 shadow-sm md:p-3">
+                {video.title && (
+                  <p className="mb-2 px-2 text-sm font-semibold text-[#1B2A4A]">{video.title}</p>
+                )}
+                <div className="relative aspect-video w-full">
+                  <iframe
+                    src={video.embed}
+                    title={video.title || `Video ${gallery.title} ${index + 1}`}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    className="absolute inset-0 h-full w-full rounded-2xl border-0"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Masonry grid */}
       <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 md:py-16">

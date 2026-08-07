@@ -155,6 +155,9 @@ Route::middleware(['auth:sanctum', 'staff'])->group(function () {
     Route::post('/admin/galleries/{id}/images', [GalleryController::class, 'storeImages'])->middleware('permission:gallery.edit');
     Route::delete('/admin/gallery-images/{id}', [GalleryController::class, 'destroyImage'])->middleware('permission:gallery.edit');
     Route::put('/admin/gallery-images/reorder', [GalleryController::class, 'reorderImages'])->middleware('permission:gallery.edit');
+    Route::post('/admin/galleries/{id}/videos', [GalleryController::class, 'storeVideos'])->middleware('permission:gallery.edit');
+    Route::delete('/admin/gallery-videos/{id}', [GalleryController::class, 'destroyVideo'])->middleware('permission:gallery.edit');
+    Route::put('/admin/gallery-videos/reorder', [GalleryController::class, 'reorderVideos'])->middleware('permission:gallery.edit');
 
     // Contact messages (admin only in the UI, but keep staff-readable list)
     Route::get('/contact', [ContactController::class, 'index'])->middleware('admin');

@@ -34,6 +34,11 @@ class Gallery extends Model
         return $this->hasMany(GalleryImage::class)->orderBy('sort_order')->orderBy('created_at');
     }
 
+    public function videos(): HasMany
+    {
+        return $this->hasMany(GalleryVideo::class)->orderBy('sort_order')->orderBy('created_at');
+    }
+
     public function imagesCount(): int
     {
         return $this->images()->count();
