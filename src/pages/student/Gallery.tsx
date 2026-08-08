@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from 'react'
 import PageHero from '../../components/ui/PageHero'
-import { gallery, type GalleryItem } from '../../data/gallery'
+import { fetchGalleries, type GalleryRow } from '../../lib/api'
 import { X } from 'lucide-react'
 
 const Gallery: React.FC = () => {
-  const [items, setItems] = useState<GalleryItem[]>(gallery)
+  const [items, setItems] = useState<GalleryRow[]>([])
   const [filter, setFilter] = useState<string>('Semua')
-  const [selected, setSelected] = useState<GalleryItem | null>(null)
-  useEffect(() => { setItems(gallery) }, [])
+  const [selected, setSelected] = useState<GalleryRow | null>(null)
+  useEffect(() => { fetchGalleries({ limit: 500 }).then(({ rows }) => setItems(rows)) }, [])
 
-  const categories = ['Semua', ...new Set(items.map((g) => g.category))]
+  const categories = ['Semua', ...new Set(items.map((g) => g.category).filter(Boolean) as string[])]
   const filtered = filter === 'Semua' ? items : items.filter((g) => g.category === filter)
 
   return (
@@ -46,14 +46,14 @@ const Gallery: React.FC = () => {
               className="group relative mb-6 block w-full overflow-hidden rounded-2xl shadow-sm transition-all hover:shadow-lg"
             >
               <img
-                src={item.src}
-                alt={item.caption}
+                src={item.cover_image}
+                alt={item.title}
                 className="w-full object-cover transition-transform duration-300 group-hover:scale-105"
                 loading="lazy"
               />
               <div className="absolute inset-0 flex items-end bg-gradient-to-t from-[#1B2A4A]/80 via-transparent to-transparent p-5 opacity-0 transition-opacity group-hover:opacity-100">
                 <p className="text-sm font-medium text-white text-left leading-snug">
-                  {item.caption}
+                  {item.title}
                 </p>
               </div>
             </button>
@@ -77,13 +77,13 @@ const Gallery: React.FC = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <img
-              src={selected.src}
-              alt={selected.caption}
+              src={selected.cover_image}
+              alt={selected.title}
               className="max-h-[50vh] sm:max-h-[80vh] w-full object-contain"
             />
             <div className="bg-white p-4">
-              <p className="font-semibold text-[#1B2A4A]">{selected.caption}</p>
-              <p className="mt-1 text-sm text-[#23314D]">{selected.category} &middot; {selected.date}</p>
+              <p className="font-semibold text-[#1B2A4A]">{selected.title}</p>
+              <p className="mt-1 text-sm text-[#23314D]">{selected.category} &middot; {selected.event_date}</p>
             </div>
           </div>
         </div>

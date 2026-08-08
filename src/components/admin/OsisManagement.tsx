@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { ChangeEvent, ReactNode } from 'react';
 import { Plus, Pencil, Trash2, X, Save, Loader2, UserRound, CalendarDays, LayoutGrid } from 'lucide-react';
 import { backendApi } from '../../lib/api';
-import type { OsisProfile, OsisMember, OsisActivity } from '../../data/osis';
+import type { OsisProfile, OsisMember, OsisActivity } from '../../lib/content-types';
 import { can } from '../../lib/permissions';
 import ImageField from './ImageField';
 

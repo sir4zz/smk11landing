@@ -1,15 +1,53 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Check, Briefcase, Building, ArrowLeft } from 'lucide-react';
 import PageHero from '../../components/ui/PageHero';
-import { programs, type Program } from '../../data/programs';
+import type { Program } from '../../lib/content-types';
+import { fetchPublicContentByIdResult, resolveImageUrl } from '../../lib/api';
 import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
 
 const StudyProgramDetail: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
-  const program = programs.find((p: Program) => p.slug === slug);
+  const [program, setProgram] = useState<Program | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'kompetensi' | 'karir' | 'fasilitas'>('overview');
+
+  useEffect(() => {
+    setProgram(null);
+    setLoading(true);
+    setError(null);
+    if (!slug) {
+      setLoading(false);
+      return;
+    }
+
+    fetchPublicContentByIdResult<Program>('programs', slug)
+      .then(({ data, error: responseError }) => {
+        setProgram(data);
+        setError(responseError?.message ?? null);
+      })
+      .finally(() => setLoading(false));
+  }, [slug]);
+
+  if (loading) {
+    return <div className="min-h-screen bg-[#FAF6F0]" />;
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#FAF6F0] flex flex-col items-center justify-center p-4">
+        <h1 className="text-4xl font-bold text-[#1B2A4A] mb-4">Gagal Memuat Program</h1>
+        <p className="text-[#23314D] mb-8">{error}</p>
+        <Link to="/akademik/program-keahlian">
+          <Button className="bg-[#1B2A4A] text-[#FAF6F0] hover:bg-[#15203a]">
+            Kembali ke Daftar Program
+          </Button>
+        </Link>
+      </div>
+    );
+  }
 
   if (!program) {
     return (
@@ -27,7 +65,7 @@ const StudyProgramDetail: React.FC = () => {
 
   return (
     <div className="bg-[#FAF6F0] min-h-screen">
-      <PageHero title={program.name} subtitle="Jelajahi kompetensi dan peluang karir di bidang ini" backgroundImage={program.image} />
+      <PageHero title={program.name} subtitle="Jelajahi kompetensi dan peluang karir di bidang ini" backgroundImage={resolveImageUrl(program.image ?? '')} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <Link to="/akademik/program-keahlian" className="inline-flex items-center text-[#1B2A4A] hover:text-[#866D2C] mb-8 transition-colors">
           <ArrowLeft className="w-5 h-5 mr-2" />
@@ -77,7 +115,7 @@ const StudyProgramDetail: React.FC = () => {
                 <div>
                   <h2 className="text-2xl font-bold text-[#1B2A4A] mb-6">Kompetensi Lulusan</h2>
                   <ul className="space-y-4">
-                    {(program.competencies || ['Kompetensi 1', 'Kompetensi 2']).map((comp: string, idx: number) => (
+                    {(program.competencies ?? []).map((comp, idx) => (
                       <li key={idx} className="flex items-start">
                         <Check className="w-6 h-6 text-[#C8A951] mr-3 shrink-0" />
                         <span className="text-[#23314D]">{comp}</span>
@@ -91,7 +129,7 @@ const StudyProgramDetail: React.FC = () => {
                 <div>
                   <h2 className="text-2xl font-bold text-[#1B2A4A] mb-6">Prospek Karir</h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {(program.careerProspects || ['Karir 1', 'Karir 2']).map((career: string, idx: number) => (
+                    {(program.careerProspects ?? []).map((career, idx) => (
                       <div key={idx} className="flex items-center bg-[#FAF6F0] p-4 rounded-lg">
                         <Briefcase className="w-5 h-5 text-[#C8A951] mr-3" />
                         <span className="font-medium text-[#1B2A4A]">{career}</span>
@@ -105,7 +143,7 @@ const StudyProgramDetail: React.FC = () => {
                 <div>
                   <h2 className="text-2xl font-bold text-[#1B2A4A] mb-6">Fasilitas Pendukung</h2>
                   <ul className="space-y-4">
-                    {(program.facilities || ['Fasilitas 1', 'Fasilitas 2']).map((fas: string, idx: number) => (
+                    {(program.facilities ?? []).map((fas, idx) => (
                       <li key={idx} className="flex items-center bg-[#FAF6F0] p-4 rounded-lg">
                         <Building className="w-5 h-5 text-[#C8A951] mr-3" />
                         <span className="font-medium text-[#1B2A4A]">{fas}</span>

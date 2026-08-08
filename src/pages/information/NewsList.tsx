@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import PageHero from '../../components/ui/PageHero'
-import { news, isImportedNews, type NewsItem } from '../../data/news'
+import { isImportedNews, type NewsItem } from '../../lib/content-types'
 import { fetchPublicContent } from '../../lib/api'
 import { Calendar, User, ArrowRight, Search } from 'lucide-react'
 
 const NewsList: React.FC = () => {
-  const [items, setItems] = useState<NewsItem[]>(news)
+  const [items, setItems] = useState<NewsItem[]>([])
   const [filterCat, setFilterCat] = useState<string>('Semua')
   const [search, setSearch] = useState('')
-  useEffect(() => { fetchPublicContent('news', news).then(setItems) }, [])
+  useEffect(() => { fetchPublicContent<NewsItem[]>('news').then(setItems) }, [])
 
   const categories = ['Semua', ...new Set(items.map((n) => n.category))]
 

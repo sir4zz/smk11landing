@@ -3,14 +3,7 @@ import type { FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { BarChart3, BookOpen, Briefcase, Building2, CalendarDays, FileText, GraduationCap, LogOut, Mail, Menu, Pencil, Plus, Trophy, Trash2, Upload, Users, X, Save, ShieldCheck, UsersRound, Dumbbell, Newspaper, UserCog, Camera, UserRound } from 'lucide-react';
 import logoSekolah from '../assets/logo.png';
-import { news as initialNews } from '../data/news';
-import { programs as initialPrograms } from '../data/programs';
-import { facilities as initialFacilities } from '../data/facilities';
-import { staffData as initialStaff } from '../data/staff';
-import { achievements as initialAchievements } from '../data/achievements';
-import { teacherActivities as initialTeacherActivities } from '../data/teacherActivities';
-import { educationStaff as initialEducationStaff } from '../data/educationStaff';
-import { defaultSpmbContent, type SpmbContent, type SpmbFaqItem, type SpmbFlowStep, type SpmbScheduleItem } from '../data/spmb';
+import type { SpmbContent, SpmbFaqItem, SpmbFlowStep, SpmbScheduleItem } from '../lib/content-types';
 import { backendApi, apiBaseUrl, resolveImageUrl } from '../lib/api';
 import { LoadingInline } from '../components/ui/LoadingScreen';
 import ImportModal from '../components/admin/ImportModal';
@@ -61,19 +54,13 @@ const TABLE_MAP: Record<string, string> = {
 };
 
 const seed = {
-  news: initialNews,
-  programs: initialPrograms,
-  facilities: initialFacilities,
-  staff: initialStaff,
-  achievements: initialAchievements,
-  teacherActivities: initialTeacherActivities,
-  educationStaff: initialEducationStaff,
+  news: [] as Item[], programs: [] as Item[], facilities: [] as Item[], staff: [] as Item[], achievements: [] as Item[], teacherActivities: [] as Item[], educationStaff: [] as Item[],
   contact: [] as Item[],
 };
 
 const configs: Record<EditableSection, { title: string; icon: typeof FileText; fields: { key: string; label: string; type?: string; multiline?: boolean }[] }> = {
   news: { title: 'Berita', icon: FileText, fields: [{ key: 'title', label: 'Judul' }, { key: 'slug', label: 'Slug' }, { key: 'category', label: 'Kategori', type: 'select' }, { key: 'author', label: 'Penulis', type: 'select' }, { key: 'date', label: 'Tanggal', type: 'date' }, { key: 'excerpt', label: 'Ringkasan', multiline: true }, { key: 'content', label: 'Isi Berita', multiline: true }, { key: 'thumbnail', label: 'Gambar Sampul', type: 'image' }, { key: 'source_label', label: 'Jenis / Sumber', type: 'select' }, { key: 'source_note', label: 'Deskripsi Sumber', multiline: true }] },
-  programs: { title: 'Program Keahlian', icon: BookOpen, fields: [{ key: 'name', label: 'Nama Program' }, { key: 'slug', label: 'Slug' }, { key: 'short_name', label: 'Singkatan' }, { key: 'short_description', label: 'Deskripsi Singkat', multiline: true }, { key: 'description', label: 'Deskripsi Lengkap', multiline: true }, { key: 'image', label: 'Gambar', type: 'image' }] },
+  programs: { title: 'Program Keahlian', icon: BookOpen, fields: [{ key: 'name', label: 'Nama Program' }, { key: 'slug', label: 'Slug' }, { key: 'short_name', label: 'Singkatan' }, { key: 'short_description', label: 'Deskripsi Singkat', multiline: true }, { key: 'description', label: 'Deskripsi Lengkap', multiline: true }, { key: 'competencies', label: 'Kompetensi', type: 'list' }, { key: 'career_prospects', label: 'Prospek Karir', type: 'list' }, { key: 'facilities', label: 'Fasilitas Pendukung', type: 'list' }, { key: 'image', label: 'Gambar', type: 'image' }] },
   facilities: { title: 'Fasilitas', icon: Building2, fields: [{ key: 'name', label: 'Nama Fasilitas' }, { key: 'category', label: 'Kategori', type: 'select' }, { key: 'description', label: 'Deskripsi', multiline: true }, { key: 'photo', label: 'Foto', type: 'image' }] },
   staff: { title: 'Staf & Guru', icon: Users, fields: [{ key: 'name', label: 'Nama' }, { key: 'position', label: 'Jabatan', type: 'select' }, { key: 'department', label: 'Unit / Departemen', type: 'select' }, { key: 'photo', label: 'Foto', type: 'image' }, { key: 'description', label: 'Deskripsi Singkat', multiline: true }] },
   achievements: { title: 'Prestasi', icon: Trophy, fields: [{ key: 'title', label: 'Judul Prestasi' }, { key: 'event', label: 'Acara' }, { key: 'level', label: 'Tingkat', type: 'select' }, { key: 'rank', label: 'Peringkat', type: 'select' }, { key: 'year', label: 'Tahun', type: 'number' }, { key: 'photo', label: 'Foto', type: 'image' }] },
@@ -91,18 +78,35 @@ const FIELD_OPTION_PRESETS: Record<string, string[]> = {
   rank: ['Juara 1', 'Juara 2', 'Juara 3', 'Medali Emas', 'Medali Perak', 'Medali Perunggu', 'Harapan', 'Peserta', 'Partisipasi'],
 };
 
+function dateInputValue(value: unknown): string {
+  const raw = String(value ?? '').trim();
+  if (!raw) return '';
+  return raw.match(/^(\d{4}-\d{2}-\d{2})/)?.[1] ?? '';
+}
+
+function formatDateValue(value: unknown): string {
+  const dateValue = dateInputValue(value);
+  if (!dateValue) return String(value ?? '-');
+
+  const [year, month, day] = dateValue.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  return Number.isNaN(date.getTime())
+    ? String(value ?? '-')
+    : date.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+}
+
 function normalizeSpmbRow(row: Record<string, unknown>): SpmbContent {
   return {
     id: row.id as string | undefined,
     status: (row.status as SpmbContent['status']) || 'ditutup',
-    title: String(row.title ?? defaultSpmbContent.title),
+    title: String(row.title ?? ''),
     description: String(row.description ?? ''),
     latest_info: String(row.latest_info ?? ''),
     requirements: Array.isArray(row.requirements) ? (row.requirements as string[]) : [],
     schedule: Array.isArray(row.schedule) ? (row.schedule as SpmbScheduleItem[]) : [],
     flow_steps: Array.isArray(row.flow_steps) ? (row.flow_steps as SpmbFlowStep[]) : [],
     faq: Array.isArray(row.faq) ? (row.faq as SpmbFaqItem[]) : [],
-    portal_url: String(row.portal_url ?? defaultSpmbContent.portal_url),
+    portal_url: String(row.portal_url ?? ''),
     banner_image: String(row.banner_image ?? ''),
     banner_title: String(row.banner_title ?? ''),
     banner_description: String(row.banner_description ?? ''),
@@ -540,6 +544,10 @@ function Table({ items, config, onEdit, onDelete }: { items: Item[]; config: { f
       return <span className="text-[#23314D]">{String(item[field.key] ?? 'Berita mandiri')}</span>;
     }
 
+    if (field.key === 'date') {
+      return formatDateValue(item[field.key]);
+    }
+
     return String(item[field.key] ?? '-');
   };
 
@@ -928,7 +936,7 @@ function PPDBDetail({ data, onClose, onUpdateStatus, onVerifyDoc }: {
 */
 
 function SPMBManagement() {
-  const [content, setContent] = useState<SpmbContent>(defaultSpmbContent);
+  const [content, setContent] = useState<SpmbContent | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -943,7 +951,7 @@ function SPMBManagement() {
   }, []);
 
   const update = <K extends keyof SpmbContent>(key: K, value: SpmbContent[K]) => {
-    setContent((current) => ({ ...current, [key]: value }));
+    setContent((current) => current ? { ...current, [key]: value } : null);
   };
 
   const save = async (event: FormEvent<HTMLFormElement>) => {
@@ -956,6 +964,7 @@ function SPMBManagement() {
       setSaving(false);
       return;
     }
+    if (!content) return;
     const { id, ...payload } = content;
     try {
       let dbError;
@@ -980,6 +989,7 @@ function SPMBManagement() {
   };
 
   if (loading) return <LoadingInline />;
+  if (!content) return <p className="rounded-xl bg-white p-6 text-[#5B7088]">Data SPMB belum tersedia.</p>;
 
   return (
     <form onSubmit={save} className="mx-auto max-w-5xl space-y-6">
@@ -1348,7 +1358,12 @@ function Editor({ config, item, onClose, onSave, section, options }: { config: {
       return;
     }
 
-    onSave({ ...(item ?? {}), ...formValues });
+    const listFields = section === 'programs' ? ['competencies', 'career_prospects', 'facilities'] : [];
+    onSave({
+      ...(item ?? {}),
+      ...formValues,
+      ...Object.fromEntries(listFields.map((key) => [key, String(formValues[key] ?? '').split('\n').map((value) => value.trim()).filter(Boolean)])),
+    });
   };
 
   return (
@@ -1388,7 +1403,9 @@ function Editor({ config, item, onClose, onSave, section, options }: { config: {
                 </div>
               : <label key={field.key} className="block text-sm font-semibold">
               {field.label}
-              {field.multiline
+              {field.type === 'list'
+                ? <textarea ref={(element) => { fieldRefs.current[field.key] = element; }} name={field.key} rows={5} defaultValue={item && Array.isArray(item[field.key]) ? (item[field.key] as unknown[]).join('\n') : String(item?.[field.key] ?? '')} placeholder="Satu item per baris" required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />
+                : field.multiline
                 ? <textarea ref={(element) => { fieldRefs.current[field.key] = element; }} name={field.key} rows={4} defaultValue={String(item?.[field.key] ?? '')} required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />
                 : field.type === 'select'
                   ? (() => {
@@ -1404,7 +1421,7 @@ function Editor({ config, item, onClose, onSave, section, options }: { config: {
                         </select>
                       );
                     })()
-                  : <input ref={(element) => { fieldRefs.current[field.key] = element; }} name={field.key} type={field.type || 'text'} defaultValue={String(item?.[field.key] ?? '')} required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />}
+                 : <input ref={(element) => { fieldRefs.current[field.key] = element; }} name={field.key} type={field.type || 'text'} defaultValue={field.type === 'date' ? dateInputValue(item?.[field.key]) : String(item?.[field.key] ?? '')} required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />}
             </label>
           ))}
         </div>
