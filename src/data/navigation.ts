@@ -57,6 +57,7 @@ export const navigationData: NavItem[] = [
     ],
   },
   { label: 'Mading', href: '/mading' },
+  { label: 'BKK', href: '/bkk' },
   { label: 'SPMB', href: '/spmb', isHighlighted: true },
   { label: 'Kontak', href: '/kontak' },
 ];
