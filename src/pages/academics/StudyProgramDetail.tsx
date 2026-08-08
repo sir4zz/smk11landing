@@ -3,19 +3,51 @@ import { useParams, Link } from 'react-router-dom';
 import { Check, Briefcase, Building, ArrowLeft } from 'lucide-react';
 import PageHero from '../../components/ui/PageHero';
 import type { Program } from '../../lib/content-types';
-import { fetchPublicContentById, resolveImageUrl } from '../../lib/api';
+import { fetchPublicContentByIdResult, resolveImageUrl } from '../../lib/api';
 import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
 
 const StudyProgramDetail: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const [program, setProgram] = useState<Program | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'kompetensi' | 'karir' | 'fasilitas'>('overview');
 
   useEffect(() => {
     setProgram(null);
-    if (slug) fetchPublicContentById<Program>('programs', slug).then(setProgram);
+    setLoading(true);
+    setError(null);
+    if (!slug) {
+      setLoading(false);
+      return;
+    }
+
+    fetchPublicContentByIdResult<Program>('programs', slug)
+      .then(({ data, error: responseError }) => {
+        setProgram(data);
+        setError(responseError?.message ?? null);
+      })
+      .finally(() => setLoading(false));
   }, [slug]);
+
+  if (loading) {
+    return <div className="min-h-screen bg-[#FAF6F0]" />;
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#FAF6F0] flex flex-col items-center justify-center p-4">
+        <h1 className="text-4xl font-bold text-[#1B2A4A] mb-4">Gagal Memuat Program</h1>
+        <p className="text-[#23314D] mb-8">{error}</p>
+        <Link to="/akademik/program-keahlian">
+          <Button className="bg-[#1B2A4A] text-[#FAF6F0] hover:bg-[#15203a]">
+            Kembali ke Daftar Program
+          </Button>
+        </Link>
+      </div>
+    );
+  }
 
   if (!program) {
     return (

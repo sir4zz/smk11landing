@@ -1,8 +1,9 @@
 import type { SpmbContent } from './content-types';
 
-const apiBaseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/$/, '') + '/api';
+const configuredApiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/$/, '');
+const apiBaseUrl = configuredApiUrl.endsWith('/api') ? configuredApiUrl : `${configuredApiUrl}/api`;
 
-const apiOrigin = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/$/, '');
+const apiOrigin = configuredApiUrl.replace(/\/api$/, '');
 
 export function resolveImageUrl(url: string): string {
   if (!url) return '';
@@ -54,7 +55,7 @@ export function youtubeThumbnailUrl(url: string): string {
 export { apiBaseUrl };
 
 type ApiError = { message?: string; [key: string]: unknown } | null;
-type ApiResponse<T> = { data: T | null; error: ApiError; count?: number | null; meta?: unknown };
+type ApiResponse<T> = { data: T | null; error: ApiError; status?: number; count?: number | null; meta?: unknown };
 type ApiResult<T> = Promise<ApiResponse<T>>;
 type Filter = { key: string; value: unknown };
 
@@ -104,9 +105,10 @@ async function request<T>(path: string, options: RequestInit = {}): ApiResult<T>
     });
     const body = await response.json().catch(() => null);
     if (!response.ok) {
-      return { data: null, error: body?.error ?? body ?? { message: 'Permintaan ke server gagal.' } };
+      return { data: null, status: response.status, error: body?.error ?? body ?? { message: 'Permintaan ke server gagal.' } };
     }
-    const result = { data: (body?.data ?? body) as T, error: body?.error ?? null, count: body?.count, meta: body?.meta };
+    const payload = body && Object.prototype.hasOwnProperty.call(body, 'data') ? body.data : body;
+    const result = { data: payload as T, status: response.status, error: body?.error ?? null, count: body?.count, meta: body?.meta };
     if (cacheable) responseCache.set(cacheKey, { expiresAt: Date.now() + PUBLIC_CACHE_TTL, value: result });
     return result;
   } catch {
@@ -209,9 +211,22 @@ export const backendApi: any = {
 };
 
 const contentPath: Record<string, string> = { news: 'news', programs: 'programs', facilities: 'facilities', staff: 'staff', achievements: 'achievements', teacherActivities: 'teacher-activities', educationStaff: 'education-staff' };
-function normalizeContentRows<T>(type: string, rows: unknown[]): T { return (type === 'programs' ? rows.map((row) => { const program = row as Record<string, unknown>; return { ...program, shortName: program.shortName ?? program.short_name, shortDescription: program.shortDescription ?? program.short_description, careerProspects: program.careerProspects ?? program.career_prospects }; }) : rows) as T; }
+function normalizeProgram(row: unknown): unknown {
+  const program = row as Record<string, unknown>;
+  return {
+    ...program,
+    shortName: program.shortName ?? program.short_name,
+    shortDescription: program.shortDescription ?? program.short_description,
+    competencies: program.competencies ?? [],
+    careerProspects: program.careerProspects ?? program.career_prospects ?? [],
+    facilities: program.facilities ?? [],
+  };
+}
+function normalizeContentRow<T>(type: string, row: unknown): T { return (type === 'programs' ? normalizeProgram(row) : row) as T; }
+function normalizeContentRows<T>(type: string, rows: unknown[]): T { return (type === 'programs' ? rows.map(normalizeProgram) : rows) as T; }
 export async function fetchPublicContent<T>(type: string): Promise<T> { const path = contentPath[type]; if (!path) return [] as T; const result = await request<unknown[]>(`/${path}`); return result.data ? normalizeContentRows<T>(type, result.data) : [] as T; }
-export async function fetchPublicContentById<T extends { slug?: string }>(type: string, slug: string): Promise<T | null> { const path = contentPath[type]; if (!path) return null; const result = await request<T>(`/${path}/${encodeURIComponent(slug)}`); return result.data ?? null; }
+export async function fetchPublicContentByIdResult<T extends { slug?: string }>(type: string, slug: string): Promise<{ data: T | null; error: ApiError }> { const path = contentPath[type]; if (!path) return { data: null, error: { message: 'Konten tidak tersedia.' } }; const result = await request<unknown>(`/${path}/${encodeURIComponent(slug)}`); return { data: result.data ? normalizeContentRow<T>(type, result.data) : null, error: result.status === 404 ? null : result.error }; }
+export async function fetchPublicContentById<T extends { slug?: string }>(type: string, slug: string): Promise<T | null> { return (await fetchPublicContentByIdResult<T>(type, slug)).data; }
 function normalizeSpmbContent(row: Record<string, unknown>): SpmbContent { return { id: row.id as string | undefined, status: (row.status as SpmbContent['status']) || 'ditutup', title: String(row.title ?? ''), description: String(row.description ?? ''), latest_info: String(row.latest_info ?? ''), requirements: Array.isArray(row.requirements) ? row.requirements as string[] : [], schedule: Array.isArray(row.schedule) ? row.schedule as SpmbContent['schedule'] : [], flow_steps: Array.isArray(row.flow_steps) ? row.flow_steps as SpmbContent['flow_steps'] : [], faq: Array.isArray(row.faq) ? row.faq as SpmbContent['faq'] : [], portal_url: String(row.portal_url ?? ''), banner_image: String(row.banner_image ?? ''), banner_title: String(row.banner_title ?? ''), banner_description: String(row.banner_description ?? ''), updated_at: row.updated_at as string | undefined }; }
 export async function fetchSpmbContent(): Promise<SpmbContent | null> { const result = await request<Record<string, unknown>>('/spmb'); return result.data ? normalizeSpmbContent(result.data) : null; }
 async function fetchFromApi<T>(path: string): Promise<T> { const result = await request<T>(path); return result.data ?? ([] as T); }
