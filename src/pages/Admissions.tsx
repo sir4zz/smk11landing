@@ -15,12 +15,11 @@ import {
 } from 'lucide-react';
 import { fetchSpmbContent } from '../lib/api';
 import {
-  defaultSpmbContent,
-  scheduleCategoryLabels,
   type SpmbContent,
   type SpmbFaqItem,
   type SpmbScheduleItem,
-} from '../data/spmb';
+} from '../lib/content-types';
+import { scheduleCategoryLabels } from '../lib/ui-constants';
 
 function FaqAccordion({ items }: { items: SpmbFaqItem[] }) {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
@@ -131,7 +130,7 @@ function RegisterButton({ content }: { content: SpmbContent }) {
 }
 
 const Admissions: React.FC = () => {
-  const [content, setContent] = useState<SpmbContent>(defaultSpmbContent);
+  const [content, setContent] = useState<SpmbContent | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -149,7 +148,8 @@ const Admissions: React.FC = () => {
     );
   }
 
-  const dummyImage = 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=1600&q=80';
+  if (!content) return <div className="min-h-screen bg-[#FAF6F0]" />;
+  const dummyImage = content.banner_image;
 
   return (
     <div className="min-h-screen bg-[#FAF6F0]">

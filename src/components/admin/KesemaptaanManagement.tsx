@@ -3,7 +3,7 @@ import type { ChangeEvent, ReactNode } from 'react';
 import { Plus, Pencil, Trash2, X, Save, Loader2, LayoutGrid, CalendarDays, Clock, User, Trophy } from 'lucide-react';
 import { backendApi } from '../../lib/api';
 import { can } from '../../lib/permissions';
-import type { KesemaptaanProfile, KesemaptaanActivity, KesemaptaanSchedule, KesemaptaanInstructor, KesemaptaanAchievement } from '../../data/kesemaptaan';
+import type { KesemaptaanProfile, KesemaptaanActivity, KesemaptaanSchedule, KesemaptaanInstructor, KesemaptaanAchievement } from '../../lib/content-types';
 import ImageField from './ImageField';
 
 type Tab = 'profile' | 'activities' | 'schedules' | 'instructors' | 'achievements';

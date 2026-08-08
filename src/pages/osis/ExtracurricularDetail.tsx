@@ -4,40 +4,25 @@ import { useParams, Link } from 'react-router-dom';
 import PageHero from '../../components/ui/PageHero';
 import { LoadingInline } from '../../components/ui/LoadingScreen';
 import { fetchExtracurricularBySlug } from '../../lib/api';
-import { extracurriculars } from '../../data/extracurriculars';
 import type { ExtracurricularRecord } from './Extracurriculars';
 import { User, Clock, MapPin, Trophy, ChevronLeft, ImageIcon } from 'lucide-react';
 
-function toSeed(slug: string): ExtracurricularRecord {
-  const found = extracurriculars.find((e) => e.name.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/[\s_-]+/g, '-').replace(/^-+|-+$/g, '') === slug);
-  return {
-    ...(found ?? extracurriculars[0]),
-    slug,
-    schedule: found?.meetingDay ?? '',
-    place: 'Sekolah SMKN 11',
-    achievements: [],
-    documentation: [],
-    status: 'published',
-  };
-}
-
 const ExtracurricularDetail: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
-  const fallback = toSeed(slug ?? '');
-  const [item, setItem] = useState<ExtracurricularRecord>(fallback);
+  const [item, setItem] = useState<ExtracurricularRecord | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
-    fetchExtracurricularBySlug(slug ?? '', fallback).then((data) => {
+    fetchExtracurricularBySlug<ExtracurricularRecord>(slug ?? '').then((data) => {
       if (!active) return;
       setItem(data);
       setLoading(false);
     });
     return () => { active = false; };
-  }, [slug, fallback]);
+  }, [slug]);
 
-  if (loading) {
+  if (loading || !item) {
     return (
       <div className="min-h-screen bg-[#FAF6F0]">
         <PageHero title="Ekstrakurikuler" subtitle="Detail kegiatan ekstrakurikuler" breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'OSIS', href: '/osis' }, { label: 'Ekstrakurikuler', href: '/osis/ekstrakurikuler' }]} />

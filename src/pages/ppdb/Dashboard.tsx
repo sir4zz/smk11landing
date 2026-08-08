@@ -7,7 +7,7 @@ import {
   LogOut, User, FileText, CheckCircle2, Clock, AlertCircle,
   ArrowRight, Upload, Save, Send, Home, Trash2
 } from 'lucide-react'
-import { programs } from '../../data/programs'
+import { fetchPublicContent } from '../../lib/api'
 import logoSekolah from '../../assets/logo.png'
 
 type Tab = 'biodata' | 'dokumen' | 'review' | 'status'
@@ -32,6 +32,7 @@ export default function Dashboard() {
   const [registration, setRegistration] = useState<any>(null)
   const [documents, setDocuments] = useState<any[]>([])
   const [activities, setActivities] = useState<any[]>([])
+  const [programs, setPrograms] = useState<{ id: string; name: string }[]>([])
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [uploading, setUploading] = useState(false)
 
@@ -59,6 +60,7 @@ export default function Dashboard() {
   }
 
   useEffect(() => { if (sessionUser) void fetchData() }, [sessionUser])
+  useEffect(() => { fetchPublicContent<{ id: string; name: string }[]>('programs').then(setPrograms) }, [])
 
   const currentStep: Step = !registration ? 'biodata' as Step
     : !registration.full_name ? 'biodata'

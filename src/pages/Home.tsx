@@ -23,9 +23,7 @@ import Button from '../components/ui/Button';
 import SectionHeading from '../components/ui/SectionHeading';
 import StatsBar from '../components/ui/StatsBar';
 import Card from '../components/ui/Card';
-import { programs } from '../data/programs';
-import { news, isImportedNews } from '../data/news';
-import { achievements } from '../data/achievements';
+import { isImportedNews } from '../lib/content-types';
 import { fetchPublicContent, fetchGalleries, resolveImageUrl, type GalleryRow } from '../lib/api';
 
 const getProgramIcon = (slug: string) => {
@@ -55,9 +53,9 @@ const heroImages = [
 
 const Home: React.FC = () => {
   const [activeImage, setActiveImage] = useState(0);
-  const [publicPrograms, setPublicPrograms] = useState(programs);
-  const [publicNews, setPublicNews] = useState(news);
-  const [publicAchievements, setPublicAchievements] = useState(achievements);
+  const [publicPrograms, setPublicPrograms] = useState<any[]>([]);
+  const [publicNews, setPublicNews] = useState<any[]>([]);
+  const [publicAchievements, setPublicAchievements] = useState<any[]>([]);
   const [gallery, setGallery] = useState<GalleryRow[]>([]);
   const [galleryLoading, setGalleryLoading] = useState(true);
   const [stats] = useState([
@@ -68,9 +66,9 @@ const Home: React.FC = () => {
   ]);
 
   useEffect(() => {
-    fetchPublicContent('programs', programs).then(setPublicPrograms);
-    fetchPublicContent('news', news).then(setPublicNews);
-    fetchPublicContent('achievements', achievements).then(setPublicAchievements);
+    fetchPublicContent<any[]>('programs').then(setPublicPrograms);
+    fetchPublicContent<any[]>('news').then(setPublicNews);
+    fetchPublicContent<any[]>('achievements').then(setPublicAchievements);
     fetchGalleries({ page: 1, limit: 8 })
       .then(({ rows }) => setGallery(rows))
       .catch(() => {})

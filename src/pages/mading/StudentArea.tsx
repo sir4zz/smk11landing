@@ -8,7 +8,7 @@ import type { MadingPostRow } from '../../lib/api';
 import PageHero from '../../components/ui/PageHero';
 import AIContentAssistant, { AiNote } from '../../components/mading/AIContentAssistant';
 import ImageField from '../../components/admin/ImageField';
-import { MADING_STATUSES } from '../../data/mading';
+import { MADING_STATUSES } from '../../lib/ui-constants';
 
 const studentSessionKey = 'smkn11-student-session';
 

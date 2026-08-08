@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from 'react'
 import PageHero from '../../components/ui/PageHero'
-import { extracurriculars, type Extracurricular } from '../../data/extracurriculars'
+import { fetchExtracurriculars } from '../../lib/api'
+
+interface ExtracurricularRecord {
+  id?: string; name: string; category: string; description: string; photo: string; advisor: string; meetingDay: string;
+}
 import { CalendarDays, User, Clock } from 'lucide-react'
 
 const Extracurriculars: React.FC = () => {
-  const [items, setItems] = useState<Extracurricular[]>(extracurriculars)
+  const [items, setItems] = useState<ExtracurricularRecord[]>([])
   const [filter, setFilter] = useState<string>('Semua')
-  useEffect(() => { setItems(extracurriculars) }, [])
+  useEffect(() => { fetchExtracurriculars<ExtracurricularRecord[]>().then(setItems) }, [])
 
   const categories = ['Semua', ...new Set(items.map((e) => e.category))]
   const filtered = filter === 'Semua' ? items : items.filter((e) => e.category === filter)

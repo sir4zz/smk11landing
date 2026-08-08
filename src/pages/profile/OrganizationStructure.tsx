@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import PageHero from '../../components/ui/PageHero';
 import { User } from 'lucide-react';
-import { staffData, type Staff } from '../../data/staff';
+import type { Staff } from '../../lib/content-types';
 import { fetchPublicContent, publicProfileApi, type PublicDirectoryEntry } from '../../lib/api';
 
 interface Person {
@@ -11,7 +11,7 @@ interface Person {
   photo?: string;
 }
 
-const principalFallback: Person = staffData.find(item => item.position === 'Kepala Sekolah') || { name: 'Drs. H. Kepala Sekolah, M.Pd.', position: 'Kepala Sekolah', photo: '' };
+const principalFallback: Person = { name: '', position: 'Kepala Sekolah', photo: '' };
 
 const Fallback: React.FC<{ photo?: string; size?: 'lg' | 'md'; alt: string }> = ({ photo, size = 'md', alt }) => (
   <div className={`mx-auto mb-4 ${size === 'lg' ? 'h-32 w-32' : 'h-24 w-24'} flex items-center justify-center overflow-hidden rounded-full bg-[#1B2A4A] text-white ${size === 'lg' ? 'border-4 border-[#C8A951]' : 'border-4 border-[#FAF6F0]'} shadow-sm`}>
@@ -20,10 +20,10 @@ const Fallback: React.FC<{ photo?: string; size?: 'lg' | 'md'; alt: string }> = 
 );
 
 const OrganizationStructure: React.FC = () => {
-  const [staff, setStaff] = useState<Staff[]>(staffData);
+  const [staff, setStaff] = useState<Staff[]>([]);
   const [gurus, setGurus] = useState<PublicDirectoryEntry[]>([]);
   useEffect(() => {
-    void fetchPublicContent('staff', staffData).then(setStaff);
+    void fetchPublicContent<Staff[]>('staff').then(setStaff);
     publicProfileApi.directory().then(({ data }) => { if (data) setGurus(data.gurus); });
   }, []);
 

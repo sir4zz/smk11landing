@@ -3,17 +3,16 @@ import PageHero from '../../components/ui/PageHero';
 import SectionHeading from '../../components/ui/SectionHeading';
 import { LoadingInline } from '../../components/ui/LoadingScreen';
 import { fetchOsisActivities, resolveImageUrl } from '../../lib/api';
-import { defaultOsisActivities } from '../../data/osis';
-import type { OsisActivity } from '../../data/osis';
+import type { OsisActivity } from '../../lib/content-types';
 import { Award, CalendarDays, Sparkles } from 'lucide-react';
 
 const OsisKegiatan: React.FC = () => {
-  const [activities, setActivities] = useState<OsisActivity[]>(defaultOsisActivities);
+  const [activities, setActivities] = useState<OsisActivity[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
-    fetchOsisActivities(defaultOsisActivities).then((data) => {
+    fetchOsisActivities<OsisActivity[]>().then((data) => {
       if (!active) return;
       setActivities(data.filter((item) => item.status === 'published'));
       setLoading(false);

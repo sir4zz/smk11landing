@@ -2,24 +2,18 @@ import React, { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import PageHero from '../../components/ui/PageHero'
 import Button from '../../components/ui/Button'
-import { news, isImportedNews, type NewsItem } from '../../data/news'
+import { isImportedNews, type NewsItem } from '../../lib/content-types'
 import { fetchPublicContentById } from '../../lib/api'
 import { Calendar, User, ArrowLeft, Share2 } from 'lucide-react'
 
 const NewsDetail: React.FC = () => {
   const { slug } = useParams<{ slug: string }>()
-  const [item, setItem] = useState<NewsItem | undefined>(
-    news.find((n) => n.slug === slug)
-  )
+  const [item, setItem] = useState<NewsItem | null>(null)
 
   useEffect(() => {
-    fetchPublicContentById<NewsItem>('news', slug || '', undefined as unknown as NewsItem)
+    fetchPublicContentById<NewsItem>('news', slug || '')
       .then((apiItem) => {
         if (apiItem) setItem(apiItem)
-        else {
-          const localItem = news.find((n) => n.slug === slug)
-          if (localItem) setItem(localItem)
-        }
       })
   }, [slug])
 
@@ -43,7 +37,7 @@ const NewsDetail: React.FC = () => {
     )
   }
 
-  const otherNews = news.filter((n) => n.slug !== slug).slice(0, 3)
+  const otherNews: NewsItem[] = []
 
   return (
     <div className="min-h-screen bg-[#FAF6F0]">

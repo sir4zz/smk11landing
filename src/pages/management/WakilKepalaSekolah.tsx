@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import PageHero from '../../components/ui/PageHero';
 import SectionHeading from '../../components/ui/SectionHeading';
-import { staffData, type Staff } from '../../data/staff';
+import type { Staff } from '../../lib/content-types';
 import { fetchPublicContent } from '../../lib/api';
 import { PersonAvatar, EmptyState } from './ManagementShared';
 
 const WakilKepalaSekolah: React.FC = () => {
-  const [staff, setStaff] = useState<Staff[]>(staffData);
+  const [staff, setStaff] = useState<Staff[]>([]);
   useEffect(() => {
-    fetchPublicContent('staff', staffData).then(setStaff);
+    fetchPublicContent<Staff[]>('staff').then(setStaff);
   }, []);
 
   const vicePrincipals = staff.filter((item) => item.position.startsWith('Wakil'));

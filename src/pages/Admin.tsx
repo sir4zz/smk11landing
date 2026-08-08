@@ -3,14 +3,7 @@ import type { FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { BarChart3, BookOpen, Briefcase, Building2, CalendarDays, FileText, GraduationCap, LogOut, Mail, Menu, Pencil, Plus, Trophy, Trash2, Upload, Users, X, Save, ShieldCheck, UsersRound, Dumbbell, Newspaper, UserCog, Camera, UserRound } from 'lucide-react';
 import logoSekolah from '../assets/logo.png';
-import { news as initialNews } from '../data/news';
-import { programs as initialPrograms } from '../data/programs';
-import { facilities as initialFacilities } from '../data/facilities';
-import { staffData as initialStaff } from '../data/staff';
-import { achievements as initialAchievements } from '../data/achievements';
-import { teacherActivities as initialTeacherActivities } from '../data/teacherActivities';
-import { educationStaff as initialEducationStaff } from '../data/educationStaff';
-import { defaultSpmbContent, type SpmbContent, type SpmbFaqItem, type SpmbFlowStep, type SpmbScheduleItem } from '../data/spmb';
+import type { SpmbContent, SpmbFaqItem, SpmbFlowStep, SpmbScheduleItem } from '../lib/content-types';
 import { backendApi, apiBaseUrl, resolveImageUrl } from '../lib/api';
 import { LoadingInline } from '../components/ui/LoadingScreen';
 import ImportModal from '../components/admin/ImportModal';
@@ -61,13 +54,7 @@ const TABLE_MAP: Record<string, string> = {
 };
 
 const seed = {
-  news: initialNews,
-  programs: initialPrograms,
-  facilities: initialFacilities,
-  staff: initialStaff,
-  achievements: initialAchievements,
-  teacherActivities: initialTeacherActivities,
-  educationStaff: initialEducationStaff,
+  news: [] as Item[], programs: [] as Item[], facilities: [] as Item[], staff: [] as Item[], achievements: [] as Item[], teacherActivities: [] as Item[], educationStaff: [] as Item[],
   contact: [] as Item[],
 };
 
@@ -95,14 +82,14 @@ function normalizeSpmbRow(row: Record<string, unknown>): SpmbContent {
   return {
     id: row.id as string | undefined,
     status: (row.status as SpmbContent['status']) || 'ditutup',
-    title: String(row.title ?? defaultSpmbContent.title),
+    title: String(row.title ?? ''),
     description: String(row.description ?? ''),
     latest_info: String(row.latest_info ?? ''),
     requirements: Array.isArray(row.requirements) ? (row.requirements as string[]) : [],
     schedule: Array.isArray(row.schedule) ? (row.schedule as SpmbScheduleItem[]) : [],
     flow_steps: Array.isArray(row.flow_steps) ? (row.flow_steps as SpmbFlowStep[]) : [],
     faq: Array.isArray(row.faq) ? (row.faq as SpmbFaqItem[]) : [],
-    portal_url: String(row.portal_url ?? defaultSpmbContent.portal_url),
+    portal_url: String(row.portal_url ?? ''),
     banner_image: String(row.banner_image ?? ''),
     banner_title: String(row.banner_title ?? ''),
     banner_description: String(row.banner_description ?? ''),
@@ -928,7 +915,7 @@ function PPDBDetail({ data, onClose, onUpdateStatus, onVerifyDoc }: {
 */
 
 function SPMBManagement() {
-  const [content, setContent] = useState<SpmbContent>(defaultSpmbContent);
+  const [content, setContent] = useState<SpmbContent | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -943,7 +930,7 @@ function SPMBManagement() {
   }, []);
 
   const update = <K extends keyof SpmbContent>(key: K, value: SpmbContent[K]) => {
-    setContent((current) => ({ ...current, [key]: value }));
+    setContent((current) => current ? { ...current, [key]: value } : null);
   };
 
   const save = async (event: FormEvent<HTMLFormElement>) => {
@@ -956,6 +943,7 @@ function SPMBManagement() {
       setSaving(false);
       return;
     }
+    if (!content) return;
     const { id, ...payload } = content;
     try {
       let dbError;
@@ -980,6 +968,7 @@ function SPMBManagement() {
   };
 
   if (loading) return <LoadingInline />;
+  if (!content) return <p className="rounded-xl bg-white p-6 text-[#5B7088]">Data SPMB belum tersedia.</p>;
 
   return (
     <form onSubmit={save} className="mx-auto max-w-5xl space-y-6">

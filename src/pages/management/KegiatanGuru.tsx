@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import PageHero from '../../components/ui/PageHero';
 import SectionHeading from '../../components/ui/SectionHeading';
-import { teacherActivities, type TeacherActivity } from '../../data/teacherActivities';
+import type { TeacherActivity } from '../../lib/content-types';
 import { fetchPublicContent, resolveImageUrl } from '../../lib/api';
 import { Calendar, CalendarDays } from 'lucide-react';
 import { EmptyState, formatDate } from './ManagementShared';
 
 const KegiatanGuru: React.FC = () => {
-  const [items, setItems] = useState<TeacherActivity[]>(teacherActivities);
+  const [items, setItems] = useState<TeacherActivity[]>([]);
   const [filterCategory, setFilterCategory] = useState<string>('Semua');
   useEffect(() => {
-    fetchPublicContent('teacherActivities', teacherActivities).then(setItems);
+    fetchPublicContent<TeacherActivity[]>('teacherActivities').then(setItems);
   }, []);
 
   const categories = ['Semua', ...new Set(items.map((item) => item.category).filter(Boolean))];
