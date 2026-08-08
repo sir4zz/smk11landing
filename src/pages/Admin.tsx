@@ -78,6 +78,23 @@ const FIELD_OPTION_PRESETS: Record<string, string[]> = {
   rank: ['Juara 1', 'Juara 2', 'Juara 3', 'Medali Emas', 'Medali Perak', 'Medali Perunggu', 'Harapan', 'Peserta', 'Partisipasi'],
 };
 
+function dateInputValue(value: unknown): string {
+  const raw = String(value ?? '').trim();
+  if (!raw) return '';
+  return raw.match(/^(\d{4}-\d{2}-\d{2})/)?.[1] ?? '';
+}
+
+function formatDateValue(value: unknown): string {
+  const dateValue = dateInputValue(value);
+  if (!dateValue) return String(value ?? '-');
+
+  const [year, month, day] = dateValue.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  return Number.isNaN(date.getTime())
+    ? String(value ?? '-')
+    : date.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+}
+
 function normalizeSpmbRow(row: Record<string, unknown>): SpmbContent {
   return {
     id: row.id as string | undefined,
@@ -525,6 +542,10 @@ function Table({ items, config, onEdit, onDelete }: { items: Item[]; config: { f
 
     if (field.key === 'source_label') {
       return <span className="text-[#23314D]">{String(item[field.key] ?? 'Berita mandiri')}</span>;
+    }
+
+    if (field.key === 'date') {
+      return formatDateValue(item[field.key]);
     }
 
     return String(item[field.key] ?? '-');
@@ -1400,7 +1421,7 @@ function Editor({ config, item, onClose, onSave, section, options }: { config: {
                         </select>
                       );
                     })()
-                  : <input ref={(element) => { fieldRefs.current[field.key] = element; }} name={field.key} type={field.type || 'text'} defaultValue={String(item?.[field.key] ?? '')} required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />}
+                 : <input ref={(element) => { fieldRefs.current[field.key] = element; }} name={field.key} type={field.type || 'text'} defaultValue={field.type === 'date' ? dateInputValue(item?.[field.key]) : String(item?.[field.key] ?? '')} required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />}
             </label>
           ))}
         </div>
