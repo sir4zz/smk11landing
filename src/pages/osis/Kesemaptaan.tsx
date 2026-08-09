@@ -3,26 +3,21 @@ import PageHero from '../../components/ui/PageHero';
 import SectionHeading from '../../components/ui/SectionHeading';
 import { LoadingInline } from '../../components/ui/LoadingScreen';
 import { fetchKesemaptaanProfile, fetchKesemaptaanActivities, fetchKesemaptaanSchedules, fetchKesemaptaanInstructors, fetchKesemaptaanAchievements, resolveImageUrl } from '../../lib/api';
-import { defaultKesemaptaanProfile, defaultKesemaptaanActivities, defaultKesemaptaanSchedules, defaultKesemaptaanInstructors, defaultKesemaptaanAchievements } from '../../data/kesemaptaan';
-import type { KesemaptaanProfile, KesemaptaanActivity, KesemaptaanSchedule, KesemaptaanInstructor, KesemaptaanAchievement } from '../../data/kesemaptaan';
+import type { KesemaptaanProfile, KesemaptaanActivity, KesemaptaanSchedule, KesemaptaanInstructor, KesemaptaanAchievement } from '../../lib/content-types';
 import { CalendarDays, User, Trophy, Shield } from 'lucide-react';
 
 const Kesemaptaan: React.FC = () => {
-  const [profile, setProfile] = useState<KesemaptaanProfile>(defaultKesemaptaanProfile);
-  const [activities, setActivities] = useState<KesemaptaanActivity[]>(defaultKesemaptaanActivities);
-  const [schedules, setSchedules] = useState<KesemaptaanSchedule[]>(defaultKesemaptaanSchedules);
-  const [instructors, setInstructors] = useState<KesemaptaanInstructor[]>(defaultKesemaptaanInstructors);
-  const [achievements, setAchievements] = useState<KesemaptaanAchievement[]>(defaultKesemaptaanAchievements);
+  const [profile, setProfile] = useState<KesemaptaanProfile | null>(null);
+  const [activities, setActivities] = useState<KesemaptaanActivity[]>([]);
+  const [schedules, setSchedules] = useState<KesemaptaanSchedule[]>([]);
+  const [instructors, setInstructors] = useState<KesemaptaanInstructor[]>([]);
+  const [achievements, setAchievements] = useState<KesemaptaanAchievement[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
     Promise.all([
-      fetchKesemaptaanProfile(defaultKesemaptaanProfile),
-      fetchKesemaptaanActivities(defaultKesemaptaanActivities),
-      fetchKesemaptaanSchedules(defaultKesemaptaanSchedules),
-      fetchKesemaptaanInstructors(defaultKesemaptaanInstructors),
-      fetchKesemaptaanAchievements(defaultKesemaptaanAchievements),
+      fetchKesemaptaanProfile<KesemaptaanProfile>(), fetchKesemaptaanActivities<KesemaptaanActivity[]>(), fetchKesemaptaanSchedules<KesemaptaanSchedule[]>(), fetchKesemaptaanInstructors<KesemaptaanInstructor[]>(), fetchKesemaptaanAchievements<KesemaptaanAchievement[]>(),
     ]).then(([p, a, s, i, c]) => {
       if (!active) return;
       setProfile(p);
@@ -35,7 +30,7 @@ const Kesemaptaan: React.FC = () => {
     return () => { active = false; };
   }, []);
 
-  if (loading) {
+  if (loading || !profile) {
     return (
       <div className="min-h-screen bg-[#FAF6F0]">
         <PageHero title="Kesemaptaan" subtitle="Pembinaan kedisiplinan, fisik, dan karakter siswa" breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'OSIS', href: '/osis' }, { label: 'Kesemaptaan' }]} />

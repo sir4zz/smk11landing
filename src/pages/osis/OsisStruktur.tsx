@@ -3,19 +3,18 @@ import PageHero from '../../components/ui/PageHero';
 import SectionHeading from '../../components/ui/SectionHeading';
 import { LoadingInline } from '../../components/ui/LoadingScreen';
 import { fetchOsisMembers, resolveImageUrl } from '../../lib/api';
-import { defaultOsisMembers } from '../../data/osis';
-import type { OsisMember } from '../../data/osis';
+import type { OsisMember } from '../../lib/content-types';
 import { Users, Target } from 'lucide-react';
 
 const positionOrder = ['Ketua', 'Wakil Ketua', 'Sekretaris', 'Bendahara', 'Ketua Bidang'];
 
 const OsisStruktur: React.FC = () => {
-  const [members, setMembers] = useState<OsisMember[]>(defaultOsisMembers);
+  const [members, setMembers] = useState<OsisMember[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
-    fetchOsisMembers(defaultOsisMembers).then((data) => {
+    fetchOsisMembers<OsisMember[]>().then((data) => {
       if (!active) return;
       setMembers(data);
       setLoading(false);

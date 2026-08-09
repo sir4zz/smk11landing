@@ -4,8 +4,7 @@ import PageHero from '../../components/ui/PageHero';
 import SectionHeading from '../../components/ui/SectionHeading';
 import { LoadingInline } from '../../components/ui/LoadingScreen';
 import { fetchOsisProfile } from '../../lib/api';
-import { defaultOsisProfile } from '../../data/osis';
-import type { OsisProfile } from '../../data/osis';
+import type { OsisProfile } from '../../lib/content-types';
 import { ArrowRight, BookOpen, CalendarDays, Dumbbell, Eye, Globe, Heart, Megaphone, Palette, Sparkles, Target, Users } from 'lucide-react';
 import logoSekolah from '../../assets/logo.png';
 
@@ -27,12 +26,12 @@ const bidangSeksi: { name: string; desc: string; icon: typeof Heart }[] = [
 ];
 
 const Osis: React.FC = () => {
-  const [profile, setProfile] = useState<OsisProfile>(defaultOsisProfile);
+  const [profile, setProfile] = useState<OsisProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
-    fetchOsisProfile(defaultOsisProfile).then((data) => {
+    fetchOsisProfile<OsisProfile>().then((data) => {
       if (!active) return;
       setProfile(data);
       setLoading(false);
@@ -40,7 +39,7 @@ const Osis: React.FC = () => {
     return () => { active = false; };
   }, []);
 
-  if (loading) {
+  if (loading || !profile) {
     return (
       <div className="min-h-screen bg-[#FAF6F0]">
         <PageHero title="OSIS" subtitle="Organisasi Siswa Intra Sekolah SMKN 11 Kabupaten Tangerang" breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'OSIS' }]} />

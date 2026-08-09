@@ -57,8 +57,9 @@ class ContentCrudController extends Controller
         return response()->json($query->get());
     }
 
-    public function show(Request $request, string $type, string $slug)
+    public function show(Request $request, string $slug)
     {
+        $type = (string) $request->route('type');
         $model = $this->resolveModel($type);
 
         $row = $model::query()->where('slug', $slug)->first();

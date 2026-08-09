@@ -12,7 +12,7 @@ class OsisController extends Controller
     // ---------- PROFILE ----------
     public function profile()
     {
-        return response()->json(Osis::query()->orderBy('created_at')->first());
+        return response()->json(Osis::query()->orderBy('updated_at')->first());
     }
 
     public function storeProfile(Request $request)

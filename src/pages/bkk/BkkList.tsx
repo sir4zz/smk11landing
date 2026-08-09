@@ -1,8 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import PageHero from '../../components/ui/PageHero'
-import { jobs as fallbackJobs } from '../../data/jobs'
-import { programs as fallbackPrograms, type Program } from '../../data/programs'
 import { fetchPublicContent } from '../../lib/api'
 import {
   fetchJobVacancies,
@@ -30,8 +28,8 @@ const employmentStyles: Record<JobEmploymentType, string> = {
 }
 
 const BkkList: React.FC = () => {
-  const [rows, setRows] = useState<JobVacancyRow[]>(fallbackJobs)
-  const [meta, setMeta] = useState({ total: fallbackJobs.length, page: 1, last_page: 1 })
+  const [rows, setRows] = useState<JobVacancyRow[]>([])
+  const [meta, setMeta] = useState({ total: 0, page: 1, last_page: 1 })
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
 
@@ -50,7 +48,7 @@ const BkkList: React.FC = () => {
         setCityOptions([...new Set(all.map((r) => r.city).filter(Boolean))] as string[])
       })
       .catch(() => {})
-    fetchPublicContent<Program[]>('programs', fallbackPrograms)
+    fetchPublicContent<any[]>('programs')
       .then((progs) => setMajorOptions(progs.map((p) => p.shortName).filter(Boolean)))
       .catch(() => {})
   }, [])
@@ -68,7 +66,7 @@ const BkkList: React.FC = () => {
         limit: PAGE_SIZE,
       })
         .then(({ rows, meta }) => {
-          setRows(rows.length ? rows : fallbackJobs.slice(0, PAGE_SIZE))
+           setRows(rows)
           setMeta({ total: meta.total, page: meta.page, last_page: meta.last_page })
         })
         .finally(() => setLoading(false))
