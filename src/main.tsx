@@ -11,6 +11,8 @@ link.setAttribute('type', 'image/png')
 link.setAttribute('href', logoSekolah)
 document.head.appendChild(link)
 
+window.addEventListener('contextmenu', (e) => e.preventDefault())
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
