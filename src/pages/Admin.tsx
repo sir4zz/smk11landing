@@ -1028,7 +1028,7 @@ function SPMBManagement() {
       <div className="rounded-xl bg-white p-6 shadow-sm">
         <h3 className="mb-4 text-lg font-bold">Banner SPMB</h3>
         <div className="grid gap-4 md:grid-cols-2">
-          <Field label="URL gambar banner" type="url" value={content.banner_image} onChange={(value) => update('banner_image', value)} />
+          <div className="md:col-span-2"><ImageField label="Gambar banner" value={content.banner_image} onChange={(url) => update('banner_image', url)} hint="Unggah file gambar atau tempel URL." /></div>
           <Field label="Judul banner" value={content.banner_title} onChange={(value) => update('banner_title', value)} />
           <div className="md:col-span-2"><Field label="Deskripsi banner" multiline value={content.banner_description} onChange={(value) => update('banner_description', value)} /></div>
         </div>
@@ -1325,11 +1325,32 @@ function HomeContentFields({ data, onChange }: { data: Record<string, any>; onCh
       {input('Akreditasi', 'hero', 'accreditation')}
       {input('Judul fasilitas', 'hero', 'facility_title')}
       {input('Deskripsi fasilitas', 'hero', 'facility_description', true)}
-      {input('URL gambar (maksimal 3, satu per baris)', 'hero', 'images', true)}
+      {(() => {
+        const heroImages = Array.isArray(data.hero?.images) ? data.hero.images : [];
+        const setHeroImage = (index: number, url: string) => {
+          const images = [...heroImages];
+          while (images.length < index) images.push('');
+          images[index] = url;
+          onChange({ ...data, hero: { ...(data.hero ?? {}), images: images.filter((url) => String(url).trim()) } });
+        };
+        return (
+          <div className="space-y-3">
+            {[0, 1, 2].map((index) => (
+              <ImageField
+                key={index}
+                label={`Gambar hero ${index + 1}`}
+                value={heroImages[index] ?? ''}
+                onChange={(url) => setHeroImage(index, url)}
+              />
+            ))}
+            <p className="text-xs font-normal text-[#5B7088]">Maksimal 3 gambar. Upload file atau tempel URL.</p>
+          </div>
+        );
+      })()}
     </fieldset>
     <fieldset className="space-y-4 rounded-lg border border-[#1B2A4A]/10 p-4">
       <legend className="px-1 font-bold">Sambutan</legend>
-      {input('URL foto', 'welcome', 'image')}
+      <ImageField label="Foto sambutan" value={homeField(data, 'welcome', 'image')} onChange={(url) => onChange({ ...data, welcome: { ...(data.welcome ?? {}), image: url } })} />
       <div className="grid gap-4 sm:grid-cols-2">
         {input('Nama', 'welcome', 'principal_name')}
         {input('Jabatan', 'welcome', 'principal_title')}
