@@ -24,7 +24,7 @@ import SectionHeading from '../components/ui/SectionHeading';
 import StatsBar from '../components/ui/StatsBar';
 import Card from '../components/ui/Card';
 import { isImportedNews } from '../lib/content-types';
-import { fetchPublicContent, fetchGalleries, fetchHomeContent, resolveImageUrl, type GalleryRow, type HomeContent } from '../lib/api';
+import { fetchPublicContent, fetchGalleries, fetchHomeContent, fetchStats, resolveImageUrl, type GalleryRow, type HomeContent } from '../lib/api';
 
 const getProgramIcon = (slug: string) => {
   switch (slug) {
@@ -53,12 +53,14 @@ const Home: React.FC = () => {
   const [gallery, setGallery] = useState<GalleryRow[]>([]);
   const [galleryLoading, setGalleryLoading] = useState(true);
   const [home, setHome] = useState<HomeContent | null>(null);
+  const [stats, setStats] = useState<{ value: string; label: string }[]>([]);
 
   useEffect(() => {
     fetchPublicContent<any[]>('programs').then(setPublicPrograms);
     fetchPublicContent<any[]>('news').then(setPublicNews);
     fetchPublicContent<any[]>('achievements').then(setPublicAchievements);
     fetchHomeContent().then(setHome);
+    fetchStats().then(setStats);
     fetchGalleries({ page: 1, limit: 8 })
       .then(({ rows }) => setGallery(rows))
       .catch(() => {})
@@ -66,8 +68,8 @@ const Home: React.FC = () => {
   }, []);
 
   const heroImages = home?.hero.images ?? [];
-  const statIcons = [Users, GraduationCap, BookOpen, Trophy];
-  const stats = (home?.stats ?? []).map((stat, index) => ({ ...stat, icon: React.createElement(statIcons[index] ?? Users, { className: 'h-6 w-6' }) }));
+  const statIcons = [Users, GraduationCap, BookOpen];
+  const statsWithIcons = (stats ?? []).map((stat, index) => ({ ...stat, icon: React.createElement(statIcons[index] ?? Users, { className: 'h-6 w-6' }) }));
 
   useEffect(() => {
     if (heroImages.length < 2) return;
@@ -329,7 +331,7 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-      <StatsBar stats={stats} />
+      <StatsBar stats={statsWithIcons} />
 
       <section className="bg-[#FAF6F0] py-16 md:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

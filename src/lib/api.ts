@@ -36,6 +36,12 @@ export async function fetchHomeContent(): Promise<HomeContent | null> {
   return (result.data as { data?: HomeContent }).data ?? result.data as HomeContent;
 }
 
+export async function fetchStats(): Promise<{ value: string; label: string }[]> {
+  const result = await request<{ data?: { value: string; label: string }[] }>('/stats');
+  if (!result.data) return [];
+  return result.data;
+}
+
 export function youtubeVideoId(url: string): string | null {
   if (!url) return null;
   const patterns = [

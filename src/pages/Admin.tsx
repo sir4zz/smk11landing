@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { BarChart3, BookOpen, Briefcase, Building2, CalendarDays, FileText, GraduationCap, LogOut, Mail, Menu, Pencil, Plus, Trophy, Trash2, Upload, Users, X, Save, ShieldCheck, UsersRound, Dumbbell, Newspaper, UserCog, Camera, UserRound, Loader2 } from 'lucide-react';
 import logoSekolah from '../assets/logo.png';
 import type { SpmbContent, SpmbFaqItem, SpmbFlowStep, SpmbScheduleItem } from '../lib/content-types';
-import { backendApi, apiBaseUrl, resolveImageUrl } from '../lib/api';
+import { backendApi, apiBaseUrl, resolveImageUrl, fetchStats } from '../lib/api';
 import { LoadingInline } from '../components/ui/LoadingScreen';
 import ImportModal from '../components/admin/ImportModal';
 import ImageField from '../components/admin/ImageField';
@@ -1305,6 +1305,12 @@ function HomeContentManagement() {
 }
 
 function HomeContentFields({ data, onChange }: { data: Record<string, any>; onChange: (data: Record<string, any>) => void }) {
+  const [autoStats, setAutoStats] = useState<{ value: string; label: string }[]>([]);
+
+  useEffect(() => {
+    fetchStats().then(setAutoStats);
+  }, []);
+
   const input = (label: string, section: string, field: string, multiline = false) => {
     const value = homeField(data, section, field);
     const update = (next: string) => onChange({ ...data, [section]: { ...(data[section] ?? {}), [field]: ['images', 'paragraphs'].includes(field) ? next.split('\n').map(line => line.trim()).filter(Boolean) : next } });
@@ -1372,13 +1378,13 @@ function HomeContentFields({ data, onChange }: { data: Record<string, any>; onCh
       {input('Lokasi', 'about', 'location')}
     </fieldset>
     <fieldset className="space-y-4 rounded-lg border border-[#1B2A4A]/10 p-4">
-      <legend className="px-1 font-bold">Statistik</legend>
-      {[0, 1, 2, 3].map(index => <div key={index} className="grid gap-4 sm:grid-cols-2">
+      <legend className="px-1 font-bold">Statistik (Otomatis dari Database)</legend>
+      {autoStats.map((stat, index) => <div key={index} className="grid gap-4 sm:grid-cols-2">
         <label className="block text-sm font-semibold">Value {index + 1}
-           <input value={String(data.stats?.[index]?.value ?? '')} onChange={e => onChange({ ...data, stats: (data.stats ?? []).map((stat: any, i: number) => i === index ? { ...stat, value: e.target.value } : stat) })} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />
+           <input value={stat.value} readOnly className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal bg-gray-50" />
         </label>
         <label className="block text-sm font-semibold">Label
-           <input value={String(data.stats?.[index]?.label ?? '')} onChange={e => onChange({ ...data, stats: (data.stats ?? []).map((stat: any, i: number) => i === index ? { ...stat, label: e.target.value } : stat) })} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />
+           <input value={stat.label} readOnly className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal bg-gray-50" />
         </label>
       </div>)}
     </fieldset>

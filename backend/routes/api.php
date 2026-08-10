@@ -20,6 +20,7 @@ use App\Http\Controllers\ProxyController;
 use App\Http\Controllers\PublicProfileController;
 use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\SpmbController;
+use App\Http\Controllers\StatsController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\DataController;
@@ -82,6 +83,9 @@ Route::get('/kesemaptaan/achievements', [KesemaptaanController::class, 'achievem
 // ---------- MADING ----------
 Route::get('/mading/categories', [MadingController::class, 'categories']);
 Route::get('/mading/posts', [MadingController::class, 'index']);
+
+// ---------- STATS ----------
+Route::get('/stats', [StatsController::class, 'index']);
 
 // ---------- FAQ ----------
 Route::get('/faqs', [FaqController::class, 'index']);
