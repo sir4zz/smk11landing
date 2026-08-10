@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { BarChart3, BookOpen, Briefcase, Building2, CalendarDays, FileText, GraduationCap, LogOut, Mail, Menu, Pencil, Plus, Trophy, Trash2, Upload, Users, X, Save, ShieldCheck, UsersRound, Dumbbell, Newspaper, UserCog, Camera, UserRound, Loader2 } from 'lucide-react';
+import { BarChart3, BookOpen, Briefcase, Building2, CalendarDays, ChevronDown, ChevronRight, FileText, GraduationCap, LogOut, Mail, Menu, Pencil, Plus, Trophy, Trash2, Upload, Users, X, Save, ShieldCheck, UsersRound, Dumbbell, Newspaper, UserCog, Camera, UserRound, Loader2 } from 'lucide-react';
 import logoSekolah from '../assets/logo.png';
 import type { SpmbContent, SpmbFaqItem, SpmbFlowStep, SpmbScheduleItem } from '../lib/content-types';
 import { backendApi, apiBaseUrl, resolveImageUrl, fetchStats } from '../lib/api';
@@ -206,6 +206,7 @@ function AdminPanel() {
   const [open, setOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [mobile, setMobile] = useState(false);
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const { role, permissions, loading: authLoading, mustChangePassword } = useStaffAuth();
   const isAdmin = role === 'admin';
   const canViewOsis = isAdmin || can(permissions, 'osis.view');
@@ -343,8 +344,10 @@ function AdminPanel() {
   const editableSections = section !== 'dashboard' && section !== 'myProfile' && section !== 'contact' && section !== 'spmb' && section !== 'permissions' && section !== 'osis' && section !== 'extracurriculars' && section !== 'kesemaptaan' && section !== 'mading' && section !== 'students' && section !== 'accounts' && section !== 'gallery' && section !== 'bkk';
 
   const navGroups: { label: string; items: { key: Section; label: string; icon: typeof FileText; visible: boolean }[] }[] = [
-    { label: 'Menu', items: [{ key: 'dashboard', label: 'Dashboard', icon: BarChart3, visible: can(permissions, 'dashboard.view') }] },
-    { label: 'Akun Saya', items: [{ key: 'myProfile', label: 'Profil Saya', icon: UserRound, visible: true }] },
+    { label: 'Menu', items: [
+      { key: 'dashboard', label: 'Dashboard', icon: BarChart3, visible: can(permissions, 'dashboard.view') },
+      { key: 'myProfile', label: 'Profil Saya', icon: UserRound, visible: true },
+    ] },
     { label: 'Konten', items: menu.map((key) => ({ key: key as Section, label: configs[key].title, icon: configs[key].icon, visible: isAdmin })) },
     { label: 'Modul Sekolah', items: [
       { key: 'spmb', label: 'Kelola SPMB', icon: GraduationCap, visible: isAdmin },
@@ -373,17 +376,28 @@ function AdminPanel() {
 <nav className="min-h-0 flex-1 overflow-y-auto">
           {navGroups.map((group) => {
             const visibleItems = group.items.filter((item) => item.visible);
-            if (visibleItems.length === 0) return null;
-            return (
-              <div key={group.label}>
-                <p className="px-3 pb-1 pt-4 text-[10px] font-bold uppercase tracking-widest text-[#F3E8D0]/50">{group.label}</p>
-                <div className="space-y-1">
-                  {visibleItems.map((item) => (
-                    <Nav key={item.key} label={item.label} icon={item.icon} active={section === item.key} onClick={() => { navigate(ADMIN_SECTION_PATHS[item.key]); setMobile(false); }} />
-                  ))}
-                </div>
-              </div>
-            );
+             if (visibleItems.length === 0) return null;
+             const isCollapsed = collapsedGroups[group.label] ?? false;
+             return (
+               <div key={group.label}>
+                 <button
+                   type="button"
+                   aria-expanded={!isCollapsed}
+                   onClick={() => setCollapsedGroups(current => ({ ...current, [group.label]: !isCollapsed }))}
+                   className="flex w-full items-center justify-between px-3 pb-1 pt-4 text-left text-[10px] font-bold uppercase tracking-widest text-[#F3E8D0]/50 hover:text-[#F3E8D0]"
+                 >
+                   {group.label}
+                   {isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+                 </button>
+                 {!isCollapsed && (
+                   <div className="space-y-1">
+                     {visibleItems.map((item) => (
+                       <Nav key={item.key} label={item.label} icon={item.icon} active={section === item.key} onClick={() => { navigate(ADMIN_SECTION_PATHS[item.key]); setMobile(false); }} />
+                     ))}
+                   </div>
+                 )}
+               </div>
+             );
           })}
         </nav>
         <button onClick={async () => {
