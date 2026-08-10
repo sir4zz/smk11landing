@@ -28,11 +28,11 @@ const Navbar: React.FC<NavbarProps> = ({ onSearchOpen }) => {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 h-[70px] bg-[#1B2A4A] text-[#FAF6F0] z-50 shadow-md">
+    <nav className="fixed top-0 left-0 right-0 h-[64px] bg-[#1B2A4A] text-[#FAF6F0] z-50 shadow-md">
       <div className="container mx-auto px-4 h-full flex items-center justify-between">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-3">
-          <img src={logoSekolah} alt="Logo SMKN 11" className="h-12 w-auto" style={{ height: '48px', width: 'auto', objectFit: 'contain' }} />
+        <Link to="/" className="flex items-center gap-2">
+          <img src={logoSekolah} alt="Logo SMKN 11" className="h-10 w-auto" style={{ height: '40px', width: 'auto', objectFit: 'contain' }} />
           <div className="flex flex-col">
             <span className="text-white font-bold text-xl leading-tight">SMKN 11</span>
             <span className="text-[#F3E8D0] text-xs">Kab. Tangerang</span>
@@ -40,18 +40,18 @@ const Navbar: React.FC<NavbarProps> = ({ onSearchOpen }) => {
         </Link>
 
         {/* Desktop Navigation */}
-        <div className="hidden xl:flex items-center space-x-1 xl:space-x-4">
+        <div className="hidden xl:flex items-center space-x-1 xl:space-x-2">
           {navItems.map((item) => (
             <div key={item.label} className="relative group">
               {item.children ? (
-                <div className="flex items-center cursor-pointer px-3 py-2 text-white hover:text-[#C8A951] transition-colors duration-300 ease-in-out">
+                <div className="flex items-center cursor-pointer px-2 py-1.5 text-white hover:text-[#C8A951] transition-colors duration-300 ease-in-out">
                   <span className={`${isActive(item.href) ? 'text-[#C8A951]' : ''}`}>{item.label}</span>
                   <ChevronDown size={16} className="ml-1" />
                 </div>
               ) : (
                 <Link
                   to={item.href}
-                  className={`px-3 py-2 block transition-all duration-300 ease-in-out ${
+                  className={`px-2 py-1.5 block transition-all duration-300 ease-in-out ${
                     item.isHighlighted
                       ? 'bg-[#C8A951] text-[#1B2A4A] font-medium rounded hover:bg-opacity-90'
                       : isActive(item.href)
@@ -84,7 +84,7 @@ const Navbar: React.FC<NavbarProps> = ({ onSearchOpen }) => {
           
           <button 
             onClick={onSearchOpen}
-            className="text-white hover:text-[#C8A951] p-2 transition-colors duration-300 ease-in-out ml-2"
+            className="text-white hover:text-[#C8A951] p-1.5 transition-colors duration-300 ease-in-out ml-1"
             aria-label="Cari"
           >
             <Search size={20} />
@@ -112,7 +112,7 @@ const Navbar: React.FC<NavbarProps> = ({ onSearchOpen }) => {
 
       {/* Mobile Navigation Drawer */}
       {isMobileMenuOpen && (
-        <div className="xl:hidden absolute top-[70px] left-0 w-full bg-[#1B2A4A] border-t border-[#2a3f6e] shadow-xl max-h-[calc(100vh-70px)] overflow-y-auto">
+        <div className="xl:hidden absolute top-[64px] left-0 w-full bg-[#1B2A4A] border-t border-[#2a3f6e] shadow-xl max-h-[calc(100vh-64px)] overflow-y-auto">
           <div className="flex flex-col py-4 px-4 space-y-2">
             {navItems.map((item) => (
               <div key={item.label} className="border-b border-[#2a3f6e] last:border-0 pb-2">
