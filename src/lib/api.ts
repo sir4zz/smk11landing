@@ -37,7 +37,7 @@ export async function fetchHomeContent(): Promise<HomeContent | null> {
 }
 
 export async function fetchStats(): Promise<{ value: string; label: string }[]> {
-  const result = await request<{ data?: { value: string; label: string }[] }>('/stats');
+  const result = await request<{ value: string; label: string }[]>('/stats');
   if (!result.data) return [];
   return result.data;
 }

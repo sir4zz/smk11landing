@@ -253,14 +253,21 @@ PROMPT;
             throw ValidationException::withMessages(['message' => 'AI tidak dapat memproses permintaan saat ini.']);
         }
 
-        $model = env('OPENROUTER_CHAT_MODEL', 'openai/gpt-4o-mini');
+        $model = config('services.openrouter.model', 'openai/gpt-4o-mini');
 
         $instruction = $mode === 'ide'
             ? 'Format output (WAJIB JSON, tanpa teks lain di luar JSON): {"ideas":[{"title":"judul ide","description":"deskripsi singkat","category":"jenis konten"}]}'
             : 'Ikuti format output JSON yang sudah dijelaskan di system prompt.';
 
         try {
-            $response = Http::timeout(60)
+            // The editor requires the generated draft in this response, so queueing would
+            // change the frontend contract. Keep the synchronous fallback bounded instead;
+            // add a job-status API before moving this work to a queue.
+            $timeout = max(1, min(30, (int) config('services.openrouter.timeout', 20)));
+            $connectTimeout = max(1, min($timeout, (int) config('services.openrouter.connect_timeout', 5)));
+
+            $response = Http::connectTimeout($connectTimeout)
+                ->timeout($timeout)
                 ->withToken($key)
                 ->withHeaders([
                     'HTTP-Referer' => config('app.url'),

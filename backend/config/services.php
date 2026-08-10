@@ -37,6 +37,9 @@ return [
 
     'openrouter' => [
         'key' => env('OPENROUTER_API_KEY'),
+        'model' => env('OPENROUTER_CHAT_MODEL', 'openai/gpt-4o-mini'),
+        'connect_timeout' => (int) env('OPENROUTER_CONNECT_TIMEOUT', 5),
+        'timeout' => (int) env('OPENROUTER_TIMEOUT', 20),
     ],
 
 ];

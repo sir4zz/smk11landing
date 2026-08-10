@@ -33,8 +33,8 @@ use Illuminate\Support\Facades\Route;
 */
 
 // ---------- AUTH ----------
-Route::post('/auth/login', [AuthController::class, 'login']);
-Route::post('/auth/register', [AuthController::class, 'register']);
+Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:auth');
+Route::post('/auth/register', [AuthController::class, 'register'])->middleware('throttle:auth');
 Route::post('/auth/logout', [AuthController::class, 'logout']);
 Route::get('/auth/me', [AuthController::class, 'me']);
 Route::get('/auth/permissions', [AuthController::class, 'permissions']);
@@ -91,7 +91,7 @@ Route::get('/stats', [StatsController::class, 'index']);
 Route::get('/faqs', [FaqController::class, 'index']);
 
 // ---------- CONTACT ----------
-Route::post('/contact', [ContactController::class, 'store']);
+Route::post('/contact', [ContactController::class, 'store'])->middleware('throttle:contact');
 
 // ---------- GALLERY ----------
 Route::get('/galleries', [GalleryController::class, 'index']);
@@ -130,15 +130,17 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Mading AI Content Assistant. Access: students by default; staff must have
     // the mading.ai_generate permission (checked inside the controller).
-    Route::post('/mading/ai/generate', [MadingAiController::class, 'generate']);
-    Route::post('/mading/ai/improve', [MadingAiController::class, 'improve']);
-    Route::post('/mading/ai/shorten', [MadingAiController::class, 'shorten']);
-    Route::post('/mading/ai/expand', [MadingAiController::class, 'expand']);
-    Route::post('/mading/ai/change-style', [MadingAiController::class, 'changeStyle']);
-    Route::post('/mading/ai/generate-ideas', [MadingAiController::class, 'generateIdeas']);
+    Route::middleware('throttle:mading-ai')->group(function () {
+        Route::post('/mading/ai/generate', [MadingAiController::class, 'generate']);
+        Route::post('/mading/ai/improve', [MadingAiController::class, 'improve']);
+        Route::post('/mading/ai/shorten', [MadingAiController::class, 'shorten']);
+        Route::post('/mading/ai/expand', [MadingAiController::class, 'expand']);
+        Route::post('/mading/ai/change-style', [MadingAiController::class, 'changeStyle']);
+        Route::post('/mading/ai/generate-ideas', [MadingAiController::class, 'generateIdeas']);
+    });
 
     // Upload
-    Route::post('/upload', [UploadController::class, 'upload']);
+    Route::post('/upload', [UploadController::class, 'upload'])->middleware('throttle:upload');
 });
 
 // ============================================================
@@ -200,7 +202,7 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     }
 
     // News URL importer (fetches remote article pages server-side to avoid CORS)
-    Route::get('/proxy/fetch', [ProxyController::class, 'fetch']);
+    Route::get('/proxy/fetch', [ProxyController::class, 'fetch'])->middleware('throttle:proxy');
 
     // SPMB
     Route::post('/spmb', [SpmbController::class, 'store']);
