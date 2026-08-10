@@ -35,9 +35,9 @@ class DataController extends Controller
         'students' => \App\Models\Student::class, 'student_accounts' => \App\Models\StudentAccount::class,
         'profiles' => \App\Models\Profile::class, 'contact_messages' => \App\Models\ContactMessage::class,
         'ppdb_registrations' => \App\Models\PpdbRegistration::class, 'ppdb_documents' => \App\Models\PpdbDocument::class,
-        'ppdb_activity_log' => \App\Models\PpdbActivityLog::class,
+        'ppdb_activity_log' => \App\Models\PpdbActivityLog::class, 'content_records' => \App\Models\ContentRecord::class,
     ];
-    private const PUBLIC = ['news','programs','facilities','staff','achievements','teacher_activities','education_staff','spmb_content','osis','osis_members','osis_activities','extracurriculars','kesemaptaan','kesemaptaan_activities','kesemaptaan_schedules','kesemaptaan_instructors','kesemaptaan_achievements','mading_categories'];
+    private const PUBLIC = ['news','programs','facilities','staff','achievements','teacher_activities','education_staff','spmb_content','osis','osis_members','osis_activities','extracurriculars','kesemaptaan','kesemaptaan_activities','kesemaptaan_schedules','kesemaptaan_instructors','kesemaptaan_achievements','mading_categories','content_records'];
 
     public function __construct(private PermissionService $permissions, private MadingService $mading) {}
 
@@ -134,7 +134,7 @@ class DataController extends Controller
         if ($table === 'mading_posts') return;
         if (in_array($table, ['ppdb_registrations','ppdb_documents','ppdb_activity_log'], true)) return;
         if ($table === 'profiles') { abort_unless(request('id') === $user->id || $this->permissions->isAdmin($user), 403); return; }
-        if (in_array($table, ['news','programs','facilities','staff','achievements','teacher_activities','education_staff','spmb_content','contact_messages','roles','permissions','role_permissions'], true)) { abort_unless($this->permissions->isAdmin($user), 403); return; }
+        if (in_array($table, ['news','programs','facilities','staff','achievements','teacher_activities','education_staff','spmb_content','contact_messages','roles','permissions','role_permissions','content_records'], true)) { abort_unless($this->permissions->isAdmin($user), 403); return; }
         $permission = match ($table) {
             'osis', 'osis_members' => request()->isMethod('DELETE') ? 'osis.delete' : (request()->isMethod('POST') ? 'osis.create' : 'osis.edit'),
             'osis_activities' => request()->isMethod('DELETE') ? 'osis.activities.delete' : (request()->isMethod('POST') ? 'osis.activities.create' : 'osis.activities.edit'),

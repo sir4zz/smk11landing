@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { BarChart3, BookOpen, Briefcase, Building2, CalendarDays, FileText, GraduationCap, LogOut, Mail, Menu, Pencil, Plus, Trophy, Trash2, Upload, Users, X, Save, ShieldCheck, UsersRound, Dumbbell, Newspaper, UserCog, Camera, UserRound } from 'lucide-react';
+import { BarChart3, BookOpen, Briefcase, Building2, CalendarDays, FileText, GraduationCap, LogOut, Mail, Menu, Pencil, Plus, Trophy, Trash2, Upload, Users, X, Save, ShieldCheck, UsersRound, Dumbbell, Newspaper, UserCog, Camera, UserRound, Loader2 } from 'lucide-react';
 import logoSekolah from '../assets/logo.png';
 import type { SpmbContent, SpmbFaqItem, SpmbFlowStep, SpmbScheduleItem } from '../lib/content-types';
 import { backendApi, apiBaseUrl, resolveImageUrl } from '../lib/api';
@@ -21,7 +21,7 @@ import MyProfile from '../components/admin/MyProfile';
 import { StaffAuthProvider, useStaffAuth } from '../lib/staffAuth';
 import { can, STAFF_ROLES } from '../lib/permissions';
 
-type Section = 'dashboard' | 'news' | 'programs' | 'facilities' | 'staff' | 'achievements' | 'teacherActivities' | 'educationStaff' | 'spmb' | 'contact' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'gallery' | 'bkk' | 'myProfile';
+type Section = 'dashboard' | 'news' | 'programs' | 'facilities' | 'staff' | 'achievements' | 'teacherActivities' | 'educationStaff' | 'contentRecords' | 'spmb' | 'contact' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'gallery' | 'bkk' | 'myProfile';
 type EditableSection = Exclude<Section, 'dashboard' | 'contact' | 'spmb' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'gallery' | 'bkk' | 'myProfile'>;
 type Item = Record<string, unknown>;
 const ADMIN_SECTION_PATHS: Record<Section, string> = {
@@ -34,6 +34,7 @@ const ADMIN_SECTION_PATHS: Record<Section, string> = {
   achievements: '/admin/prestasi',
   teacherActivities: '/admin/kegiatan-guru',
   educationStaff: '/admin/tenaga-kependidikan',
+  contentRecords: '/admin/konten-beranda',
   spmb: '/admin/spmb',
   contact: '/admin/pesan-kontak',
   permissions: '/admin/role-permission',
@@ -51,10 +52,11 @@ const TABLE_MAP: Record<string, string> = {
   news: 'news', programs: 'programs', facilities: 'facilities',
   staff: 'staff', achievements: 'achievements',
   teacherActivities: 'teacher_activities', educationStaff: 'education_staff',
+  contentRecords: 'content_records',
 };
 
 const seed = {
-  news: [] as Item[], programs: [] as Item[], facilities: [] as Item[], staff: [] as Item[], achievements: [] as Item[], teacherActivities: [] as Item[], educationStaff: [] as Item[],
+  news: [] as Item[], programs: [] as Item[], facilities: [] as Item[], staff: [] as Item[], achievements: [] as Item[], teacherActivities: [] as Item[], educationStaff: [] as Item[], contentRecords: [] as Item[],
   contact: [] as Item[],
 };
 
@@ -66,6 +68,7 @@ const configs: Record<EditableSection, { title: string; icon: typeof FileText; f
   achievements: { title: 'Prestasi', icon: Trophy, fields: [{ key: 'title', label: 'Judul Prestasi' }, { key: 'event', label: 'Acara' }, { key: 'level', label: 'Tingkat', type: 'select' }, { key: 'rank', label: 'Peringkat', type: 'select' }, { key: 'year', label: 'Tahun', type: 'number' }, { key: 'photo', label: 'Foto', type: 'image' }] },
   teacherActivities: { title: 'Kegiatan Guru', icon: CalendarDays, fields: [{ key: 'title', label: 'Judul Kegiatan' }, { key: 'category', label: 'Kategori', type: 'select' }, { key: 'date', label: 'Tanggal', type: 'date' }, { key: 'photo', label: 'Foto', type: 'image' }, { key: 'description', label: 'Deskripsi', multiline: true }] },
   educationStaff: { title: 'Tenaga Kependidikan', icon: Briefcase, fields: [{ key: 'name', label: 'Nama' }, { key: 'position', label: 'Jabatan', type: 'select' }, { key: 'department', label: 'Unit / Departemen', type: 'select' }, { key: 'photo', label: 'Foto', type: 'image' }] },
+  contentRecords: { title: 'Konten Beranda', icon: FileText, fields: [{ key: 'content_type', label: 'Tipe Konten' }] },
 };
 
 const FIELD_OPTION_PRESETS: Record<string, string[]> = {
@@ -243,9 +246,10 @@ function AdminPanel() {
         backendApi.database.from(TABLE_MAP.achievements).select('*').then((r: any) => r.data || []),
         backendApi.database.from(TABLE_MAP.teacherActivities).select('*').then((r: any) => r.data || []),
         backendApi.database.from(TABLE_MAP.educationStaff).select('*').then((r: any) => r.data || []),
+        backendApi.database.from(TABLE_MAP.contentRecords).select('*').eq('content_type', 'home').then((r: any) => r.data || []),
         backendApi.database.from('contact_messages').select('*').then((r: any) => r.data || []),
-      ]).then(([news, programs, facilities, staff, achievements, teacherActivities, educationStaff, contact]) => setData({
-        news, programs, facilities, staff, achievements, teacherActivities, educationStaff, contact,
+      ]).then(([news, programs, facilities, staff, achievements, teacherActivities, educationStaff, contentRecords, contact]) => setData({
+        news, programs, facilities, staff, achievements, teacherActivities, educationStaff, contentRecords, contact,
       })).catch(() => {});
     })
   }, [authLoading, isAdmin, navigate]);
@@ -272,7 +276,10 @@ function AdminPanel() {
 
   const update = async (next: Item) => {
     try {
-      const normalizedNext = section === 'news'
+      if (section === 'contentRecords' && !editing) {
+        throw new Error('Konten beranda hanya dapat memperbarui record home yang sudah ada.');
+      }
+      const normalizedNext: Item = section === 'news'
         ? {
             ...next,
             source_type: next.source_type ?? (next.source_url ? 'imported' : 'manual'),
@@ -425,7 +432,9 @@ function AdminPanel() {
 
           {section === 'accounts' && isAdmin && <AccountsManagement />}
 
-          {editableSections && (
+          {section === 'contentRecords' && isAdmin && <HomeContentManagement />}
+
+          {editableSections && section !== 'contentRecords' && (
             <>
               <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                 <p className="text-[#23314D]">Kelola data {active!.title.toLowerCase()}.</p>
@@ -438,7 +447,7 @@ function AdminPanel() {
             </>
           )}
 
-          {open && editableSections && (
+          {open && editableSections && section !== 'contentRecords' && (
             <Editor section={section} config={active!} item={editing} options={fieldOptions} onClose={() => setOpen(false)} onSave={async item => { const ok = await update(item); if (ok) setOpen(false); }} />
           )}
 
@@ -521,7 +530,7 @@ function ContactMessages({ items, onMarkRead, onDelete }: { items: Item[]; onMar
   );
 }
 
-function Table({ items, config, onEdit, onDelete }: { items: Item[]; config: { fields: { key: string; label: string }[] }; onEdit: (item: Item) => void; onDelete: (id: unknown) => void }) {
+function Table({ items, config, onEdit, onDelete }: { items: Item[]; config: { fields: { key: string; label: string }[] }; onEdit: (item: Item) => void; onDelete?: (id: unknown) => void }) {
   const renderCell = (field: { key: string; label: string }, item: Item) => {
     if (field.key === 'photo' && item[field.key]) {
       return <img src={resolveImageUrl(String(item[field.key]))} alt="" className="h-10 w-10 rounded-full object-cover" />;
@@ -570,7 +579,7 @@ function Table({ items, config, onEdit, onDelete }: { items: Item[]; config: { f
               ))}
               <td className="p-4">
                 <button onClick={() => onEdit(item)} className="mr-3 text-[#866D2C]"><Pencil size={17} /></button>
-                <button onClick={() => onDelete(item.id)} className="text-red-600"><Trash2 size={17} /></button>
+                {onDelete && <button onClick={() => onDelete(item.id)} className="text-red-600"><Trash2 size={17} /></button>}
               </td>
             </tr>
           ))}
@@ -1244,6 +1253,117 @@ function extractNewsData(raw: string, pageUrl: string) {
   return parseMarkdownNews(raw, pageUrl);
 }
 
+function homeData(item: Item | null): Record<string, any> {
+  if (!item?.data) return {};
+  if (typeof item.data === 'object') return item.data as Record<string, any>;
+  try { return JSON.parse(String(item.data)) as Record<string, any>; } catch { return {}; }
+}
+
+function homeField(data: Record<string, any>, section: string, field: string): string {
+  const value = data[section]?.[field];
+  return Array.isArray(value) ? value.join('\n') : String(value ?? '');
+}
+
+function HomeContentManagement() {
+  const [record, setRecord] = useState<Item | null>(null);
+  const [values, setValues] = useState<Record<string, any>>({});
+  const [state, setState] = useState<'loading' | 'ready' | 'saving'>('loading');
+  const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    backendApi.database.from('content_records').select('*').eq('content_type', 'home').limit(1).maybeSingle().then((result: any) => {
+      if (cancelled) return;
+      if (result.error) setMessage({ type: 'error', text: result.error.message });
+      else if (!result.data) setMessage({ type: 'error', text: 'Record konten home tidak ditemukan.' });
+      else { setRecord(result.data); setValues(homeData(result.data)); }
+      setState('ready');
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  const save = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!record?.id) return;
+    setState('saving');
+    setMessage(null);
+    const result = await backendApi.database.from('content_records').update({ content_type: 'home', data: values }).eq('id', record.id);
+    if (result.error) setMessage({ type: 'error', text: result.error.message });
+    else setMessage({ type: 'success', text: 'Konten beranda berhasil disimpan.' });
+    setState('ready');
+  };
+
+  if (state === 'loading') return <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-[#C8A951]" /></div>;
+
+  return (
+    <form onSubmit={save} className="space-y-6">
+      {message && <p className={`rounded-lg p-3 text-sm ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>{message.text}</p>}
+      {record && <HomeContentFields data={values} onChange={setValues} />}
+      {record && <div className="flex justify-end"><button type="submit" disabled={state === 'saving'} className="inline-flex items-center gap-2 rounded-lg bg-[#1B2A4A] px-5 py-2.5 font-bold text-white hover:bg-[#15203a] disabled:opacity-60"><Save className="h-4 w-4" />{state === 'saving' ? 'Menyimpan...' : 'Simpan Konten Beranda'}</button></div>}
+    </form>
+  );
+}
+
+function HomeContentFields({ data, onChange }: { data: Record<string, any>; onChange: (data: Record<string, any>) => void }) {
+  const input = (label: string, section: string, field: string, multiline = false) => {
+    const value = homeField(data, section, field);
+    const update = (next: string) => onChange({ ...data, [section]: { ...(data[section] ?? {}), [field]: ['images', 'paragraphs'].includes(field) ? next.split('\n').map(line => line.trim()).filter(Boolean) : next } });
+    return (
+    <label className="block text-sm font-semibold">
+      {label}
+      {multiline
+        ? <textarea rows={3} value={value} onChange={e => update(e.target.value)} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />
+        : <input value={value} onChange={e => update(e.target.value)} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />}
+    </label>
+    );
+  };
+
+  return <div className="space-y-6">
+    <fieldset className="space-y-4 rounded-lg border border-[#1B2A4A]/10 p-4">
+      <legend className="px-1 font-bold">Hero</legend>
+      {input('Deskripsi', 'hero', 'description', true)}
+      {input('Akreditasi', 'hero', 'accreditation')}
+      {input('Judul fasilitas', 'hero', 'facility_title')}
+      {input('Deskripsi fasilitas', 'hero', 'facility_description', true)}
+      {input('URL gambar (maksimal 3, satu per baris)', 'hero', 'images', true)}
+    </fieldset>
+    <fieldset className="space-y-4 rounded-lg border border-[#1B2A4A]/10 p-4">
+      <legend className="px-1 font-bold">Sambutan</legend>
+      {input('URL foto', 'welcome', 'image')}
+      <div className="grid gap-4 sm:grid-cols-2">
+        {input('Nama', 'welcome', 'principal_name')}
+        {input('Jabatan', 'welcome', 'principal_title')}
+      </div>
+      {input('Judul', 'welcome', 'title')}
+      {input('Paragraf (maksimal 2, satu per baris)', 'welcome', 'paragraphs', true)}
+      {input('Kutipan', 'welcome', 'quote', true)}
+    </fieldset>
+    <fieldset className="space-y-4 rounded-lg border border-[#1B2A4A]/10 p-4">
+      <legend className="px-1 font-bold">Tentang</legend>
+      {input('Judul', 'about', 'title')}
+      {input('Subtitle', 'about', 'subtitle')}
+      {input('Paragraf (maksimal 3, satu per baris)', 'about', 'paragraphs', true)}
+      <div className="grid gap-4 sm:grid-cols-2">
+        {input('Label card', 'about', 'card_label')}
+        {input('Judul card', 'about', 'card_title')}
+      </div>
+      {input('Kutipan', 'about', 'quote', true)}
+      {input('Lokasi', 'about', 'location')}
+    </fieldset>
+    <fieldset className="space-y-4 rounded-lg border border-[#1B2A4A]/10 p-4">
+      <legend className="px-1 font-bold">Statistik</legend>
+      {[0, 1, 2, 3].map(index => <div key={index} className="grid gap-4 sm:grid-cols-2">
+        <label className="block text-sm font-semibold">Value {index + 1}
+           <input value={String(data.stats?.[index]?.value ?? '')} onChange={e => onChange({ ...data, stats: (data.stats ?? []).map((stat: any, i: number) => i === index ? { ...stat, value: e.target.value } : stat) })} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />
+        </label>
+        <label className="block text-sm font-semibold">Label
+           <input value={String(data.stats?.[index]?.label ?? '')} onChange={e => onChange({ ...data, stats: (data.stats ?? []).map((stat: any, i: number) => i === index ? { ...stat, label: e.target.value } : stat) })} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />
+        </label>
+      </div>)}
+    </fieldset>
+  </div>;
+}
+
 function Editor({ config, item, onClose, onSave, section, options }: { config: { title: string; fields: { key: string; label: string; type?: string; multiline?: boolean }[] }; item: Item | null; onClose: () => void; onSave: (item: Item) => void; section?: string; options?: Record<string, string[]> }) {
   const [sourceUrl, setSourceUrl] = useState('');
   const [sourceMeta, setSourceMeta] = useState({ sourceType: 'manual' as 'manual' | 'imported', sourceUrl: '', sourceLabel: 'Berita mandiri', sourceNote: '' });
@@ -1341,6 +1461,43 @@ function Editor({ config, item, onClose, onSave, section, options }: { config: {
     const form = new FormData(event.currentTarget);
     const formValues = Object.fromEntries(form as any) as Record<string, string>;
 
+    if (section === 'contentRecords') {
+      const value = (name: string) => formValues[name] ?? '';
+      const lines = (name: string, limit?: number) => value(name).split('\n').map(line => line.trim()).filter(Boolean).slice(0, limit);
+      onSave({
+        ...(item ?? {}),
+        content_type: 'home',
+        data: {
+          hero: {
+            description: value('hero_description'),
+            accreditation: value('hero_accreditation'),
+            facility_title: value('hero_facility_title'),
+            facility_description: value('hero_facility_description'),
+            images: lines('hero_images', 3),
+          },
+          welcome: {
+            image: value('welcome_image'),
+            principal_name: value('welcome_principal_name'),
+            principal_title: value('welcome_principal_title'),
+            title: value('welcome_title'),
+            paragraphs: lines('welcome_paragraphs', 2),
+            quote: value('welcome_quote'),
+          },
+          about: {
+            title: value('about_title'),
+            subtitle: value('about_subtitle'),
+            paragraphs: lines('about_paragraphs', 3),
+            card_label: value('about_card_label'),
+            card_title: value('about_card_title'),
+            quote: value('about_quote'),
+            location: value('about_location'),
+          },
+          stats: [0, 1, 2, 3].map(index => ({ value: value(`stat_${index}_value`), label: value(`stat_${index}_label`) })),
+        },
+      });
+      return;
+    }
+
     if (section === 'news') {
       const sourceUrlValue = sourceMeta.sourceUrl || String((item as Record<string, unknown> | null)?.source_url ?? '');
       const sourceTypeValue = sourceUrlValue ? 'imported' : 'manual';
@@ -1374,7 +1531,7 @@ function Editor({ config, item, onClose, onSave, section, options }: { config: {
           <button type="button" onClick={onClose}><X /></button>
         </div>
 
-        {section === 'news' && (
+        {section === 'contentRecords' ? <HomeContentFields data={homeData(item)} onChange={() => {}} /> : section === 'news' && (
           <div className="mb-4 rounded-lg border border-[#1B2A4A]/10 bg-[#FAF6F0] p-4">
             <label className="block text-sm font-semibold text-[#1B2A4A]">
               Ambil berita dari URL
@@ -1394,7 +1551,7 @@ function Editor({ config, item, onClose, onSave, section, options }: { config: {
           </div>
         )}
 
-        <div className="space-y-4">
+        {section !== 'contentRecords' && <div className="space-y-4">
           {config.fields.map(field => (
             field.type === 'image'
               ? <div key={field.key}>
@@ -1405,8 +1562,8 @@ function Editor({ config, item, onClose, onSave, section, options }: { config: {
               {field.label}
               {field.type === 'list'
                 ? <textarea ref={(element) => { fieldRefs.current[field.key] = element; }} name={field.key} rows={5} defaultValue={item && Array.isArray(item[field.key]) ? (item[field.key] as unknown[]).join('\n') : String(item?.[field.key] ?? '')} placeholder="Satu item per baris" required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />
-                : field.multiline
-                ? <textarea ref={(element) => { fieldRefs.current[field.key] = element; }} name={field.key} rows={4} defaultValue={String(item?.[field.key] ?? '')} required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />
+                 : field.multiline
+                 ? <textarea ref={(element) => { fieldRefs.current[field.key] = element; }} name={field.key} rows={4} defaultValue={field.key === 'data' && item?.[field.key] ? JSON.stringify(item[field.key], null, 2) : String(item?.[field.key] ?? '')} required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />
                 : field.type === 'select'
                   ? (() => {
                       const currentValue = String(item?.[field.key] ?? '');
@@ -1424,7 +1581,7 @@ function Editor({ config, item, onClose, onSave, section, options }: { config: {
                  : <input ref={(element) => { fieldRefs.current[field.key] = element; }} name={field.key} type={field.type || 'text'} defaultValue={field.type === 'date' ? dateInputValue(item?.[field.key]) : String(item?.[field.key] ?? '')} required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />}
             </label>
           ))}
-        </div>
+        </div>}
         <div className="mt-6 flex justify-end gap-3">
           <button type="button" onClick={onClose} className="px-4 py-2">Batal</button>
           <button className="rounded-lg bg-[#1B2A4A] px-4 py-2 font-bold text-white">Simpan</button>
