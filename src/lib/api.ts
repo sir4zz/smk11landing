@@ -23,6 +23,19 @@ export function resolveImageUrl(url: string): string {
   return url;
 }
 
+export interface HomeContent {
+  hero: { images: string[]; description: string; accreditation: string; facility_title: string; facility_description: string };
+  welcome: { image: string; principal_name: string; principal_title: string; title: string; paragraphs: string[]; quote: string };
+  about: { title: string; subtitle: string; paragraphs: string[]; card_label: string; card_title: string; quote: string; location: string };
+  stats: { value: string; label: string }[];
+}
+
+export async function fetchHomeContent(): Promise<HomeContent | null> {
+  const result = await request<{ data?: HomeContent } | HomeContent>('/data/content_records?content_type=home&single=1');
+  if (!result.data) return null;
+  return (result.data as { data?: HomeContent }).data ?? result.data as HomeContent;
+}
+
 export function youtubeVideoId(url: string): string | null {
   if (!url) return null;
   const patterns = [
