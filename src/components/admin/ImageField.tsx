@@ -67,6 +67,16 @@ export default function ImageField({ label, value, onChange, hint, disabled = fa
           />
           {uploading && <Loader2 size={18} className="shrink-0 animate-spin text-[#866D2C]" />}
         </div>
+        <div className="border-t border-[#1B2A4A]/10 px-3 py-2">
+          <input
+            type="url"
+            value={value}
+            disabled={disabled}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder="...atau tempel URL gambar"
+            className="block w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 text-sm font-normal disabled:opacity-60"
+          />
+        </div>
       </div>
       {hint && <p className="mt-1 text-xs font-normal text-[#5B7088]">{hint}</p>}
       {error && <p className="mt-1 text-xs font-normal text-red-600">{error}</p>}

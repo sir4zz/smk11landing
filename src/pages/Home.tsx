@@ -24,7 +24,7 @@ import SectionHeading from '../components/ui/SectionHeading';
 import StatsBar from '../components/ui/StatsBar';
 import Card from '../components/ui/Card';
 import { isImportedNews } from '../lib/content-types';
-import { fetchPublicContent, fetchGalleries, resolveImageUrl, type GalleryRow } from '../lib/api';
+import { fetchPublicContent, fetchGalleries, fetchHomeContent, fetchStats, resolveImageUrl, type GalleryRow, type HomeContent } from '../lib/api';
 
 const getProgramIcon = (slug: string) => {
   switch (slug) {
@@ -45,12 +45,6 @@ const getProgramIcon = (slug: string) => {
   }
 };
 
-const heroImages = [
-  'https://images.unsplash.com/photo-1591123120675-6f7f1aae0e5b?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OHx8c2Nob29sfGVufDB8fDB8fHww',
-  'https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=1600&q=80',
-  'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&w=1600&q=80',
-];
-
 const Home: React.FC = () => {
   const [activeImage, setActiveImage] = useState(0);
   const [publicPrograms, setPublicPrograms] = useState<any[]>([]);
@@ -58,28 +52,30 @@ const Home: React.FC = () => {
   const [publicAchievements, setPublicAchievements] = useState<any[]>([]);
   const [gallery, setGallery] = useState<GalleryRow[]>([]);
   const [galleryLoading, setGalleryLoading] = useState(true);
-  const [stats] = useState([
-    { value: '1.124+', label: 'Siswa Aktif', icon: <Users className="h-6 w-6" /> },
-    { value: '51+', label: 'Tenaga Pengajar', icon: <GraduationCap className="h-6 w-6" /> },
-    { value: '6', label: 'Program Keahlian', icon: <BookOpen className="h-6 w-6" /> },
-    { value: '33', label: 'Rombel', icon: <Trophy className="h-6 w-6" /> },
-  ]);
+  const [home, setHome] = useState<HomeContent | null>(null);
+  const [stats, setStats] = useState<{ value: string; label: string }[]>([]);
 
   useEffect(() => {
     fetchPublicContent<any[]>('programs').then(setPublicPrograms);
     fetchPublicContent<any[]>('news').then(setPublicNews);
     fetchPublicContent<any[]>('achievements').then(setPublicAchievements);
+    fetchHomeContent().then(setHome);
+    fetchStats().then(setStats);
     fetchGalleries({ page: 1, limit: 8 })
       .then(({ rows }) => setGallery(rows))
       .catch(() => {})
       .finally(() => setGalleryLoading(false));
-    // Statistik hanya menampilkan informasi sekolah; SPMB tidak menyimpan data pendaftar di situs ini.
-    const timer = window.setInterval(() => {
-      setActiveImage((prev) => (prev + 1) % heroImages.length);
-    }, 5000);
-
-    return () => window.clearInterval(timer);
   }, []);
+
+  const heroImages = home?.hero.images ?? [];
+  const statIcons = [Users, GraduationCap, BookOpen];
+  const statsWithIcons = (stats ?? []).map((stat, index) => ({ ...stat, icon: React.createElement(statIcons[index] ?? Users, { className: 'h-6 w-6' }) }));
+
+  useEffect(() => {
+    if (heroImages.length < 2) return;
+    const timer = window.setInterval(() => setActiveImage((prev) => (prev + 1) % heroImages.length), 5000);
+    return () => window.clearInterval(timer);
+  }, [heroImages.length]);
 
 
 
@@ -151,7 +147,7 @@ const Home: React.FC = () => {
               </div>
               
               <p className="mt-8 max-w-xl text-lg font-medium leading-relaxed text-[#FBEFCC] sm:text-xl">
-                Sekolah kejuruan favorit yang menyiapkan lulusan unggul, berkarakter, dan memiliki kompetensi tinggi sesuai kebutuhan industri masa depan.
+                {home?.hero.description}
               </p>
 
               {/* Action Buttons */}
@@ -188,8 +184,8 @@ const Home: React.FC = () => {
                         <Building2 className="h-7 w-7" />
                       </div>
                       <div>
-                        <h3 className="text-xl font-bold text-white uppercase tracking-wider drop-shadow-md">Fasilitas Modern</h3>
-                        <p className="mt-1 text-sm font-medium text-[#FBEFCC]">Mendukung penuh kompetensi siswa di era digital.</p>
+                        <h3 className="text-xl font-bold text-white uppercase tracking-wider drop-shadow-md">{home?.hero.facility_title}</h3>
+                        <p className="mt-1 text-sm font-medium text-[#FBEFCC]">{home?.hero.facility_description}</p>
                       </div>
                     </div>
                   </div>
@@ -206,7 +202,7 @@ const Home: React.FC = () => {
                   </div>
                   <div className="flex flex-col">
                     <span className="text-[10px] font-bold uppercase tracking-widest text-[#C8A951]">Akreditasi</span>
-                    <span className="text-base font-black text-white">Peringkat B</span>
+                    <span className="text-base font-black text-white">{home?.hero.accreditation}</span>
                     <span className="text-[10px] font-semibold text-white/60">BAN-S/M</span>
                   </div>
                 </div>
@@ -236,10 +232,10 @@ const Home: React.FC = () => {
             {/* Image/Photo */}
             <div className="relative mx-auto w-full max-w-md lg:max-w-none">
               <div className="relative overflow-hidden rounded-3xl rounded-tr-[80px] rounded-bl-[80px] bg-[#FAF6F0] p-4 shadow-sm">
-                <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=800" alt="Kepala Sekolah SMKN 11" className="h-[250px] sm:h-[350px] md:h-[450px] w-full object-cover rounded-2xl rounded-tr-[70px] rounded-bl-[70px]" />
+                <img src={home?.welcome.image} alt="Kepala Sekolah SMKN 11" className="h-[250px] sm:h-[350px] md:h-[450px] w-full object-cover rounded-2xl rounded-tr-[70px] rounded-bl-[70px]" />
                 <div className="absolute bottom-10 left-0 bg-[#1B2A4A] text-white p-4 pr-8 rounded-r-2xl shadow-xl border-l-4 border-[#C8A951]">
-                  <h4 className="font-bold text-lg">Emma Sukmayati</h4>
-                  <p className="text-[#F9E7A8] text-sm">Kepala SMKN 11 Kab. Tangerang</p>
+                  <h4 className="font-bold text-lg">{home?.welcome.principal_name}</h4>
+                  <p className="text-[#F9E7A8] text-sm">{home?.welcome.principal_title}</p>
                 </div>
               </div>
               <div className="absolute -z-10 -bottom-5 -right-5 h-full w-full rounded-3xl rounded-tr-[80px] rounded-bl-[80px] border-2 border-[#C8A951]/20"></div>
@@ -251,18 +247,13 @@ const Home: React.FC = () => {
                 <span className="h-px w-8 bg-[#C8A951]"></span>
                 <span className="text-sm font-bold uppercase tracking-widest text-[#C8A951]">Sambutan Kepala Sekolah</span>
               </div>
-              <h2 className="mb-6 text-3xl font-bold leading-tight text-[#1B2A4A] md:text-4xl">
-                Selamat Datang di Portal Resmi SMKN 11 Kabupaten Tangerang
+                <h2 className="mb-6 text-3xl font-bold leading-tight text-[#1B2A4A] md:text-4xl">
+                 {home?.welcome.title}
               </h2>
               <div className="space-y-4 text-lg text-[#23314D] leading-relaxed mb-8">
-                <p>
-                  Puji syukur kita panjatkan ke hadirat Allah SWT atas rahmat dan karunia-Nya. Di era digitalisasi dan disrupsi teknologi saat ini, pendidikan vokasi memegang peran krusial dalam mencetak generasi muda yang tidak hanya kompeten, tetapi juga memiliki karakter dan daya adaptasi yang tinggi.
-                </p>
-                <p>
-                  SMKN 11 Kabupaten Tangerang berkomitmen penuh untuk menjadi lembaga pendidikan yang inovatif, berdaya saing global, dan berakar pada nilai-nilai luhur bangsa. Melalui sinkronisasi kurikulum dengan industri, kami berupaya memastikan lulusan kami siap menghadapi tantangan dunia kerja masa depan.
-                </p>
+                {(home?.welcome.paragraphs ?? []).map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
                 <p className="font-semibold text-[#1B2A4A] italic border-l-4 border-[#C8A951] pl-4 mt-6">
-                  "SMK BISA, SMK HEBAT, Vokasi Kuat Menguatkan Indonesia!"
+                  {home?.welcome.quote}
                 </p>
               </div>
             </div>
@@ -272,13 +263,11 @@ const Home: React.FC = () => {
 
       <section className="bg-[#FAF6F0] py-16 md:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <SectionHeading title="Tentang SMKN 11 Kabupaten Tangerang" subtitle="Sekolah vokasi yang menyiapkan lulusan unggul, kompeten, dan siap bersaing di dunia kerja." />
+          <SectionHeading title={home?.about.title ?? ''} subtitle={home?.about.subtitle ?? ''} />
 
           <div className="mt-12 grid items-center gap-8 lg:grid-cols-[1.1fr_0.9fr]">
             <div className="space-y-5 text-lg leading-8 text-[#23314D]">
-              <p>SMKN 11 Kabupaten Tangerang adalah lembaga pendidikan kejuruan negeri yang berdiri pada tahun 2013 dan berkomitmen mencetak siswa berprestasi, berakhlaqul karimah, dan memiliki kompetensi sesuai kebutuhan industri.</p>
-              <p>Berlokasi di Kp. Saradan, Desa Pangkat, Kecamatan Jayanti, sekolah ini memiliki 6 program keahlian unggulan dengan 1.124 siswa aktif dan 51 tenaga pengajar profesional yang berdedikasi.</p>
-              <p>Dengan akreditasi B dan didukung fasilitas laboratorium, bengkel, serta lingkungan belajar yang kondusif, lulusan kami tidak hanya siap bekerja, tetapi juga memiliki jiwa kewirausahaan dan akhlak mulia yang kuat.</p>
+              {(home?.about.paragraphs ?? []).map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
             </div>
 
             <div className="rounded-[1.5rem] border border-[#1B2A4A]/10 bg-white p-8 shadow-sm">
@@ -287,19 +276,19 @@ const Home: React.FC = () => {
                   <Building2 className="h-6 w-6" />
                 </div>
                 <div>
-                  <p className="text-sm uppercase tracking-[0.3em] text-[#866D2C]">Sekolah kami</p>
-                  <h3 className="text-xl font-semibold text-[#1B2A4A]">Lingkungan belajar yang memotivasi</h3>
+                    <p className="text-sm uppercase tracking-[0.3em] text-[#866D2C]">{home?.about.card_label}</p>
+                   <h3 className="text-xl font-semibold text-[#1B2A4A]">{home?.about.card_title}</h3>
                 </div>
               </div>
 
               <div className="mt-6 rounded-[1.25rem] bg-[#1B2A4A] p-6 text-[#FFF9F1]">
                 <p className="text-sm uppercase tracking-[0.3em] text-[#C8A951]">Sambutan</p>
                 <p className="mt-4 text-lg leading-8">
-                  "Kami terus mendorong setiap siswa untuk tumbuh menjadi pribadi yang unggul, disiplin, dan siap memberikan kontribusi nyata bagi masyarakat dan bangsa."
+                   {home?.about.quote}
                 </p>
                 <div className="mt-5 flex items-center gap-2 text-sm font-semibold text-white">
                   <MapPin className="h-4 w-4" />
-                  Kabupaten Tangerang, Banten
+                   {home?.about.location}
                 </div>
               </div>
             </div>
@@ -342,7 +331,7 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-      <StatsBar stats={stats} />
+      <StatsBar stats={statsWithIcons} />
 
       <section className="bg-[#FAF6F0] py-16 md:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

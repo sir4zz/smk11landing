@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { Plus, Pencil, Trash2, X, Save, Loader2, Images } from 'lucide-react';
 import { backendApi, resolveImageUrl } from '../../lib/api';
@@ -149,6 +149,32 @@ function ExtracurricularForm({ item, onClose, onSave, categories = [] }: { item:
     },
   });
 
+  const [docUploading, setDocUploading] = useState(false);
+  const [docError, setDocError] = useState('');
+  const docInputRef = useRef<HTMLInputElement | null>(null);
+
+  const uploadDocumentation = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const arr = Array.from(files);
+    setDocUploading(true);
+    setDocError('');
+    try {
+      const urls: string[] = [];
+      for (const file of arr) {
+        const { data, error } = await backendApi.storage.from('photos').uploadAuto(file);
+        if (error) throw error;
+        if (!data?.url) throw new Error('Gagal mengunggah foto.');
+        urls.push(data.url);
+      }
+      setValues((v) => ({ ...v, documentation: [...(Array.isArray(v.documentation) ? v.documentation : []), ...urls] }));
+    } catch (err) {
+      setDocError(err instanceof Error ? err.message : 'Gagal mengunggah foto.');
+    } finally {
+      setDocUploading(false);
+      if (docInputRef.current) docInputRef.current.value = '';
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 p-4 py-10">
       <div className="mx-auto w-full max-w-2xl rounded-xl bg-white p-6 shadow-xl">
@@ -177,7 +203,25 @@ function ExtracurricularForm({ item, onClose, onSave, categories = [] }: { item:
           <div className="sm:col-span-2"><Field label="Deskripsi" multiline {...f('description')} /></div>
           <div className="sm:col-span-2"><ImageField label="Logo / Foto" value={String(values.photo ?? '')} onChange={(url) => setValues((v) => ({ ...v, photo: url }))} /></div>
           <Field label="Prestasi" hint="Satu prestasi per baris." multiline {...listField('achievements')} />
-          <Field label="Dokumentasi" hint="Satu URL gambar per baris." multiline {...listField('documentation')} />
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-semibold">Dokumentasi
+              <span className="block font-normal text-xs text-[#5B7088]">Upload file gambar atau satu URL per baris.</span>
+              <textarea {...listField('documentation')} rows={4} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />
+            </label>
+            <div className="mt-2 flex items-center gap-2">
+              <input
+                ref={docInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                disabled={docUploading}
+                onChange={(e) => uploadDocumentation(e.target.files)}
+                className="block w-full text-sm text-[#1B2A4A] file:mr-3 file:rounded-lg file:border-0 file:bg-[#1B2A4A] file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-[#15203a] disabled:opacity-60"
+              />
+              {docUploading && <Loader2 size={18} className="shrink-0 animate-spin text-[#866D2C]" />}
+            </div>
+            {docError && <p className="mt-1 text-xs font-normal text-red-600">{docError}</p>}
+          </div>
         </div>
 
         <div className="mt-6 flex justify-end gap-3">

@@ -18,7 +18,7 @@ return [
     |
     */
 
-    'driver' => env('SESSION_DRIVER', 'database'),
+    'driver' => env('SESSION_DRIVER', 'file'),
 
     /*
     |--------------------------------------------------------------------------
@@ -114,7 +114,10 @@ return [
     |
     */
 
-    'lottery' => [2, 100],
+    'lottery' => [
+        (int) env('SESSION_LOTTERY_CHANCE', 2),
+        (int) env('SESSION_LOTTERY_OUT_OF', 100),
+    ],
 
     /*
     |--------------------------------------------------------------------------

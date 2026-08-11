@@ -28,14 +28,6 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->remove(\Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class);
 
-        // SPA cookie auth: every API route needs a session store so
-        // Sanctum's session guard + /api/auth/me work regardless of Origin.
-        $middleware->api(append: [
-            \Illuminate\Session\Middleware\StartSession::class,
-        ]);
-
-        // SPA cookie auth: API endpoints rely on the session cookie set by
-        // /api/auth/login; the React client uses the same login flow.
         $middleware->validateCsrfTokens(except: ['api/*']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

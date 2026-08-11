@@ -18,7 +18,7 @@ const Layout: React.FC = () => {
       <Navbar onSearchOpen={() => setIsSearchOpen(true)} />
       
       {/* Main content with padding-top to offset fixed navbar */}
-      <main className="flex-grow pt-[70px]">
+      <main className="flex-grow pt-[64px]">
         <Outlet />
       </main>
 
