@@ -3,6 +3,7 @@
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\StudentAuthController;
+use App\Http\Controllers\BkkPartnerController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ContentCrudController;
 use App\Http\Controllers\ExtracurricularController;
@@ -103,6 +104,7 @@ Route::delete('/uploads', [UploadController::class, 'destroy'])->middleware('aut
 // ---------- BKK / JOB VACANCIES ----------
 Route::get('/jobs', [JobVacancyController::class, 'index']);
 Route::get('/jobs/{slug}', [JobVacancyController::class, 'show']);
+Route::get('/bkk/partners', [BkkPartnerController::class, 'index']);
 
 // Compatibility REST resources for the existing React CRUD layer. They are
 // backed by Laravel models and authorization.
@@ -180,6 +182,12 @@ Route::middleware(['auth:sanctum', 'staff'])->group(function () {
     Route::post('/admin/jobs', [JobVacancyController::class, 'store'])->middleware('permission:job.create');
     Route::put('/admin/jobs/{id}', [JobVacancyController::class, 'update'])->middleware('permission:job.edit');
     Route::delete('/admin/jobs/{id}', [JobVacancyController::class, 'destroy'])->middleware('permission:job.delete');
+
+    // BKK / Partner company management
+    Route::get('/admin/bkk/partners', [BkkPartnerController::class, 'adminIndex'])->middleware('permission:job.view');
+    Route::post('/admin/bkk/partners', [BkkPartnerController::class, 'store'])->middleware('permission:job.create');
+    Route::put('/admin/bkk/partners/{id}', [BkkPartnerController::class, 'update'])->middleware('permission:job.edit');
+    Route::delete('/admin/bkk/partners/{id}', [BkkPartnerController::class, 'destroy'])->middleware('permission:job.delete');
 });
 
 // ============================================================

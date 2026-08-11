@@ -438,7 +438,7 @@ function AdminPanel() {
 
           {section === 'mading' && canViewMading && <MadingManagement permissions={permissions} />}
 
-          {section === 'bkk' && canViewBkk && <BkkManagement permissions={permissions} />}
+          {section === 'bkk' && canViewBkk && <BkkManagement permissions={permissions} isAdmin={isAdmin} />}
 
           {section === 'gallery' && canViewGallery && <GalleryManagement />}
 

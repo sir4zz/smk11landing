@@ -56,7 +56,15 @@ export const navigationData: NavItem[] = [
             { label: 'Kesemaptaan', href: '/osis/kesemaptaan' },
         ],
     },
-    { label: 'BKK', href: '/bkk' },
+    {
+        label: 'BKK',
+        href: '/bkk',
+        children: [
+            { label: 'Beranda BKK', href: '/bkk' },
+            { label: 'Lowongan Kerja', href: '/bkk/lowongan' },
+            { label: 'Kontak BKK', href: '/bkk/kontak' },
+        ],
+    },
     { label: 'Mading', href: '/mading' },
     { label: 'SPMB', href: '/spmb', isHighlighted: true },
     { label: 'Kontak', href: '/kontak' },

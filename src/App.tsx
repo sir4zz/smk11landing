@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate, useParams } from 'react-router-dom'
 import Layout from './components/layout/Layout'
 import Home from './pages/Home'
 import History from './pages/profile/History'
@@ -35,6 +35,8 @@ import StudentLogin from './pages/mading/StudentLogin'
 import StudentArea from './pages/mading/StudentArea'
 import BkkList from './pages/bkk/BkkList'
 import BkkDetail from './pages/bkk/BkkDetail'
+import BkkHome from './pages/bkk/BkkHome'
+import BkkContact from './pages/bkk/BkkContact'
 import MustChangePassword from './pages/admin/MustChangePassword'
 import ProfileDirectory from './pages/profiles/ProfileDirectory'
 import ProfilePage from './pages/profiles/ProfilePage'
@@ -101,8 +103,11 @@ function App() {
           </Route>
 
           {/* BKK (Bursa Kerja Khusus) */}
-          <Route path="bkk" element={<BkkList />} />
-          <Route path="bkk/:slug" element={<BkkDetail />} />
+          <Route path="bkk" element={<BkkHome />} />
+          <Route path="bkk/lowongan" element={<BkkList />} />
+          <Route path="bkk/lowongan/:slug" element={<BkkDetail />} />
+          <Route path="bkk/kontak" element={<BkkContact />} />
+          <Route path="bkk/:slug" element={<BkkDetailRedirect />} />
 
           {/* Public information portal */}
           <Route path="spmb" element={<Admissions />} />
@@ -113,6 +118,11 @@ function App() {
         </Route>
     </Routes>
   )
+}
+
+function BkkDetailRedirect() {
+  const { slug } = useParams<{ slug: string }>()
+  return <Navigate to={`/bkk/lowongan/${slug}`} replace />
 }
 
 function NotFound() {

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import PageHero from '../../components/ui/PageHero'
+import BkkSubNav from '../../components/bkk/BkkSubNav'
 import { fetchPublicContent } from '../../lib/api'
 import {
   fetchJobVacancies,
@@ -94,8 +95,12 @@ const BkkList: React.FC = () => {
         title="Bursa Kerja Khusus (BKK)"
         subtitle="Temukan lowongan kerja terbaru dari perusahaan mitra untuk alumni SMKN 11 Kabupaten Tangerang"
         backgroundImage="https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=1600&q=80"
-        breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'BKK' }]}
+        breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'BKK', href: '/bkk' }, { label: 'Lowongan Kerja' }]}
       />
+
+      <div className="relative z-10 -mt-6">
+        <BkkSubNav />
+      </div>
 
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 md:py-20">
         <div className="mb-10 grid gap-4 md:grid-cols-2 lg:grid-cols-5">
@@ -146,7 +151,7 @@ const BkkList: React.FC = () => {
             {rows.map((job) => (
               <Link
                 key={job.id}
-                to={`/bkk/${job.slug}`}
+                to={`/bkk/lowongan/${job.slug}`}
                 className="group flex flex-col overflow-hidden rounded-2xl border border-[#1B2A4A]/10 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl"
               >
                 <div className="flex items-start justify-between gap-3 p-5 pb-4">

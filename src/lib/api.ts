@@ -661,3 +661,74 @@ export const jobAdminApi = {
     return request<null>(`/admin/jobs/${encodeURIComponent(id)}`, { method: 'DELETE' });
   },
 };
+
+// ---------- BKK / BERANDA & KONTAK SETTINGS ----------
+export interface BkkBannerContent { title: string; subtitle: string; image: string }
+export interface BkkAboutContent { title: string; subtitle: string; paragraphs: string[] }
+export interface BkkServiceContent { title: string; description: string }
+export interface BkkHomeContent {
+  banner: BkkBannerContent;
+  about: BkkAboutContent;
+  services: BkkServiceContent[];
+}
+
+export interface BkkContactContent {
+  whatsapp: string;
+  whatsapp_link: string;
+  email: string;
+  location: string;
+  hours: string;
+}
+
+function contentRecordData<T>(type: string): Promise<T | null> {
+  return request<{ data?: T } | T>(`/data/content_records?content_type=${type}&single=1`).then((result) => {
+    if (!result.data) return null;
+    return (result.data as { data?: T }).data ?? (result.data as T);
+  });
+}
+
+export async function fetchBkkHomeContent(): Promise<BkkHomeContent | null> {
+  return contentRecordData<BkkHomeContent>('bkk_home');
+}
+
+export async function fetchBkkContactContent(): Promise<BkkContactContent | null> {
+  return contentRecordData<BkkContactContent>('bkk_contact');
+}
+
+// ---------- BKK / PARTNER COMPANIES ----------
+export interface BkkPartner {
+  id: string;
+  name: string;
+  industry: string;
+  location: string;
+  description: string;
+  logo: string;
+  is_active: boolean;
+  sort_order: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export async function fetchBkkPartners(): Promise<BkkPartner[]> {
+  const result = await request<BkkPartner[]>('/bkk/partners');
+  return result.data ?? [];
+}
+
+export const bkkPartnerAdminApi = {
+  list(params?: { search?: string; is_active?: boolean }): ApiResult<BkkPartner[]> {
+    const q = new URLSearchParams();
+    if (params?.search) q.set('search', params.search);
+    if (typeof params?.is_active === 'boolean') q.set('is_active', params.is_active ? '1' : '0');
+    const suffix = q.size ? `?${q}` : '';
+    return request<BkkPartner[]>(`/admin/bkk/partners${suffix}`);
+  },
+  create(payload: Record<string, unknown>): ApiResult<BkkPartner> {
+    return request<BkkPartner>('/admin/bkk/partners', { method: 'POST', body: JSON.stringify(payload) });
+  },
+  update(id: string, payload: Record<string, unknown>): ApiResult<BkkPartner> {
+    return request<BkkPartner>(`/admin/bkk/partners/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(payload) });
+  },
+  remove(id: string): ApiResult<null> {
+    return request<null>(`/admin/bkk/partners/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  },
+};

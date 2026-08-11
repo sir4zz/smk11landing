@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Achievement;
+use App\Models\BkkPartner;
 use App\Models\ContentRecord;
 use App\Models\EducationStaff;
 use App\Models\Extracurricular;
@@ -280,6 +281,8 @@ class DatabaseSeeder extends Seeder
         $this->seedGalleries();
         $this->seedFaqs();
         $this->seedJobVacancies();
+        $this->seedBkkSettings();
+        $this->seedBkkPartners();
         $this->seedHome();
     }
 
@@ -579,6 +582,77 @@ class DatabaseSeeder extends Seeder
         }
     }
 
+    protected function seedBkkSettings(): void
+    {
+        ContentRecord::updateOrCreate(
+            ['content_type' => 'bkk_home'],
+            ['data' => [
+                'banner' => [
+                    'title' => 'Bursa Kerja Khusus (BKK)',
+                    'subtitle' => 'Pusat layanan informasi lowongan kerja, penyaluran lulusan, dan bimbingan karir SMKN 11 Kabupaten Tangerang',
+                    'image' => 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=1600&q=80',
+                ],
+                'about' => [
+                    'title' => 'Apa itu BKK SMKN 11 Kabupaten Tangerang?',
+                    'subtitle' => 'Menghubungkan alumni dengan dunia kerja',
+                    'paragraphs' => [
+                        'Bursa Kerja Khusus (BKK) adalah unit layanan di SMKN 11 Kabupaten Tangerang yang memfasilitasi penempatan lulusan ke dunia usaha dan dunia industri (DUDI). Melalui BKK, alumni dapat mengakses informasi lowongan kerja yang relevan dengan kompetensi keahlian mereka.',
+                        'Kami bekerja sama dengan berbagai perusahaan mitra untuk memastikan lulusan mendapatkan peluang karir terbaik, mulai dari lowongan full time, kontrak, hingga program magang.',
+                    ],
+                ],
+                'services' => [
+                    ['title' => 'Informasi Lowongan Kerja', 'description' => 'Menyediakan informasi lowongan kerja terbaru dari perusahaan mitra yang sesuai dengan kompetensi lulusan.'],
+                    ['title' => 'Penyaluran Lulusan', 'description' => 'Menjembatani alumni dengan dunia usaha dan industri melalui rekrutmen langsung maupun kerja sama mitra.'],
+                    ['title' => 'Bimbingan Karir', 'description' => 'Membantu siswa dan alumni mempersiapkan diri memasuki dunia kerja, termasuk penyusunan lamaran dan wawancara.'],
+                ],
+            ]]
+        );
+
+        ContentRecord::updateOrCreate(
+            ['content_type' => 'bkk_contact'],
+            ['data' => [
+                'whatsapp' => '0812 9922 0831',
+                'whatsapp_link' => 'https://wa.me/6281299220831',
+                'email' => 'admin@smkn11kabtang.sch.id',
+                'location' => 'Kp. Saradan RT. 03/01, Desa Pangkat, Kec. Jayanti, Kab. Tangerang, Banten 15610',
+                'hours' => 'Senin - Jumat, 07.00 - 15.00 WIB',
+            ]]
+        );
+    }
+
+    protected function seedBkkPartners(): void
+    {
+        $rows = [
+            ['name' => 'PT Teknologi Nusantara', 'industry' => 'Teknologi Informasi & Telekomunikasi', 'location' => 'Jakarta', 'logo' => 'https://images.unsplash.com/photo-1614680376593-902f74cf0d41?auto=format&fit=crop&w=200&q=80'],
+            ['name' => 'CV Kreatif Desain Studio', 'industry' => 'Desain & Kreatif', 'location' => 'Tangerang', 'logo' => 'https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=200&q=80'],
+            ['name' => 'PT Astra Motor Sales Operation', 'industry' => 'Otomotif', 'location' => 'Tangerang', 'logo' => 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=200&q=80'],
+            ['name' => 'PT PLN (Persero) Tangerang', 'industry' => 'Energi & Kelistrikan', 'location' => 'Tangerang', 'logo' => 'https://images.unsplash.com/photo-1544882657-fbd6a4f9e5e9?auto=format&fit=crop&w=200&q=80'],
+            ['name' => 'PT Bank Banten Syariah', 'industry' => 'Perbankan', 'location' => 'Tangerang', 'logo' => 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=200&q=80'],
+            ['name' => 'CV Busana Nusantara', 'industry' => 'Tekstil & Garmen', 'location' => 'Tangerang', 'logo' => 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=200&q=80'],
+            ['name' => 'PT Multimedia Kreatif Indonesia', 'industry' => 'Media & Kreatif', 'location' => 'Jakarta', 'logo' => 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?auto=format&fit=crop&w=200&q=80'],
+            ['name' => 'PT Jaringan Cepat Indonesia', 'industry' => 'Telekomunikasi', 'location' => 'Tangerang', 'logo' => 'https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?auto=format&fit=crop&w=200&q=80'],
+            ['name' => 'PT Sentral Mesin Otomotif', 'industry' => 'Otomotif', 'location' => 'Tangerang', 'logo' => 'https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=200&q=80'],
+            ['name' => 'PT Listrik Bangun Mandiri', 'industry' => 'Konstruksi & Kelistrikan', 'location' => 'Jakarta', 'logo' => 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?auto=format&fit=crop&w=200&q=80'],
+            ['name' => 'PT Ritel Makmur Bersama', 'industry' => 'Ritel', 'location' => 'Tangerang', 'logo' => 'https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?auto=format&fit=crop&w=200&q=80'],
+            ['name' => 'PT Garmen Sejahtera', 'industry' => 'Tekstil & Garmen', 'location' => 'Tangerang', 'logo' => 'https://images.unsplash.com/photo-1571945153237-4929e783af4a?auto=format&fit=crop&w=200&q=80'],
+            ['name' => 'PT Garda Nusa Teknologi', 'industry' => 'Teknologi Informasi', 'location' => 'Jakarta', 'logo' => 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=200&q=80'],
+        ];
+
+        foreach ($rows as $index => $row) {
+            BkkPartner::updateOrCreate(
+                ['name' => $row['name']],
+                [
+                    'industry' => $row['industry'],
+                    'location' => $row['location'],
+                    'logo' => $row['logo'],
+                    'description' => 'Perusahaan mitra BKK SMKN 11 Kabupaten Tangerang yang membuka lowongan kerja bagi lulusan sekolah.',
+                    'is_active' => true,
+                    'sort_order' => $index,
+                ]
+            );
+        }
+    }
+
     protected function seedHome(): void
     {
         ContentRecord::updateOrCreate(
@@ -694,6 +768,56 @@ class DatabaseSeeder extends Seeder
                 'thumbnail' => 'https://images.unsplash.com/photo-1606857521015-7f7fc63a41f0?auto=format&fit=crop&w=900&q=80',
                 'category' => 'Pengumuman',
                 'author' => 'Admin',
+            ],
+            [
+                'title' => 'Lowongan Kerja Terbaru PT Teknologi Nusantara untuk Lulusan TJKT',
+                'slug' => 'pengumuman-lowongan-tjkt-teknologi-nusantara',
+                'date' => '2026-08-05',
+                'excerpt' => 'PT Teknologi Nusantara membuka lowongan Network Administrator untuk lulusan TJKT melalui BKK SMKN 11 Kabupaten Tangerang.',
+                'content' => '<p>BKK SMKN 11 Kabupaten Tangerang menerima informasi lowongan kerja terbaru dari PT Teknologi Nusantara. Perusahaan penyedia layanan infrastruktur IT dan telekomunikasi tersebut membutuhkan kandidat untuk posisi Network Administrator.</p><p>Posisi ini terbuka bagi lulusan SMK jurusan Teknik Jaringan Komputer dan Telekomunikasi (TJKT) yang memahami MikroTik, Cisco, serta dasar TCP/IP dan VLAN. Fresh graduate dipersilakan untuk mendaftar.</p><p>Alumni yang berminat dapat melihat detail lowongan melalui halaman Lowongan Kerja BKK atau menghubungi petugas BKK pada jam pelayanan. Batas akhir pendaftaran adalah 30 September 2026.</p>',
+                'thumbnail' => 'https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=900&q=80',
+                'category' => 'Pengumuman',
+                'author' => 'BKK SMKN 11',
+            ],
+            [
+                'title' => 'Pendaftaran Program Magang Batch 2 PT Multimedia Kreatif Dibuka',
+                'slug' => 'pendaftaran-magang-multimedia-kreatif-batch-2',
+                'date' => '2026-07-28',
+                'excerpt' => 'PT Multimedia Kreatif Indonesia kembali membuka program magang bagi siswa dan alumni DKV. Pendaftaran melalui BKK SMKN 11.',
+                'content' => '<p>BKK SMKN 11 Kabupaten Tangerang mengumumkan dibukanya pendaftaran program magang batch kedua dari PT Multimedia Kreatif Indonesia. Production house yang menangani berbagai merek nasional ini mencari kandidat untuk posisi Videografer &amp; Editor.</p><p>Program magang ini terbuka bagi siswa SMK jurusan DKV atau Multimedia yang sedang melaksanakan PKL maupun alumni baru. Kandidat diharapkan menguasai dasar videografi dan editing video menggunakan Adobe Premiere atau CapCut.</p><p>Peserta magang akan mendapatkan uang saku, sertifikat pengalaman kerja, dan kesempatan diangkat sebagai karyawan kontrak. Silakan hubungi BKK SMKN 11 untuk informasi pendaftaran lebih lanjut.</p>',
+                'thumbnail' => 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=900&q=80',
+                'category' => 'Pengumuman',
+                'author' => 'BKK SMKN 11',
+            ],
+            [
+                'title' => 'BKK Buka Layanan Konsultasi Karir untuk Alumni',
+                'slug' => 'layanan-konsultasi-karir-bkk',
+                'date' => '2026-07-20',
+                'excerpt' => 'BKK SMKN 11 Kabupaten Tangerang menyediakan layanan konsultasi karir gratis bagi alumni setiap hari kerja.',
+                'content' => '<p>BKK SMKN 11 Kabupaten Tangerang membuka layanan konsultasi karir bagi alumni yang ingin mempersiapkan diri memasuki dunia kerja. Layanan ini mencakup bimbingan penyusunan curriculum vitae (CV), tips menghadapi wawancara kerja, serta informasi tren lowongan di berbagai sektor industri.</p><p>Konsultasi dapat dilakukan secara langsung di kantor BKK atau melalui WhatsApp pada jam pelayanan, Senin hingga Jumat pukul 07.00 - 15.00 WIB. Layanan ini gratis dan terbuka untuk seluruh alumni dari semua program keahlian.</p><p>Melalui layanan ini, BKK berharap alumni semakin siap bersaing dan mendapatkan pekerjaan yang sesuai dengan kompetensi masing-masing.</p>',
+                'thumbnail' => 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&w=900&q=80',
+                'category' => 'Pengumuman',
+                'author' => 'BKK SMKN 11',
+            ],
+            [
+                'title' => 'Rekrutmen Bersama Perusahaan Mitra BKK Tahun 2026',
+                'slug' => 'rekrutmen-bersama-mitra-bkk-2026',
+                'date' => '2026-07-12',
+                'excerpt' => 'BKK SMKN 11 mengadakan rekrutmen bersama yang diikuti perusahaan mitra dari berbagai sektor industri untuk menyalurkan lulusan.',
+                'content' => '<p>BKK SMKN 11 Kabupaten Tangerang akan menyelenggarakan kegiatan rekrutmen bersama yang diikuti oleh sejumlah perusahaan mitra dari berbagai sektor industri. Kegiatan ini menjadi wadah bagi alumni untuk bertemu langsung dengan perwakilan perusahaan dan mengajukan lamaran kerja.</p><p>Rekrutmen bersama menghadirkan perusahaan dari sektor teknologi informasi, otomotif, manufaktur, ritel, hingga perbankan. Alumni diharapkan membawa berkas lamaran lengkap dan berpakaian rapi saat mengikuti kegiatan.</p><p>Informasi jadwal dan daftar perusahaan peserta akan diumumkan melalui halaman Lowongan Kerja BKK. Pantau terus informasi terbaru agar tidak ketinggalan kesempatan ini.</p>',
+                'thumbnail' => 'https://images.unsplash.com/photo-1521791136064-7986c5920bc6?auto=format&fit=crop&w=900&q=80',
+                'category' => 'Pengumuman',
+                'author' => 'BKK SMKN 11',
+            ],
+            [
+                'title' => 'Workshop Persiapan Kerja: Tips CV dan Wawancara bagi Calon Lulusan',
+                'slug' => 'workshop-persiapan-kerja-bkk',
+                'date' => '2026-06-25',
+                'excerpt' => 'BKK SMKN 11 menggelar workshop persiapan kerja untuk siswa kelas XII dalam menyusun CV dan menghadapi wawancara kerja.',
+                'content' => '<p>Dalam rangka mempersiapkan siswa kelas XII memasuki dunia kerja setelah lulus, BKK SMKN 11 Kabupaten Tangerang menyelenggarakan workshop persiapan kerja. Materi workshop meliputi teknik menyusun CV yang menarik, strategi menjawab wawancara kerja, dan etika berkomunikasi di lingkungan profesional.</p><p>Workshop menghadirkan praktisi dari perusahaan mitra yang membagikan pengalaman dan tips langsung dari dunia industri. Peserta juga berkesempatan melakukan simulasi wawancara kerja.</p><p>Kegiatan ini merupakan bagian dari program bimbingan karir BKK yang diadakan secara rutin setiap tahun menjelang kelulusan siswa kelas XII.</p>',
+                'thumbnail' => 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=900&q=80',
+                'category' => 'Pengumuman',
+                'author' => 'BKK SMKN 11',
             ],
         ];
 

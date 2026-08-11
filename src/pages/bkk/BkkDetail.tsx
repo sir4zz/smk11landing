@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import PageHero from '../../components/ui/PageHero'
 import Button from '../../components/ui/Button'
+import BkkSubNav from '../../components/bkk/BkkSubNav'
 import {
   fetchJobVacancyBySlug,
   resolveImageUrl,
@@ -76,7 +77,7 @@ const BkkDetail: React.FC = () => {
         <PageHero title="Lowongan Tidak Ditemukan" />
         <div className="mx-auto max-w-7xl px-4 py-16 text-center">
           <p className="mb-6 text-lg text-[#23314D]">Lowongan yang Anda cari tidak tersedia.</p>
-          <Link to="/bkk">
+          <Link to="/bkk/lowongan">
             <Button variant="outline">Kembali ke BKK</Button>
           </Link>
         </div>
@@ -93,10 +94,15 @@ const BkkDetail: React.FC = () => {
         breadcrumbs={[
           { label: 'Beranda', href: '/' },
           { label: 'BKK', href: '/bkk' },
+          { label: 'Lowongan Kerja', href: '/bkk/lowongan' },
           { label: job.position },
         ]}
         backgroundImage="https://images.unsplash.com/photo-1554774853-aae0a22c8aa4?auto=format&fit=crop&w=1600&q=80"
       />
+
+      <div className="relative z-10 -mt-6">
+        <BkkSubNav />
+      </div>
 
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="overflow-hidden rounded-2xl border border-[#1B2A4A]/10 bg-white shadow-sm">
@@ -175,7 +181,7 @@ const BkkDetail: React.FC = () => {
               </div>
             </div>
 
-            <Link to="/bkk">
+            <Link to="/bkk/lowongan">
               <Button variant="outline" className="w-full gap-2">
                 <ArrowLeft className="h-4 w-4" /> Kembali ke BKK
               </Button>
