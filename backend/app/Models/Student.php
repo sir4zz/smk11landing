@@ -20,11 +20,16 @@ class Student extends Model
         'name',
         'class',
         'major',
+        'gender',
+        'date_of_birth',
+        'place_of_birth',
+        'address',
         'achievements',
     ];
 
     protected $casts = [
         'achievements' => 'array',
+        'date_of_birth' => 'date',
     ];
 
     public function account(): HasOne

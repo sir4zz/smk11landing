@@ -6,6 +6,7 @@ use App\Models\Profile;
 use App\Models\Student;
 use App\Models\StudentAccount;
 use App\Models\User;
+use App\Services\AccountService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -13,6 +14,10 @@ use Illuminate\Validation\ValidationException;
 
 class StudentController extends Controller
 {
+    public function __construct(protected AccountService $accounts)
+    {
+    }
+
     public function index(Request $request)
     {
         $query = Student::query();
@@ -43,6 +48,10 @@ class StudentController extends Controller
             'p_name' => ['required', 'string'],
             'p_class' => ['nullable', 'string'],
             'p_major' => ['nullable', 'string'],
+            'p_gender' => ['nullable', 'string'],
+            'p_date_of_birth' => ['nullable', 'string'],
+            'p_place_of_birth' => ['nullable', 'string'],
+            'p_address' => ['nullable', 'string'],
             'p_pin' => ['required', 'string'],
         ]);
 
@@ -54,7 +63,7 @@ class StudentController extends Controller
         }
 
         $nisn = trim($data['p_nisn']);
-        $email = 'nisn-'.$nisn.'@mading.smkn11.sch.id';
+        $email = $this->accounts->studentEmail($nisn);
 
         if (Student::query()->where('nisn', $nisn)->exists() || User::query()->where('email', $email)->exists()) {
             throw ValidationException::withMessages(['message' => 'NISN sudah terdaftar']);
@@ -87,6 +96,10 @@ class StudentController extends Controller
                     'name' => $data['p_name'],
                     'class' => $data['p_class'] ?? '',
                     'major' => $data['p_major'] ?? '',
+                    'gender' => $this->accounts->normalizeGender($data['p_gender'] ?? ''),
+                    'date_of_birth' => $this->accounts->normalizeDate($data['p_date_of_birth'] ?? null),
+                    'place_of_birth' => $data['p_place_of_birth'] ?? '',
+                    'address' => $data['p_address'] ?? '',
                 ]);
 
                 StudentAccount::create([
@@ -101,6 +114,122 @@ class StudentController extends Controller
         }
 
         return response()->json(Student::find($id), 201);
+    }
+
+    /**
+     * Bulk import siswa from spreadsheet rows. Each row creates a login
+     * account (NISN + PIN, PIN di-generate bila tidak dikirim).
+     */
+    public function import(Request $request)
+    {
+        $data = $request->validate([
+            'rows' => ['required', 'array', 'min:1'],
+            'default_pin' => ['nullable', 'string'],
+        ]);
+
+        $defaultPin = trim((string) ($data['default_pin'] ?? ''));
+        $imported = 0;
+        $skipped = 0;
+        $errors = [];
+        $seen = [];
+
+        foreach ($data['rows'] as $index => $row) {
+            $row = is_array($row) ? $row : [];
+            $line = (int) $index + 2;
+            $nisn = '';
+
+            try {
+                $nisn = trim((string) ($row['nisn'] ?? ''));
+                $name = trim((string) ($row['name'] ?? ''));
+
+                if ($nisn === '' || mb_strlen($nisn) < 4) {
+                    throw new \RuntimeException('NISN tidak valid (minimal 4 karakter).');
+                }
+                if (mb_strlen($name) < 2) {
+                    throw new \RuntimeException('Nama wajib diisi (minimal 2 karakter).');
+                }
+
+                $email = $this->accounts->studentEmail($nisn);
+                if (isset($seen[$nisn]) || Student::query()->where('nisn', $nisn)->exists() || User::query()->where('email', $email)->exists()) {
+                    throw new \RuntimeException('NISN sudah terdaftar.');
+                }
+                $seen[$nisn] = true;
+
+                $pin = $this->defaultPin($nisn, $defaultPin);
+                $id = (string) \Illuminate\Support\Str::uuid();
+
+                DB::transaction(function () use ($id, $email, $nisn, $name, $row, $pin) {
+                    User::create([
+                        'id' => $id,
+                        'email' => $email,
+                        'password' => Hash::make($pin),
+                        'name' => $name,
+                        'profile' => ['name' => $name],
+                        'email_verified_at' => now(),
+                    ]);
+
+                    Profile::create([
+                        'id' => $id,
+                        'role' => 'student',
+                        'name' => $name,
+                        'email' => $email,
+                        'updated_at' => now(),
+                    ]);
+
+                    Student::create([
+                        'id' => $id,
+                        'nisn' => $nisn,
+                        'name' => $name,
+                        'class' => trim((string) ($row['class'] ?? '')),
+                        'major' => trim((string) ($row['major'] ?? '')),
+                        'gender' => $this->accounts->normalizeGender($row['gender'] ?? ''),
+                        'date_of_birth' => $this->accounts->normalizeDate($row['date_of_birth'] ?? null),
+                        'place_of_birth' => trim((string) ($row['place_of_birth'] ?? '')),
+                        'address' => trim((string) ($row['address'] ?? '')),
+                    ]);
+
+                    StudentAccount::create([
+                        'id' => $id,
+                        'student_id' => $id,
+                        'email' => $email,
+                        'status' => 'active',
+                    ]);
+                });
+
+                $imported++;
+            } catch (\Throwable $e) {
+                $skipped++;
+                $errors[] = [
+                    'row' => (int) $line,
+                    'nisn' => $nisn,
+                    'message' => $e->getMessage(),
+                ];
+            }
+        }
+
+        return response()->json([
+            'data' => [
+                'imported' => $imported,
+                'skipped' => $skipped,
+                'errors' => $errors,
+            ],
+            'error' => null,
+        ]);
+    }
+
+    private function defaultPin(string $nisn, string $providedPin): string
+    {
+        $pin = trim($providedPin);
+        if (mb_strlen($pin) >= 4) {
+            return $pin;
+        }
+
+        $digits = preg_replace('/\D/', '', $nisn);
+        if ($digits !== null && strlen($digits) >= 4) {
+            return substr($digits, -4);
+        }
+
+        return '1234';
     }
 
     /**

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
-import { Plus, Trash2, X, Loader2, KeyRound, Search, UserRound } from 'lucide-react';
+import { Plus, Trash2, X, Loader2, KeyRound, Search, UserRound, Upload } from 'lucide-react';
 import { backendApi } from '../../lib/api';
+import StudentImportModal from './StudentImportModal';
 
 interface StudentRow {
   id: string;
@@ -9,6 +10,10 @@ interface StudentRow {
   name: string;
   class: string;
   major: string;
+  gender?: string;
+  date_of_birth?: string;
+  place_of_birth?: string;
+  address?: string;
   created_at?: string;
 }
 
@@ -19,7 +24,8 @@ export default function StudentsManagement() {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [creating, setCreating] = useState(false);
-  const [createValues, setCreateValues] = useState({ nisn: '', name: '', class: '', major: '', pin: '' });
+  const [importOpen, setImportOpen] = useState(false);
+  const [createValues, setCreateValues] = useState({ nisn: '', name: '', class: '', major: '', gender: '', date_of_birth: '', place_of_birth: '', address: '', pin: '' });
 
   const load = useCallback(async () => {
     const { data, error } = await backendApi.database.from('students').select('*').order('name', { ascending: true });
@@ -53,6 +59,10 @@ export default function StudentsManagement() {
       p_name: name.trim(),
       p_class: klass.trim(),
       p_major: major.trim(),
+      p_gender: createValues.gender,
+      p_date_of_birth: createValues.date_of_birth,
+      p_place_of_birth: createValues.place_of_birth.trim(),
+      p_address: createValues.address.trim(),
       p_pin: pin,
     });
     if (r.error) {
@@ -60,7 +70,7 @@ export default function StudentsManagement() {
       setCreating(false);
       return;
     }
-    setCreateValues({ nisn: '', name: '', class: '', major: '', pin: '' });
+    setCreateValues({ nisn: '', name: '', class: '', major: '', gender: '', date_of_birth: '', place_of_birth: '', address: '', pin: '' });
     setOpen(false);
     await load();
     flash('ok', `Akun siswa ${name.trim()} berhasil dibuat. Login siswa: NISN + PIN.`);
@@ -95,7 +105,10 @@ export default function StudentsManagement() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-[#23314D]">Buat dan kelola akun siswa untuk Mading (login NISN + PIN).</p>
-        <button onClick={() => setOpen(true)} className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-4 py-2 font-bold text-[#1B2A4A]"><Plus size={18} /> Tambah Siswa</button>
+        <div className="flex flex-wrap gap-2">
+          <button onClick={() => setImportOpen(true)} className="inline-flex items-center gap-2 rounded-lg border-2 border-[#1B2A4A] px-4 py-2 font-bold text-[#1B2A4A] hover:bg-[#1B2A4A]/5"><Upload size={18} /> Import Excel/CSV</button>
+          <button onClick={() => setOpen(true)} className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-4 py-2 font-bold text-[#1B2A4A]"><Plus size={18} /> Tambah Siswa</button>
+        </div>
       </div>
 
       {msg && <p className={`rounded-lg p-3 text-sm ${msg.type === 'ok' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>{msg.text}</p>}
@@ -154,6 +167,22 @@ export default function StudentsManagement() {
               <Field label="Nama Lengkap" value={createValues.name} onChange={(e) => setCreateValues((v) => ({ ...v, name: e.target.value }))} />
               <Field label="Kelas" value={createValues.class} onChange={(e) => setCreateValues((v) => ({ ...v, class: e.target.value }))} placeholder="cth. X TJKT 1" />
               <Field label="Jurusan" value={createValues.major} onChange={(e) => setCreateValues((v) => ({ ...v, major: e.target.value }))} placeholder="cth. Teknik Jaringan" />
+              <label className="block text-sm font-semibold">Jenis Kelamin
+                <select value={createValues.gender} onChange={(e) => setCreateValues((v) => ({ ...v, gender: e.target.value }))} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 bg-white px-3 py-2 font-normal">
+                  <option value="">Pilih</option>
+                  <option value="L">Laki-laki</option>
+                  <option value="P">Perempuan</option>
+                </select>
+              </label>
+              <label className="block text-sm font-semibold">Tanggal Lahir
+                <input value={createValues.date_of_birth} type="date" onChange={(e) => setCreateValues((v) => ({ ...v, date_of_birth: e.target.value }))} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />
+              </label>
+              <Field label="Tempat Lahir" value={createValues.place_of_birth} onChange={(e) => setCreateValues((v) => ({ ...v, place_of_birth: e.target.value }))} placeholder="cth. Bandung" />
+              <div className="sm:col-span-2">
+                <label className="block text-sm font-semibold">Alamat
+                  <textarea value={createValues.address} onChange={(e) => setCreateValues((v) => ({ ...v, address: e.target.value }))} rows={2} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" placeholder="Alamat lengkap" />
+                </label>
+              </div>
               <div className="sm:col-span-2">
                 <label className="block text-sm font-semibold">PIN Siswa (min. 4 karakter)
                   <input value={createValues.pin} type="text" inputMode="numeric" onChange={(e) => setCreateValues((v) => ({ ...v, pin: e.target.value }))} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" placeholder="cth. 1234" />
@@ -169,6 +198,8 @@ export default function StudentsManagement() {
           </form>
         </div>
       )}
+
+      {importOpen && <StudentImportModal onClose={() => setImportOpen(false)} onImported={() => void load()} />}
     </div>
   );
 }

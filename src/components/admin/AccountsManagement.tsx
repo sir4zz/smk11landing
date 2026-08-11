@@ -32,6 +32,10 @@ interface FormValues {
   nisn: string;
   class: string;
   major: string;
+  gender: string;
+  date_of_birth: string;
+  place_of_birth: string;
+  address: string;
   pin: string;
   status: 'active' | 'inactive';
   must_change_password: boolean;
@@ -43,7 +47,7 @@ interface FormValues {
 const emptyForm = (role: AccountRole = 'guru'): FormValues => ({
   role, name: '', email: '', password: '',
   nip: '', nuptk: '', subject: '', position: '', division: '',
-  nisn: '', class: '', major: '', pin: '',
+  nisn: '', class: '', major: '', gender: '', date_of_birth: '', place_of_birth: '', address: '', pin: '',
   status: 'active', must_change_password: false,
   achievements: '', certifications: '', work_programs: '',
 });
@@ -106,6 +110,10 @@ export default function AccountsManagement() {
       nisn: account.nisn ?? account.osis?.nisn ?? '',
       class: account.class ?? '',
       major: account.major ?? '',
+      gender: account.gender ?? '',
+      date_of_birth: account.date_of_birth ?? '',
+      place_of_birth: account.place_of_birth ?? '',
+      address: account.address ?? '',
       pin: '',
       status: account.status === 'inactive' ? 'inactive' : 'active',
       must_change_password: Boolean(account.must_change_password),
@@ -143,6 +151,10 @@ export default function AccountsManagement() {
         payload = {
           role: 'student', name, nisn,
           class: form.class.trim(), major: form.major.trim(),
+          gender: form.gender,
+          date_of_birth: form.date_of_birth,
+          place_of_birth: form.place_of_birth.trim(),
+          address: form.address.trim(),
           achievements: splitLines(form.achievements),
           status: form.status, must_change_password: form.must_change_password,
         };
@@ -326,6 +338,22 @@ export default function AccountsManagement() {
                   <Field label="NISN" value={form.nisn} onChange={setField('nisn')} placeholder="cth. 0061234567" />
                   <Field label="Kelas" value={form.class} onChange={setField('class')} placeholder="cth. X TJKT 1" />
                   <Field label="Jurusan" value={form.major} onChange={setField('major')} placeholder="cth. Teknik Jaringan" />
+                  <label className="block text-sm font-semibold">Jenis Kelamin
+                    <select value={form.gender} onChange={setField('gender')} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 bg-white px-3 py-2 font-normal">
+                      <option value="">Pilih</option>
+                      <option value="L">Laki-laki</option>
+                      <option value="P">Perempuan</option>
+                    </select>
+                  </label>
+                  <label className="block text-sm font-semibold">Tanggal Lahir
+                    <input value={form.date_of_birth} type="date" onChange={setField('date_of_birth')} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />
+                  </label>
+                  <Field label="Tempat Lahir" value={form.place_of_birth} onChange={setField('place_of_birth')} placeholder="cth. Bandung" />
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-semibold">Alamat
+                      <textarea value={form.address} onChange={setField('address')} rows={2} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" placeholder="Alamat lengkap" />
+                    </label>
+                  </div>
                   <div>
                     <label className="block text-sm font-semibold">{editing ? 'PIN Baru (opsional)' : 'PIN Siswa (min. 4 karakter)'}
                       <input value={form.pin} type="text" inputMode="numeric" onChange={setField('pin')} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" placeholder="cth. 1234" />

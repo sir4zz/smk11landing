@@ -201,6 +201,7 @@ export const backendApi: any = {
         publish_mading_post: `/mading/posts/${params.p_post_id}/publish`,
         admin_create_student: '/admin/students',
         admin_reset_student_pin: `/admin/students/${params.p_student_id}/reset-pin`,
+        admin_import_students: '/admin/students/import',
       };
       const path = paths[name];
       if (!path) return { data: null, error: { message: `RPC ${name} tidak tersedia.` } };
@@ -323,6 +324,10 @@ export interface AccountRow {
   nisn?: string;
   class?: string;
   major?: string;
+  gender?: string;
+  date_of_birth?: string;
+  place_of_birth?: string;
+  address?: string;
   status?: string;
   must_change_password?: boolean;
   achievements?: string[];
@@ -494,7 +499,7 @@ export interface MyProfilePayload {
   social: MyProfileSocial;
   guru?: { nip?: string; nuptk?: string; teacher_id?: string; subject?: string; position?: string; achievements?: string[]; certifications?: string[] } | null;
   osis?: { member_id?: string; nisn?: string; division?: string; position?: string; achievements?: string[]; work_programs?: string[] } | null;
-  student?: { nisn?: string; class?: string; major?: string; achievements?: string[] } | null;
+  student?: { nisn?: string; class?: string; major?: string; gender?: string; date_of_birth?: string; place_of_birth?: string; address?: string; achievements?: string[] } | null;
 }
 
 export const myProfileApi = {
