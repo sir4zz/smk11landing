@@ -24,10 +24,11 @@ export function resolveImageUrl(url: string): string {
 }
 
 export interface HomeContent {
-  hero: { images: string[]; description: string; accreditation: string; facility_title: string; facility_description: string };
+  hero: { images: string[]; frame_image?: string; description: string; accreditation: string; facility_title: string; facility_description: string };
   welcome: { image: string; principal_name: string; principal_title: string; title: string; paragraphs: string[]; quote: string };
   about: { title: string; subtitle: string; paragraphs: string[]; card_label: string; card_title: string; quote: string; location: string };
   stats: { value: string; label: string }[];
+  social?: { instagram: string; facebook: string; tiktok: string; email: string };
 }
 
 export async function fetchHomeContent(): Promise<HomeContent | null> {

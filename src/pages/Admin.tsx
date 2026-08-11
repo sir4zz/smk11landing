@@ -1367,6 +1367,12 @@ function HomeContentFields({ data, onChange }: { data: Record<string, any>; onCh
           </div>
         );
       })()}
+      <ImageField
+        label="Gambar frame kanan (pop up di hero)"
+        value={homeField(data, 'hero', 'frame_image')}
+        hint="Gambar yang tampil di bingkai/kaca besar sisi kanan hero."
+        onChange={(url) => onChange({ ...data, hero: { ...(data.hero ?? {}), frame_image: url } })}
+      />
     </fieldset>
     <fieldset className="space-y-4 rounded-lg border border-[#1B2A4A]/10 p-4">
       <legend className="px-1 font-bold">Sambutan</legend>
@@ -1401,6 +1407,14 @@ function HomeContentFields({ data, onChange }: { data: Record<string, any>; onCh
            <input value={stat.label} readOnly className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal bg-gray-50" />
         </label>
       </div>)}
+    </fieldset>
+    <fieldset className="space-y-4 rounded-lg border border-[#1B2A4A]/10 p-4">
+      <legend className="px-1 font-bold">Sosial Media (Tampil di Footer)</legend>
+      {input('Instagram', 'social', 'instagram')}
+      {input('Facebook', 'social', 'facebook')}
+      {input('TikTok', 'social', 'tiktok')}
+      {input('Email Sekolah', 'social', 'email')}
+      <p className="text-xs font-normal text-[#5B7088]">Isi URL atau email lengkap. Kosongkan untuk menyembunyikan tautan di footer.</p>
     </fieldset>
   </div>;
 }
@@ -1515,6 +1529,7 @@ function Editor({ config, item, onClose, onSave, section, options }: { config: {
             facility_title: value('hero_facility_title'),
             facility_description: value('hero_facility_description'),
             images: lines('hero_images', 3),
+            frame_image: value('hero_frame_image'),
           },
           welcome: {
             image: value('welcome_image'),
@@ -1534,6 +1549,12 @@ function Editor({ config, item, onClose, onSave, section, options }: { config: {
             location: value('about_location'),
           },
           stats: [0, 1, 2, 3].map(index => ({ value: value(`stat_${index}_value`), label: value(`stat_${index}_label`) })),
+          social: {
+            instagram: value('social_instagram'),
+            facebook: value('social_facebook'),
+            tiktok: value('social_tiktok'),
+            email: value('social_email'),
+          },
         },
       });
       return;

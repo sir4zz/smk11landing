@@ -68,6 +68,7 @@ const Home: React.FC = () => {
   }, []);
 
   const heroImages = home?.hero.images ?? [];
+  const heroFrameImage = home?.hero.frame_image || heroImages[1] || '';
   const statIcons = [Users, GraduationCap, BookOpen];
   const statsWithIcons = (stats ?? []).map((stat, index) => ({ ...stat, icon: React.createElement(statIcons[index] ?? Users, { className: 'h-6 w-6' }) }));
 
@@ -169,7 +170,7 @@ const Home: React.FC = () => {
               {/* Modern Glass Frame instead of boring box */}
               <div className="absolute inset-y-10 right-0 left-10 overflow-hidden rounded-bl-[140px] rounded-tr-[140px] border-[6px] border-white/10 bg-white/5 shadow-2xl backdrop-blur-sm transition-transform hover:scale-[1.02] duration-500">
                 <img 
-                  src={heroImages[1]} 
+                  src={heroFrameImage} 
                   alt="Sekolah" 
                   className="h-full w-full object-cover mix-blend-overlay opacity-90 transition-transform duration-1000 hover:scale-110"
                 />
