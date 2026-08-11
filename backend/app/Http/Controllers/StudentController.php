@@ -93,6 +93,7 @@ class StudentController extends Controller
                 Student::create([
                     'id' => $id,
                     'nisn' => $nisn,
+                    'pin' => $data['p_pin'],
                     'name' => $data['p_name'],
                     'class' => $data['p_class'] ?? '',
                     'major' => $data['p_major'] ?? '',
@@ -179,6 +180,7 @@ class StudentController extends Controller
                     Student::create([
                         'id' => $id,
                         'nisn' => $nisn,
+                        'pin' => $pin,
                         'name' => $name,
                         'class' => trim((string) ($row['class'] ?? '')),
                         'major' => trim((string) ($row['major'] ?? '')),
@@ -248,6 +250,7 @@ class StudentController extends Controller
         $student = Student::findOrFail($studentId);
 
         User::query()->where('id', $student->id)->update(['password' => Hash::make($data['p_new_pin'])]);
+        $student->update(['pin' => $data['p_new_pin']]);
 
         return response()->json(['data' => null, 'error' => null]);
     }

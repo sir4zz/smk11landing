@@ -7,6 +7,7 @@ import StudentImportModal from './StudentImportModal';
 interface StudentRow {
   id: string;
   nisn: string;
+  pin?: string;
   name: string;
   class: string;
   major: string;
@@ -124,13 +125,18 @@ export default function StudentsManagement() {
             <tr>
               <th className="p-4">Siswa</th>
               <th className="p-4">NISN</th>
+              <th className="p-4">PIN Login</th>
               <th className="p-4">Kelas</th>
               <th className="p-4">Jurusan</th>
+              <th className="p-4">Jenis Kelamin</th>
+              <th className="p-4">Tanggal Lahir</th>
+              <th className="p-4">Tempat Lahir</th>
+              <th className="p-4">Alamat</th>
               <th className="p-4">Aksi</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 && <tr><td colSpan={5} className="p-8 text-center text-[#5B7088]">Belum ada siswa terdaftar.</td></tr>}
+            {filtered.length === 0 && <tr><td colSpan={10} className="p-8 text-center text-[#5B7088]">Belum ada siswa terdaftar.</td></tr>}
             {filtered.map((student) => (
               <tr key={student.id} className="border-t border-[#1B2A4A]/10">
                 <td className="p-4">
@@ -140,9 +146,14 @@ export default function StudentsManagement() {
                   </div>
                 </td>
                 <td className="p-4 font-mono text-xs">{student.nisn}</td>
+                <td className="p-4 font-mono text-xs">{student.pin || '-'}</td>
                 <td className="p-4">{student.class || '-'}</td>
                 <td className="p-4">{student.major || '-'}</td>
-                <td className="p-4">
+                <td className="p-4">{genderLabel(student.gender)}</td>
+                <td className="p-4 whitespace-nowrap">{formatDate(student.date_of_birth)}</td>
+                <td className="p-4">{student.place_of_birth || '-'}</td>
+                <td className="p-4 max-w-[200px] truncate" title={student.address || ''}>{student.address || '-'}</td>
+                <td className="p-4 whitespace-nowrap">
                   <button onClick={() => resetPin(student)} className="mr-3 inline-flex items-center gap-1 text-sm font-semibold text-[#866D2C]"><KeyRound size={15} /> Reset PIN</button>
                   <button onClick={() => removeStudent(student)} className="text-red-600"><Trash2 size={16} /></button>
                 </td>
@@ -210,4 +221,17 @@ function Field({ label, value, onChange, placeholder }: { label: string; value: 
       <input value={value} onChange={onChange} placeholder={placeholder} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />
     </label>
   );
+}
+
+function genderLabel(value?: string): string {
+  if (value === 'L') return 'Laki-laki';
+  if (value === 'P') return 'Perempuan';
+  return '-';
+}
+
+function formatDate(value?: string): string {
+  if (!value) return '-';
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+  return value;
 }

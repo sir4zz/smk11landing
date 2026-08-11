@@ -322,6 +322,7 @@ export interface AccountRow {
   role: AccountRole;
   phone?: string;
   nisn?: string;
+  pin?: string;
   class?: string;
   major?: string;
   gender?: string;

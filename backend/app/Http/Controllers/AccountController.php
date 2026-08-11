@@ -341,6 +341,7 @@ class AccountController extends Controller
         if ($student) {
             $student->update([
                 'nisn' => $nisn,
+                'pin' => $pin !== '' ? $pin : $student->pin,
                 'name' => $name,
                 'class' => (string) $request->input('class', $student->class),
                 'major' => (string) $request->input('major', $student->major),
@@ -511,6 +512,7 @@ class AccountController extends Controller
         Student::create([
             'id' => $id,
             'nisn' => $nisn,
+            'pin' => (string) $request->input('pin', ''),
             'name' => $name,
             'class' => (string) $request->input('class', ''),
             'major' => (string) $request->input('major', ''),
@@ -586,6 +588,7 @@ class AccountController extends Controller
             'status' => $profile?->status ?? 'active',
             'must_change_password' => (bool) ($profile?->must_change_password ?? false),
             'nisn' => $user->student?->nisn ?? '',
+            'pin' => $user->student?->pin ?? '',
             'class' => $user->student?->class ?? '',
             'major' => $user->student?->major ?? '',
             'gender' => $user->student?->gender ?? '',
