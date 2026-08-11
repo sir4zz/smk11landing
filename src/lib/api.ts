@@ -201,6 +201,7 @@ export const backendApi: any = {
         publish_mading_post: `/mading/posts/${params.p_post_id}/publish`,
         admin_create_student: '/admin/students',
         admin_reset_student_pin: `/admin/students/${params.p_student_id}/reset-pin`,
+        admin_delete_student: `/admin/students/${params.p_student_id}`,
         admin_import_students: '/admin/students/import',
       };
       const path = paths[name];
@@ -210,6 +211,7 @@ export const backendApi: any = {
       if (name === 'submit_mading_post' || name === 'publish_mading_post') return request(path, { method: 'POST' });
       if (name === 'review_mading_post') return request(path, { method: 'POST', body: JSON.stringify({ action: params.p_action, feedback: params.p_feedback }) });
       if (name === 'admin_create_student') return request(path, { method: 'POST', body: JSON.stringify(params) });
+      if (name === 'admin_delete_student') return request(path, { method: 'DELETE' });
       return request(path, { method: 'POST', body: JSON.stringify(params) });
     },
   },
