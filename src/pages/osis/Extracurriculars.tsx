@@ -3,7 +3,6 @@ import PageHero from '../../components/ui/PageHero';
 import SectionHeading from '../../components/ui/SectionHeading';
 import { LoadingInline } from '../../components/ui/LoadingScreen';
 import { fetchExtracurriculars, resolveImageUrl } from '../../lib/api';
-import { extracurriculars } from '../../data/extracurriculars';
 import { User, Clock, Link } from 'lucide-react';
 
 export interface ExtracurricularRecord {
@@ -21,24 +20,15 @@ export interface ExtracurricularRecord {
   status: string;
 }
 
-const seedExtracurriculars: ExtracurricularRecord[] = extracurriculars.map((e) => ({
-  ...e,
-  slug: e.name.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/[\s_-]+/g, '-').replace(/^-+|-+$/g, ''),
-  schedule: e.meetingDay,
-  place: 'Sekolah SMKN 11',
-  achievements: [],
-  documentation: [],
-  status: 'published',
-}));
 
 const Extracurriculars: React.FC = () => {
-  const [items, setItems] = useState<ExtracurricularRecord[]>(seedExtracurriculars);
+  const [items, setItems] = useState<ExtracurricularRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('Semua');
 
   useEffect(() => {
     let active = true;
-    fetchExtracurriculars(seedExtracurriculars).then((data) => {
+    fetchExtracurriculars<ExtracurricularRecord[]>().then((data) => {
       if (!active) return;
       setItems(data.filter((item) => item.status === 'published'));
       setLoading(false);

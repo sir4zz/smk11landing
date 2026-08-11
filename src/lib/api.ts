@@ -1,8 +1,9 @@
-import { defaultSpmbContent, type SpmbContent } from '../data/spmb';
+import type { SpmbContent } from './content-types';
 
-const apiBaseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/$/, '') + '/api';
+const configuredApiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/$/, '');
+const apiBaseUrl = configuredApiUrl.endsWith('/api') ? configuredApiUrl : `${configuredApiUrl}/api`;
 
-const apiOrigin = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/$/, '');
+const apiOrigin = configuredApiUrl.replace(/\/api$/, '');
 
 export function resolveImageUrl(url: string): string {
   if (!url) return '';
@@ -54,7 +55,7 @@ export function youtubeThumbnailUrl(url: string): string {
 export { apiBaseUrl };
 
 type ApiError = { message?: string; [key: string]: unknown } | null;
-type ApiResponse<T> = { data: T | null; error: ApiError; count?: number | null; meta?: unknown };
+type ApiResponse<T> = { data: T | null; error: ApiError; status?: number; count?: number | null; meta?: unknown };
 type ApiResult<T> = Promise<ApiResponse<T>>;
 type Filter = { key: string; value: unknown };
 
@@ -104,9 +105,10 @@ async function request<T>(path: string, options: RequestInit = {}): ApiResult<T>
     });
     const body = await response.json().catch(() => null);
     if (!response.ok) {
-      return { data: null, error: body?.error ?? body ?? { message: 'Permintaan ke server gagal.' } };
+      return { data: null, status: response.status, error: body?.error ?? body ?? { message: 'Permintaan ke server gagal.' } };
     }
-    const result = { data: (body?.data ?? body) as T, error: body?.error ?? null, count: body?.count, meta: body?.meta };
+    const payload = body && Object.prototype.hasOwnProperty.call(body, 'data') ? body.data : body;
+    const result = { data: payload as T, status: response.status, error: body?.error ?? null, count: body?.count, meta: body?.meta };
     if (cacheable) responseCache.set(cacheKey, { expiresAt: Date.now() + PUBLIC_CACHE_TTL, value: result });
     return result;
   } catch {
@@ -209,23 +211,36 @@ export const backendApi: any = {
 };
 
 const contentPath: Record<string, string> = { news: 'news', programs: 'programs', facilities: 'facilities', staff: 'staff', achievements: 'achievements', teacherActivities: 'teacher-activities', educationStaff: 'education-staff' };
-function normalizeContentRows<T>(type: string, rows: unknown[]): T { return (type === 'programs' ? rows.map((row) => { const program = row as Record<string, unknown>; return { ...program, shortName: program.shortName ?? program.short_name, shortDescription: program.shortDescription ?? program.short_description, careerProspects: program.careerProspects ?? program.career_prospects }; }) : rows) as T; }
-export async function fetchPublicContent<T>(type: string, fallback: T): Promise<T> { const path = contentPath[type]; if (!path) return fallback; const result = await request<unknown[]>(`/${path}`); return result.data?.length ? normalizeContentRows<T>(type, result.data) : fallback; }
-export async function fetchPublicContentById<T extends { slug?: string }>(type: string, slug: string, fallback: T): Promise<T> { const path = contentPath[type]; if (!path) return fallback; const result = await request<T>(`/${path}/${encodeURIComponent(slug)}`); return result.data ?? fallback; }
-function normalizeSpmbContent(row: Record<string, unknown>): SpmbContent { return { id: row.id as string | undefined, status: (row.status as SpmbContent['status']) || defaultSpmbContent.status, title: (row.title as string) || defaultSpmbContent.title, description: (row.description as string) || defaultSpmbContent.description, latest_info: (row.latest_info as string) || defaultSpmbContent.latest_info, requirements: Array.isArray(row.requirements) ? row.requirements as string[] : defaultSpmbContent.requirements, schedule: Array.isArray(row.schedule) ? row.schedule as SpmbContent['schedule'] : defaultSpmbContent.schedule, flow_steps: Array.isArray(row.flow_steps) ? row.flow_steps as SpmbContent['flow_steps'] : defaultSpmbContent.flow_steps, faq: Array.isArray(row.faq) ? row.faq as SpmbContent['faq'] : defaultSpmbContent.faq, portal_url: (row.portal_url as string) || defaultSpmbContent.portal_url, banner_image: (row.banner_image as string) || defaultSpmbContent.banner_image, banner_title: (row.banner_title as string) || defaultSpmbContent.banner_title, banner_description: (row.banner_description as string) || defaultSpmbContent.banner_description, updated_at: row.updated_at as string | undefined }; }
-export async function fetchSpmbContent(fallback: SpmbContent = defaultSpmbContent): Promise<SpmbContent> { const result = await request<Record<string, unknown>>('/spmb'); return result.data ? normalizeSpmbContent(result.data) : fallback; }
-async function fetchFallback<T>(path: string, fallback: T, nonEmpty = true): Promise<T> { const result = await request<any>(path); return result.data && (!nonEmpty || result.data.length) ? result.data as T : fallback; }
-export const fetchOsisProfile = <T>(fallback: T) => fetchFallback('/osis', fallback, false);
-export const fetchOsisMembers = <T>(fallback: T) => fetchFallback('/osis/members', fallback);
-export const fetchOsisActivities = <T>(fallback: T) => fetchFallback('/osis/activities', fallback);
-export const fetchExtracurriculars = <T>(fallback: T) => fetchFallback('/extracurriculars', fallback);
-export const fetchExtracurricularBySlug = <T>(slug: string, fallback: T) => fetchFallback(`/extracurriculars/${encodeURIComponent(slug)}`, fallback, false);
-export const fetchKesemaptaanProfile = <T>(fallback: T) => fetchFallback('/kesemaptaan', fallback, false);
-export const fetchKesemaptaanActivities = <T>(fallback: T) => fetchFallback('/kesemaptaan/activities', fallback);
-export const fetchKesemaptaanSchedules = <T>(fallback: T) => fetchFallback('/kesemaptaan/schedules', fallback);
-export const fetchKesemaptaanInstructors = <T>(fallback: T) => fetchFallback('/kesemaptaan/instructors', fallback);
-export const fetchKesemaptaanAchievements = <T>(fallback: T) => fetchFallback('/kesemaptaan/achievements', fallback);
-export const fetchMadingCategories = <T>(fallback: T) => fetchFallback('/mading/categories', fallback);
+function normalizeProgram(row: unknown): unknown {
+  const program = row as Record<string, unknown>;
+  return {
+    ...program,
+    shortName: program.shortName ?? program.short_name,
+    shortDescription: program.shortDescription ?? program.short_description,
+    competencies: program.competencies ?? [],
+    careerProspects: program.careerProspects ?? program.career_prospects ?? [],
+    facilities: program.facilities ?? [],
+  };
+}
+function normalizeContentRow<T>(type: string, row: unknown): T { return (type === 'programs' ? normalizeProgram(row) : row) as T; }
+function normalizeContentRows<T>(type: string, rows: unknown[]): T { return (type === 'programs' ? rows.map(normalizeProgram) : rows) as T; }
+export async function fetchPublicContent<T>(type: string): Promise<T> { const path = contentPath[type]; if (!path) return [] as T; const result = await request<unknown[]>(`/${path}`); return result.data ? normalizeContentRows<T>(type, result.data) : [] as T; }
+export async function fetchPublicContentByIdResult<T extends { slug?: string }>(type: string, slug: string): Promise<{ data: T | null; error: ApiError }> { const path = contentPath[type]; if (!path) return { data: null, error: { message: 'Konten tidak tersedia.' } }; const result = await request<unknown>(`/${path}/${encodeURIComponent(slug)}`); return { data: result.data ? normalizeContentRow<T>(type, result.data) : null, error: result.status === 404 ? null : result.error }; }
+export async function fetchPublicContentById<T extends { slug?: string }>(type: string, slug: string): Promise<T | null> { return (await fetchPublicContentByIdResult<T>(type, slug)).data; }
+function normalizeSpmbContent(row: Record<string, unknown>): SpmbContent { return { id: row.id as string | undefined, status: (row.status as SpmbContent['status']) || 'ditutup', title: String(row.title ?? ''), description: String(row.description ?? ''), latest_info: String(row.latest_info ?? ''), requirements: Array.isArray(row.requirements) ? row.requirements as string[] : [], schedule: Array.isArray(row.schedule) ? row.schedule as SpmbContent['schedule'] : [], flow_steps: Array.isArray(row.flow_steps) ? row.flow_steps as SpmbContent['flow_steps'] : [], faq: Array.isArray(row.faq) ? row.faq as SpmbContent['faq'] : [], portal_url: String(row.portal_url ?? ''), banner_image: String(row.banner_image ?? ''), banner_title: String(row.banner_title ?? ''), banner_description: String(row.banner_description ?? ''), updated_at: row.updated_at as string | undefined }; }
+export async function fetchSpmbContent(): Promise<SpmbContent | null> { const result = await request<Record<string, unknown>>('/spmb'); return result.data ? normalizeSpmbContent(result.data) : null; }
+async function fetchFromApi<T>(path: string): Promise<T> { const result = await request<T>(path); return result.data ?? ([] as T); }
+export const fetchOsisProfile = <T>() => fetchFromApi<T>('/osis');
+export const fetchOsisMembers = <T>() => fetchFromApi<T>('/osis/members');
+export const fetchOsisActivities = <T>() => fetchFromApi<T>('/osis/activities');
+export const fetchExtracurriculars = <T>() => fetchFromApi<T>('/extracurriculars');
+export const fetchExtracurricularBySlug = <T>(slug: string) => fetchFromApi<T | null>(`/extracurriculars/${encodeURIComponent(slug)}`);
+export const fetchKesemaptaanProfile = <T>() => fetchFromApi<T>('/kesemaptaan');
+export const fetchKesemaptaanActivities = <T>() => fetchFromApi<T>('/kesemaptaan/activities');
+export const fetchKesemaptaanSchedules = <T>() => fetchFromApi<T>('/kesemaptaan/schedules');
+export const fetchKesemaptaanInstructors = <T>() => fetchFromApi<T>('/kesemaptaan/instructors');
+export const fetchKesemaptaanAchievements = <T>() => fetchFromApi<T>('/kesemaptaan/achievements');
+export const fetchMadingCategories = <T>() => fetchFromApi<T>('/mading/categories');
 
 // ---------- FAQ ----------
 export interface FaqRow {
@@ -235,7 +250,7 @@ export interface FaqRow {
   category: string;
   sort_order?: number;
 }
-export const fetchFaqs = <T>(fallback: T) => fetchFallback('/faqs', fallback);
+export const fetchFaqs = <T>() => fetchFromApi<T>('/faqs');
 export interface MadingPostRow extends Record<string, unknown> { id?: string; title?: string; content?: string; category_id?: string | null; author_id?: string | null; author_name?: string; author_role?: string; cover_image?: string; status?: string; feedback?: string; ai_assisted?: boolean; published_at?: string | null; created_at?: string; updated_at?: string; }
 export async function fetchMadingPosts(filter?: { status?: string; authorId?: string; categoryId?: string }): Promise<MadingPostRow[]> { const params = new URLSearchParams(); if (filter?.status) params.set('status', filter.status); if (filter?.authorId) params.set('author_id', filter.authorId); if (filter?.categoryId) params.set('category_id', filter.categoryId); const result = await request<MadingPostRow[]>(`/mading/posts${params.size ? `?${params}` : ''}`); return result.data ?? []; }
 export async function fetchMadingPublished(): Promise<MadingPostRow[]> { return fetchMadingPosts({ status: 'published' }); }

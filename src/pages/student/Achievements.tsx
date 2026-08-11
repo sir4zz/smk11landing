@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import PageHero from '../../components/ui/PageHero'
 import SectionHeading from '../../components/ui/SectionHeading'
-import { achievements, type Achievement } from '../../data/achievements'
+import type { Achievement } from '../../lib/content-types'
 import { fetchPublicContent } from '../../lib/api'
 import { Trophy, Users, Calendar } from 'lucide-react'
 
@@ -13,10 +13,10 @@ const levelColors: Record<string, string> = {
 }
 
 const Achievements: React.FC = () => {
-  const [items, setItems] = useState<Achievement[]>(achievements)
+  const [items, setItems] = useState<Achievement[]>([])
   const [filterYear, setFilterYear] = useState<string>('Semua')
   const [filterLevel, setFilterLevel] = useState<string>('Semua')
-  useEffect(() => { fetchPublicContent('achievements', achievements).then(setItems) }, [])
+  useEffect(() => { fetchPublicContent<Achievement[]>('achievements').then(setItems) }, [])
 
   const years = ['Semua', ...new Set(items.map((a) => a.year.toString()))].sort((a, b) => {
     if (a === 'Semua') return -1

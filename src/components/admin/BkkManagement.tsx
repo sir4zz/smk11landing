@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { Plus, Pencil, Trash2, X, Save, Loader2, Search, ChevronLeft, ChevronRight, Building2 } from 'lucide-react';
-import { programs as fallbackPrograms } from '../../data/programs';
 import { fetchPublicContent } from '../../lib/api';
 import {
   jobAdminApi,
@@ -47,7 +46,7 @@ export default function BkkManagement({ permissions }: Props) {
   const [programs, setPrograms] = useState<{ name: string; shortName: string }[]>([]);
 
   useEffect(() => {
-    fetchPublicContent<{ name: string; shortName: string }[]>('programs', fallbackPrograms)
+    fetchPublicContent<{ name: string; shortName: string }[]>('programs')
       .then((rows) => setPrograms(rows.filter((r) => r.shortName)))
       .catch(() => {});
   }, []);

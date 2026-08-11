@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import PageHero from '../../components/ui/PageHero';
-import { facilities, type Facility } from '../../data/facilities';
+import type { Facility } from '../../lib/content-types';
 import Card from '../../components/ui/Card';
 import { fetchPublicContent } from '../../lib/api';
 
 const Facilities: React.FC = () => {
   const [filter, setFilter] = useState<string>('Semua');
-  const [items, setItems] = useState(facilities);
-  useEffect(() => { fetchPublicContent('facilities', facilities).then(setItems); }, []);
+  const [items, setItems] = useState<Facility[]>([]);
+  useEffect(() => { fetchPublicContent<Facility[]>('facilities').then(setItems); }, []);
   const categories = ['Semua', 'Akademik', 'Fasilitas Umum', 'Keagamaan', 'Pendukung'];
 
   const filteredFacilities = filter === 'Semua'

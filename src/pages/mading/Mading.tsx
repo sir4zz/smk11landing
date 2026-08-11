@@ -3,7 +3,7 @@ import PageHero from '../../components/ui/PageHero';
 import SectionHeading from '../../components/ui/SectionHeading';
 import { LoadingInline } from '../../components/ui/LoadingScreen';
 import { fetchMadingPublished, fetchMadingCategories, resolveImageUrl, type MadingPostRow } from '../../lib/api';
-import { defaultMadingCategories, defaultMadingPosts, type MadingCategory, type MadingPost } from '../../data/mading';
+import type { MadingCategory, MadingPost } from '../../lib/content-types';
 import { PenLine, Calendar, User } from 'lucide-react';
 import { AiNote } from '../../components/mading/AIContentAssistant';
 
@@ -17,18 +17,18 @@ function normalizeCategory(row: MadingPostRow, categories: MadingCategory[]): st
 }
 
 const Mading: React.FC = () => {
-  const [posts, setPosts] = useState<MadingPost[]>(defaultMadingPosts);
-  const [categories, setCategories] = useState<MadingCategory[]>(defaultMadingCategories);
+  const [posts, setPosts] = useState<MadingPost[]>([]);
+  const [categories, setCategories] = useState<MadingCategory[]>([]);
   const [filter, setFilter] = useState('Semua');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
-    Promise.all([fetchMadingPublished(), fetchMadingCategories(defaultMadingCategories)]).then(([rows, cats]) => {
+    Promise.all([fetchMadingPublished(), fetchMadingCategories<MadingCategory[]>()]).then(([rows, cats]) => {
       if (!active) return;
       setCategories(cats);
       const data: Post[] = rows.map((r) => ({ ...r, category: normalizeCategory(r, cats) }));
-      setPosts(data.length > 0 ? (data as MadingPost[]) : defaultMadingPosts);
+       setPosts(data as MadingPost[]);
       setLoading(false);
     });
     return () => { active = false; };

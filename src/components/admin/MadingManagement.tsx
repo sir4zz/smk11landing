@@ -4,7 +4,7 @@ import { Plus, Pencil, Trash2, X, Save, Loader2, Search, CheckCircle2, XCircle, 
 import { backendApi } from '../../lib/api';
 import type { MadingPostRow } from '../../lib/api';
 import { can } from '../../lib/permissions';
-import { MADING_STATUSES } from '../../data/mading';
+import { MADING_STATUSES } from '../../lib/ui-constants';
 import ImageField from './ImageField';
 import AIContentAssistant from '../mading/AIContentAssistant';
 

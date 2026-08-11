@@ -2,15 +2,14 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { BookOpen } from 'lucide-react';
 import PageHero from '../../components/ui/PageHero';
-import { programs } from '../../data/programs';
 import { SectionHeading } from '../../components/ui/SectionHeading';
 import { Card } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import { fetchPublicContent, resolveImageUrl } from '../../lib/api';
 
 const StudyPrograms: React.FC = () => {
-  const [items, setItems] = React.useState(programs);
-  React.useEffect(() => { fetchPublicContent('programs', programs).then(setItems); }, []);
+  const [items, setItems] = React.useState<any[]>([]);
+  React.useEffect(() => { fetchPublicContent<any[]>('programs').then(setItems); }, []);
   return (
     <div className="bg-[#FAF6F0] min-h-screen">
       <PageHero 

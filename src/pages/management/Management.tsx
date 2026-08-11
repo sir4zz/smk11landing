@@ -2,9 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import PageHero from '../../components/ui/PageHero';
 import SectionHeading from '../../components/ui/SectionHeading';
-import { staffData, type Staff } from '../../data/staff';
-import { teacherActivities, type TeacherActivity } from '../../data/teacherActivities';
-import { educationStaff, type EducationStaff } from '../../data/educationStaff';
+import type { Staff, TeacherActivity, EducationStaff } from '../../lib/content-types';
 import { fetchPublicContent, resolveImageUrl } from '../../lib/api';
 import { ArrowRight, Briefcase, CalendarDays, Network, User, Users } from 'lucide-react';
 import { PersonAvatar, formatDate } from './ManagementShared';
@@ -18,13 +16,13 @@ const sections = [
 ];
 
 const Management: React.FC = () => {
-  const [staff, setStaff] = useState<Staff[]>(staffData);
-  const [activities, setActivities] = useState<TeacherActivity[]>(teacherActivities);
-  const [educationStaffList, setEducationStaffList] = useState<EducationStaff[]>(educationStaff);
+  const [staff, setStaff] = useState<Staff[]>([]);
+  const [activities, setActivities] = useState<TeacherActivity[]>([]);
+  const [educationStaffList, setEducationStaffList] = useState<EducationStaff[]>([]);
   useEffect(() => {
-    fetchPublicContent('staff', staffData).then(setStaff);
-    fetchPublicContent('teacherActivities', teacherActivities).then(setActivities);
-    fetchPublicContent('educationStaff', educationStaff).then(setEducationStaffList);
+    fetchPublicContent<Staff[]>('staff').then(setStaff);
+    fetchPublicContent<TeacherActivity[]>('teacherActivities').then(setActivities);
+    fetchPublicContent<EducationStaff[]>('educationStaff').then(setEducationStaffList);
   }, []);
 
   const principal = staff.find((item) => item.position === 'Kepala Sekolah');

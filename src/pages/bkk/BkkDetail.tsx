@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import PageHero from '../../components/ui/PageHero'
 import Button from '../../components/ui/Button'
-import { jobs as fallbackJobs } from '../../data/jobs'
 import {
   fetchJobVacancyBySlug,
   resolveImageUrl,
@@ -58,17 +57,11 @@ function Block({ title, icon: Icon, items, children }: { title: string; icon: Re
 
 const BkkDetail: React.FC = () => {
   const { slug } = useParams<{ slug: string }>()
-  const [job, setJob] = useState<JobVacancyRow | undefined>(
-    fallbackJobs.find((j) => j.slug === slug)
-  )
+  const [job, setJob] = useState<JobVacancyRow | null>(null)
 
   useEffect(() => {
     fetchJobVacancyBySlug(slug || '').then((apiJob) => {
       if (apiJob) setJob(apiJob)
-      else {
-        const local = fallbackJobs.find((j) => j.slug === slug)
-        if (local) setJob(local)
-      }
     })
   }, [slug])
 

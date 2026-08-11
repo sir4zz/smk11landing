@@ -1,14 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import PageHero from '../../components/ui/PageHero';
 import SectionHeading from '../../components/ui/SectionHeading';
-import { educationStaff, type EducationStaff } from '../../data/educationStaff';
+import type { EducationStaff } from '../../lib/content-types';
 import { fetchPublicContent } from '../../lib/api';
 import { PersonAvatar, EmptyState } from './ManagementShared';
 
 const TenagaKependidikan: React.FC = () => {
-  const [items, setItems] = useState<EducationStaff[]>(educationStaff);
+  const [items, setItems] = useState<EducationStaff[]>([]);
   useEffect(() => {
-    fetchPublicContent('educationStaff', educationStaff).then(setItems);
+    fetchPublicContent<EducationStaff[]>('educationStaff').then(setItems);
   }, []);
 
   const grouped = useMemo(() => {
