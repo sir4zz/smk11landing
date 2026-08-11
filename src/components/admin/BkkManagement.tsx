@@ -333,7 +333,7 @@ function JobForm({ item, programs, onClose, onSave }: { item: JobVacancyRow | nu
           <Field label="Nama Perusahaan *" value={values.company_name} onChange={set('company_name')} />
           <Field label="Posisi *" value={values.position} onChange={set('position')} />
           <div className="sm:col-span-2">
-            <ImageField label="Logo Perusahaan" value={values.company_logo} onChange={(url) => setValues((v) => ({ ...v, company_logo: url }))} />
+            <ImageField label="Logo Perusahaan" value={values.company_logo} onChange={(url) => setValues((v) => ({ ...v, company_logo: url }))} bucket="bkk/logos" />
           </div>
           <div className="sm:col-span-2"><Field label="Deskripsi Perusahaan" multiline value={values.company_description} onChange={set('company_description')} /></div>
           <div className="sm:col-span-2"><Field label="Deskripsi Pekerjaan" multiline value={values.job_description} onChange={set('job_description')} /></div>

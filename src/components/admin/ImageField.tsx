@@ -8,9 +8,10 @@ interface ImageFieldProps {
   onChange: (url: string) => void;
   hint?: string;
   disabled?: boolean;
+  bucket?: string;
 }
 
-export default function ImageField({ label, value, onChange, hint, disabled = false }: ImageFieldProps) {
+export default function ImageField({ label, value, onChange, hint, disabled = false, bucket = 'photos' }: ImageFieldProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
@@ -20,7 +21,7 @@ export default function ImageField({ label, value, onChange, hint, disabled = fa
     setUploading(true);
     setError('');
     try {
-      const { data, error } = await backendApi.storage.from('photos').uploadAuto(file);
+      const { data, error } = await backendApi.storage.from(bucket).uploadAuto(file);
       if (error) throw error;
       if (!data?.url) throw new Error('Gagal mengunggah foto.');
       onChange(data.url);

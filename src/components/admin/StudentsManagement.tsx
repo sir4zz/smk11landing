@@ -1,25 +1,47 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
-import { Plus, Trash2, X, Loader2, KeyRound, Search, UserRound } from 'lucide-react';
-import { backendApi } from '../../lib/api';
+import { Plus, Trash2, X, Loader2, KeyRound, Search, UserRound, Upload, Pencil } from 'lucide-react';
+import { backendApi, accountsApi } from '../../lib/api';
+import StudentImportModal from './StudentImportModal';
 
 interface StudentRow {
   id: string;
   nisn: string;
+  pin?: string;
   name: string;
   class: string;
   major: string;
+  gender?: string;
+  date_of_birth?: string;
+  place_of_birth?: string;
+  address?: string;
   created_at?: string;
 }
+
+interface StudentForm {
+  nisn: string;
+  name: string;
+  class: string;
+  major: string;
+  gender: string;
+  date_of_birth: string;
+  place_of_birth: string;
+  address: string;
+  pin: string;
+}
+
+const emptyForm = (): StudentForm => ({ nisn: '', name: '', class: '', major: '', gender: '', date_of_birth: '', place_of_birth: '', address: '', pin: '' });
 
 export default function StudentsManagement() {
   const [students, setStudents] = useState<StudentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [msg, setMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<StudentRow | null>(null);
   const [search, setSearch] = useState('');
-  const [creating, setCreating] = useState(false);
-  const [createValues, setCreateValues] = useState({ nisn: '', name: '', class: '', major: '', pin: '' });
+  const [saving, setSaving] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [form, setForm] = useState<StudentForm>(emptyForm());
 
   const load = useCallback(async () => {
     const { data, error } = await backendApi.database.from('students').select('*').order('name', { ascending: true });
@@ -38,14 +60,64 @@ export default function StudentsManagement() {
     !search || s.name.toLowerCase().includes(search.toLowerCase()) || s.nisn.toLowerCase().includes(search.toLowerCase())
   );
 
-  const createStudent = async (event: FormEvent<HTMLFormElement>) => {
+  const openCreate = () => {
+    setEditing(null);
+    setForm(emptyForm());
+    setOpen(true);
+  };
+
+  const openEdit = (student: StudentRow) => {
+    setEditing(student);
+    setForm({
+      nisn: student.nisn ?? '',
+      name: student.name ?? '',
+      class: student.class ?? '',
+      major: student.major ?? '',
+      gender: student.gender ?? '',
+      date_of_birth: student.date_of_birth?.slice(0, 10) ?? '',
+      place_of_birth: student.place_of_birth ?? '',
+      address: student.address ?? '',
+      pin: '',
+    });
+    setOpen(true);
+  };
+
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setCreating(true);
+    setSaving(true);
     setMsg(null);
-    const { nisn, name, class: klass, major, pin } = createValues;
+    const { nisn, name, class: klass, major, pin } = form;
+
+    if (editing) {
+      const updatePayload: Record<string, unknown> = {
+        role: 'student',
+        name: name.trim(),
+        nisn: nisn.trim(),
+        class: klass.trim(),
+        major: major.trim(),
+        gender: form.gender,
+        date_of_birth: form.date_of_birth,
+        place_of_birth: form.place_of_birth.trim(),
+        address: form.address.trim(),
+      };
+      if (pin.trim()) updatePayload.pin = pin.trim();
+
+      const r = await accountsApi.update(editing.id, updatePayload);
+      if (r.error) {
+        flash('err', r.error.message ?? 'Gagal memperbarui siswa.');
+        setSaving(false);
+        return;
+      }
+      setOpen(false);
+      await load();
+      flash('ok', `Data siswa ${name.trim()} berhasil diperbarui.`);
+      setSaving(false);
+      return;
+    }
+
     if (!nisn.trim() || !name.trim() || pin.length < 4) {
       flash('err', 'NISN, nama wajib diisi dan PIN minimal 4 karakter.');
-      setCreating(false);
+      setSaving(false);
       return;
     }
     const r = await backendApi.database.rpc('admin_create_student', {
@@ -53,18 +125,22 @@ export default function StudentsManagement() {
       p_name: name.trim(),
       p_class: klass.trim(),
       p_major: major.trim(),
+      p_gender: form.gender,
+      p_date_of_birth: form.date_of_birth,
+      p_place_of_birth: form.place_of_birth.trim(),
+      p_address: form.address.trim(),
       p_pin: pin,
     });
     if (r.error) {
       flash('err', r.error.message);
-      setCreating(false);
+      setSaving(false);
       return;
     }
-    setCreateValues({ nisn: '', name: '', class: '', major: '', pin: '' });
+    setForm(emptyForm());
     setOpen(false);
     await load();
     flash('ok', `Akun siswa ${name.trim()} berhasil dibuat. Login siswa: NISN + PIN.`);
-    setCreating(false);
+    setSaving(false);
   };
 
   const resetPin = async (student: StudentRow) => {
@@ -81,10 +157,8 @@ export default function StudentsManagement() {
 
   const removeStudent = async (student: StudentRow) => {
     if (!confirm(`Hapus akun ${student.name}? Akun login siswa akan ikut terhapus.`)) return;
-    const r = await backendApi.database.from('student_accounts').delete().eq('student_id', student.id);
+    const r = await backendApi.database.rpc('admin_delete_student', { p_student_id: student.id });
     if (r.error) { flash('err', r.error.message); return; }
-    const r2 = await backendApi.database.from('students').delete().eq('id', student.id);
-    if (r2.error) { flash('err', r2.error.message); return; }
     await load();
     flash('ok', 'Akun siswa dihapus.');
   };
@@ -95,7 +169,10 @@ export default function StudentsManagement() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-[#23314D]">Buat dan kelola akun siswa untuk Mading (login NISN + PIN).</p>
-        <button onClick={() => setOpen(true)} className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-4 py-2 font-bold text-[#1B2A4A]"><Plus size={18} /> Tambah Siswa</button>
+        <div className="flex flex-wrap gap-2">
+          <button onClick={() => setImportOpen(true)} className="inline-flex items-center gap-2 rounded-lg border-2 border-[#1B2A4A] px-4 py-2 font-bold text-[#1B2A4A] hover:bg-[#1B2A4A]/5"><Upload size={18} /> Import Excel/CSV</button>
+          <button onClick={openCreate} className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-4 py-2 font-bold text-[#1B2A4A]"><Plus size={18} /> Tambah Siswa</button>
+        </div>
       </div>
 
       {msg && <p className={`rounded-lg p-3 text-sm ${msg.type === 'ok' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>{msg.text}</p>}
@@ -111,13 +188,18 @@ export default function StudentsManagement() {
             <tr>
               <th className="p-4">Siswa</th>
               <th className="p-4">NISN</th>
+              <th className="p-4">PIN Login</th>
               <th className="p-4">Kelas</th>
               <th className="p-4">Jurusan</th>
+              <th className="p-4">Jenis Kelamin</th>
+              <th className="p-4">Tanggal Lahir</th>
+              <th className="p-4">Tempat Lahir</th>
+              <th className="p-4">Alamat</th>
               <th className="p-4">Aksi</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 && <tr><td colSpan={5} className="p-8 text-center text-[#5B7088]">Belum ada siswa terdaftar.</td></tr>}
+            {filtered.length === 0 && <tr><td colSpan={10} className="p-8 text-center text-[#5B7088]">Belum ada siswa terdaftar.</td></tr>}
             {filtered.map((student) => (
               <tr key={student.id} className="border-t border-[#1B2A4A]/10">
                 <td className="p-4">
@@ -127,9 +209,15 @@ export default function StudentsManagement() {
                   </div>
                 </td>
                 <td className="p-4 font-mono text-xs">{student.nisn}</td>
+                <td className="p-4 font-mono text-xs">{student.pin || '-'}</td>
                 <td className="p-4">{student.class || '-'}</td>
                 <td className="p-4">{student.major || '-'}</td>
-                <td className="p-4">
+                <td className="p-4">{genderLabel(student.gender)}</td>
+                <td className="p-4 whitespace-nowrap">{formatDate(student.date_of_birth)}</td>
+                <td className="p-4">{student.place_of_birth || '-'}</td>
+                <td className="p-4 max-w-[200px] truncate" title={student.address || ''}>{student.address || '-'}</td>
+                <td className="p-4 whitespace-nowrap">
+                  <button onClick={() => openEdit(student)} className="mr-3 inline-flex items-center gap-1 text-sm font-semibold text-[#866D2C]"><Pencil size={15} /> Edit</button>
                   <button onClick={() => resetPin(student)} className="mr-3 inline-flex items-center gap-1 text-sm font-semibold text-[#866D2C]"><KeyRound size={15} /> Reset PIN</button>
                   <button onClick={() => removeStudent(student)} className="text-red-600"><Trash2 size={16} /></button>
                 </td>
@@ -141,34 +229,56 @@ export default function StudentsManagement() {
 
       {open && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4">
-          <form onSubmit={createStudent} className="w-full max-w-xl rounded-xl bg-white p-6 shadow-xl">
+          <form onSubmit={submit} className="w-full max-w-xl rounded-xl bg-white p-6 shadow-xl">
             <div className="mb-5 flex justify-between">
-              <h2 className="text-xl font-bold text-[#1B2A4A]">Tambah Akun Siswa</h2>
+              <h2 className="text-xl font-bold text-[#1B2A4A]">{editing ? 'Edit Data Siswa' : 'Tambah Akun Siswa'}</h2>
               <button type="button" onClick={() => setOpen(false)}><X /></button>
             </div>
             <p className="mb-4 rounded-lg bg-[#FAF6F0] p-3 text-xs text-[#5B7088]">
-              Siswa login ke Mading menggunakan <strong>NISN sebagai identitas</strong> dan <strong>PIN sebagai autentikasi</strong>. PIN disimpan terenkripsi.
+              {editing ? (
+                'Perbarui data siswa. Jika mengubah NISN, akun login ikut diperbarui. Kosongkan PIN jika tidak ingin mengganti PIN.'
+              ) : (
+                <>Siswa login ke Mading menggunakan <strong>NISN sebagai identitas</strong> dan <strong>PIN sebagai autentikasi</strong>. PIN disimpan terenkripsi.</>
+              )}
             </p>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="NISN" value={createValues.nisn} onChange={(e) => setCreateValues((v) => ({ ...v, nisn: e.target.value }))} placeholder="cth. 0061234567" />
-              <Field label="Nama Lengkap" value={createValues.name} onChange={(e) => setCreateValues((v) => ({ ...v, name: e.target.value }))} />
-              <Field label="Kelas" value={createValues.class} onChange={(e) => setCreateValues((v) => ({ ...v, class: e.target.value }))} placeholder="cth. X TJKT 1" />
-              <Field label="Jurusan" value={createValues.major} onChange={(e) => setCreateValues((v) => ({ ...v, major: e.target.value }))} placeholder="cth. Teknik Jaringan" />
+              <Field label="NISN" value={form.nisn} onChange={(e) => setForm((v) => ({ ...v, nisn: e.target.value }))} placeholder="cth. 0061234567" />
+              <Field label="Nama Lengkap" value={form.name} onChange={(e) => setForm((v) => ({ ...v, name: e.target.value }))} />
+              <Field label="Kelas" value={form.class} onChange={(e) => setForm((v) => ({ ...v, class: e.target.value }))} placeholder="cth. X TJKT 1" />
+              <Field label="Jurusan" value={form.major} onChange={(e) => setForm((v) => ({ ...v, major: e.target.value }))} placeholder="cth. Teknik Jaringan" />
+              <label className="block text-sm font-semibold">Jenis Kelamin
+                <select value={form.gender} onChange={(e) => setForm((v) => ({ ...v, gender: e.target.value }))} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 bg-white px-3 py-2 font-normal">
+                  <option value="">Pilih</option>
+                  <option value="L">Laki-laki</option>
+                  <option value="P">Perempuan</option>
+                </select>
+              </label>
+              <label className="block text-sm font-semibold">Tanggal Lahir
+                <input value={form.date_of_birth} type="date" onChange={(e) => setForm((v) => ({ ...v, date_of_birth: e.target.value }))} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />
+              </label>
+              <Field label="Tempat Lahir" value={form.place_of_birth} onChange={(e) => setForm((v) => ({ ...v, place_of_birth: e.target.value }))} placeholder="cth. Bandung" />
               <div className="sm:col-span-2">
-                <label className="block text-sm font-semibold">PIN Siswa (min. 4 karakter)
-                  <input value={createValues.pin} type="text" inputMode="numeric" onChange={(e) => setCreateValues((v) => ({ ...v, pin: e.target.value }))} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" placeholder="cth. 1234" />
+                <label className="block text-sm font-semibold">Alamat
+                  <textarea value={form.address} onChange={(e) => setForm((v) => ({ ...v, address: e.target.value }))} rows={2} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" placeholder="Alamat lengkap" />
+                </label>
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-sm font-semibold">{editing ? 'PIN Baru (opsional, min. 4 karakter)' : 'PIN Siswa (min. 4 karakter)'}
+                  <input value={form.pin} type="text" inputMode="numeric" onChange={(e) => setForm((v) => ({ ...v, pin: e.target.value }))} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" placeholder={editing ? 'Kosongkan jika tidak diubah' : 'cth. 1234'} />
                 </label>
               </div>
             </div>
             <div className="mt-6 flex justify-end gap-3">
               <button type="button" onClick={() => setOpen(false)} className="px-4 py-2 text-[#5B7088]">Batal</button>
-              <button type="submit" disabled={creating} className="inline-flex items-center gap-2 rounded-lg bg-[#1B2A4A] px-4 py-2 font-bold text-white disabled:opacity-60">
-                {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Buat Akun
+              <button type="submit" disabled={saving} className="inline-flex items-center gap-2 rounded-lg bg-[#1B2A4A] px-4 py-2 font-bold text-white disabled:opacity-60">
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editing ? <Pencil className="h-4 w-4" /> : <Plus className="h-4 w-4" />} {editing ? 'Simpan Perubahan' : 'Buat Akun'}
               </button>
             </div>
           </form>
         </div>
       )}
+
+      {importOpen && <StudentImportModal onClose={() => setImportOpen(false)} onImported={() => void load()} />}
     </div>
   );
 }
@@ -179,4 +289,17 @@ function Field({ label, value, onChange, placeholder }: { label: string; value: 
       <input value={value} onChange={onChange} placeholder={placeholder} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />
     </label>
   );
+}
+
+function genderLabel(value?: string): string {
+  if (value === 'L') return 'Laki-laki';
+  if (value === 'P') return 'Perempuan';
+  return '-';
+}
+
+function formatDate(value?: string): string {
+  if (!value) return '-';
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+  return value;
 }

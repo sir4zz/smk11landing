@@ -157,6 +157,7 @@ Route::middleware(['auth:sanctum', 'staff'])->group(function () {
     // Student management (gated by mading.edit_all, replica of frontend nav)
     Route::get('/admin/students', [StudentController::class, 'index'])->middleware('permission:mading.edit_all');
     Route::post('/admin/students', [StudentController::class, 'store'])->middleware('permission:mading.edit_all');
+    Route::post('/admin/students/import', [StudentController::class, 'import'])->middleware('permission:mading.edit_all');
     Route::post('/admin/students/{studentId}/reset-pin', [StudentController::class, 'resetPin'])->middleware('permission:mading.edit_all');
     Route::delete('/admin/students/{studentId}', [StudentController::class, 'destroy'])->middleware('permission:mading.edit_all');
 

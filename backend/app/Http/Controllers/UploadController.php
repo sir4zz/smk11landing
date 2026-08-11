@@ -11,11 +11,20 @@ class UploadController extends Controller
     {
         $request->validate([
             'file' => ['required', 'file', 'image', 'max:51200'],
+            'bucket' => ['nullable', 'string', 'regex:/^[a-zA-Z0-9\-\/_]+$/'],
         ]);
 
         $file = $request->file('file');
 
-        $key = 'photos/'.now()->format('Y/m').'/'.uniqid().'-'.preg_replace('/[^a-zA-Z0-9._-]/', '-', $file->getClientOriginalName());
+        $bucket = $request->input('bucket', 'photos');
+        $bucket = trim($bucket, '/');
+        // Sanitasi / cegah traversal path traversal, hanya izinkan folder yang dikenal.
+        $allowed = ['photos', 'bkk/logos'];
+        if (!in_array($bucket, $allowed, true)) {
+            $bucket = 'photos';
+        }
+
+        $key = $bucket.'/'.now()->format('Y/m').'/'.uniqid().'-'.preg_replace('/[^a-zA-Z0-9._-]/', '-', $file->getClientOriginalName());
 
         Storage::disk('public')->putFileAs(
             dirname($key),
@@ -27,7 +36,7 @@ class UploadController extends Controller
 
         return response()->json([
             'data' => [
-                'bucket' => 'photos',
+                'bucket' => $bucket,
                 'key' => $key,
                 'size' => $file->getSize(),
                 'mimeType' => $file->getMimeType(),

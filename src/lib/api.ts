@@ -201,6 +201,8 @@ export const backendApi: any = {
         publish_mading_post: `/mading/posts/${params.p_post_id}/publish`,
         admin_create_student: '/admin/students',
         admin_reset_student_pin: `/admin/students/${params.p_student_id}/reset-pin`,
+        admin_delete_student: `/admin/students/${params.p_student_id}`,
+        admin_import_students: '/admin/students/import',
       };
       const path = paths[name];
       if (!path) return { data: null, error: { message: `RPC ${name} tidak tersedia.` } };
@@ -209,6 +211,7 @@ export const backendApi: any = {
       if (name === 'submit_mading_post' || name === 'publish_mading_post') return request(path, { method: 'POST' });
       if (name === 'review_mading_post') return request(path, { method: 'POST', body: JSON.stringify({ action: params.p_action, feedback: params.p_feedback }) });
       if (name === 'admin_create_student') return request(path, { method: 'POST', body: JSON.stringify(params) });
+      if (name === 'admin_delete_student') return request(path, { method: 'DELETE' });
       return request(path, { method: 'POST', body: JSON.stringify(params) });
     },
   },
@@ -220,9 +223,9 @@ export const backendApi: any = {
     onAuthStateChange(listener: (event: 'signedIn' | 'signedOut') => void) { listeners.add(listener); return () => listeners.delete(listener); },
   },
   storage: {
-    from(_bucket: string) { return {
-      async uploadAuto(file: File) { const form = new FormData(); form.append('file', file); const result = await request<{ url: string }>('/upload', { method: 'POST', body: form }); return { data: result.data ? { url: result.data.url } : null, error: result.error }; },
-      async upload(_path: string, file: File) { const form = new FormData(); form.append('file', file); const result = await request('/upload', { method: 'POST', body: form }); return { data: result.data, error: result.error }; },
+    from(bucket: string) { return {
+      async uploadAuto(file: File) { const form = new FormData(); form.append('file', file); form.append('bucket', bucket); const result = await request<{ url: string }>('/upload', { method: 'POST', body: form }); return { data: result.data ? { url: result.data.url } : null, error: result.error }; },
+      async upload(_path: string, file: File) { const form = new FormData(); form.append('file', file); form.append('bucket', bucket); const result = await request('/upload', { method: 'POST', body: form }); return { data: result.data, error: result.error }; },
       async remove(paths: string[]) { return request('/uploads', { method: 'DELETE', body: JSON.stringify({ paths }) }); },
       async createSignedUrl(path: string) { return request<{ url: string }>(`/uploads/url?path=${encodeURIComponent(path)}`); },
     }; },
@@ -321,8 +324,13 @@ export interface AccountRow {
   role: AccountRole;
   phone?: string;
   nisn?: string;
+  pin?: string;
   class?: string;
   major?: string;
+  gender?: string;
+  date_of_birth?: string;
+  place_of_birth?: string;
+  address?: string;
   status?: string;
   must_change_password?: boolean;
   achievements?: string[];
@@ -494,7 +502,7 @@ export interface MyProfilePayload {
   social: MyProfileSocial;
   guru?: { nip?: string; nuptk?: string; teacher_id?: string; subject?: string; position?: string; achievements?: string[]; certifications?: string[] } | null;
   osis?: { member_id?: string; nisn?: string; division?: string; position?: string; achievements?: string[]; work_programs?: string[] } | null;
-  student?: { nisn?: string; class?: string; major?: string; achievements?: string[] } | null;
+  student?: { nisn?: string; class?: string; major?: string; gender?: string; date_of_birth?: string; place_of_birth?: string; address?: string; achievements?: string[] } | null;
 }
 
 export const myProfileApi = {

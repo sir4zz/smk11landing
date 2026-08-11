@@ -341,9 +341,18 @@ class AccountController extends Controller
         if ($student) {
             $student->update([
                 'nisn' => $nisn,
+                'pin' => $pin !== '' ? $pin : $student->pin,
                 'name' => $name,
                 'class' => (string) $request->input('class', $student->class),
                 'major' => (string) $request->input('major', $student->major),
+                'gender' => $request->has('gender')
+                    ? $this->accounts->normalizeGender($request->input('gender'))
+                    : $student->gender,
+                'date_of_birth' => $request->has('date_of_birth')
+                    ? $this->accounts->normalizeDate($request->input('date_of_birth'))
+                    : $student->date_of_birth,
+                'place_of_birth' => (string) $request->input('place_of_birth', $student->place_of_birth ?? ''),
+                'address' => (string) $request->input('address', $student->address ?? ''),
                 'achievements' => $request->has('achievements')
                     ? $this->jsonList($request->input('achievements'))
                     : $student->achievements,
@@ -503,9 +512,14 @@ class AccountController extends Controller
         Student::create([
             'id' => $id,
             'nisn' => $nisn,
+            'pin' => (string) $request->input('pin', ''),
             'name' => $name,
             'class' => (string) $request->input('class', ''),
             'major' => (string) $request->input('major', ''),
+            'gender' => $this->accounts->normalizeGender($request->input('gender', '')),
+            'date_of_birth' => $this->accounts->normalizeDate($request->input('date_of_birth')),
+            'place_of_birth' => (string) $request->input('place_of_birth', ''),
+            'address' => (string) $request->input('address', ''),
             'achievements' => $this->jsonList($request->input('achievements')),
         ]);
 
@@ -574,8 +588,13 @@ class AccountController extends Controller
             'status' => $profile?->status ?? 'active',
             'must_change_password' => (bool) ($profile?->must_change_password ?? false),
             'nisn' => $user->student?->nisn ?? '',
+            'pin' => $user->student?->pin ?? '',
             'class' => $user->student?->class ?? '',
             'major' => $user->student?->major ?? '',
+            'gender' => $user->student?->gender ?? '',
+            'date_of_birth' => $user->student?->date_of_birth?->toDateString() ?? '',
+            'place_of_birth' => $user->student?->place_of_birth ?? '',
+            'address' => $user->student?->address ?? '',
             'achievements' => $this->roleAchievements($user),
             'guru' => $user->guru ? [
                 'nip' => $user->guru->nip ?? '',
