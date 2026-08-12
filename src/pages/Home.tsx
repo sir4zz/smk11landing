@@ -96,7 +96,7 @@ const Home: React.FC = () => {
           {heroImages.map((image, index) => (
             <img
               key={image}
-              src={index < loadedImageCount ? image : undefined}
+              src={index < loadedImageCount ? resolveImageUrl(image) : undefined}
               alt={index === 0 ? 'Siswa SMKN 11 sedang belajar' : 'Kegiatan sekolah SMKN 11'}
               className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${index === activeImage ? 'opacity-100' : 'opacity-0'}`}
             />
@@ -178,7 +178,7 @@ const Home: React.FC = () => {
               {/* Modern Glass Frame instead of boring box */}
               <div className="absolute inset-y-10 right-0 left-10 overflow-hidden rounded-bl-[140px] rounded-tr-[140px] border-[6px] border-white/10 bg-white/5 shadow-2xl backdrop-blur-sm transition-transform hover:scale-[1.02] duration-500">
                 <img 
-                  src={heroFrameImage} 
+                  src={resolveImageUrl(heroFrameImage)} 
                   alt="Sekolah" 
                   className="h-full w-full object-cover mix-blend-overlay opacity-90 transition-transform duration-1000 hover:scale-110"
                 />
