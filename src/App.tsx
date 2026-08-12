@@ -1,117 +1,132 @@
+import { lazy, Suspense } from 'react'
 import { Routes, Route, Navigate, useParams } from 'react-router-dom'
 import Layout from './components/layout/Layout'
-import Home from './pages/Home'
-import History from './pages/profile/History'
-import VisionMission from './pages/profile/VisionMission'
-import OrganizationStructure from './pages/profile/OrganizationStructure'
-import StudyPrograms from './pages/academics/StudyPrograms'
-import StudyProgramDetail from './pages/academics/StudyProgramDetail'
-import Facilities from './pages/academics/Facilities'
-import Admissions from './pages/Admissions'
-import Contact from './pages/Contact'
-import Admin, { AdminLogin } from './pages/Admin'
-import Achievements from './pages/student/Achievements'
-import Extracurriculars from './pages/student/Extracurriculars'
-import Gallery from './pages/student/Gallery'
-import GalleryList from './pages/gallery/GalleryList'
-import GalleryDetail from './pages/gallery/GalleryDetail'
-import Management from './pages/management/Management'
-import KepalaSekolah from './pages/management/KepalaSekolah'
-import WakilKepalaSekolah from './pages/management/WakilKepalaSekolah'
-import KegiatanGuru from './pages/management/KegiatanGuru'
-import TenagaKependidikan from './pages/management/TenagaKependidikan'
-import StrukturManajemen from './pages/management/StrukturManajemen'
-import NewsList from './pages/information/NewsList'
-import NewsDetail from './pages/information/NewsDetail'
-import FAQ from './pages/information/FAQ'
-import Osis from './pages/osis/Osis'
-import OsisStruktur from './pages/osis/OsisStruktur'
-import OsisKegiatan from './pages/osis/OsisKegiatan'
-import OsisExtracurriculars from './pages/osis/Extracurriculars'
-import OsisExtracurricularDetail from './pages/osis/ExtracurricularDetail'
-import Kesemaptaan from './pages/osis/Kesemaptaan'
-import Mading from './pages/mading/Mading'
-import StudentLogin from './pages/mading/StudentLogin'
-import StudentArea from './pages/mading/StudentArea'
-import BkkList from './pages/bkk/BkkList'
-import BkkDetail from './pages/bkk/BkkDetail'
-import BkkHome from './pages/bkk/BkkHome'
-import BkkContact from './pages/bkk/BkkContact'
-import MustChangePassword from './pages/admin/MustChangePassword'
-import ProfileDirectory from './pages/profiles/ProfileDirectory'
-import ProfilePage from './pages/profiles/ProfilePage'
 import { AdminRouteGuard, StudentRouteGuard } from './components/auth/RouteGuards'
+
+const Home = lazy(() => import('./pages/Home'))
+const History = lazy(() => import('./pages/profile/History'))
+const VisionMission = lazy(() => import('./pages/profile/VisionMission'))
+const OrganizationStructure = lazy(() => import('./pages/profile/OrganizationStructure'))
+const StudyPrograms = lazy(() => import('./pages/academics/StudyPrograms'))
+const StudyProgramDetail = lazy(() => import('./pages/academics/StudyProgramDetail'))
+const Facilities = lazy(() => import('./pages/academics/Facilities'))
+const Admissions = lazy(() => import('./pages/Admissions'))
+const Contact = lazy(() => import('./pages/Contact'))
+const Admin = lazy(() => import('./pages/Admin'))
+const AdminLogin = lazy(() => import('./pages/Admin').then((m) => ({ default: m.AdminLogin })))
+const Achievements = lazy(() => import('./pages/student/Achievements'))
+const Extracurriculars = lazy(() => import('./pages/student/Extracurriculars'))
+const Gallery = lazy(() => import('./pages/student/Gallery'))
+const GalleryList = lazy(() => import('./pages/gallery/GalleryList'))
+const GalleryDetail = lazy(() => import('./pages/gallery/GalleryDetail'))
+const Management = lazy(() => import('./pages/management/Management'))
+const KepalaSekolah = lazy(() => import('./pages/management/KepalaSekolah'))
+const WakilKepalaSekolah = lazy(() => import('./pages/management/WakilKepalaSekolah'))
+const KegiatanGuru = lazy(() => import('./pages/management/KegiatanGuru'))
+const TenagaKependidikan = lazy(() => import('./pages/management/TenagaKependidikan'))
+const StrukturManajemen = lazy(() => import('./pages/management/StrukturManajemen'))
+const NewsList = lazy(() => import('./pages/information/NewsList'))
+const NewsDetail = lazy(() => import('./pages/information/NewsDetail'))
+const FAQ = lazy(() => import('./pages/information/FAQ'))
+const Osis = lazy(() => import('./pages/osis/Osis'))
+const OsisStruktur = lazy(() => import('./pages/osis/OsisStruktur'))
+const OsisKegiatan = lazy(() => import('./pages/osis/OsisKegiatan'))
+const OsisExtracurriculars = lazy(() => import('./pages/osis/Extracurriculars'))
+const OsisExtracurricularDetail = lazy(() => import('./pages/osis/ExtracurricularDetail'))
+const Kesemaptaan = lazy(() => import('./pages/osis/Kesemaptaan'))
+const Mading = lazy(() => import('./pages/mading/Mading'))
+const StudentLogin = lazy(() => import('./pages/mading/StudentLogin'))
+const StudentArea = lazy(() => import('./pages/mading/StudentArea'))
+const BkkList = lazy(() => import('./pages/bkk/BkkList'))
+const BkkDetail = lazy(() => import('./pages/bkk/BkkDetail'))
+const BkkHome = lazy(() => import('./pages/bkk/BkkHome'))
+const BkkContact = lazy(() => import('./pages/bkk/BkkContact'))
+const MustChangePassword = lazy(() => import('./pages/admin/MustChangePassword'))
+const ProfileDirectory = lazy(() => import('./pages/profiles/ProfileDirectory'))
+const ProfilePage = lazy(() => import('./pages/profiles/ProfilePage'))
+
+function RouteFallback() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-[#FAF6F0]">
+      <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#C8A951] border-t-transparent" />
+    </div>
+  )
+}
+
+function suspend(node: React.ReactNode) {
+  return <Suspense fallback={<RouteFallback />}>{node}</Suspense>
+}
 
 function App() {
   return (
     <Routes>
-        <Route path="admin/login" element={<AdminLogin />} />
+        <Route path="admin/login" element={suspend(<AdminLogin />)} />
         <Route element={<AdminRouteGuard />}>
-          <Route path="admin/*" element={<Admin />} />
-          <Route path="admin/ubah-password" element={<MustChangePassword />} />
+          <Route path="admin/*" element={suspend(<Admin />)} />
+          <Route path="admin/ubah-password" element={suspend(<MustChangePassword />)} />
         </Route>
 
         <Route path="/" element={<Layout />}>
-          <Route index element={<Home />} />
+          <Route index element={suspend(<Home />)} />
 
           {/* Profile */}
-          <Route path="profil/sejarah" element={<History />} />
-          <Route path="profil/visi-misi" element={<VisionMission />} />
-          <Route path="profil/struktur-organisasi" element={<OrganizationStructure />} />
-          <Route path="profil/direktori" element={<ProfileDirectory />} />
-          <Route path="profil/guru/:id" element={<ProfilePage />} />
-          <Route path="profil/osis/:id" element={<ProfilePage />} />
+          <Route path="profil/sejarah" element={suspend(<History />)} />
+          <Route path="profil/visi-misi" element={suspend(<VisionMission />)} />
+          <Route path="profil/struktur-organisasi" element={suspend(<OrganizationStructure />)} />
+          <Route path="profil/direktori" element={suspend(<ProfileDirectory />)} />
+          <Route path="profil/guru/:id" element={suspend(<ProfilePage />)} />
+          <Route path="profil/osis/:id" element={suspend(<ProfilePage />)} />
 
           {/* Academics */}
-          <Route path="akademik/program-keahlian" element={<StudyPrograms />} />
-          <Route path="akademik/program/:slug" element={<StudyProgramDetail />} />
-          <Route path="akademik/fasilitas" element={<Facilities />} />
+          <Route path="akademik/program-keahlian" element={suspend(<StudyPrograms />)} />
+          <Route path="akademik/program/:slug" element={suspend(<StudyProgramDetail />)} />
+          <Route path="akademik/fasilitas" element={suspend(<Facilities />)} />
 
           {/* Student Affairs */}
-          <Route path="kesiswaan/prestasi" element={<Achievements />} />
-          <Route path="kesiswaan/ekstrakurikuler" element={<Extracurriculars />} />
-          <Route path="kesiswaan/galeri" element={<Gallery />} />
+          <Route path="kesiswaan/prestasi" element={suspend(<Achievements />)} />
+          <Route path="kesiswaan/ekstrakurikuler" element={suspend(<Extracurriculars />)} />
+          <Route path="kesiswaan/galeri" element={suspend(<Gallery />)} />
 
           {/* Gallery */}
-          <Route path="galeri" element={<GalleryList />} />
-          <Route path="galeri/:slug" element={<GalleryDetail />} />
+          <Route path="galeri" element={suspend(<GalleryList />)} />
+          <Route path="galeri/:slug" element={suspend(<GalleryDetail />)} />
 
           {/* Management */}
-          <Route path="manajemen" element={<Management />} />
-          <Route path="manajemen/kepala-sekolah" element={<KepalaSekolah />} />
-          <Route path="manajemen/wakil-kepala-sekolah" element={<WakilKepalaSekolah />} />
-          <Route path="manajemen/kegiatan-guru" element={<KegiatanGuru />} />
-          <Route path="manajemen/tenaga-kependidikan" element={<TenagaKependidikan />} />
-          <Route path="manajemen/struktur-manajemen" element={<StrukturManajemen />} />
+          <Route path="manajemen" element={suspend(<Management />)} />
+          <Route path="manajemen/kepala-sekolah" element={suspend(<KepalaSekolah />)} />
+          <Route path="manajemen/wakil-kepala-sekolah" element={suspend(<WakilKepalaSekolah />)} />
+          <Route path="manajemen/kegiatan-guru" element={suspend(<KegiatanGuru />)} />
+          <Route path="manajemen/tenaga-kependidikan" element={suspend(<TenagaKependidikan />)} />
+          <Route path="manajemen/struktur-manajemen" element={suspend(<StrukturManajemen />)} />
 
           {/* Information */}
-          <Route path="informasi/berita" element={<NewsList />} />
-          <Route path="informasi/berita/:slug" element={<NewsDetail />} />
-          <Route path="informasi/faq" element={<FAQ />} />
+          <Route path="informasi/berita" element={suspend(<NewsList />)} />
+          <Route path="informasi/berita/:slug" element={suspend(<NewsDetail />)} />
+          <Route path="informasi/faq" element={suspend(<FAQ />)} />
 
           {/* OSIS */}
-          <Route path="osis" element={<Osis />} />
-          <Route path="osis/struktur" element={<OsisStruktur />} />
-          <Route path="osis/kegiatan" element={<OsisKegiatan />} />
-          <Route path="osis/ekstrakurikuler" element={<OsisExtracurriculars />} />
-          <Route path="osis/ekstrakurikuler/:slug" element={<OsisExtracurricularDetail />} />
-          <Route path="osis/kesemaptaan" element={<Kesemaptaan />} />
-          <Route path="mading" element={<Mading />} />
-          <Route path="mading/login" element={<StudentLogin />} />
+          <Route path="osis" element={suspend(<Osis />)} />
+          <Route path="osis/struktur" element={suspend(<OsisStruktur />)} />
+          <Route path="osis/kegiatan" element={suspend(<OsisKegiatan />)} />
+          <Route path="osis/ekstrakurikuler" element={suspend(<OsisExtracurriculars />)} />
+          <Route path="osis/ekstrakurikuler/:slug" element={suspend(<OsisExtracurricularDetail />)} />
+          <Route path="osis/kesemaptaan" element={suspend(<Kesemaptaan />)} />
+          <Route path="mading" element={suspend(<Mading />)} />
+          <Route path="mading/login" element={suspend(<StudentLogin />)} />
           <Route element={<StudentRouteGuard />}>
-            <Route path="mading/area" element={<StudentArea />} />
+            <Route path="mading/area" element={suspend(<StudentArea />)} />
           </Route>
 
           {/* BKK (Bursa Kerja Khusus) */}
-          <Route path="bkk" element={<BkkHome />} />
-          <Route path="bkk/lowongan" element={<BkkList />} />
-          <Route path="bkk/lowongan/:slug" element={<BkkDetail />} />
-          <Route path="bkk/kontak" element={<BkkContact />} />
+          <Route path="bkk" element={suspend(<BkkHome />)} />
+          <Route path="bkk/lowongan" element={suspend(<BkkList />)} />
+          <Route path="bkk/lowongan/:slug" element={suspend(<BkkDetail />)} />
+          <Route path="bkk/kontak" element={suspend(<BkkContact />)} />
           <Route path="bkk/:slug" element={<BkkDetailRedirect />} />
 
           {/* Public information portal */}
-          <Route path="spmb" element={<Admissions />} />
-          <Route path="kontak" element={<Contact />} />
+          <Route path="spmb" element={suspend(<Admissions />)} />
+          <Route path="kontak" element={suspend(<Contact />)} />
 
           {/* 404 Not Found */}
           <Route path="*" element={<NotFound />} />

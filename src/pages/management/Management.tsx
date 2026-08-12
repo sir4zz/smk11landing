@@ -21,7 +21,7 @@ const Management: React.FC = () => {
   const [educationStaffList, setEducationStaffList] = useState<EducationStaff[]>([]);
   useEffect(() => {
     fetchPublicContent<Staff[]>('staff').then(setStaff);
-    fetchPublicContent<TeacherActivity[]>('teacherActivities').then(setActivities);
+    fetchPublicContent<TeacherActivity[]>('teacherActivities', { limit: 3 }).then(setActivities);
     fetchPublicContent<EducationStaff[]>('educationStaff').then(setEducationStaffList);
   }, []);
 
@@ -96,7 +96,7 @@ const Management: React.FC = () => {
             {latestActivities.map((activity) => (
               <div key={activity.id} className="overflow-hidden rounded-2xl border border-[#1B2A4A]/10 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
                 <div className="relative h-44 w-full overflow-hidden">
-                  <img src={resolveImageUrl(activity.photo)} alt={activity.title} className="h-full w-full object-cover" />
+                    <img src={resolveImageUrl(activity.photo)} alt={activity.title} loading="lazy" className="h-full w-full object-cover" />
                   <span className="absolute right-3 top-3 rounded-full bg-[#C8A951] px-3 py-1 text-xs font-semibold text-[#1B2A4A]">{activity.category}</span>
                 </div>
                 <div className="p-6">

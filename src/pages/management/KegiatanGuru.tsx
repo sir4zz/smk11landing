@@ -57,7 +57,7 @@ const KegiatanGuru: React.FC = () => {
             {filtered.map((activity) => (
               <div key={activity.id} className="overflow-hidden rounded-2xl border border-[#1B2A4A]/10 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
                 <div className="relative h-48 w-full overflow-hidden">
-                  <img src={resolveImageUrl(activity.photo)} alt={activity.title} className="h-full w-full object-cover" />
+                    <img src={resolveImageUrl(activity.photo)} alt={activity.title} loading="lazy" className="h-full w-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#1B2A4A]/70 to-transparent" />
                   <span className="absolute right-3 top-3 rounded-full bg-[#C8A951] px-3 py-1 text-xs font-semibold text-[#1B2A4A]">{activity.category}</span>
                 </div>

@@ -30,7 +30,7 @@ export const Card: React.FC<CardProps> = ({
         <>
           {image && (
             <div className="relative h-48 w-full overflow-hidden">
-              <img src={image} alt={title} className="h-full w-full object-cover" />
+              <img src={image} alt={title} loading="lazy" className="h-full w-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#1B2A4A]/70 to-transparent" />
               {tag && (
                 <span className={`absolute left-3 top-3 rounded-full px-3 py-1 text-xs font-semibold ${tagClassName}`}>

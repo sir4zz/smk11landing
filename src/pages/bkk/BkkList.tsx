@@ -44,7 +44,7 @@ const BkkList: React.FC = () => {
   const [cityOptions, setCityOptions] = useState<string[]>([])
 
   useEffect(() => {
-    fetchJobVacancies({ limit: 500 })
+    fetchJobVacancies({ limit: 200 })
       .then(({ rows: all }) => {
         setCityOptions([...new Set(all.map((r) => r.city).filter(Boolean))] as string[])
       })
@@ -160,6 +160,7 @@ const BkkList: React.FC = () => {
                       <img
                         src={resolveImageUrl(job.company_logo)}
                         alt={job.company_name}
+                        loading="lazy"
                         className="h-12 w-12 shrink-0 rounded-xl border border-[#1B2A4A]/10 bg-white object-cover"
                       />
                     ) : (

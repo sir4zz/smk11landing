@@ -74,6 +74,7 @@ const NewsList: React.FC = () => {
                 <img
                   src={item.thumbnail}
                   alt={item.title}
+                  loading="lazy"
                   className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#1B2A4A]/60 to-transparent" />

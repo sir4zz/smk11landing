@@ -50,7 +50,7 @@ const OsisKegiatan: React.FC = () => {
               <article key={String(activity.id)} className="group overflow-hidden rounded-2xl border border-[#1B2A4A]/10 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
                 <div className="relative h-48 overflow-hidden">
                   {activity.photo ? (
-                    <img src={resolveImageUrl(activity.photo)} alt={activity.title} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                    <img src={resolveImageUrl(activity.photo)} alt={activity.title} loading="lazy" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
                   ) : (
                     <div className="grid h-full w-full place-items-center bg-[#FAF6F0]"><Award className="h-12 w-12 text-[#C8A951]/40" /></div>
                   )}

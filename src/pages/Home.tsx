@@ -47,6 +47,7 @@ const getProgramIcon = (slug: string) => {
 
 const Home: React.FC = () => {
   const [activeImage, setActiveImage] = useState(0);
+  const [loadedImageCount, setLoadedImageCount] = useState(1);
   const [publicPrograms, setPublicPrograms] = useState<any[]>([]);
   const [publicNews, setPublicNews] = useState<any[]>([]);
   const [publicAchievements, setPublicAchievements] = useState<any[]>([]);
@@ -56,15 +57,17 @@ const Home: React.FC = () => {
   const [stats, setStats] = useState<{ value: string; label: string }[]>([]);
 
   useEffect(() => {
-    fetchPublicContent<any[]>('programs').then(setPublicPrograms);
-    fetchPublicContent<any[]>('news').then(setPublicNews);
-    fetchPublicContent<any[]>('achievements').then(setPublicAchievements);
-    fetchHomeContent().then(setHome);
-    fetchStats().then(setStats);
+    let active = true;
+    fetchPublicContent<any[]>('programs').then((data) => { if (active) setPublicPrograms(data); });
+    fetchPublicContent<any[]>('news', { limit: 2 }).then((data) => { if (active) setPublicNews(data); });
+    fetchPublicContent<any[]>('achievements', { limit: 3 }).then((data) => { if (active) setPublicAchievements(data); });
+    fetchHomeContent().then((data) => { if (active) setHome(data); });
+    fetchStats().then((data) => { if (active) setStats(data); });
     fetchGalleries({ page: 1, limit: 8 })
-      .then(({ rows }) => setGallery(rows))
+      .then(({ rows }) => { if (active) setGallery(rows); })
       .catch(() => {})
-      .finally(() => setGalleryLoading(false));
+      .finally(() => { if (active) setGalleryLoading(false); });
+    return () => { active = false; };
   }, []);
 
   const heroImages = home?.hero.images ?? [];
@@ -78,6 +81,11 @@ const Home: React.FC = () => {
     return () => window.clearInterval(timer);
   }, [heroImages.length]);
 
+  useEffect(() => {
+    if (heroImages.length <= 1) return;
+    setLoadedImageCount((count) => Math.max(count, Math.min(activeImage + 2, heroImages.length)));
+  }, [activeImage, heroImages.length]);
+
 
 
   return (
@@ -88,7 +96,7 @@ const Home: React.FC = () => {
           {heroImages.map((image, index) => (
             <img
               key={image}
-              src={image}
+              src={index < loadedImageCount ? image : undefined}
               alt={index === 0 ? 'Siswa SMKN 11 sedang belajar' : 'Kegiatan sekolah SMKN 11'}
               className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${index === activeImage ? 'opacity-100' : 'opacity-0'}`}
             />
@@ -233,7 +241,7 @@ const Home: React.FC = () => {
             {/* Image/Photo */}
             <div className="relative mx-auto w-full max-w-md lg:max-w-none">
               <div className="relative overflow-hidden rounded-3xl rounded-tr-[80px] rounded-bl-[80px] bg-[#FAF6F0] p-4 shadow-sm">
-                <img src={home?.welcome.image} alt="Kepala Sekolah SMKN 11" className="h-[250px] sm:h-[350px] md:h-[450px] w-full object-cover rounded-2xl rounded-tr-[70px] rounded-bl-[70px]" />
+                <img src={home?.welcome.image} alt="Kepala Sekolah SMKN 11" loading="lazy" className="h-[250px] sm:h-[350px] md:h-[450px] w-full object-cover rounded-2xl rounded-tr-[70px] rounded-bl-[70px]" />
                 <div className="absolute bottom-10 left-0 bg-[#1B2A4A] text-white p-4 pr-8 rounded-r-2xl shadow-xl border-l-4 border-[#C8A951]">
                   <h4 className="font-bold text-lg">{home?.welcome.principal_name}</h4>
                   <p className="text-[#F9E7A8] text-sm">{home?.welcome.principal_title}</p>

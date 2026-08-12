@@ -105,7 +105,7 @@ const BkkHome: React.FC = () => {
     fetchJobVacancies({ limit: 6 })
       .then(({ rows }) => setJobs(rows))
       .finally(() => setJobsLoading(false))
-    fetchPublicContent<NewsItem[]>('news')
+    fetchPublicContent<NewsItem[]>('news', { limit: 30 })
       .then((items) => {
         const sorted = [...items].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
         const announcements = sorted.filter((n) => n.category === 'Pengumuman')
@@ -231,6 +231,7 @@ const BkkHome: React.FC = () => {
                         <img
                           src={resolveImageUrl(job.company_logo)}
                           alt={job.company_name}
+                          loading="lazy"
                           className="h-12 w-12 shrink-0 rounded-xl border border-[#1B2A4A]/10 bg-white object-cover"
                         />
                       ) : (
@@ -294,6 +295,7 @@ const BkkHome: React.FC = () => {
                   <img
                     src={resolveImageUrl(company.logo)}
                     alt={company.name}
+                    loading="lazy"
                     className="h-14 w-14 rounded-xl border border-[#1B2A4A]/10 object-cover"
                   />
                 ) : (
@@ -333,6 +335,7 @@ const BkkHome: React.FC = () => {
                     <img
                       src={item.thumbnail}
                       alt={item.title}
+                      loading="lazy"
                       className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-[#1B2A4A]/60 to-transparent" />

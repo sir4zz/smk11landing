@@ -23,3 +23,10 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+
+# Long-lived browser cache for uploaded images (unique filenames never change)
+<IfModule mod_headers.c>
+    <FilesMatch "\.(jpe?g|jfif|png|webp|avif|gif|ico)$">
+        Header set Cache-Control "public, max-age=86400"
+    </FilesMatch>
+</IfModule>

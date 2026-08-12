@@ -48,11 +48,12 @@ const Extracurriculars: React.FC = () => {
               className="group flex flex-col overflow-hidden rounded-2xl border border-[#1B2A4A]/10 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg sm:flex-row"
             >
               <div className="h-48 w-full flex-shrink-0 overflow-hidden sm:h-auto sm:w-48">
-                <img
-                  src={ekskul.photo}
-                  alt={ekskul.name}
-                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
+              <img
+                src={ekskul.photo}
+                alt={ekskul.name}
+                loading="lazy"
+                className="h-full w-full object-cover"
+              />
               </div>
               <div className="flex flex-1 flex-col justify-center p-6">
                 <span className="mb-2 inline-block w-fit rounded-full bg-[#FAF6F0] px-3 py-1 text-xs font-semibold text-[#866D2C]">

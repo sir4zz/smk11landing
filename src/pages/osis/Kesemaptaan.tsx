@@ -80,7 +80,7 @@ const Kesemaptaan: React.FC = () => {
                   <p className="mt-3 text-sm leading-6 text-[#F3E8D0]/90">{activity.description}</p>
                   {Array.isArray(activity.documentation) && activity.documentation.length > 0 && (
                     <div className="mt-4 grid grid-cols-2 gap-2">
-                      {activity.documentation.map((url, i) => <img key={i} src={url} alt={`Dokumentasi ${i + 1}`} className="h-24 w-full rounded-lg object-cover" />)}
+                      {activity.documentation.map((url, i) => <img key={i} src={url} alt={`Dokumentasi ${i + 1}`} loading="lazy" className="h-24 w-full rounded-lg object-cover" />)}
                     </div>
                   )}
                 </article>
@@ -130,7 +130,7 @@ const Kesemaptaan: React.FC = () => {
               {instructors.map((ins) => (
                 <div key={ins.id} className="rounded-2xl border border-[#1B2A4A]/10 bg-white p-6 text-center shadow-sm">
                   <div className="mx-auto mb-4 grid h-20 w-20 place-items-center overflow-hidden rounded-full bg-[#FAF6F0]">
-                    {ins.photo ? <img src={resolveImageUrl(ins.photo)} alt={ins.name} className="h-full w-full object-cover" /> : <User className="h-8 w-8 text-[#C8A951]" />}
+                    {ins.photo ? <img src={resolveImageUrl(ins.photo)} alt={ins.name} loading="lazy" className="h-full w-full object-cover" /> : <User className="h-8 w-8 text-[#C8A951]" />}
                   </div>
                   <h4 className="font-bold text-[#1B2A4A]">{ins.name}</h4>
                   <p className="mt-1 text-sm font-semibold text-[#866D2C]">{ins.role}</p>
@@ -158,7 +158,7 @@ const Kesemaptaan: React.FC = () => {
                 <p className="mt-2 text-sm leading-6 text-[#23314D]">{a.description}</p>
                 {Array.isArray(a.documentation) && a.documentation.length > 0 && (
                   <div className="mt-3 grid grid-cols-2 gap-2">
-                    {a.documentation.map((doc, i) => <img key={i} src={doc} alt={`Dokumentasi ${i + 1}`} className="h-24 w-full rounded-lg object-cover" />)}
+                    {a.documentation.map((doc, i) => <img key={i} src={doc} alt={`Dokumentasi ${i + 1}`} loading="lazy" className="h-24 w-full rounded-lg object-cover" />)}
                   </div>
                 )}
               </article>

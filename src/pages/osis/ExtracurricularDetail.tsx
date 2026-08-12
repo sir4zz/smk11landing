@@ -79,7 +79,7 @@ const ExtracurricularDetail: React.FC = () => {
                 <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-[#1B2A4A]"><ImageIcon className="h-5 w-5 text-[#C8A951]" /> Dokumentasi</h3>
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                   {item.documentation.map((url, i) => (
-                    <img key={i} src={url} alt={`Dokumentasi ${i + 1}`} className="h-40 w-full rounded-xl object-cover" />
+                    <img key={i} src={url} alt={`Dokumentasi ${i + 1}`} loading="lazy" className="h-40 w-full rounded-xl object-cover" />
                   ))}
                 </div>
               </div>

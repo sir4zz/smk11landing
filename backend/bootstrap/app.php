@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\AdminOnly;
+use App\Http\Middleware\CachePublic;
 use App\Http\Middleware\CheckPermission;
 use App\Http\Middleware\StaffOnly;
 use Illuminate\Foundation\Application;
@@ -27,6 +28,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*');
 
         $middleware->remove(\Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class);
+
+        $middleware->append(CachePublic::class);
 
         $middleware->validateCsrfTokens(except: ['api/*']);
     })

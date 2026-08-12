@@ -24,7 +24,7 @@ const StudyPrograms: React.FC = () => {
             <Card key={program.id}>
               {program.image && (
                 <div className="relative h-48 overflow-hidden">
-                  <img src={resolveImageUrl(program.image)} alt={program.name} className="h-full w-full object-cover" />
+                  <img src={resolveImageUrl(program.image)} alt={program.name} loading="lazy" className="h-full w-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#1B2A4A]/70 via-transparent to-transparent" />
                   <span className="absolute right-4 top-4 rounded-full bg-[#C8A951] px-3 py-1 text-xs font-bold text-[#1B2A4A]">
                     {program.shortName}

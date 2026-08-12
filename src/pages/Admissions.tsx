@@ -192,7 +192,7 @@ const Admissions: React.FC = () => {
 
         {/* Banner */}
         <div className="mb-12 overflow-hidden rounded-2xl bg-gradient-to-r from-[#1B2A4A] to-[#0C1527] text-white shadow-xl relative">
-          <img src={dummyImage} alt="" className="absolute inset-0 h-full w-full object-cover opacity-40" />
+          <img src={dummyImage} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover opacity-40" />
           <div className="absolute inset-0 bg-gradient-to-r from-[#1B2A4A]/90 to-[#0C1527]/70" />
           <div className="relative z-10 flex flex-col items-center gap-6 p-8 text-center md:flex-row md:p-10 md:text-left">
             <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[#C8A951]/20">
@@ -275,7 +275,7 @@ const Admissions: React.FC = () => {
 
         {/* CTA */}
         <section className="relative overflow-hidden rounded-2xl bg-[#1B2A4A] text-center text-white">
-          <img src={dummyImage} alt="Kegiatan siswa SMKN 11" className="absolute inset-0 h-full w-full object-cover" />
+          <img src={dummyImage} alt="Kegiatan siswa SMKN 11" loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-r from-[#0C1527]/60 via-[#1B2A4A]/50 to-[#1B2A4A]/20" />
           <div className="relative z-10 p-12">
             <GraduationCap className="mx-auto mb-4 h-12 w-12 text-[#C8A951]" />

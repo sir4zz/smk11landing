@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Users, BookOpen, Loader2, Search } from 'lucide-react';
 import PageHero from '../../components/ui/PageHero';
@@ -32,7 +32,10 @@ function ProfileDirectory() {
 
   const list: PublicDirectoryEntry[] = directory ? directory[TAB_KEY[tab]] : [];
   const q = search.toLowerCase();
-  const filtered = list.filter((entry) => !q || entry.name.toLowerCase().includes(q) || (entry.position ?? '').toLowerCase().includes(q) || (entry.division ?? '').toLowerCase().includes(q) || (entry.major ?? '').toLowerCase().includes(q));
+  const filtered = useMemo(() => {
+    const rows: PublicDirectoryEntry[] = directory ? directory[TAB_KEY[tab]] : [];
+    return rows.filter((entry) => !q || entry.name.toLowerCase().includes(q) || (entry.position ?? '').toLowerCase().includes(q) || (entry.division ?? '').toLowerCase().includes(q) || (entry.major ?? '').toLowerCase().includes(q));
+  }, [directory, tab, q]);
 
   return (
     <div className="min-h-screen bg-[#FAF6F0]">
@@ -89,7 +92,7 @@ function EntryCard({ entry }: { entry: PublicDirectoryEntry }) {
     >
       <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-full bg-[#FAF6F0]">
         {entry.photo ? (
-          <img src={entry.photo} alt={entry.name} className="h-full w-full object-cover" />
+                        <img src={entry.photo} alt={entry.name} loading="lazy" className="h-full w-full object-cover" />
         ) : (
           <Users className="h-7 w-7 text-[#C8A951]/60" />
         )}
