@@ -12,12 +12,6 @@ const InstagramIcon = ({ size = 20 }: { size?: number }) => (
   </svg>
 );
 
-const FacebookIcon = ({ size = 20 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
-  </svg>
-);
-
 const TiktokIcon = ({ size = 20 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" />
@@ -25,19 +19,28 @@ const TiktokIcon = ({ size = 20 }: { size?: number }) => (
 );
 
 const DEFAULT_SOCIAL = {
-  instagram: 'https://instagram.com/smkn11kabtangerang',
-  facebook: 'https://facebook.com/smkn11kabtangerang',
-  tiktok: 'https://tiktok.com/@smkn11kabtangerang',
-  email: 'admin@smkn11kabtang.sch.id',
+  instagram: 'https://instagram.com/official_smkn11kab.tng',
+  tiktok: 'https://tiktok.com/@osis_smkn11kabtangeran',
+  email: 'smkn11kabtangschool@gmail.com',
+};
+
+const DEFAULT_CONTACT = {
+  address: 'Kp. Saradan RT. 03/01, Desa Pangkat, Kec. Jayanti, Kab. Tangerang, Banten 15610',
+  phone: '0812 9922 0831',
+  email: 'smkn11kabtangschool@gmail.com',
 };
 
 const Footer: React.FC = () => {
   const [social, setSocial] = useState(DEFAULT_SOCIAL);
+  const [contact, setContact] = useState(DEFAULT_CONTACT);
 
   useEffect(() => {
     fetchHomeContent().then((home) => {
       if (home?.social) {
         setSocial({ ...DEFAULT_SOCIAL, ...home.social });
+      }
+      if (home?.contact) {
+        setContact({ ...DEFAULT_CONTACT, ...home.contact });
       }
     }).catch(() => {});
   }, []);
@@ -47,11 +50,6 @@ const Footer: React.FC = () => {
       label: 'Instagram',
       href: social.instagram,
       icon: <InstagramIcon />,
-    },
-    {
-      label: 'Facebook',
-      href: social.facebook,
-      icon: <FacebookIcon />,
     },
     {
       label: 'TikTok',
@@ -104,7 +102,7 @@ const Footer: React.FC = () => {
             <ul className="space-y-2">
               <li><Link to="/profil/sejarah" className="text-[#F3E8D0] hover:text-white transition-colors">Profil Sekolah</Link></li>
               <li><Link to="/akademik/program-keahlian" className="text-[#F3E8D0] hover:text-white transition-colors">Program Keahlian</Link></li>
-              <li><Link to="/kesiswaan/prestasi" className="text-[#F3E8D0] hover:text-white transition-colors">Kesiswaan</Link></li>
+              <li><Link to="/kesiswaan/prestasi" className="text-[#F3E8D0] hover:text-white transition-colors">Prestasi Siswa</Link></li>
               <li><Link to="/informasi/berita" className="text-[#F3E8D0] hover:text-white transition-colors">Berita & Pengumuman</Link></li>
               <li><Link to="/spmb" className="text-[#F3E8D0] hover:text-white transition-colors">Informasi SPMB</Link></li>
               <li><Link to="/kontak" className="text-[#F3E8D0] hover:text-white transition-colors">Hubungi Kami</Link></li>
@@ -130,15 +128,15 @@ const Footer: React.FC = () => {
             <ul className="space-y-4">
               <li className="flex items-start gap-3">
                 <MapPin className="text-[#C8A951] shrink-0 mt-1" size={18} />
-                <span className="text-[#F3E8D0] text-sm">Kp. Saradan RT. 03/01, Desa Pangkat, Kec. Jayanti, Kab. Tangerang, Banten 15610</span>
+                <span className="text-[#F3E8D0] text-sm">{contact.address}</span>
               </li>
               <li className="flex items-center gap-3">
                 <Phone className="text-[#C8A951] shrink-0" size={18} />
-                <span className="text-[#F3E8D0] text-sm">0812 9922 0831</span>
+                <span className="text-[#F3E8D0] text-sm">{contact.phone}</span>
               </li>
               <li className="flex items-center gap-3">
                 <Mail className="text-[#C8A951] shrink-0" size={18} />
-                <span className="text-[#F3E8D0] text-sm">admin@smkn11kabtang.sch.id</span>
+                <span className="text-[#F3E8D0] text-sm">{contact.email}</span>
               </li>
             </ul>
           </div>

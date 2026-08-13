@@ -39,7 +39,7 @@ export default function ImageField({ label, value, onChange, hint, disabled = fa
       <div className="mt-1 overflow-hidden rounded-lg border border-[#1B2A4A]/20 bg-white">
         {value ? (
           <div className="relative">
-            <img src={resolveImageUrl(value)} alt="" className="h-40 w-full object-cover" />
+            {resolveImageUrl(value) ? <img src={resolveImageUrl(value)!} alt="" className="h-40 w-full object-cover" /> : <div className="grid h-24 place-items-center text-[#5B7088]"><ImageIcon size={28} /></div>}
             {!disabled && (
               <button
                 type="button"
@@ -69,7 +69,7 @@ export default function ImageField({ label, value, onChange, hint, disabled = fa
         </div>
         <div className="border-t border-[#1B2A4A]/10 px-3 py-2">
           <input
-            type="url"
+            type="text"
             value={value}
             disabled={disabled}
             onChange={(e) => onChange(e.target.value)}

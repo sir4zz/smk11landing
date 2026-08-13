@@ -108,9 +108,9 @@ const BkkDetail: React.FC = () => {
         <div className="overflow-hidden rounded-2xl border border-[#1B2A4A]/10 bg-white shadow-sm">
           <div className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-4">
-              {job.company_logo ? (
+              {job.company_logo && resolveImageUrl(job.company_logo) ? (
                 <img
-                  src={resolveImageUrl(job.company_logo)}
+                  src={resolveImageUrl(job.company_logo)!}
                   alt={job.company_name}
                   className="h-16 w-16 rounded-xl border border-[#1B2A4A]/10 object-cover"
                 />

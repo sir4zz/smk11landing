@@ -59,3 +59,7 @@ export interface SpmbContent {
   requirements: string[]; schedule: SpmbScheduleItem[]; flow_steps: SpmbFlowStep[]; faq: SpmbFaqItem[];
   portal_url: string; banner_image: string; banner_title: string; banner_description: string; updated_at?: string;
 }
+export interface SpmbPoster {
+  id?: string; title: string; image: string; is_active: boolean; sort_order: number;
+  created_at?: string; updated_at?: string;
+}

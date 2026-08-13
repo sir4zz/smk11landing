@@ -1,14 +1,32 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import PageHero from '../components/ui/PageHero';
 import { SectionHeading } from '../components/ui/SectionHeading';
 import { Button } from '../components/ui/Button';
 import { MapPin, Phone, Mail, Clock } from 'lucide-react';
-import { backendApi } from '../lib/api';
+import { backendApi, fetchHomeContent } from '../lib/api';
+
+const DEFAULT_CONTACT = {
+  address: 'Kp. Saradan RT. 03/01, Desa Pangkat,\nKec. Jayanti, Kab. Tangerang, Banten 15610',
+  phone: '0812 9922 0831',
+  email: 'smkn11kabtangschool@gmail.com',
+  hours: 'Senin - Jumat, 07:00 - 15:00 WIB',
+  map_query: 'Kp. Saradan RT. 03/01, Pangkat, Jayanti, Kabupaten Tangerang, Banten 15610',
+};
 
 const Contact: React.FC = () => {
   const [formStatus, setFormStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [contact, setContact] = useState(DEFAULT_CONTACT);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchHomeContent().then((home) => {
+      if (cancelled || !home?.contact) return;
+      setContact({ ...DEFAULT_CONTACT, ...home.contact });
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   const submitContact = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -132,8 +150,9 @@ const Contact: React.FC = () => {
                   <div>
                     <h4 className="font-bold text-white mb-1">Alamat</h4>
                     <p className="text-[#F3E8D0] leading-relaxed">
-                      Kp. Saradan RT. 03/01, Desa Pangkat,<br />
-                      Kec. Jayanti, Kab. Tangerang, Banten 15610
+                      {contact.address.split('\n').map((line, i) => (
+                        <span key={i}>{line}<br /></span>
+                      ))}
                     </p>
                   </div>
                 </div>
@@ -142,7 +161,7 @@ const Contact: React.FC = () => {
                   <Phone className="w-6 h-6 text-[#C8A951] mr-4 shrink-0 mt-1" />
                   <div>
                     <h4 className="font-bold text-white mb-1">Telepon</h4>
-                    <p className="text-[#F3E8D0]">0812 9922 0831</p>
+                    <p className="text-[#F3E8D0]">{contact.phone}</p>
                   </div>
                 </div>
 
@@ -150,7 +169,7 @@ const Contact: React.FC = () => {
                   <Mail className="w-6 h-6 text-[#C8A951] mr-4 shrink-0 mt-1" />
                   <div>
                     <h4 className="font-bold text-white mb-1">Email</h4>
-                    <p className="text-[#F3E8D0]">admin@smkn11kabtang.sch.id</p>
+                    <p className="text-[#F3E8D0]">{contact.email}</p>
                   </div>
                 </div>
 
@@ -158,7 +177,7 @@ const Contact: React.FC = () => {
                   <Clock className="w-6 h-6 text-[#C8A951] mr-4 shrink-0 mt-1" />
                   <div>
                     <h4 className="font-bold text-white mb-1">Jam Operasional</h4>
-                    <p className="text-[#F3E8D0]">Senin - Jumat, 07:00 - 15:00 WIB</p>
+                    <p className="text-[#F3E8D0]">{contact.hours}</p>
                   </div>
                 </div>
               </div>
@@ -167,7 +186,7 @@ const Contact: React.FC = () => {
             {/* Google Maps Embed */}
             <div className="rounded-xl overflow-hidden h-64 w-full">
               <iframe
-                src="https://www.google.com/maps?q=Kp.+Saradan+RT.+03/01,+Pangkat,+Jayanti,+Kabupaten+Tangerang,+Banten+15610&output=embed"
+                src={`https://www.google.com/maps?q=${encodeURIComponent(contact.map_query.replace(/\s*\n+\s*/g, ' '))}&output=embed`}
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}

@@ -1,12 +1,12 @@
-import type { SpmbContent } from './content-types';
+import type { SpmbContent, SpmbPoster } from './content-types';
 
 const configuredApiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/$/, '');
 const apiBaseUrl = configuredApiUrl.endsWith('/api') ? configuredApiUrl : `${configuredApiUrl}/api`;
 
 const apiOrigin = configuredApiUrl.replace(/\/api$/, '');
 
-export function resolveImageUrl(url: string): string {
-  if (!url) return '';
+export function resolveImageUrl(url: string | null | undefined): string | undefined {
+  if (!url || !url.trim()) return undefined;
   if (/^https?:\/\//.test(url)) {
     try {
       const parsed = new URL(url);
@@ -28,7 +28,8 @@ export interface HomeContent {
   welcome: { image: string; principal_name: string; principal_title: string; title: string; paragraphs: string[]; quote: string };
   about: { title: string; subtitle: string; paragraphs: string[]; card_label: string; card_title: string; quote: string; location: string };
   stats: { value: string; label: string }[];
-  social?: { instagram: string; facebook: string; tiktok: string; email: string };
+  social?: { instagram: string; tiktok: string; email: string };
+  contact?: { address: string; phone: string; email: string; hours: string; map_query: string };
 }
 
 export async function fetchHomeContent(): Promise<HomeContent | null> {
@@ -252,6 +253,32 @@ export async function fetchPublicContentByIdResult<T extends { slug?: string }>(
 export async function fetchPublicContentById<T extends { slug?: string }>(type: string, slug: string): Promise<T | null> { return (await fetchPublicContentByIdResult<T>(type, slug)).data; }
 function normalizeSpmbContent(row: Record<string, unknown>): SpmbContent { return { id: row.id as string | undefined, status: (row.status as SpmbContent['status']) || 'ditutup', title: String(row.title ?? ''), description: String(row.description ?? ''), latest_info: String(row.latest_info ?? ''), requirements: Array.isArray(row.requirements) ? row.requirements as string[] : [], schedule: Array.isArray(row.schedule) ? row.schedule as SpmbContent['schedule'] : [], flow_steps: Array.isArray(row.flow_steps) ? row.flow_steps as SpmbContent['flow_steps'] : [], faq: Array.isArray(row.faq) ? row.faq as SpmbContent['faq'] : [], portal_url: String(row.portal_url ?? ''), banner_image: String(row.banner_image ?? ''), banner_title: String(row.banner_title ?? ''), banner_description: String(row.banner_description ?? ''), updated_at: row.updated_at as string | undefined }; }
 export async function fetchSpmbContent(): Promise<SpmbContent | null> { const result = await request<Record<string, unknown>>('/spmb'); return result.data ? normalizeSpmbContent(result.data) : null; }
+
+// ---------- SPMB POSTERS (informational flyers / images) ----------
+export async function fetchSpmbPosters(): Promise<SpmbPoster[]> {
+  const result = await request<SpmbPoster[]>('/spmb/posters');
+  return result.data ?? [];
+}
+
+export const spmbPosterApi = {
+  listAll(): ApiResult<SpmbPoster[]> {
+    return request<SpmbPoster[]>('/admin/spmb/posters');
+  },
+  create(payload: Record<string, unknown>): ApiResult<SpmbPoster> {
+    return request<SpmbPoster>('/admin/spmb/posters', { method: 'POST', body: JSON.stringify(payload) });
+  },
+  update(id: string, payload: Record<string, unknown>): ApiResult<SpmbPoster> {
+    return request<SpmbPoster>(`/admin/spmb/posters/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(payload) });
+  },
+  remove(id: string): ApiResult<null> {
+    return request<null>(`/admin/spmb/posters/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  },
+  upload(file: File): ApiResult<{ url: string }> {
+    const form = new FormData();
+    form.append('file', file);
+    return request<{ url: string }>('/admin/spmb/posters/upload', { method: 'POST', body: form });
+  },
+};
 async function fetchFromApi<T>(path: string): Promise<T> { const result = await request<T>(path); return result.data ?? ([] as T); }
 export const fetchOsisProfile = <T>() => fetchFromApi<T>('/osis');
 export const fetchOsisMembers = <T>() => fetchFromApi<T>('/osis/members');
@@ -739,5 +766,99 @@ export const bkkPartnerAdminApi = {
   },
   remove(id: string): ApiResult<null> {
     return request<null>(`/admin/bkk/partners/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  },
+};
+
+// ---------- KELULUSAN SISWA (ALUMNI GRADUATION) ----------
+export type AlumniStatus = 'bekerja' | 'kuliah' | 'wirausaha' | 'belum_bekerja';
+export type VerificationStatus = 'menunggu' | 'terverifikasi' | 'ditolak';
+
+export interface AlumniGraduationRow {
+  id: string;
+  name: string;
+  nisn: string;
+  major: string;
+  graduation_year: number;
+  phone: string;
+  email: string;
+  domicile: string;
+  status: AlumniStatus;
+  status_detail: Record<string, unknown> | null;
+  verification_status: VerificationStatus;
+  verification_note: string;
+  submitted_by: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface AlumniGraduationStats {
+  total: number;
+  filled: number;
+  bekerja: number;
+  kuliah: number;
+  wirausaha: number;
+  belum_bekerja: number;
+  keterserapan: number;
+  avg_wait_time: number;
+  job_match_percentage: number;
+  by_major: { major: string; total: number; bekerja: number; kuliah: number; wirausaha: number; belum_bekerja: number }[];
+  by_year: { year: number; total: number; bekerja: number; kuliah: number; wirausaha: number; belum_bekerja: number; keterserapan: number }[];
+}
+
+export const ALUMNI_STATUS_LABELS: Record<AlumniStatus, string> = {
+  bekerja: 'Bekerja',
+  kuliah: 'Kuliah',
+  wirausaha: 'Wirausaha',
+  belum_bekerja: 'Belum Bekerja',
+};
+
+export const VERIFICATION_STATUS_LABELS: Record<VerificationStatus, string> = {
+  menunggu: 'Menunggu Verifikasi',
+  terverifikasi: 'Terverifikasi',
+  ditolak: 'Ditolak',
+};
+
+export const kelulusanAdminApi = {
+  list(params?: { search?: string; graduation_year?: number; major?: string; status?: string; verification_status?: string; page?: number; limit?: number }): ApiResult<AlumniGraduationRow[]> {
+    const q = new URLSearchParams();
+    if (params?.search) q.set('search', params.search);
+    if (params?.graduation_year) q.set('graduation_year', String(params.graduation_year));
+    if (params?.major) q.set('major', params.major);
+    if (params?.status) q.set('status', params.status);
+    if (params?.verification_status) q.set('verification_status', params.verification_status);
+    if (params?.page) q.set('page', String(params.page));
+    if (params?.limit) q.set('limit', String(params.limit ?? 10));
+    const suffix = q.size ? `?${q}` : '';
+    return request<AlumniGraduationRow[]>(`/admin/kelulusan${suffix}`);
+  },
+  get(id: string): ApiResult<AlumniGraduationRow> {
+    return request<AlumniGraduationRow>(`/admin/kelulusan/${encodeURIComponent(id)}`);
+  },
+  stats(params?: { graduation_year?: number; major?: string }): ApiResult<AlumniGraduationStats> {
+    const q = new URLSearchParams();
+    if (params?.graduation_year) q.set('graduation_year', String(params.graduation_year));
+    if (params?.major) q.set('major', params.major);
+    const suffix = q.size ? `?${q}` : '';
+    return request<AlumniGraduationStats>(`/admin/kelulusan/stats${suffix}`);
+  },
+  create(payload: Record<string, unknown>): ApiResult<AlumniGraduationRow> {
+    return request<AlumniGraduationRow>('/kelulusan', { method: 'POST', body: JSON.stringify(payload) });
+  },
+  update(id: string, payload: Record<string, unknown>): ApiResult<AlumniGraduationRow> {
+    return request<AlumniGraduationRow>(`/admin/kelulusan/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(payload) });
+  },
+  remove(id: string): ApiResult<null> {
+    return request<null>(`/admin/kelulusan/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  },
+  verify(id: string, payload: { verification_status: string; verification_note?: string }): ApiResult<AlumniGraduationRow> {
+    return request<AlumniGraduationRow>(`/admin/kelulusan/${encodeURIComponent(id)}/verify`, { method: 'PATCH', body: JSON.stringify(payload) });
+  },
+  exportUrl(params?: { graduation_year?: number; major?: string; status?: string }): string {
+    const q = new URLSearchParams();
+    if (params?.graduation_year) q.set('graduation_year', String(params.graduation_year));
+    if (params?.major) q.set('major', params.major);
+    if (params?.status) q.set('status', params.status);
+    const suffix = q.size ? `?${q}` : '';
+    return `${apiBaseUrl}/admin/kelulusan/export${suffix}`;
   },
 };

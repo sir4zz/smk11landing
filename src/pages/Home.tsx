@@ -177,11 +177,13 @@ const Home: React.FC = () => {
             <div className="hidden lg:block relative h-[650px] w-full">
               {/* Modern Glass Frame instead of boring box */}
               <div className="absolute inset-y-10 right-0 left-10 overflow-hidden rounded-bl-[140px] rounded-tr-[140px] border-[6px] border-white/10 bg-white/5 shadow-2xl backdrop-blur-sm transition-transform hover:scale-[1.02] duration-500">
-                <img 
-                  src={resolveImageUrl(heroFrameImage)} 
-                  alt="Sekolah" 
-                  className="h-full w-full object-cover mix-blend-overlay opacity-90 transition-transform duration-1000 hover:scale-110"
-                />
+                {resolveImageUrl(heroFrameImage) && (
+                  <img 
+                    src={resolveImageUrl(heroFrameImage)!} 
+                    alt="Sekolah" 
+                    className="h-full w-full object-cover mix-blend-overlay opacity-90 transition-transform duration-1000 hover:scale-110"
+                  />
+                )}
                 {/* Inner Gradient */}
                 <div className="absolute inset-0 bg-gradient-to-t from-[#0C1527] via-transparent to-transparent opacity-90" />
                 
@@ -409,12 +411,14 @@ const Home: React.FC = () => {
                   to={`/galeri/${item.slug}`}
                   className="group relative block aspect-[4/3] overflow-hidden rounded-[1.25rem] bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
                 >
-                  <img
-                    src={resolveImageUrl(item.cover_image)}
-                    alt={item.title}
-                    loading="lazy"
-                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
+                  {resolveImageUrl(item.cover_image) && (
+                    <img
+                      src={resolveImageUrl(item.cover_image)!}
+                      alt={item.title}
+                      loading="lazy"
+                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-t from-[#1B2A4A]/90 via-[#1B2A4A]/20 to-transparent opacity-80 transition-opacity duration-300 group-hover:opacity-100" />
                   <span className="absolute left-3 top-3 rounded-full bg-[#C8A951]/95 px-3 py-1 text-xs font-semibold text-[#1B2A4A]">
                     {item.category ?? 'Kegiatan'}

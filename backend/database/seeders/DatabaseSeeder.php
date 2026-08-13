@@ -12,6 +12,7 @@ use App\Models\Faq;
 use App\Models\Gallery;
 use App\Models\JobVacancy;
 use App\Models\GalleryImage;
+use App\Models\Guru;
 use App\Models\Kesemaptaan;
 use App\Models\KesemaptaanAchievement;
 use App\Models\KesemaptaanActivity;
@@ -29,6 +30,7 @@ use App\Models\Program;
 use App\Models\Role;
 use App\Models\RolePermission;
 use App\Models\SpmbContent;
+use App\Models\SpmbPoster;
 use App\Models\Staff;
 use App\Models\Student;
 use App\Models\StudentAccount;
@@ -46,6 +48,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->seedRbac();
         $this->seedAccounts();
+        $this->seedGurus();
         $this->seedContent();
     }
 
@@ -265,6 +268,58 @@ class DatabaseSeeder extends Seeder
         );
     }
 
+    protected function seedGurus(): void
+    {
+        $rows = [
+            ['id' => 'b1b0c1a2-0001-4000-8000-000000000001', 'name' => 'Rudi Hartono, S.Kom.', 'email' => 'rudi.hartono@smkn11.sch.id', 'teacher_id' => 'GR-SMKN11-01', 'subject' => 'Produktif TJKT', 'position' => 'Guru Produktif TJKT', 'photo' => 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80'],
+            ['id' => 'b1b0c1a2-0002-4000-8000-000000000002', 'name' => 'Novi Lestari, S.Kom.', 'email' => 'novi.lestari@smkn11.sch.id', 'teacher_id' => 'GR-SMKN11-02', 'subject' => 'Produktif DKV', 'position' => 'Guru Produktif DKV', 'photo' => 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=800&q=80'],
+            ['id' => 'b1b0c1a2-0003-4000-8000-000000000003', 'name' => 'Rahmat Hidayat, S.Pd.T.', 'email' => 'rahmat.hidayat@smkn11.sch.id', 'teacher_id' => 'GR-SMKN11-03', 'subject' => 'Produktif Teknik Otomotif', 'position' => 'Guru Produktif Teknik Otomotif', 'photo' => 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80'],
+            ['id' => 'b1b0c1a2-0004-4000-8000-000000000004', 'name' => 'Dewi Anggraini, S.T.', 'email' => 'dewi.anggraini@smkn11.sch.id', 'teacher_id' => 'GR-SMKN11-04', 'subject' => 'Produktif TITL', 'position' => 'Guru Produktif TITL', 'photo' => 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=800&q=80'],
+            ['id' => 'b1b0c1a2-0005-4000-8000-000000000005', 'name' => 'Bambang Priyadi, S.E.', 'email' => 'bambang.priyadi@smkn11.sch.id', 'teacher_id' => 'GR-SMKN11-05', 'subject' => 'Produktif MPLB', 'position' => 'Guru Produktif MPLB', 'photo' => 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=800&q=80'],
+            ['id' => 'b1b0c1a2-0006-4000-8000-000000000006', 'name' => 'Sri Rahayu, S.Pd.', 'email' => 'sri.rahayu@smkn11.sch.id', 'teacher_id' => 'GR-SMKN11-06', 'subject' => 'Produktif Busana', 'position' => 'Guru Produktif Busana', 'photo' => 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=800&q=80'],
+            ['id' => 'b1b0c1a2-0007-4000-8000-000000000007', 'name' => 'Agus Salim, S.Pd.', 'email' => 'agus.salim@smkn11.sch.id', 'teacher_id' => 'GR-SMKN11-07', 'subject' => 'Matematika', 'position' => 'Guru Mapel Matematika', 'photo' => 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=800&q=80'],
+            ['id' => 'b1b0c1a2-0008-4000-8000-000000000008', 'name' => 'Ratna Sari, S.Pd.', 'email' => 'ratna.sari@smkn11.sch.id', 'teacher_id' => 'GR-SMKN11-08', 'subject' => 'Bahasa Indonesia', 'position' => 'Guru Mapel Bahasa Indonesia', 'photo' => 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=800&q=80'],
+            ['id' => 'b1b0c1a2-0009-4000-8000-000000000009', 'name' => 'Hendra Gunawan, S.Pd.', 'email' => 'hendra.gunawan@smkn11.sch.id', 'teacher_id' => 'GR-SMKN11-09', 'subject' => 'Bahasa Inggris', 'position' => 'Guru Mapel Bahasa Inggris', 'photo' => 'https://images.unsplash.com/photo-1504593811423-6dd665756598?auto=format&fit=crop&w=800&q=80'],
+            ['id' => 'b1b0c1a2-0010-4000-8000-000000000010', 'name' => 'Siti Maesaroh, M.Pd.', 'email' => 'siti.maesaroh@smkn11.sch.id', 'teacher_id' => 'GR-SMKN11-10', 'subject' => 'Pendidikan Agama Islam', 'position' => 'Guru PAI', 'photo' => 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80'],
+            ['id' => 'b1b0c1a2-0011-4000-8000-000000000011', 'name' => 'Fajar Nugroho, S.Kom.', 'email' => 'fajar.nugroho@smkn11.sch.id', 'teacher_id' => 'GR-SMKN11-11', 'subject' => 'Informatika', 'position' => 'Guru Mapel Informatika', 'photo' => 'https://images.unsplash.com/photo-1507591064344-4c6ce005b128?auto=format&fit=crop&w=800&q=80'],
+            ['id' => 'b1b0c1a2-0012-4000-8000-000000000012', 'name' => 'Yulia Febrianti, S.Pd.', 'email' => 'yulia.febrianti@smkn11.sch.id', 'teacher_id' => 'GR-SMKN11-12', 'subject' => 'PKWU', 'position' => 'Guru Mapel PKWU', 'photo' => 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=800&q=80'],
+        ];
+
+        foreach ($rows as $row) {
+            $user = User::updateOrCreate(
+                ['id' => $row['id']],
+                [
+                    'email' => $row['email'],
+                    'password' => Hash::make('smkn11guru'),
+                    'name' => $row['name'],
+                    'profile' => ['name' => $row['name']],
+                    'email_verified_at' => now(),
+                ]
+            );
+
+            Profile::updateOrCreate(
+                ['id' => $row['id']],
+                [
+                    'role' => 'guru',
+                    'name' => $row['name'],
+                    'email' => $row['email'],
+                    'photo' => $row['photo'],
+                    'updated_at' => now(),
+                ]
+            );
+
+            Guru::updateOrCreate(
+                ['id' => $row['id']],
+                [
+                    'id' => $row['id'],
+                    'teacher_id' => $row['teacher_id'],
+                    'subject' => $row['subject'],
+                    'position' => $row['position'],
+                ]
+            );
+        }
+    }
+
     // ========================================================================
     // CONTENT SEED (mirrors the static datasets formerly in src/data/)
     // ========================================================================
@@ -279,6 +334,7 @@ class DatabaseSeeder extends Seeder
         $this->seedTeacherActivities();
         $this->seedEducationStaff();
         $this->seedSpmb();
+        $this->seedSpmbPosters();
         $this->seedOsis();
         $this->seedExtracurriculars();
         $this->seedKesemaptaan();
@@ -667,7 +723,8 @@ class DatabaseSeeder extends Seeder
                 'welcome' => ['image' => 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=800', 'principal_name' => 'Emma Sukmayati', 'principal_title' => 'Kepala SMKN 11 Kab. Tangerang', 'title' => 'Selamat Datang di Portal Resmi SMKN 11 Kabupaten Tangerang', 'paragraphs' => ['Puji syukur kita panjatkan ke hadirat Allah SWT atas rahmat dan karunia-Nya. Di era digitalisasi dan disrupsi teknologi saat ini, pendidikan vokasi memegang peran krusial dalam mencetak generasi muda yang tidak hanya kompeten, tetapi juga memiliki karakter dan daya adaptasi yang tinggi.', 'SMKN 11 Kabupaten Tangerang berkomitmen penuh untuk menjadi lembaga pendidikan yang inovatif, berdaya saing global, dan berakar pada nilai-nilai luhur bangsa. Melalui sinkronisasi kurikulum dengan industri, kami berupaya memastikan lulusan kami siap menghadapi tantangan dunia kerja masa depan.'], 'quote' => '"SMK BISA, SMK HEBAT, Vokasi Kuat Menguatkan Indonesia!"'],
                 'about' => ['title' => 'Tentang SMKN 11 Kabupaten Tangerang', 'subtitle' => 'Sekolah vokasi yang menyiapkan lulusan unggul, kompeten, dan siap bersaing di dunia kerja.', 'paragraphs' => ['SMKN 11 Kabupaten Tangerang adalah lembaga pendidikan kejuruan negeri yang berdiri pada tahun 2013 dan berkomitmen mencetak siswa berprestasi, berakhlaqul karimah, dan memiliki kompetensi sesuai kebutuhan industri.', 'Berlokasi di Kp. Saradan, Desa Pangkat, Kecamatan Jayanti, sekolah ini memiliki 6 program keahlian unggulan dengan 1.124 siswa aktif dan 51 tenaga pengajar profesional yang berdedikasi.', 'Dengan akreditasi B dan didukung fasilitas laboratorium, bengkel, serta lingkungan belajar yang kondusif, lulusan kami tidak hanya siap bekerja, tetapi juga memiliki jiwa kewirausahaan dan akhlak mulia yang kuat.'], 'card_label' => 'Sekolah kami', 'card_title' => 'Lingkungan belajar yang memotivasi', 'quote' => '"Kami terus mendorong setiap siswa untuk tumbuh menjadi pribadi yang unggul, disiplin, dan siap memberikan kontribusi nyata bagi masyarakat dan bangsa."', 'location' => 'Kabupaten Tangerang, Banten'],
                 'stats' => [['value' => '1.124+', 'label' => 'Siswa Aktif'], ['value' => '51+', 'label' => 'Tenaga Pengajar'], ['value' => '6', 'label' => 'Program Keahlian'], ['value' => '33', 'label' => 'Rombel']],
-                'social' => ['instagram' => 'https://instagram.com/smkn11kabtangerang', 'facebook' => 'https://facebook.com/smkn11kabtangerang', 'tiktok' => 'https://tiktok.com/@smkn11kabtangerang', 'email' => 'admin@smkn11kabtang.sch.id'],
+                'social' => ['instagram' => 'https://instagram.com/official_smkn11kab.tng', 'tiktok' => 'https://tiktok.com/@osis_smkn11kabtangeran', 'email' => 'smkn11kabtangschool@gmail.com'],
+                'contact' => ['address' => "Kp. Saradan RT. 03/01, Desa Pangkat,\nKec. Jayanti, Kab. Tangerang, Banten 15610", 'phone' => '0812 9922 0831', 'email' => 'smkn11kabtangschool@gmail.com', 'hours' => 'Senin - Jumat, 07:00 - 15:00 WIB', 'map_query' => 'Kp. Saradan RT. 03/01, Pangkat, Jayanti, Kabupaten Tangerang, Banten 15610'],
             ]]
         );
     }
@@ -1051,6 +1108,19 @@ class DatabaseSeeder extends Seeder
             'banner_title' => 'SPMB SMKN 11 Kabupaten Tangerang',
             'banner_description' => 'Portal informasi resmi SPMB. Pendaftaran dilakukan melalui portal SPMB Provinsi Banten.',
         ]);
+    }
+
+    protected function seedSpmbPosters(): void
+    {
+        $rows = [
+            ['title' => 'Informasi SPMB 2026/2027', 'image' => 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=1200&q=80', 'is_active' => true, 'sort_order' => 1],
+            ['title' => 'Jadwal Pendaftaran SPMB', 'image' => 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1200&q=80', 'is_active' => true, 'sort_order' => 2],
+            ['title' => 'Persyaratan Pendaftaran', 'image' => 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=1200&q=80', 'is_active' => true, 'sort_order' => 3],
+        ];
+
+        foreach ($rows as $row) {
+            SpmbPoster::updateOrCreate(['title' => $row['title']], $row);
+        }
     }
 
     protected function seedOsis(): void

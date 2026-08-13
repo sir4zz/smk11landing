@@ -21,8 +21,8 @@ interface PersonAvatarProps {
 }
 
 export function PersonAvatar({ photo, name, className = '', iconClassName = 'h-12 w-12' }: PersonAvatarProps) {
-  if (photo) {
-    return <img src={resolveImageUrl(photo)} alt={name ?? ''} loading="lazy" className={className} />;
+  if (photo && resolveImageUrl(photo)) {
+    return <img src={resolveImageUrl(photo)!} alt={name ?? ''} loading="lazy" className={className} />;
   }
   return (
     <div className={`flex items-center justify-center bg-[#1B2A4A] text-[#C8A951] ${className}`}>

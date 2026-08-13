@@ -83,8 +83,8 @@ const KepalaSekolah: React.FC = () => {
             <Link to="/manajemen/wakil-kepala-sekolah" className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-5 py-2.5 font-bold text-[#1B2A4A] transition-colors hover:bg-[#B59640]">
               Wakil Kepala Sekolah <ArrowRight className="h-4 w-4" />
             </Link>
-            <Link to="/manajemen/struktur-manajemen" className="inline-flex items-center gap-2 rounded-lg border-2 border-[#FAF6F0] px-5 py-2.5 font-bold text-[#FAF6F0] transition-colors hover:bg-[#FAF6F0]/10">
-              Struktur Manajemen
+            <Link to="/profil/struktur-organisasi" className="inline-flex items-center gap-2 rounded-lg border-2 border-[#FAF6F0] px-5 py-2.5 font-bold text-[#FAF6F0] transition-colors hover:bg-[#FAF6F0]/10">
+              Struktur Organisasi
             </Link>
           </div>
         </div>

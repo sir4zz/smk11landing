@@ -101,8 +101,8 @@ export default function GalleryManagement() {
                 {albums.map((album) => (
                   <div key={album.id} className="overflow-hidden rounded-xl border border-[#1B2A4A]/10 bg-white shadow-sm">
                     <div className="relative aspect-[4/3] overflow-hidden">
-                      {album.cover_image ? (
-                        <img src={resolveImageUrl(album.cover_image)} alt={album.title} className="h-full w-full object-cover" loading="lazy" />
+                      {album.cover_image && resolveImageUrl(album.cover_image) ? (
+                        <img src={resolveImageUrl(album.cover_image)!} alt={album.title} className="h-full w-full object-cover" loading="lazy" />
                       ) : (
                         <div className="grid h-full place-items-center bg-[#FAF6F0] text-[#23314D]/40"><Camera className="h-10 w-10" /></div>
                       )}

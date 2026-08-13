@@ -4,7 +4,7 @@ import PageHero from '../../components/ui/PageHero';
 import SectionHeading from '../../components/ui/SectionHeading';
 import type { Staff, TeacherActivity, EducationStaff } from '../../lib/content-types';
 import { fetchPublicContent, resolveImageUrl } from '../../lib/api';
-import { ArrowRight, Briefcase, CalendarDays, Network, User, Users } from 'lucide-react';
+import { ArrowRight, Briefcase, CalendarDays, User, Users } from 'lucide-react';
 import { PersonAvatar, formatDate } from './ManagementShared';
 
 const sections = [
@@ -12,7 +12,6 @@ const sections = [
   { label: 'Wakil Kepala Sekolah', href: '/manajemen/wakil-kepala-sekolah', icon: Users },
   { label: 'Kegiatan Guru', href: '/manajemen/kegiatan-guru', icon: CalendarDays },
   { label: 'Tenaga Kependidikan', href: '/manajemen/tenaga-kependidikan', icon: Briefcase },
-  { label: 'Struktur Manajemen', href: '/manajemen/struktur-manajemen', icon: Network },
 ];
 
 const Management: React.FC = () => {
@@ -96,7 +95,7 @@ const Management: React.FC = () => {
             {latestActivities.map((activity) => (
               <div key={activity.id} className="overflow-hidden rounded-2xl border border-[#1B2A4A]/10 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
                 <div className="relative h-44 w-full overflow-hidden">
-                    <img src={resolveImageUrl(activity.photo)} alt={activity.title} loading="lazy" className="h-full w-full object-cover" />
+                    {resolveImageUrl(activity.photo) && <img src={resolveImageUrl(activity.photo)!} alt={activity.title} loading="lazy" className="h-full w-full object-cover" />}
                   <span className="absolute right-3 top-3 rounded-full bg-[#C8A951] px-3 py-1 text-xs font-semibold text-[#1B2A4A]">{activity.category}</span>
                 </div>
                 <div className="p-6">

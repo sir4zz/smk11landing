@@ -24,7 +24,6 @@ const KepalaSekolah = lazy(() => import('./pages/management/KepalaSekolah'))
 const WakilKepalaSekolah = lazy(() => import('./pages/management/WakilKepalaSekolah'))
 const KegiatanGuru = lazy(() => import('./pages/management/KegiatanGuru'))
 const TenagaKependidikan = lazy(() => import('./pages/management/TenagaKependidikan'))
-const StrukturManajemen = lazy(() => import('./pages/management/StrukturManajemen'))
 const NewsList = lazy(() => import('./pages/information/NewsList'))
 const NewsDetail = lazy(() => import('./pages/information/NewsDetail'))
 const FAQ = lazy(() => import('./pages/information/FAQ'))
@@ -41,6 +40,7 @@ const BkkList = lazy(() => import('./pages/bkk/BkkList'))
 const BkkDetail = lazy(() => import('./pages/bkk/BkkDetail'))
 const BkkHome = lazy(() => import('./pages/bkk/BkkHome'))
 const BkkContact = lazy(() => import('./pages/bkk/BkkContact'))
+const BkkKelulusan = lazy(() => import('./pages/bkk/BkkKelulusan'))
 const MustChangePassword = lazy(() => import('./pages/admin/MustChangePassword'))
 const ProfileDirectory = lazy(() => import('./pages/profiles/ProfileDirectory'))
 const ProfilePage = lazy(() => import('./pages/profiles/ProfilePage'))
@@ -97,7 +97,6 @@ function App() {
           <Route path="manajemen/wakil-kepala-sekolah" element={suspend(<WakilKepalaSekolah />)} />
           <Route path="manajemen/kegiatan-guru" element={suspend(<KegiatanGuru />)} />
           <Route path="manajemen/tenaga-kependidikan" element={suspend(<TenagaKependidikan />)} />
-          <Route path="manajemen/struktur-manajemen" element={suspend(<StrukturManajemen />)} />
 
           {/* Information */}
           <Route path="informasi/berita" element={suspend(<NewsList />)} />
@@ -121,6 +120,7 @@ function App() {
           <Route path="bkk" element={suspend(<BkkHome />)} />
           <Route path="bkk/lowongan" element={suspend(<BkkList />)} />
           <Route path="bkk/lowongan/:slug" element={suspend(<BkkDetail />)} />
+          <Route path="bkk/kelulusan" element={suspend(<BkkKelulusan />)} />
           <Route path="bkk/kontak" element={suspend(<BkkContact />)} />
           <Route path="bkk/:slug" element={<BkkDetailRedirect />} />
 

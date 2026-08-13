@@ -156,9 +156,9 @@ const BkkList: React.FC = () => {
               >
                 <div className="flex items-start justify-between gap-3 p-5 pb-4">
                   <div className="flex min-w-0 items-center gap-3">
-                    {job.company_logo ? (
+                    {job.company_logo && resolveImageUrl(job.company_logo) ? (
                       <img
-                        src={resolveImageUrl(job.company_logo)}
+                        src={resolveImageUrl(job.company_logo)!}
                         alt={job.company_name}
                         loading="lazy"
                         className="h-12 w-12 shrink-0 rounded-xl border border-[#1B2A4A]/10 bg-white object-cover"

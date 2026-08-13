@@ -95,7 +95,7 @@ export default function ExtracurricularManagement({ permissions }: Props) {
               <tr key={String(ekskul.id)} className="border-t border-[#1B2A4A]/10">
                 <td className="p-4">
                   <div className="flex items-center gap-3">
-                    {ekskul.photo ? <img src={resolveImageUrl(ekskul.photo)} alt="" className="h-10 w-10 rounded-full object-cover" /> : <div className="grid h-10 w-10 place-items-center rounded-full bg-[#FAF6F0]"><Images className="h-4 w-4 text-[#866D2C]" /></div>}
+                    {ekskul.photo && resolveImageUrl(ekskul.photo) ? <img src={resolveImageUrl(ekskul.photo)!} alt="" className="h-10 w-10 rounded-full object-cover" /> : <div className="grid h-10 w-10 place-items-center rounded-full bg-[#FAF6F0]"><Images className="h-4 w-4 text-[#866D2C]" /></div>}
                     <span className="font-semibold">{ekskul.name || '-'}</span>
                   </div>
                 </td>

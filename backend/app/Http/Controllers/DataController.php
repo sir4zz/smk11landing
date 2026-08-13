@@ -36,8 +36,9 @@ class DataController extends Controller
         'profiles' => \App\Models\Profile::class, 'contact_messages' => \App\Models\ContactMessage::class,
         'ppdb_registrations' => \App\Models\PpdbRegistration::class, 'ppdb_documents' => \App\Models\PpdbDocument::class,
         'ppdb_activity_log' => \App\Models\PpdbActivityLog::class, 'content_records' => \App\Models\ContentRecord::class,
+        'alumni_graduations' => \App\Models\AlumniGraduation::class,
     ];
-    private const PUBLIC = ['news','programs','facilities','staff','achievements','teacher_activities','education_staff','spmb_content','osis','osis_members','osis_activities','extracurriculars','kesemaptaan','kesemaptaan_activities','kesemaptaan_schedules','kesemaptaan_instructors','kesemaptaan_achievements','mading_categories','content_records'];
+    private const PUBLIC = ['news','programs','facilities','staff','achievements','teacher_activities','education_staff','spmb_content','osis','osis_members','osis_activities','extracurriculars','kesemaptaan','kesemaptaan_activities','kesemaptaan_schedules','kesemaptaan_instructors','kesemaptaan_achievements','mading_categories','content_records','alumni_graduations'];
 
     public function __construct(private PermissionService $permissions, private MadingService $mading) {}
 

@@ -99,11 +99,13 @@ export default function GalleryDetail() {
     <div className="min-h-screen bg-[#FAF6F0]">
       {/* Hero */}
       <div className="relative isolate overflow-hidden bg-[#1B2A4A]">
-        <img
-          src={resolveImageUrl(gallery.cover_image)}
-          alt={gallery.title}
-          className="absolute inset-0 h-full w-full object-cover opacity-30"
-        />
+        {resolveImageUrl(gallery.cover_image) && (
+          <img
+            src={resolveImageUrl(gallery.cover_image)!}
+            alt={gallery.title}
+            className="absolute inset-0 h-full w-full object-cover opacity-30"
+          />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-[#1B2A4A] via-[#1B2A4A]/80 to-[#1B2A4A]/50" />
         <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 md:py-24">
           <nav className="mb-6 flex items-center gap-2 text-sm text-white/70">
@@ -182,12 +184,14 @@ export default function GalleryDetail() {
                 transition={{ duration: 0.4, delay: (index % 3) * 0.05 }}
                 className="group relative mb-5 block w-full overflow-hidden rounded-2xl bg-white shadow-sm transition-shadow hover:shadow-lg"
               >
-                <img
-                  src={resolveImageUrl(image.image)}
-                  alt={image.caption || gallery.title}
-                  loading="lazy"
-                  className="w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
+                {resolveImageUrl(image.image) && (
+                  <img
+                    src={resolveImageUrl(image.image)!}
+                    alt={image.caption || gallery.title}
+                    loading="lazy"
+                    className="w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                )}
                 <div className="absolute inset-0 flex items-end bg-gradient-to-t from-[#1B2A4A]/70 to-transparent p-4 opacity-0 transition-opacity group-hover:opacity-100">
                   {image.caption && <p className="text-left text-sm font-medium text-white">{image.caption}</p>}
                   <span className="ml-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#C8A951] text-[#1B2A4A]">
@@ -244,11 +248,13 @@ export default function GalleryDetail() {
               className="max-h-[90vh] w-full max-w-5xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <img
-                src={resolveImageUrl(images[lightbox].image)}
-                alt={images[lightbox].caption || gallery.title}
-                className="mx-auto max-h-[80vh] w-auto rounded-xl object-contain shadow-2xl"
-              />
+              {resolveImageUrl(images[lightbox].image) && (
+                <img
+                  src={resolveImageUrl(images[lightbox].image)!}
+                  alt={images[lightbox].caption || gallery.title}
+                  className="mx-auto max-h-[80vh] w-auto rounded-xl object-contain shadow-2xl"
+                />
+              )}
               <figcaption className="mt-3 flex items-center justify-between text-sm text-white/80">
                 <span>{images[lightbox].caption || gallery.title}</span>
                 <span>{lightbox + 1} / {images.length}</span>
