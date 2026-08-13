@@ -46,11 +46,13 @@ class StudentController extends Controller
         $data = $request->validate([
             'p_nisn' => ['required', 'string'],
             'p_name' => ['required', 'string'],
+            'p_nis' => ['nullable', 'string'],
             'p_class' => ['nullable', 'string'],
             'p_major' => ['nullable', 'string'],
             'p_gender' => ['nullable', 'string'],
             'p_date_of_birth' => ['nullable', 'string'],
             'p_place_of_birth' => ['nullable', 'string'],
+            'p_religion' => ['nullable', 'string'],
             'p_address' => ['nullable', 'string'],
             'p_pin' => ['required', 'string'],
         ]);
@@ -63,16 +65,20 @@ class StudentController extends Controller
         }
 
         $nisn = trim($data['p_nisn']);
+        $nis = trim($data['p_nis'] ?? '');
         $email = $this->accounts->studentEmail($nisn);
 
         if (Student::query()->where('nisn', $nisn)->exists() || User::query()->where('email', $email)->exists()) {
             throw ValidationException::withMessages(['message' => 'NISN sudah terdaftar']);
         }
+        if ($nis !== '' && Student::query()->where('nis', $nis)->exists()) {
+            throw ValidationException::withMessages(['message' => 'NIS sudah terdaftar']);
+        }
 
         $id = (string) \Illuminate\Support\Str::uuid();
 
         try {
-            DB::transaction(function () use ($id, $email, $data, $nisn) {
+            DB::transaction(function () use ($id, $email, $data, $nisn, $nis) {
                 User::create([
                     'id' => $id,
                     'email' => $email,
@@ -90,9 +96,10 @@ class StudentController extends Controller
                     'updated_at' => now(),
                 ]);
 
-                Student::create([
+                Student::create(array_merge([
                     'id' => $id,
                     'nisn' => $nisn,
+                    'nis' => $nis !== '' ? $nis : null,
                     'pin' => $data['p_pin'],
                     'name' => $data['p_name'],
                     'class' => $data['p_class'] ?? '',
@@ -100,8 +107,9 @@ class StudentController extends Controller
                     'gender' => $this->accounts->normalizeGender($data['p_gender'] ?? ''),
                     'date_of_birth' => $this->accounts->normalizeDate($data['p_date_of_birth'] ?? null),
                     'place_of_birth' => $data['p_place_of_birth'] ?? '',
+                    'religion' => $data['p_religion'] ?? '',
                     'address' => $data['p_address'] ?? '',
-                ]);
+                ], $this->accounts->biodata($data)));
 
                 StudentAccount::create([
                     'id' => $id,
@@ -133,15 +141,18 @@ class StudentController extends Controller
         $skipped = 0;
         $errors = [];
         $seen = [];
+        $seenNis = [];
 
         foreach ($data['rows'] as $index => $row) {
             $row = is_array($row) ? $row : [];
-            $line = (int) $index + 2;
+            // Template BIODATA: 8 baris header, data dimulai dari baris ke-9.
+            $line = (int) $index + 9;
             $nisn = '';
 
             try {
                 $nisn = trim((string) ($row['nisn'] ?? ''));
                 $name = trim((string) ($row['name'] ?? ''));
+                $nis = trim((string) ($row['nis'] ?? ''));
 
                 if ($nisn === '' || mb_strlen($nisn) < 4) {
                     throw new \RuntimeException('NISN tidak valid (minimal 4 karakter).');
@@ -156,10 +167,15 @@ class StudentController extends Controller
                 }
                 $seen[$nisn] = true;
 
+                if ($nis !== '' && (isset($seenNis[$nis]) || Student::query()->where('nis', $nis)->exists())) {
+                    throw new \RuntimeException('NIS sudah terdaftar.');
+                }
+                $seenNis[$nis] = true;
+
                 $pin = $this->defaultPin($nisn, $defaultPin);
                 $id = (string) \Illuminate\Support\Str::uuid();
 
-                DB::transaction(function () use ($id, $email, $nisn, $name, $row, $pin) {
+                DB::transaction(function () use ($id, $email, $nisn, $nis, $name, $row, $pin) {
                     User::create([
                         'id' => $id,
                         'email' => $email,
@@ -177,9 +193,10 @@ class StudentController extends Controller
                         'updated_at' => now(),
                     ]);
 
-                    Student::create([
+                    Student::create(array_merge([
                         'id' => $id,
                         'nisn' => $nisn,
+                        'nis' => $nis !== '' ? $nis : null,
                         'pin' => $pin,
                         'name' => $name,
                         'class' => trim((string) ($row['class'] ?? '')),
@@ -187,8 +204,9 @@ class StudentController extends Controller
                         'gender' => $this->accounts->normalizeGender($row['gender'] ?? ''),
                         'date_of_birth' => $this->accounts->normalizeDate($row['date_of_birth'] ?? null),
                         'place_of_birth' => trim((string) ($row['place_of_birth'] ?? '')),
+                        'religion' => trim((string) ($row['religion'] ?? '')),
                         'address' => trim((string) ($row['address'] ?? '')),
-                    ]);
+                    ], $this->accounts->biodata($row)));
 
                     StudentAccount::create([
                         'id' => $id,

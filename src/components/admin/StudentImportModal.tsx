@@ -1,17 +1,7 @@
 import { useState } from 'react';
 import { AlertTriangle, CheckCircle2, Download, FileSpreadsheet, Loader2, Upload, X } from 'lucide-react';
 import { backendApi } from '../../lib/api';
-
-interface StudentRowInput {
-  nisn: string;
-  name: string;
-  class: string;
-  major: string;
-  gender: string;
-  date_of_birth: string;
-  place_of_birth: string;
-  address: string;
-}
+import { TEMPLATE_COLUMNS, TEMPLATE_HEADER_ROWS, normalizeGender, toDateString } from '../../lib/studentBiodata';
 
 interface ImportResult {
   imported: number;
@@ -19,51 +9,24 @@ interface ImportResult {
   errors: { row: number; nisn?: string; message: string }[];
 }
 
-const FIELDS: { key: keyof StudentRowInput; label: string; example: string }[] = [
-  { key: 'nisn', label: 'NISN', example: '0061234567' },
-  { key: 'name', label: 'Nama', example: 'Nama Lengkap' },
-  { key: 'class', label: 'Kelas', example: 'X TJKT 1' },
-  { key: 'major', label: 'Jurusan', example: 'Teknik Komputer dan Jaringan' },
-  { key: 'gender', label: 'Jenis Kelamin', example: 'L / P' },
-  { key: 'date_of_birth', label: 'Tanggal Lahir', example: '12/05/2008' },
-  { key: 'place_of_birth', label: 'Tempat Lahir', example: 'Bandung' },
-  { key: 'address', label: 'Alamat', example: 'Jl. Merdeka No. 12' },
+// Kolom yang ditampilkan pada preview.
+const PREVIEW_KEYS: { key: string; label: string }[] = [
+  { key: 'nisn', label: 'NISN' },
+  { key: 'nis', label: 'NIS' },
+  { key: 'name', label: 'Nama' },
+  { key: 'class', label: 'Kelas' },
+  { key: 'major', label: 'Jurusan' },
+  { key: 'gender', label: 'Kelamin' },
+  { key: 'place_of_birth', label: 'Tempat Lahir' },
+  { key: 'date_of_birth', label: 'Tgl Lahir' },
+  { key: 'religion', label: 'Agama' },
 ];
 
-function normalizeGender(raw: unknown): string {
-  const r = String(raw ?? '').trim().toLowerCase();
-  if (r === 'l' || r === 'm' || r === 'pria' || r === 'laki' || r === 'laki-laki' || r === 'male') return 'L';
-  if (r === 'p' || r === 'f' || r === 'wanita' || r === 'perempuan' || r === 'female') return 'P';
-  return '';
-}
-
-function toDateString(value: unknown): string {
-  if (value === null || value === undefined || value === '') return '';
-  if (value instanceof Date && !Number.isNaN(value.getTime())) {
-    const d = value;
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  }
-  const raw = String(value).trim();
-  if (!raw) return '';
-  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(raw)) {
-    const [d, m, y] = raw.split('/');
-    return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
-  }
-  if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10);
-  // Excel / Google Sheets serial number: days since 1899-12-30
-  if (/^\d+(\.\d+)?$/.test(raw)) {
-    const serial = Number(raw);
-    if (serial >= 20000 && serial <= 80000) {
-      const date = new Date(Date.UTC(1899, 11, 30 + serial));
-      return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}-${String(date.getUTCDate()).padStart(2, '0')}`;
-    }
-  }
-  return raw;
-}
+const TEMPLATE_URL = `${(import.meta.env.BASE_URL ?? '/').replace(/\/$/, '')}/templates/template_biodata_siswa.xlsx`;
 
 export default function StudentImportModal({ onClose, onImported }: { onClose: () => void; onImported: () => void }) {
   const [spreadsheet, setSpreadsheet] = useState<File | null>(null);
-  const [rows, setRows] = useState<StudentRowInput[] | null>(null);
+  const [rows, setRows] = useState<Record<string, string>[] | null>(null);
   const [error, setError] = useState('');
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState('');
@@ -76,32 +39,30 @@ export default function StudentImportModal({ onClose, onImported }: { onClose: (
     setRows(null);
     try {
       const XLSX = await import('xlsx');
-      let wb: Awaited<ReturnType<typeof XLSX.read>>;
-      if (file.name.toLowerCase().endsWith('.csv')) {
-        wb = XLSX.read(await file.text(), { type: 'string', cellDates: true });
-      } else {
-        wb = XLSX.read(await file.arrayBuffer(), { type: 'array', cellDates: true });
-      }
+      const wb = XLSX.read(await file.arrayBuffer(), { type: 'array', cellDates: true });
       const ws = wb.Sheets[wb.SheetNames[0]];
-      const raw = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: '' });
+      const grid = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, defval: '' });
 
-      const mapped = raw
-        .map((row) => {
-          const out = {} as StudentRowInput;
-          for (const [header, value] of Object.entries(row)) {
-            const norm = header.trim().toLowerCase();
-            const field = FIELDS.find((f) => f.label.toLowerCase() === norm || f.key.toLowerCase() === norm);
-            if (!field) continue;
-            if (field.key === 'gender') out.gender = normalizeGender(value);
-            else if (field.key === 'date_of_birth') out.date_of_birth = toDateString(value);
-            else out[field.key] = String(value ?? '').trim();
+      const mapped = grid
+        .slice(TEMPLATE_HEADER_ROWS)
+        .map((cells) => {
+          const out: Record<string, string> = {};
+          for (const [colIdx, key] of Object.entries(TEMPLATE_COLUMNS)) {
+            const value = cells[Number(colIdx)];
+            if (value === null || value === undefined || String(value).trim() === '') continue;
+            if (key === 'gender') out.gender = normalizeGender(value);
+            else if (key === 'date_of_birth' || key === 'tanggal_sttb' || key === 'tanggal_diterima' || key === 'ayah_tanggal_lahir' || key === 'ibu_tanggal_lahir' || key === 'wali_tanggal_lahir' || key === 'siswa_tanggal') {
+              out[key] = toDateString(value);
+            } else {
+              out[key] = String(value).trim();
+            }
           }
-          return { ...out, nisn: String(out.nisn ?? '').trim() };
+          return out;
         })
         .filter((row) => Object.values(row).some((v) => v !== ''));
 
       if (mapped.length === 0) {
-        setError('File tidak berisi data yang cocok. Pastikan kolomnya mengikuti template.');
+        setError('File tidak berisi data pada kolom template. Isi mulai baris ke-9 pada template (di bawah baris nomor 1-76).');
       }
       setRows(mapped);
     } catch (e) {
@@ -109,14 +70,13 @@ export default function StudentImportModal({ onClose, onImported }: { onClose: (
     }
   };
 
-  const downloadTemplate = async () => {
-    const XLSX = await import('xlsx');
-    const headers = FIELDS.map((field) => field.label);
-    const example = FIELDS.map((field) => field.example);
-    const ws = XLSX.utils.aoa_to_sheet([headers, example]);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Siswa');
-    XLSX.writeFile(wb, 'template-import-siswa.xlsx');
+  const downloadTemplate = () => {
+    const a = document.createElement('a');
+    a.href = TEMPLATE_URL;
+    a.download = 'BIODATA PESERTA DIDIK BARU.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   };
 
   const runImport = async () => {
@@ -128,11 +88,11 @@ export default function StudentImportModal({ onClose, onImported }: { onClose: (
     const { data, error: apiError } = await backendApi.database.rpc('admin_import_students', { rows });
 
     if (apiError) {
-      setResult({ imported: 0, skipped: rows.length, errors: [{ row: 2, message: apiError.message ?? 'Gagal mengimport siswa.' }] });
+      setResult({ imported: 0, skipped: rows.length, errors: [{ row: 9, message: apiError.message ?? 'Gagal mengimport siswa.' }] });
     } else if (data) {
       setResult(data);
     } else {
-      setResult({ imported: 0, skipped: rows.length, errors: [{ row: 2, message: 'Gagal mengimport siswa.' }] });
+      setResult({ imported: 0, skipped: rows.length, errors: [{ row: 9, message: 'Gagal mengimport siswa.' }] });
     }
 
     setImporting(false);
@@ -141,11 +101,11 @@ export default function StudentImportModal({ onClose, onImported }: { onClose: (
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4">
-      <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white shadow-xl">
+      <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-xl bg-white shadow-xl">
         <div className="flex items-start justify-between border-b border-[#1B2A4A]/10 p-6">
           <div>
             <h2 className="text-xl font-bold text-[#1B2A4A]">Import Siswa</h2>
-            <p className="mt-1 text-sm text-[#5B7088]">Import data siswa sekaligus akun login (NISN + PIN) dari file Excel (.xlsx) atau CSV.</p>
+            <p className="mt-1 text-sm text-[#5B7088]">Import data BIODATA siswa sekaligus akun login (NISN + PIN) dari file Excel (.xlsx).</p>
           </div>
           <button onClick={onClose} aria-label="Tutup"><X /></button>
         </div>
@@ -154,18 +114,18 @@ export default function StudentImportModal({ onClose, onImported }: { onClose: (
           <div className="rounded-xl bg-[#FAF6F0] p-4 text-sm text-[#5B7088]">
             <p className="font-semibold text-[#1B2A4A]">Ketentuan</p>
             <ul className="mt-1 list-disc space-y-0.5 pl-5">
-              <li>Kolom <strong>NISN</strong> dan <strong>Nama</strong> wajib diisi. Pastikan kolom NISN berformat teks agar angka nol di depan tidak hilang.</li>
-              <li><strong>Jenis Kelamin</strong> diisi <code>L</code> atau <code>P</code> (Laki-laki/Perempuan diterima juga).</li>
-              <li><strong>Tanggal Lahir</strong> menerima format <code>DD/MM/YYYY</code>, <code>YYYY-MM-DD</code>, atau serial Excel.</li>
-              <li><strong>Jurusan</strong> diisi nama jurusan langsung, contoh: Teknik Komputer dan Jaringan.</li>
-              <li>PIN login siswa dibuat otomatis (4 digit terakhir NISN). Baris dengan NISN duplikat akan dilewati.</li>
+              <li>Gunakan <strong>template asli BIODATA PESERTA DIDIK BARU</strong> (76 kolom, 10 seksi) dari tombol Unduh Template.</li>
+              <li>Isi data dimulai pada <strong>baris ke-9</strong> (tepat di bawah baris nomor kolom 1-76). Baris header 1-8 otomatis dilewati.</li>
+              <li>Kolom <strong>NISN</strong> dan <strong>Nama</strong> wajib diisi. Pastikan kolom NISN &amp; NIS berformat teks agar angka nol di depan tidak hilang.</li>
+              <li><strong>Jenis Kelamin</strong> diisi <code>L</code> atau <code>P</code> (Laki-laki/Perempuan diterima juga). <strong>Tanggal</strong> menerima format <code>DD/MM/YYYY</code>, <code>YYYY-MM-DD</code>, atau serial Excel.</li>
+              <li>PIN login siswa dibuat otomatis (4 digit terakhir NISN). Baris dengan NISN/NIS duplikat atau tidak valid akan dilewati dan dicatat dalam laporan.</li>
             </ul>
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-[#FAF6F0] p-4">
             <div>
               <p className="font-semibold text-[#1B2A4A]">1. Unduh template</p>
-              <p className="text-sm text-[#5B7088]">Format kolom mengikuti template di bawah.</p>
+              <p className="text-sm text-[#5B7088]">Template asli BIODATA PESERTA DIDIK BARU (format persis, termasuk header 3 lapis).</p>
             </div>
             <button onClick={downloadTemplate} className="inline-flex items-center gap-2 rounded-lg bg-[#1B2A4A] px-4 py-2 text-sm font-bold text-white">
               <Download size={16} /> Unduh Template
@@ -173,14 +133,14 @@ export default function StudentImportModal({ onClose, onImported }: { onClose: (
           </div>
 
           <div>
-            <p className="font-semibold text-[#1B2A4A]">2. Pilih file Excel/CSV</p>
+            <p className="font-semibold text-[#1B2A4A]">2. Pilih file Excel</p>
             <label className="mt-2 flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#1B2A4A]/20 bg-[#FAF6F0] p-6 text-center transition-colors hover:border-[#C8A951]">
               <FileSpreadsheet className="h-8 w-8 text-[#866D2C]" />
               <span className="mt-2 text-sm font-semibold text-[#1B2A4A]">{spreadsheet ? spreadsheet.name : 'Klik untuk memilih file'}</span>
-              <span className="text-xs text-[#5B7088]">Format .xlsx atau .csv</span>
+              <span className="text-xs text-[#5B7088]">Format .xlsx</span>
               <input
                 type="file"
-                accept=".xlsx,.csv"
+                accept=".xlsx"
                 className="hidden"
                 onChange={(event) => {
                   const file = event.target.files?.[0];
@@ -199,7 +159,7 @@ export default function StudentImportModal({ onClose, onImported }: { onClose: (
                 <table className="w-full text-left text-sm">
                   <thead className="bg-[#FAF6F0] text-[#1B2A4A]">
                     <tr>
-                      {FIELDS.map((field) => (
+                      {PREVIEW_KEYS.map((field) => (
                         <th key={field.key} className="p-3">{field.label}</th>
                       ))}
                     </tr>
@@ -207,8 +167,8 @@ export default function StudentImportModal({ onClose, onImported }: { onClose: (
                   <tbody>
                     {rows.slice(0, 6).map((row, idx) => (
                       <tr key={idx} className="border-t border-[#1B2A4A]/10">
-                        {FIELDS.map((field) => (
-                          <td key={field.key} className="max-w-xs truncate p-3">{String(row[field.key] ?? '')}</td>
+                        {PREVIEW_KEYS.map((field) => (
+                          <td key={field.key} className="max-w-xs truncate p-3">{row[field.key] ?? ''}</td>
                         ))}
                       </tr>
                     ))}

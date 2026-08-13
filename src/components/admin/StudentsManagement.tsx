@@ -1,12 +1,15 @@
-import { useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
-import { Plus, Trash2, X, Loader2, KeyRound, Search, UserRound, Upload, Pencil } from 'lucide-react';
-import { backendApi, accountsApi } from '../../lib/api';
+import { ChevronRight, Plus, Trash2, X, Loader2, KeyRound, Search, UserRound, Upload, Pencil } from 'lucide-react';
+import { accountsApi, backendApi } from '../../lib/api';
 import StudentImportModal from './StudentImportModal';
+import { BIODATA_FIELDS, BIODATA_SECTIONS, emptyBiodata, normalizeGender } from '../../lib/studentBiodata';
+import type { BiodataFieldDef } from '../../lib/studentBiodata';
 
 interface StudentRow {
   id: string;
   nisn: string;
+  nis?: string;
   pin?: string;
   name: string;
   class: string;
@@ -14,23 +17,35 @@ interface StudentRow {
   gender?: string;
   date_of_birth?: string;
   place_of_birth?: string;
+  religion?: string;
   address?: string;
-  created_at?: string;
+  [key: string]: unknown;
 }
 
-interface StudentForm {
-  nisn: string;
-  name: string;
-  class: string;
-  major: string;
-  gender: string;
-  date_of_birth: string;
-  place_of_birth: string;
-  address: string;
-  pin: string;
-}
+const dateForInput = (value: unknown): string => (typeof value === 'string' ? value.slice(0, 10) : '');
 
-const emptyForm = (): StudentForm => ({ nisn: '', name: '', class: '', major: '', gender: '', date_of_birth: '', place_of_birth: '', address: '', pin: '' });
+function initFormFrom(student: StudentRow | null): Record<string, string> {
+  const form = emptyBiodata();
+  if (!student) return form;
+  for (const field of BIODATA_FIELDS) {
+    const raw = student[field.key];
+    if (raw === null || raw === undefined) continue;
+    if (field.type === 'date') form[field.key] = dateForInput(raw);
+    else form[field.key] = String(raw);
+  }
+  form.nisn = String(student.nisn ?? '');
+  form.nis = String(student.nis ?? '');
+  form.name = String(student.name ?? '');
+  form.class = String(student.class ?? '');
+  form.major = String(student.major ?? '');
+  form.gender = String(student.gender ?? '');
+  form.date_of_birth = dateForInput(student.date_of_birth);
+  form.place_of_birth = String(student.place_of_birth ?? '');
+  form.religion = String(student.religion ?? '');
+  form.address = String(student.address ?? '');
+  form.pin = '';
+  return form;
+}
 
 export default function StudentsManagement() {
   const [students, setStudents] = useState<StudentRow[]>([]);
@@ -41,7 +56,12 @@ export default function StudentsManagement() {
   const [search, setSearch] = useState('');
   const [saving, setSaving] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
-  const [form, setForm] = useState<StudentForm>(emptyForm());
+  const [form, setForm] = useState<Record<string, string>>(emptyBiodata());
+  const [step, setStep] = useState(1);
+  const [maxStep, setMaxStep] = useState(1);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const totalSteps = BIODATA_SECTIONS.length;
 
   const load = useCallback(async () => {
     const { data, error } = await backendApi.database.from('students').select('*').order('name', { ascending: true });
@@ -62,47 +82,126 @@ export default function StudentsManagement() {
 
   const openCreate = () => {
     setEditing(null);
-    setForm(emptyForm());
+    setForm(emptyBiodata());
+    setStep(1);
+    setMaxStep(1);
+    setErrors({});
     setOpen(true);
   };
 
   const openEdit = (student: StudentRow) => {
     setEditing(student);
-    setForm({
-      nisn: student.nisn ?? '',
-      name: student.name ?? '',
-      class: student.class ?? '',
-      major: student.major ?? '',
-      gender: student.gender ?? '',
-      date_of_birth: student.date_of_birth?.slice(0, 10) ?? '',
-      place_of_birth: student.place_of_birth ?? '',
-      address: student.address ?? '',
-      pin: '',
-    });
+    setForm(initFormFrom(student));
+    setStep(1);
+    setMaxStep(1);
+    setErrors({});
     setOpen(true);
+  };
+
+  const setValue = (key: string) => (event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    setForm((v) => ({ ...v, [key]: event.target.value }));
+    setErrors((prev) => {
+      if (!prev[key]) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
+
+  const validateStep = (current: Record<string, string>, stepIdx: number): Record<string, string> => {
+    const fieldErrors: Record<string, string> = {};
+    const section = BIODATA_SECTIONS[stepIdx - 1];
+    const fields = BIODATA_FIELDS.filter((f) => f.section === section.id);
+
+    if (stepIdx === 1) {
+      const nisn = current.nisn.trim();
+      const name = current.name.trim();
+      const pin = current.pin.trim();
+      if (!nisn) fieldErrors.nisn = 'NISN wajib diisi.';
+      else if (nisn.length < 4) fieldErrors.nisn = 'NISN minimal 4 karakter.';
+      if (!name) fieldErrors.name = 'Nama wajib diisi.';
+      if (!editing && pin.length < 4) fieldErrors.pin = 'PIN minimal 4 karakter.';
+      if (editing && pin !== '' && pin.length < 4) fieldErrors.pin = 'PIN minimal 4 karakter.';
+    }
+
+    for (const f of fields) {
+      const value = (current[f.key] ?? '').trim();
+      if (!value) continue;
+      if (f.type === 'number' && !/^\d+(\.\d+)?$/.test(value)) fieldErrors[f.key] = 'Harus berupa angka.';
+      if (f.type === 'date' && !/^\d{4}-\d{2}-\d{2}$/.test(value)) fieldErrors[f.key] = 'Tanggal tidak valid.';
+    }
+
+    return fieldErrors;
+  };
+
+  const goNext = () => {
+    const fieldErrors = validateStep(form, step);
+    if (Object.keys(fieldErrors).length > 0) {
+      setErrors(fieldErrors);
+      return;
+    }
+    const next = Math.min(step + 1, totalSteps);
+    setStep(next);
+    setMaxStep((prev) => Math.max(prev, next));
+    setErrors({});
+  };
+
+  const goBack = () => {
+    setStep((prev) => Math.max(1, prev - 1));
+    setErrors({});
+  };
+
+  const jumpTo = (target: number) => {
+    if (target <= maxStep && target >= 1) {
+      setStep(target);
+      setErrors({});
+    }
   };
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSaving(true);
     setMsg(null);
-    const { nisn, name, class: klass, major, pin } = form;
+
+    const currentErrors = validateStep(form, step);
+    if (Object.keys(currentErrors).length > 0) {
+      setErrors(currentErrors);
+      setSaving(false);
+      return;
+    }
+
+    const nisn = form.nisn.trim();
+    const name = form.name.trim();
+    const pin = form.pin.trim();
+
+    if (!nisn || !name) {
+      flash('err', 'NISN dan nama wajib diisi.');
+      setSaving(false);
+      return;
+    }
+    if (!editing && pin.length < 4) {
+      flash('err', 'PIN minimal 4 karakter.');
+      setSaving(false);
+      return;
+    }
+    if (editing && pin !== '' && pin.length < 4) {
+      flash('err', 'PIN minimal 4 karakter.');
+      setSaving(false);
+      return;
+    }
+
+    const payload: Record<string, unknown> = { role: 'student', nisn, name };
+    for (const field of BIODATA_FIELDS) {
+      if (field.key === 'nisn' || field.key === 'name') continue;
+      let value = (form[field.key] ?? '').trim();
+      if (field.key === 'gender') value = normalizeGender(value) || form.gender;
+      payload[field.key] = value;
+    }
+    payload.achievements = [];
 
     if (editing) {
-      const updatePayload: Record<string, unknown> = {
-        role: 'student',
-        name: name.trim(),
-        nisn: nisn.trim(),
-        class: klass.trim(),
-        major: major.trim(),
-        gender: form.gender,
-        date_of_birth: form.date_of_birth,
-        place_of_birth: form.place_of_birth.trim(),
-        address: form.address.trim(),
-      };
-      if (pin.trim()) updatePayload.pin = pin.trim();
-
-      const r = await accountsApi.update(editing.id, updatePayload);
+      if (pin) payload.pin = pin;
+      const r = await accountsApi.update(editing.id, payload);
       if (r.error) {
         flash('err', r.error.message ?? 'Gagal memperbarui siswa.');
         setSaving(false);
@@ -110,36 +209,28 @@ export default function StudentsManagement() {
       }
       setOpen(false);
       await load();
-      flash('ok', `Data siswa ${name.trim()} berhasil diperbarui.`);
+      flash('ok', `Data siswa ${name} berhasil diperbarui.`);
+      setStep(1);
+      setMaxStep(1);
+      setErrors({});
       setSaving(false);
       return;
     }
 
-    if (!nisn.trim() || !name.trim() || pin.length < 4) {
-      flash('err', 'NISN, nama wajib diisi dan PIN minimal 4 karakter.');
-      setSaving(false);
-      return;
-    }
-    const r = await backendApi.database.rpc('admin_create_student', {
-      p_nisn: nisn.trim(),
-      p_name: name.trim(),
-      p_class: klass.trim(),
-      p_major: major.trim(),
-      p_gender: form.gender,
-      p_date_of_birth: form.date_of_birth,
-      p_place_of_birth: form.place_of_birth.trim(),
-      p_address: form.address.trim(),
-      p_pin: pin,
-    });
+    payload.pin = pin;
+    const r = await accountsApi.create(payload);
     if (r.error) {
-      flash('err', r.error.message);
+      flash('err', r.error.message ?? 'Gagal membuat akun siswa.');
       setSaving(false);
       return;
     }
-    setForm(emptyForm());
+    setForm(emptyBiodata());
     setOpen(false);
     await load();
-    flash('ok', `Akun siswa ${name.trim()} berhasil dibuat. Login siswa: NISN + PIN.`);
+    flash('ok', `Akun siswa ${name} berhasil dibuat. Login siswa: NISN + PIN.`);
+    setStep(1);
+    setMaxStep(1);
+    setErrors({});
     setSaving(false);
   };
 
@@ -168,9 +259,9 @@ export default function StudentsManagement() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-[#23314D]">Buat dan kelola akun siswa untuk Mading (login NISN + PIN).</p>
+        <p className="text-[#23314D]">Buat dan kelola akun siswa untuk Mading (login NISN + PIN) beserta data BIODATA lengkap.</p>
         <div className="flex flex-wrap gap-2">
-          <button onClick={() => setImportOpen(true)} className="inline-flex items-center gap-2 rounded-lg border-2 border-[#1B2A4A] px-4 py-2 font-bold text-[#1B2A4A] hover:bg-[#1B2A4A]/5"><Upload size={18} /> Import Excel/CSV</button>
+          <button onClick={() => setImportOpen(true)} className="inline-flex items-center gap-2 rounded-lg border-2 border-[#1B2A4A] px-4 py-2 font-bold text-[#1B2A4A] hover:bg-[#1B2A4A]/5"><Upload size={18} /> Import Excel</button>
           <button onClick={openCreate} className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-4 py-2 font-bold text-[#1B2A4A]"><Plus size={18} /> Tambah Siswa</button>
         </div>
       </div>
@@ -188,18 +279,20 @@ export default function StudentsManagement() {
             <tr>
               <th className="p-4">Siswa</th>
               <th className="p-4">NISN</th>
+              <th className="p-4">NIS</th>
               <th className="p-4">PIN Login</th>
               <th className="p-4">Kelas</th>
               <th className="p-4">Jurusan</th>
               <th className="p-4">Jenis Kelamin</th>
               <th className="p-4">Tanggal Lahir</th>
               <th className="p-4">Tempat Lahir</th>
+              <th className="p-4">Agama</th>
               <th className="p-4">Alamat</th>
               <th className="p-4">Aksi</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 && <tr><td colSpan={10} className="p-8 text-center text-[#5B7088]">Belum ada siswa terdaftar.</td></tr>}
+            {filtered.length === 0 && <tr><td colSpan={12} className="p-8 text-center text-[#5B7088]">Belum ada siswa terdaftar.</td></tr>}
             {filtered.map((student) => (
               <tr key={student.id} className="border-t border-[#1B2A4A]/10">
                 <td className="p-4">
@@ -209,13 +302,15 @@ export default function StudentsManagement() {
                   </div>
                 </td>
                 <td className="p-4 font-mono text-xs">{student.nisn}</td>
+                <td className="p-4 font-mono text-xs">{student.nis || '-'}</td>
                 <td className="p-4 font-mono text-xs">{student.pin || '-'}</td>
                 <td className="p-4">{student.class || '-'}</td>
                 <td className="p-4">{student.major || '-'}</td>
                 <td className="p-4">{genderLabel(student.gender)}</td>
                 <td className="p-4 whitespace-nowrap">{formatDate(student.date_of_birth)}</td>
                 <td className="p-4">{student.place_of_birth || '-'}</td>
-                <td className="p-4 max-w-[200px] truncate" title={student.address || ''}>{student.address || '-'}</td>
+                <td className="p-4">{student.religion || '-'}</td>
+                <td className="p-4 max-w-[200px] truncate" title={String(student.address ?? '')}>{student.address || '-'}</td>
                 <td className="p-4 whitespace-nowrap">
                   <button onClick={() => openEdit(student)} className="mr-3 inline-flex items-center gap-1 text-sm font-semibold text-[#866D2C]"><Pencil size={15} /> Edit</button>
                   <button onClick={() => resetPin(student)} className="mr-3 inline-flex items-center gap-1 text-sm font-semibold text-[#866D2C]"><KeyRound size={15} /> Reset PIN</button>
@@ -229,50 +324,78 @@ export default function StudentsManagement() {
 
       {open && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4">
-          <form onSubmit={submit} className="w-full max-w-xl rounded-xl bg-white p-6 shadow-xl">
+          <form onSubmit={submit} className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
             <div className="mb-5 flex justify-between">
               <h2 className="text-xl font-bold text-[#1B2A4A]">{editing ? 'Edit Data Siswa' : 'Tambah Akun Siswa'}</h2>
               <button type="button" onClick={() => setOpen(false)}><X /></button>
             </div>
+
             <p className="mb-4 rounded-lg bg-[#FAF6F0] p-3 text-xs text-[#5B7088]">
-              {editing ? (
-                'Perbarui data siswa. Jika mengubah NISN, akun login ikut diperbarui. Kosongkan PIN jika tidak ingin mengganti PIN.'
-              ) : (
-                <>Siswa login ke Mading menggunakan <strong>NISN sebagai identitas</strong> dan <strong>PIN sebagai autentikasi</strong>. PIN disimpan terenkripsi.</>
-              )}
+              {editing
+                ? 'Perbarui data siswa mengikuti format BIODATA PESERTA DIDIK BARU. Jika mengubah NISN, akun login ikut diperbarui. Kosongkan PIN jika tidak ingin mengganti PIN.'
+                : <>Siswa login ke Mading menggunakan <strong>NISN sebagai identitas</strong> dan <strong>PIN sebagai autentikasi</strong>. PIN disimpan terenkripsi.</>}
             </p>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="NISN" value={form.nisn} onChange={(e) => setForm((v) => ({ ...v, nisn: e.target.value }))} placeholder="cth. 0061234567" />
-              <Field label="Nama Lengkap" value={form.name} onChange={(e) => setForm((v) => ({ ...v, name: e.target.value }))} />
-              <Field label="Kelas" value={form.class} onChange={(e) => setForm((v) => ({ ...v, class: e.target.value }))} placeholder="cth. X TJKT 1" />
-              <Field label="Jurusan" value={form.major} onChange={(e) => setForm((v) => ({ ...v, major: e.target.value }))} placeholder="cth. Teknik Jaringan" />
-              <label className="block text-sm font-semibold">Jenis Kelamin
-                <select value={form.gender} onChange={(e) => setForm((v) => ({ ...v, gender: e.target.value }))} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 bg-white px-3 py-2 font-normal">
-                  <option value="">Pilih</option>
-                  <option value="L">Laki-laki</option>
-                  <option value="P">Perempuan</option>
-                </select>
-              </label>
-              <label className="block text-sm font-semibold">Tanggal Lahir
-                <input value={form.date_of_birth} type="date" onChange={(e) => setForm((v) => ({ ...v, date_of_birth: e.target.value }))} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />
-              </label>
-              <Field label="Tempat Lahir" value={form.place_of_birth} onChange={(e) => setForm((v) => ({ ...v, place_of_birth: e.target.value }))} placeholder="cth. Bandung" />
-              <div className="sm:col-span-2">
-                <label className="block text-sm font-semibold">Alamat
-                  <textarea value={form.address} onChange={(e) => setForm((v) => ({ ...v, address: e.target.value }))} rows={2} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" placeholder="Alamat lengkap" />
-                </label>
-              </div>
-              <div className="sm:col-span-2">
-                <label className="block text-sm font-semibold">{editing ? 'PIN Baru (opsional, min. 4 karakter)' : 'PIN Siswa (min. 4 karakter)'}
-                  <input value={form.pin} type="text" inputMode="numeric" onChange={(e) => setForm((v) => ({ ...v, pin: e.target.value }))} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" placeholder={editing ? 'Kosongkan jika tidak diubah' : 'cth. 1234'} />
-                </label>
-              </div>
+
+            <div className="mb-5 flex items-center gap-1 overflow-x-auto pb-1">
+              {BIODATA_SECTIONS.map((section, i) => {
+                const n = i + 1;
+                const active = n === step;
+                const done = n < step;
+                const reachable = n <= maxStep;
+                return (
+                  <Fragment key={section.id}>
+                    {i > 0 && <ChevronRight className="h-4 w-4 shrink-0 text-[#5B7088]/40" />}
+                    <button
+                      type="button"
+                      disabled={!reachable}
+                      onClick={() => jumpTo(n)}
+                      title={section.title}
+                      className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
+                        active ? 'bg-[#1B2A4A] text-white'
+                          : done ? 'bg-[#C8A951] text-[#1B2A4A]'
+                            : reachable ? 'bg-[#FAF6F0] text-[#5B7088] hover:bg-[#1B2A4A]/10'
+                              : 'cursor-not-allowed bg-[#FAF6F0] text-[#5B7088]/40'
+                      }`}
+                    >
+                      {n}. {stepShortLabel(section.title)}
+                    </button>
+                  </Fragment>
+                );
+              })}
             </div>
+
+            {(() => {
+              const section = BIODATA_SECTIONS[step - 1];
+              const fields = BIODATA_FIELDS.filter((f) => f.section === section.id);
+              return (
+                <div key={section.id} className="rounded-xl border border-[#1B2A4A]/10 p-4">
+                  <p className="mb-3 font-bold text-[#1B2A4A]">{section.title}</p>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {section.id === 'identity' && (
+                      <BiodataField field={{ key: 'pin', label: editing ? 'PIN Baru (opsional, min. 4 karakter)' : 'PIN Siswa (min. 4 karakter)', section: 'identity', type: 'text' }} value={form.pin} onChange={setValue('pin')} placeholder={editing ? 'Kosongkan jika tidak diubah' : 'cth. 1234'} error={errors.pin} />
+                    )}
+                    {fields.map((field) => (
+                      <BiodataField key={field.key} field={field} value={form[field.key] ?? ''} onChange={setValue(field.key)} error={errors[field.key]} />
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
             <div className="mt-6 flex justify-end gap-3">
               <button type="button" onClick={() => setOpen(false)} className="px-4 py-2 text-[#5B7088]">Batal</button>
-              <button type="submit" disabled={saving} className="inline-flex items-center gap-2 rounded-lg bg-[#1B2A4A] px-4 py-2 font-bold text-white disabled:opacity-60">
-                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : editing ? <Pencil className="h-4 w-4" /> : <Plus className="h-4 w-4" />} {editing ? 'Simpan Perubahan' : 'Buat Akun'}
-              </button>
+              {step > 1 && (
+                <button type="button" onClick={goBack} className="px-4 py-2 font-semibold text-[#866D2C]">Kembali</button>
+              )}
+              {step < totalSteps ? (
+                <button type="button" onClick={goNext} className="inline-flex items-center gap-2 rounded-lg bg-[#1B2A4A] px-5 py-2 font-bold text-white">
+                  Lanjut <ChevronRight size={16} />
+                </button>
+              ) : (
+                <button type="submit" disabled={saving} className="inline-flex items-center gap-2 rounded-lg bg-[#1B2A4A] px-5 py-2 font-bold text-white disabled:opacity-60">
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Simpan Siswa
+                </button>
+              )}
             </div>
           </form>
         </div>
@@ -283,12 +406,39 @@ export default function StudentsManagement() {
   );
 }
 
-function Field({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (e: ChangeEvent<HTMLInputElement>) => void; placeholder?: string }) {
+function BiodataField({ field, value, onChange, placeholder, error }: { field: BiodataFieldDef; value: string; onChange: (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void; placeholder?: string; error?: string }) {
+  const cls = field.full ? 'sm:col-span-2' : '';
+  const inputCls = `mt-1 w-full rounded-lg border bg-white px-3 py-2 font-normal ${error ? 'border-red-400' : 'border-[#1B2A4A]/20'}`;
+
   return (
-    <label className="block text-sm font-semibold">{label}
-      <input value={value} onChange={onChange} placeholder={placeholder} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />
+    <label className={`block text-sm font-semibold ${cls}`}>
+      {field.label}
+      {field.type === 'select' ? (
+        <select value={value} onChange={onChange} className={inputCls}>
+          {field.options?.map((opt) => (
+            <option key={opt} value={opt}>
+              {opt === '' ? 'Pilih' : selectLabel(field.key, opt)}
+            </option>
+          ))}
+        </select>
+      ) : field.type === 'textarea' ? (
+        <textarea value={value} onChange={onChange} rows={2} className={inputCls} placeholder={placeholder ?? field.placeholder} />
+      ) : (
+        <input value={value} type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'} onChange={onChange} className={inputCls} placeholder={placeholder ?? field.placeholder} />
+      )}
+      {error && <span className="mt-1 block text-xs font-medium text-red-600">{error}</span>}
     </label>
   );
+}
+
+function stepShortLabel(title: string): string {
+  return title.replace(/^[A-J]\.\s*/, '');
+}
+
+function selectLabel(key: string, value: string): string {
+  if (key === 'gender') return value === 'L' ? 'Laki-laki' : value === 'P' ? 'Perempuan' : value;
+  if (key === 'anak_yatim_piatu') return value === 'Yatim' ? 'Yatim' : value === 'Piatu' ? 'Piatu' : value === 'Yatim-Piatu' ? 'Yatim-Piatu' : value;
+  return value;
 }
 
 function genderLabel(value?: string): string {

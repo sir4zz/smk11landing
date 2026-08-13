@@ -325,12 +325,14 @@ export interface AccountRow {
   role: AccountRole;
   phone?: string;
   nisn?: string;
+  nis?: string;
   pin?: string;
   class?: string;
   major?: string;
   gender?: string;
   date_of_birth?: string;
   place_of_birth?: string;
+  religion?: string;
   address?: string;
   status?: string;
   must_change_password?: boolean;
@@ -338,6 +340,7 @@ export interface AccountRow {
   guru?: { nip?: string; nuptk?: string; teacher_id?: string; subject?: string; position?: string; certifications?: string[] } | null;
   osis?: { member_id?: string; nisn?: string; division?: string; position?: string; work_programs?: string[] } | null;
   created_at?: string;
+  [key: string]: unknown;
 }
 
 export const accountsApi = {
@@ -503,7 +506,11 @@ export interface MyProfilePayload {
   social: MyProfileSocial;
   guru?: { nip?: string; nuptk?: string; teacher_id?: string; subject?: string; position?: string; achievements?: string[]; certifications?: string[] } | null;
   osis?: { member_id?: string; nisn?: string; division?: string; position?: string; achievements?: string[]; work_programs?: string[] } | null;
-  student?: { nisn?: string; class?: string; major?: string; gender?: string; date_of_birth?: string; place_of_birth?: string; address?: string; achievements?: string[] } | null;
+  student?: {
+    nisn?: string; nis?: string; class?: string; major?: string; gender?: string;
+    date_of_birth?: string; place_of_birth?: string; religion?: string; address?: string; achievements?: string[];
+    [key: string]: unknown;
+  } | null;
 }
 
 export const myProfileApi = {

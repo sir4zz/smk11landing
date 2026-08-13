@@ -6,6 +6,7 @@ use App\Models\Guru;
 use App\Models\OsisAccount;
 use App\Models\Student;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 /**
@@ -124,6 +125,135 @@ class AccountService
         return 'nisn-'.$nisn.'@mading.smkn11.sch.id';
     }
 
+    /**
+     * Daftar seluruh kolom biodata (Section 1-10 template BIODATA) pada tabel
+     * students. Dipakai oleh AccountController & StudentController.
+     *
+     * @return string[]
+     */
+    public function biodataKeys(): array
+    {
+        $parentCols = ['nama', 'tempat', 'tanggal_lahir', 'agama', 'kewarganegaraan', 'pendidikan', 'pekerjaan', 'penghasilan', 'alamat', 'no_telp', 'status_hidup'];
+        $keys = [
+            // Section 1
+            'nickname', 'kewarganegaraan', 'anak_ke', 'jml_saudara_kandung', 'jml_saudara_tiri',
+            'anak_yatim_piatu', 'bahasa_sehari_hari',
+            // Section 2
+            'phone', 'tinggal_dengan', 'jarak_sekolah',
+            // Section 3
+            'golongan_darah', 'penyakit', 'kelainan_jasmani', 'tinggi_cm', 'berat_kg',
+            // Section 4
+            'lulusan_dari', 'tanggal_sttb', 'nomor_sttb', 'lama_belajar', 'pindahan_dari',
+            'alasan_pindah', 'diangkat', 'kompetensi_keahlian', 'tanggal_diterima',
+            // Section 5-7
+        ];
+
+        foreach (['ayah', 'ibu', 'wali'] as $p) {
+            foreach ($parentCols as $c) {
+                $keys[] = "{$p}_{$c}";
+            }
+        }
+
+        return array_merge($keys, [
+            // Section 8
+            'gemar_kesenian', 'gemar_olahraga', 'gemar_kemasyarakatan', 'gemar_lain',
+            // Section 9
+            'beasiswa_tk', 'beasiswa_dari',
+            // Section 10
+            'siswa_status', 'siswa_tanggal',
+        ]);
+    }
+
+    /**
+     * Normalize satu kolom biodata untuk disimpan ke database. Kosong => null.
+     */
+    public function biodataValue(string $key, mixed $value): mixed
+    {
+        $raw = trim((string) $value);
+
+        if ($raw === '') {
+            return null;
+        }
+
+        $ints = ['anak_ke', 'jml_saudara_kandung', 'jml_saudara_tiri', 'tinggi_cm', 'berat_kg'];
+        if (in_array($key, $ints, true)) {
+            return is_numeric($raw) ? (int) $raw : null;
+        }
+
+        if ($key === 'jarak_sekolah') {
+            return is_numeric($raw) ? (float) $raw : null;
+        }
+
+        $dates = ['tanggal_sttb', 'tanggal_diterima', 'siswa_tanggal', 'tanggal_lahir'];
+        if (in_array($key, $dates, true) || str_ends_with($key, '_tanggal_lahir')) {
+            return $this->normalizeDate($value);
+        }
+
+        $texts = ['penyakit', 'kelainan_jasmani', 'ayah_alamat', 'ibu_alamat', 'wali_alamat'];
+        if (in_array($key, $texts, true)) {
+            return $raw;
+        }
+
+        $limits = [
+            'nickname' => 100, 'kewarganegaraan' => 50, 'anak_yatim_piatu' => 30,
+            'bahasa_sehari_hari' => 50, 'phone' => 30, 'tinggal_dengan' => 60,
+            'golongan_darah' => 5, 'lulusan_dari' => 255, 'nomor_sttb' => 100,
+            'lama_belajar' => 20, 'pindahan_dari' => 255, 'alasan_pindah' => 255,
+            'diangkat' => 100, 'kompetensi_keahlian' => 255, 'gemar_kesenian' => 100,
+            'gemar_olahraga' => 100, 'gemar_kemasyarakatan' => 100, 'gemar_lain' => 100,
+            'beasiswa_tk' => 60, 'beasiswa_dari' => 100, 'siswa_status' => 60,
+            '_nama' => 255, '_tempat' => 255, '_agama' => 50, '_kewarganegaraan' => 50,
+            '_pendidikan' => 100, '_pekerjaan' => 100, '_penghasilan' => 100,
+            '_no_telp' => 30, '_status_hidup' => 60,
+        ];
+
+        $limit = null;
+        foreach ($limits as $k => $max) {
+            if ($key === $k || str_ends_with($key, $k)) {
+                $limit = $max;
+                break;
+            }
+        }
+
+        return $limit !== null ? mb_substr($raw, 0, $limit) : $raw;
+    }
+
+    /**
+     * Bangun array kolom biodata (Section 1-10) dari satu baris sumber.
+     *
+     * @param  array<string, mixed>  $src
+     * @return array<string, mixed>
+     */
+    public function biodata(array $src): array
+    {
+        $out = [];
+
+        foreach ($this->biodataKeys() as $key) {
+            $out[$key] = $this->biodataValue($key, $src[$key] ?? null);
+        }
+
+        return $out;
+    }
+
+    /**
+     * Hanya kolom biodata yang benar-benar dikirim dalam request. Dipakai pada
+     * update agar field yang tidak dikirim tidak menimpa data lama dengan null.
+     *
+     * @return array<string, mixed>
+     */
+    public function biodataFromRequest(Request $request): array
+    {
+        $out = [];
+
+        foreach ($this->biodataKeys() as $key) {
+            if ($request->has($key)) {
+                $out[$key] = $this->biodataValue($key, $request->input($key));
+            }
+        }
+
+        return $out;
+    }
+
     public function generateTeacherId(): string
     {
         do {
@@ -187,16 +317,72 @@ class AccountService
                 'achievements' => $user->osisAccount->achievements ?? [],
                 'work_programs' => $user->osisAccount->work_programs ?? [],
             ] : null,
-            'student' => $user->student ? [
-                'nisn' => $user->student->nisn ?? '',
-                'class' => $user->student->class ?? '',
-                'major' => $user->student->major ?? '',
-                'gender' => $user->student->gender ?? '',
-                'date_of_birth' => $user->student->date_of_birth?->toDateString() ?? '',
-                'place_of_birth' => $user->student->place_of_birth ?? '',
-                'address' => $user->student->address ?? '',
-                'achievements' => $user->student->achievements ?? [],
-            ] : null,
+            'student' => $user->student ? $this->studentPayload($user->student) : null,
         ];
+    }
+
+    /**
+     * Payload data siswa (Section 1-10 template BIODATA).
+     */
+    public function studentPayload(Student $student): array
+    {
+        $parentCols = ['nama', 'tempat', 'tanggal_lahir', 'agama', 'kewarganegaraan', 'pendidikan', 'pekerjaan', 'penghasilan', 'alamat', 'no_telp', 'status_hidup'];
+
+        $payload = [
+            'nisn' => $student->nisn ?? '',
+            'nis' => $student->nis ?? '',
+            'class' => $student->class ?? '',
+            'major' => $student->major ?? '',
+            'gender' => $student->gender ?? '',
+            'date_of_birth' => $student->date_of_birth?->toDateString() ?? '',
+            'place_of_birth' => $student->place_of_birth ?? '',
+            'religion' => $student->religion ?? '',
+            'address' => $student->address ?? '',
+            'achievements' => $student->achievements ?? [],
+            'nickname' => $student->nickname ?? '',
+            'kewarganegaraan' => $student->kewarganegaraan ?? '',
+            'anak_ke' => $student->anak_ke,
+            'jml_saudara_kandung' => $student->jml_saudara_kandung,
+            'jml_saudara_tiri' => $student->jml_saudara_tiri,
+            'anak_yatim_piatu' => $student->anak_yatim_piatu ?? '',
+            'bahasa_sehari_hari' => $student->bahasa_sehari_hari ?? '',
+            'phone' => $student->phone ?? '',
+            'tinggal_dengan' => $student->tinggal_dengan ?? '',
+            'jarak_sekolah' => $student->jarak_sekolah,
+            'golongan_darah' => $student->golongan_darah ?? '',
+            'penyakit' => $student->penyakit ?? '',
+            'kelainan_jasmani' => $student->kelainan_jasmani ?? '',
+            'tinggi_cm' => $student->tinggi_cm,
+            'berat_kg' => $student->berat_kg,
+            'lulusan_dari' => $student->lulusan_dari ?? '',
+            'tanggal_sttb' => $student->tanggal_sttb?->toDateString() ?? '',
+            'nomor_sttb' => $student->nomor_sttb ?? '',
+            'lama_belajar' => $student->lama_belajar ?? '',
+            'pindahan_dari' => $student->pindahan_dari ?? '',
+            'alasan_pindah' => $student->alasan_pindah ?? '',
+            'diangkat' => $student->diangkat ?? '',
+            'kompetensi_keahlian' => $student->kompetensi_keahlian ?? '',
+            'tanggal_diterima' => $student->tanggal_diterima?->toDateString() ?? '',
+            'gemar_kesenian' => $student->gemar_kesenian ?? '',
+            'gemar_olahraga' => $student->gemar_olahraga ?? '',
+            'gemar_kemasyarakatan' => $student->gemar_kemasyarakatan ?? '',
+            'gemar_lain' => $student->gemar_lain ?? '',
+            'beasiswa_tk' => $student->beasiswa_tk ?? '',
+            'beasiswa_dari' => $student->beasiswa_dari ?? '',
+            'siswa_status' => $student->siswa_status ?? '',
+            'siswa_tanggal' => $student->siswa_tanggal?->toDateString() ?? '',
+        ];
+
+        foreach (['ayah', 'ibu', 'wali'] as $p) {
+            foreach ($parentCols as $c) {
+                $key = "{$p}_{$c}";
+                $value = $student->$key ?? '';
+                $payload[$key] = in_array($c, ['tanggal_lahir'], true) && $value instanceof \DateTimeInterface
+                    ? $value->toDateString()
+                    : $value;
+            }
+        }
+
+        return $payload;
     }
 }
