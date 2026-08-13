@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\AlumniGraduationController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\StudentAuthController;
 use App\Http\Controllers\BkkPartnerController;
@@ -64,6 +65,7 @@ Route::get('/education-staff', [ContentCrudController::class, 'index'])->default
 
 // ---------- SPMB ----------
 Route::get('/spmb', [SpmbController::class, 'index']);
+Route::get('/spmb/posters', [SpmbController::class, 'posters']);
 
 // ---------- OSIS ----------
 Route::get('/osis', [OsisController::class, 'profile']);
@@ -105,6 +107,9 @@ Route::delete('/uploads', [UploadController::class, 'destroy'])->middleware('aut
 Route::get('/jobs', [JobVacancyController::class, 'index']);
 Route::get('/jobs/{slug}', [JobVacancyController::class, 'show']);
 Route::get('/bkk/partners', [BkkPartnerController::class, 'index']);
+
+// ---------- KELULUSAN SISWA (public form) ----------
+Route::post('/kelulusan', [AlumniGraduationController::class, 'store']);
 
 // Compatibility REST resources for the existing React CRUD layer. They are
 // backed by Laravel models and authorization.
@@ -189,6 +194,17 @@ Route::middleware(['auth:sanctum', 'staff'])->group(function () {
     Route::post('/admin/bkk/partners', [BkkPartnerController::class, 'store'])->middleware('permission:job.create');
     Route::put('/admin/bkk/partners/{id}', [BkkPartnerController::class, 'update'])->middleware('permission:job.edit');
     Route::delete('/admin/bkk/partners/{id}', [BkkPartnerController::class, 'destroy'])->middleware('permission:job.delete');
+
+    // KELULUSAN SISWA (Alumni Graduation)
+    Route::get('/admin/kelulusan', [AlumniGraduationController::class, 'adminIndex'])->middleware('permission:job.view');
+    Route::get('/admin/kelulusan/stats', [AlumniGraduationController::class, 'stats'])->middleware('permission:job.view');
+    Route::get('/admin/kelulusan/export', [AlumniGraduationController::class, 'export'])->middleware('permission:job.view');
+    Route::get('/admin/kelulusan/{id}', [AlumniGraduationController::class, 'show'])->middleware('permission:job.view');
+    Route::post('/admin/kelulusan', [AlumniGraduationController::class, 'store'])->middleware('permission:job.create');
+    Route::put('/admin/kelulusan/{id}', [AlumniGraduationController::class, 'update'])->middleware('permission:job.edit');
+    Route::patch('/admin/kelulusan/{id}', [AlumniGraduationController::class, 'update'])->middleware('permission:job.edit');
+    Route::delete('/admin/kelulusan/{id}', [AlumniGraduationController::class, 'destroy'])->middleware('permission:job.delete');
+    Route::patch('/admin/kelulusan/{id}/verify', [AlumniGraduationController::class, 'verify'])->middleware('permission:job.edit');
 });
 
 // ============================================================
@@ -216,6 +232,11 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     // SPMB
     Route::post('/spmb', [SpmbController::class, 'store']);
     Route::patch('/spmb/{id}', [SpmbController::class, 'update']);
+    Route::get('/spmb/posters', [SpmbController::class, 'adminPosters']);
+    Route::post('/spmb/posters', [SpmbController::class, 'storePoster']);
+    Route::post('/spmb/posters/upload', [SpmbController::class, 'uploadPoster']);
+    Route::patch('/spmb/posters/{id}', [SpmbController::class, 'updatePoster']);
+    Route::delete('/spmb/posters/{id}', [SpmbController::class, 'destroyPoster']);
 
     // OSIS
     Route::post('/osis', [OsisController::class, 'storeProfile']);

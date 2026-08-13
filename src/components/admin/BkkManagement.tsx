@@ -227,8 +227,8 @@ function JobsTab({ permissions }: { permissions: string[] }) {
               <tr key={job.id} className="border-t border-[#1B2A4A]/10">
                 <td className="p-4">
                   <div className="flex items-center gap-2">
-                    {job.company_logo ? (
-                      <img src={resolveImageUrl(job.company_logo)} alt="" className="h-8 w-8 rounded-lg object-cover" />
+                    {job.company_logo && resolveImageUrl(job.company_logo) ? (
+                      <img src={resolveImageUrl(job.company_logo)!} alt="" className="h-8 w-8 rounded-lg object-cover" />
                     ) : (
                       <div className="grid h-8 w-8 place-items-center rounded-lg bg-[#1B2A4A]/5"><Building2 className="h-4 w-4 text-[#5B7088]" /></div>
                     )}
@@ -542,8 +542,8 @@ function PartnersTab({ permissions }: { permissions: string[] }) {
             {rows.map((partner) => (
               <tr key={partner.id} className="border-t border-[#1B2A4A]/10">
                 <td className="p-4">
-                  {partner.logo ? (
-                    <img src={resolveImageUrl(partner.logo)} alt={partner.name} className="h-10 w-10 rounded-lg border border-[#1B2A4A]/10 object-cover" />
+                  {partner.logo && resolveImageUrl(partner.logo) ? (
+                    <img src={resolveImageUrl(partner.logo)!} alt={partner.name} className="h-10 w-10 rounded-lg border border-[#1B2A4A]/10 object-cover" />
                   ) : (
                     <div className="grid h-10 w-10 place-items-center rounded-lg bg-[#1B2A4A]/5"><Building2 className="h-5 w-5 text-[#5B7088]" /></div>
                   )}

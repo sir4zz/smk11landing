@@ -227,9 +227,9 @@ const BkkHome: React.FC = () => {
                 >
                   <div className="flex items-start justify-between gap-3 p-5 pb-4">
                     <div className="flex min-w-0 items-center gap-3">
-                      {job.company_logo ? (
+                      {job.company_logo && resolveImageUrl(job.company_logo) ? (
                         <img
-                          src={resolveImageUrl(job.company_logo)}
+                          src={resolveImageUrl(job.company_logo)!}
                           alt={job.company_name}
                           loading="lazy"
                           className="h-12 w-12 shrink-0 rounded-xl border border-[#1B2A4A]/10 bg-white object-cover"
@@ -291,9 +291,9 @@ const BkkHome: React.FC = () => {
                 key={company.name}
                 className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-[#1B2A4A]/10 bg-white p-6 text-center shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg"
               >
-                {company.logo ? (
+                {company.logo && resolveImageUrl(company.logo) ? (
                   <img
-                    src={resolveImageUrl(company.logo)}
+                    src={resolveImageUrl(company.logo)!}
                     alt={company.name}
                     loading="lazy"
                     className="h-14 w-14 rounded-xl border border-[#1B2A4A]/10 object-cover"

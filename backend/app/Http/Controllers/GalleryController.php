@@ -385,10 +385,66 @@ class GalleryController extends Controller
     protected function storeFile($file, bool $cover = false): string
     {
         $directory = 'gallery/'.($cover ? 'covers' : 'images').'/'.now()->format('Y/m');
-        $name = uniqid().'-'.Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)).'.'.$file->getClientOriginalExtension();
-        Storage::disk('public')->putFileAs($directory, $file, $name);
+        $optimized = $this->optimizeImage($file);
+        if ($optimized) {
+            $name = uniqid().'-'.Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)).'.jpg';
+            Storage::disk('public')->putFileAs($directory, $optimized, $name);
+            @unlink($optimized->getPathname());
+        } else {
+            $name = uniqid().'-'.Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)).'.'.$file->getClientOriginalExtension();
+            Storage::disk('public')->putFileAs($directory, $file, $name);
+        }
 
         return '/storage/'.$directory.'/'.$name;
+    }
+
+    protected function optimizeImage($file): ?\Symfony\Component\HttpFoundation\File\UploadedFile
+    {
+        $maxDim = 1600;
+        $quality = 82;
+
+        $src = match (strtolower($file->getClientOriginalExtension())) {
+            'png' => @imagecreatefrompng($file->getPathname()),
+            'gif' => @imagecreatefromgif($file->getPathname()),
+            'webp' => @imagecreatefromwebp($file->getPathname()),
+            default => @imagecreatefromjpeg($file->getPathname()),
+        };
+        if ($src === false) {
+            return null;
+        }
+
+        $w = imagesx($src);
+        $h = imagesy($src);
+        $ratio = min(1, $maxDim / max($w, $h));
+        $nw = (int) round($w * $ratio);
+        $nh = (int) round($h * $ratio);
+        $dst = imagecreatetruecolor(max(1, $nw), max(1, $nh));
+        imagecopyresampled($dst, $src, 0, 0, 0, 0, $nw, $nh, $w, $h);
+
+        $tmp = tempnam(sys_get_temp_dir(), 'img');
+        $savedSize = null;
+        if (imagejpeg($dst, $tmp, $quality)) {
+            $savedSize = filesize($tmp);
+        }
+        imagedestroy($src);
+        imagedestroy($dst);
+
+        if ($savedSize === null) {
+            @unlink($tmp);
+            return null;
+        }
+        if ($savedSize >= $file->getSize()) {
+            @unlink($tmp);
+            return null;
+        }
+
+        return new \Symfony\Component\HttpFoundation\File\UploadedFile(
+            $tmp,
+            preg_replace('/\.(png|gif|webp)$/i', '.jpg', $file->getClientOriginalName()),
+            'image/jpeg',
+            null,
+            true
+        );
     }
 
     protected function syncImages(Gallery $gallery, array $images, Request $request): void

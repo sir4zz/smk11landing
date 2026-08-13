@@ -130,7 +130,7 @@ const Kesemaptaan: React.FC = () => {
               {instructors.map((ins) => (
                 <div key={ins.id} className="rounded-2xl border border-[#1B2A4A]/10 bg-white p-6 text-center shadow-sm">
                   <div className="mx-auto mb-4 grid h-20 w-20 place-items-center overflow-hidden rounded-full bg-[#FAF6F0]">
-                    {ins.photo ? <img src={resolveImageUrl(ins.photo)} alt={ins.name} loading="lazy" className="h-full w-full object-cover" /> : <User className="h-8 w-8 text-[#C8A951]" />}
+                    {ins.photo && resolveImageUrl(ins.photo) ? <img src={resolveImageUrl(ins.photo)!} alt={ins.name} loading="lazy" className="h-full w-full object-cover" /> : <User className="h-8 w-8 text-[#C8A951]" />}
                   </div>
                   <h4 className="font-bold text-[#1B2A4A]">{ins.name}</h4>
                   <p className="mt-1 text-sm font-semibold text-[#866D2C]">{ins.role}</p>

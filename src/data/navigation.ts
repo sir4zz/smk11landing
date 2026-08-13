@@ -32,7 +32,6 @@ export const navigationData: NavItem[] = [
             { label: 'Wakil Kepala Sekolah', href: '/manajemen/wakil-kepala-sekolah' },
             { label: 'Kegiatan Guru', href: '/manajemen/kegiatan-guru' },
             { label: 'Tenaga Kependidikan', href: '/manajemen/tenaga-kependidikan' },
-            { label: 'Struktur Manajemen', href: '/manajemen/struktur-manajemen' },
         ],
     },
     {
@@ -42,18 +41,27 @@ export const navigationData: NavItem[] = [
             { label: 'Berita', href: '/informasi/berita' },
             { label: 'FAQ', href: '/informasi/faq' },
             { label: 'Galeri', href: '/galeri' },
+            { label: 'Kontak', href: '/kontak' },
         ],
     },
     //{ label: 'Galeri', href: '/galeri' },
     {
-        label: 'OSIS',
+        label: 'Ruang Siswa',
         href: '/osis',
         children: [
-            { label: 'Profil OSIS', href: '/osis' },
-            { label: 'Struktur OSIS', href: '/osis/struktur' },
-            { label: 'Kegiatan OSIS', href: '/osis/kegiatan' },
+            {
+                label: 'OSIS',
+                href: '/osis',
+                children: [
+                    { label: 'Profil OSIS', href: '/osis' },
+                    { label: 'Struktur OSIS', href: '/osis/struktur' },
+                    { label: 'Kegiatan OSIS', href: '/osis/kegiatan' },
+                ],
+            },
             { label: 'Ekstrakurikuler', href: '/osis/ekstrakurikuler' },
             { label: 'Kesemaptaan', href: '/osis/kesemaptaan' },
+            { label: 'Mading', href: '/mading' },
+            { label: 'Prestasi Siswa', href: '/kesiswaan/prestasi' },
         ],
     },
     {
@@ -62,12 +70,11 @@ export const navigationData: NavItem[] = [
         children: [
             { label: 'Beranda BKK', href: '/bkk' },
             { label: 'Lowongan Kerja', href: '/bkk/lowongan' },
+            { label: 'Kelulusan Siswa', href: '/bkk/kelulusan' },
             { label: 'Kontak BKK', href: '/bkk/kontak' },
         ],
     },
-    { label: 'Mading', href: '/mading' },
     { label: 'SPMB', href: '/spmb', isHighlighted: true },
-    { label: 'Kontak', href: '/kontak' },
 ];
 
 export { navigationData as navItems };

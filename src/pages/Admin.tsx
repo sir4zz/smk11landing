@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { BarChart3, BookOpen, Briefcase, Building2, CalendarDays, ChevronDown, ChevronRight, FileText, GraduationCap, LogOut, Mail, Menu, Pencil, Plus, Trophy, Trash2, Upload, Users, X, Save, ShieldCheck, UsersRound, Dumbbell, Newspaper, UserCog, Camera, UserRound, Loader2 } from 'lucide-react';
+import { BarChart3, BookOpen, Briefcase, Building2, CalendarDays, ChevronDown, ChevronRight, FileText, GraduationCap, LogOut, Mail, MapPin, Menu, Pencil, Plus, Trophy, Trash2, Upload, Users, X, Save, ShieldCheck, UsersRound, Dumbbell, Newspaper, UserCog, Camera, UserRound, Loader2 } from 'lucide-react';
 import logoSekolah from '../assets/logo.png';
-import type { SpmbContent, SpmbFaqItem, SpmbFlowStep, SpmbScheduleItem } from '../lib/content-types';
 import { backendApi, apiBaseUrl, resolveImageUrl, fetchStats } from '../lib/api';
 import { LoadingInline } from '../components/ui/LoadingScreen';
 import ImportModal from '../components/admin/ImportModal';
@@ -15,14 +14,16 @@ import KesemaptaanManagement from '../components/admin/KesemaptaanManagement';
 import MadingManagement from '../components/admin/MadingManagement';
 import GalleryManagement from '../components/admin/GalleryManagement';
 import BkkManagement from '../components/admin/BkkManagement';
+import KelulusanSiswaManagement from '../components/admin/KelulusanSiswaManagement';
 import StudentsManagement from '../components/admin/StudentsManagement';
 import AccountsManagement from '../components/admin/AccountsManagement';
+import SpmbManagement from '../components/admin/SpmbManagement';
 import MyProfile from '../components/admin/MyProfile';
 import { StaffAuthProvider, useStaffAuth } from '../lib/staffAuth';
 import { can, STAFF_ROLES } from '../lib/permissions';
 
-type Section = 'dashboard' | 'news' | 'programs' | 'facilities' | 'staff' | 'achievements' | 'teacherActivities' | 'educationStaff' | 'contentRecords' | 'spmb' | 'contact' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'gallery' | 'bkk' | 'myProfile';
-type EditableSection = Exclude<Section, 'dashboard' | 'contact' | 'spmb' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'gallery' | 'bkk' | 'myProfile'>;
+type Section = 'dashboard' | 'news' | 'programs' | 'facilities' | 'staff' | 'achievements' | 'teacherActivities' | 'educationStaff' | 'contentRecords' | 'spmb' | 'contact' | 'contactSettings' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'gallery' | 'bkk' | 'kelulusan' | 'myProfile';
+type EditableSection = Exclude<Section, 'dashboard' | 'contact' | 'contactSettings' | 'spmb' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'gallery' | 'bkk' | 'kelulusan' | 'myProfile'>;
 type Item = Record<string, unknown>;
 const ADMIN_SECTION_PATHS: Record<Section, string> = {
   dashboard: '/admin',
@@ -37,6 +38,7 @@ const ADMIN_SECTION_PATHS: Record<Section, string> = {
   contentRecords: '/admin/konten-beranda',
   spmb: '/admin/spmb',
   contact: '/admin/pesan-kontak',
+  contactSettings: '/admin/pengaturan-kontak',
   permissions: '/admin/role-permission',
   osis: '/admin/osis',
   extracurriculars: '/admin/ekstrakurikuler',
@@ -46,6 +48,7 @@ const ADMIN_SECTION_PATHS: Record<Section, string> = {
   accounts: '/admin/akun',
   gallery: '/admin/galeri',
   bkk: '/admin/bkk',
+  kelulusan: '/admin/kelulusan',
 };
 const sessionKey = 'smkn11-admin-session';
 const TABLE_MAP: Record<string, string> = {
@@ -65,7 +68,7 @@ const configs: Record<EditableSection, { title: string; icon: typeof FileText; f
   programs: { title: 'Program Keahlian', icon: BookOpen, fields: [{ key: 'name', label: 'Nama Program' }, { key: 'slug', label: 'Slug' }, { key: 'short_name', label: 'Singkatan' }, { key: 'short_description', label: 'Deskripsi Singkat', multiline: true }, { key: 'description', label: 'Deskripsi Lengkap', multiline: true }, { key: 'competencies', label: 'Kompetensi', type: 'list' }, { key: 'career_prospects', label: 'Prospek Karir', type: 'list' }, { key: 'facilities', label: 'Fasilitas Pendukung', type: 'list' }, { key: 'image', label: 'Gambar', type: 'image' }] },
   facilities: { title: 'Fasilitas', icon: Building2, fields: [{ key: 'name', label: 'Nama Fasilitas' }, { key: 'category', label: 'Kategori', type: 'select' }, { key: 'description', label: 'Deskripsi', multiline: true }, { key: 'photo', label: 'Foto', type: 'image' }] },
   staff: { title: 'Staf & Guru', icon: Users, fields: [{ key: 'name', label: 'Nama' }, { key: 'position', label: 'Jabatan', type: 'select' }, { key: 'department', label: 'Unit / Departemen', type: 'select' }, { key: 'photo', label: 'Foto', type: 'image' }, { key: 'description', label: 'Deskripsi Singkat', multiline: true }] },
-  achievements: { title: 'Prestasi', icon: Trophy, fields: [{ key: 'title', label: 'Judul Prestasi' }, { key: 'event', label: 'Acara' }, { key: 'level', label: 'Tingkat', type: 'select' }, { key: 'rank', label: 'Peringkat', type: 'select' }, { key: 'year', label: 'Tahun', type: 'number' }, { key: 'photo', label: 'Foto', type: 'image' }] },
+  achievements: { title: 'Prestasi Siswa', icon: Trophy, fields: [{ key: 'title', label: 'Judul Prestasi' }, { key: 'event', label: 'Acara' }, { key: 'level', label: 'Tingkat', type: 'select' }, { key: 'rank', label: 'Peringkat', type: 'select' }, { key: 'year', label: 'Tahun', type: 'number' }, { key: 'photo', label: 'Foto', type: 'image' }] },
   teacherActivities: { title: 'Kegiatan Guru', icon: CalendarDays, fields: [{ key: 'title', label: 'Judul Kegiatan' }, { key: 'category', label: 'Kategori', type: 'select' }, { key: 'date', label: 'Tanggal', type: 'date' }, { key: 'photo', label: 'Foto', type: 'image' }, { key: 'description', label: 'Deskripsi', multiline: true }] },
   educationStaff: { title: 'Tenaga Kependidikan', icon: Briefcase, fields: [{ key: 'name', label: 'Nama' }, { key: 'position', label: 'Jabatan', type: 'select' }, { key: 'department', label: 'Unit / Departemen', type: 'select' }, { key: 'photo', label: 'Foto', type: 'image' }] },
   contentRecords: { title: 'Konten Beranda', icon: FileText, fields: [{ key: 'content_type', label: 'Tipe Konten' }] },
@@ -96,25 +99,6 @@ function formatDateValue(value: unknown): string {
   return Number.isNaN(date.getTime())
     ? String(value ?? '-')
     : date.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
-}
-
-function normalizeSpmbRow(row: Record<string, unknown>): SpmbContent {
-  return {
-    id: row.id as string | undefined,
-    status: (row.status as SpmbContent['status']) || 'ditutup',
-    title: String(row.title ?? ''),
-    description: String(row.description ?? ''),
-    latest_info: String(row.latest_info ?? ''),
-    requirements: Array.isArray(row.requirements) ? (row.requirements as string[]) : [],
-    schedule: Array.isArray(row.schedule) ? (row.schedule as SpmbScheduleItem[]) : [],
-    flow_steps: Array.isArray(row.flow_steps) ? (row.flow_steps as SpmbFlowStep[]) : [],
-    faq: Array.isArray(row.faq) ? (row.faq as SpmbFaqItem[]) : [],
-    portal_url: String(row.portal_url ?? ''),
-    banner_image: String(row.banner_image ?? ''),
-    banner_title: String(row.banner_title ?? ''),
-    banner_description: String(row.banner_description ?? ''),
-    updated_at: row.updated_at as string | undefined,
-  };
 }
 
 export function AdminLogin() {
@@ -216,6 +200,7 @@ function AdminPanel() {
   const canViewStudents = isAdmin || can(permissions, 'mading.edit_all');
   const canViewGallery = isAdmin || can(permissions, 'gallery.view');
   const canViewBkk = isAdmin || can(permissions, 'job.view');
+  const canViewKelulusan = isAdmin || can(permissions, 'job.view');
 
   useEffect(() => {
     const nextSection = (Object.entries(ADMIN_SECTION_PATHS).find(([, path]) => path === location.pathname)?.[0] ?? 'dashboard') as Section;
@@ -255,7 +240,7 @@ function AdminPanel() {
     })
   }, [authLoading, isAdmin, navigate]);
 
-  const menu = (Object.keys(configs) as EditableSection[]);
+  const menu = (Object.keys(configs) as EditableSection[]).filter((key) => key !== 'achievements');
   const total = useMemo(() => Object.values(data).reduce((sum, list) => sum + list.length, 0), [data]);
   const fieldOptions = useMemo(() => {
     if (!(section in configs)) return {};
@@ -340,8 +325,8 @@ function AdminPanel() {
     if (data) setData(current => ({ ...current, [key]: data as Item[] }));
   };
 
-  const active = section === 'dashboard' ? null : section === 'myProfile' ? { title: 'Profil Saya', icon: UserRound, fields: [] } : section === 'contact' ? { title: 'Pesan Kontak', icon: Mail, fields: [] } : section === 'spmb' ? { title: 'Kelola SPMB', icon: GraduationCap, fields: [] } : section === 'permissions' ? { title: 'Role & Permission', icon: ShieldCheck, fields: [] } : section === 'osis' ? { title: 'OSIS', icon: UsersRound, fields: [] } : section === 'extracurriculars' ? { title: 'Ekstrakurikuler', icon: Dumbbell, fields: [] } : section === 'kesemaptaan' ? { title: 'Kesemaptaan', icon: ShieldCheck, fields: [] } : section === 'mading' ? { title: 'Mading', icon: Newspaper, fields: [] } : section === 'students' ? { title: 'Data Siswa', icon: UserCog, fields: [] } : section === 'accounts' ? { title: 'Kelola Akun', icon: Users, fields: [] } : section === 'gallery' ? { title: 'Galeri', icon: Camera, fields: [] } : section === 'bkk' ? { title: 'BKK (Bursa Kerja Khusus)', icon: Briefcase, fields: [] } : configs[section];
-  const editableSections = section !== 'dashboard' && section !== 'myProfile' && section !== 'contact' && section !== 'spmb' && section !== 'permissions' && section !== 'osis' && section !== 'extracurriculars' && section !== 'kesemaptaan' && section !== 'mading' && section !== 'students' && section !== 'accounts' && section !== 'gallery' && section !== 'bkk';
+  const active = section === 'dashboard' ? null : section === 'myProfile' ? { title: 'Profil Saya', icon: UserRound, fields: [] } : section === 'contact' ? { title: 'Pesan Kontak', icon: Mail, fields: [] } : section === 'contactSettings' ? { title: 'Pengaturan Kontak', icon: MapPin, fields: [] } : section === 'spmb' ? { title: 'Kelola SPMB', icon: GraduationCap, fields: [] } : section === 'permissions' ? { title: 'Role & Permission', icon: ShieldCheck, fields: [] } : section === 'osis' ? { title: 'OSIS', icon: UsersRound, fields: [] } : section === 'extracurriculars' ? { title: 'Ekstrakurikuler', icon: Dumbbell, fields: [] } : section === 'kesemaptaan' ? { title: 'Kesemaptaan', icon: ShieldCheck, fields: [] } : section === 'mading' ? { title: 'Mading', icon: Newspaper, fields: [] } : section === 'students' ? { title: 'Data Siswa', icon: UserCog, fields: [] } : section === 'accounts' ? { title: 'Kelola Akun', icon: Users, fields: [] } : section === 'gallery' ? { title: 'Galeri', icon: Camera, fields: [] } : section === 'bkk' ? { title: 'BKK (Bursa Kerja Khusus)', icon: Briefcase, fields: [] } : section === 'kelulusan' ? { title: 'Kelulusan Siswa', icon: GraduationCap, fields: [] } : configs[section];
+  const editableSections = section !== 'dashboard' && section !== 'myProfile' && section !== 'contact' && section !== 'contactSettings' && section !== 'spmb' && section !== 'permissions' && section !== 'osis' && section !== 'extracurriculars' && section !== 'kesemaptaan' && section !== 'mading' && section !== 'students' && section !== 'accounts' && section !== 'gallery' && section !== 'bkk' && section !== 'kelulusan';
 
   const navGroups: { label: string; items: { key: Section; label: string; icon: typeof FileText; visible: boolean }[] }[] = [
     { label: 'Menu', items: [
@@ -349,18 +334,23 @@ function AdminPanel() {
       { key: 'myProfile', label: 'Profil Saya', icon: UserRound, visible: true },
     ] },
     { label: 'Konten', items: menu.map((key) => ({ key: key as Section, label: configs[key].title, icon: configs[key].icon, visible: isAdmin })) },
-    { label: 'Modul Sekolah', items: [
-      { key: 'spmb', label: 'Kelola SPMB', icon: GraduationCap, visible: isAdmin },
+    { label: 'Ruang Siswa', items: [
       { key: 'osis', label: 'OSIS', icon: UsersRound, visible: canViewOsis },
       { key: 'extracurriculars', label: 'Ekstrakurikuler', icon: Dumbbell, visible: canViewEkstra },
       { key: 'kesemaptaan', label: 'Kesemaptaan', icon: ShieldCheck, visible: canViewKesemaptaan },
       { key: 'mading', label: 'Mading', icon: Newspaper, visible: canViewMading },
+      { key: 'achievements', label: 'Prestasi Siswa', icon: Trophy, visible: isAdmin },
+    ]},
+    { label: 'Modul Sekolah', items: [
+      { key: 'spmb', label: 'Kelola SPMB', icon: GraduationCap, visible: isAdmin },
       { key: 'bkk', label: 'BKK', icon: Briefcase, visible: canViewBkk },
+      { key: 'kelulusan', label: 'Kelulusan Siswa', icon: GraduationCap, visible: canViewKelulusan },
       { key: 'gallery', label: 'Galeri', icon: Camera, visible: canViewGallery },
       { key: 'students', label: 'Data Siswa', icon: UserCog, visible: canViewStudents },
     ]},
     { label: 'Sistem', items: [
       { key: 'contact', label: 'Pesan Kontak', icon: Mail, visible: isAdmin },
+      { key: 'contactSettings', label: 'Pengaturan Kontak', icon: MapPin, visible: isAdmin },
       { key: 'permissions', label: 'Role & Permission', icon: ShieldCheck, visible: isAdmin },
       { key: 'accounts', label: 'Kelola Akun', icon: Users, visible: isAdmin },
     ]},
@@ -426,7 +416,7 @@ function AdminPanel() {
             <ContactMessages items={data.contact} onMarkRead={markRead} onDelete={remove} />
           )}
 
-          {section === 'spmb' && <SPMBManagement />}
+          {section === 'spmb' && <SpmbManagement isAdmin={isAdmin} permissions={permissions} />}
 
           {section === 'permissions' && isAdmin && <RolePermissions />}
 
@@ -440,6 +430,8 @@ function AdminPanel() {
 
           {section === 'bkk' && canViewBkk && <BkkManagement permissions={permissions} isAdmin={isAdmin} />}
 
+          {section === 'kelulusan' && canViewKelulusan && <KelulusanSiswaManagement permissions={permissions} isAdmin={isAdmin} />}
+
           {section === 'gallery' && canViewGallery && <GalleryManagement />}
 
           {section === 'students' && canViewStudents && <StudentsManagement />}
@@ -447,6 +439,8 @@ function AdminPanel() {
           {section === 'accounts' && isAdmin && <AccountsManagement />}
 
           {section === 'contentRecords' && isAdmin && <HomeContentManagement />}
+
+          {section === 'contactSettings' && isAdmin && <ContactSettings />}
 
           {editableSections && section !== 'contentRecords' && (
             <>
@@ -547,11 +541,13 @@ function ContactMessages({ items, onMarkRead, onDelete }: { items: Item[]; onMar
 function Table({ items, config, onEdit, onDelete }: { items: Item[]; config: { fields: { key: string; label: string }[] }; onEdit: (item: Item) => void; onDelete?: (id: unknown) => void }) {
   const renderCell = (field: { key: string; label: string }, item: Item) => {
     if (field.key === 'photo' && item[field.key]) {
-      return <img src={resolveImageUrl(String(item[field.key]))} alt="" className="h-10 w-10 rounded-full object-cover" />;
+      const photoUrl = resolveImageUrl(String(item[field.key]));
+      return photoUrl ? <img src={photoUrl} alt="" className="h-10 w-10 rounded-full object-cover" /> : null;
     }
 
     if (['image', 'thumbnail'].includes(field.key) && item[field.key]) {
-      return <img src={resolveImageUrl(String(item[field.key]))} alt="" className="h-10 w-16 rounded object-cover" />;
+      const imgUrl = resolveImageUrl(String(item[field.key]));
+      return imgUrl ? <img src={imgUrl} alt="" className="h-10 w-16 rounded object-cover" /> : null;
     }
 
     if (field.key === 'source_label' && item.source_type === 'imported') {
@@ -958,122 +954,6 @@ function PPDBDetail({ data, onClose, onUpdateStatus, onVerifyDoc }: {
 
 */
 
-function SPMBManagement() {
-  const [content, setContent] = useState<SpmbContent | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState('');
-
-  useEffect(() => {
-    const load = async () => {
-      const { data, error } = await backendApi.database.from('spmb_content').select('*').limit(1).maybeSingle();
-      if (!error && data) setContent(normalizeSpmbRow(data as Record<string, unknown>));
-      setLoading(false);
-    };
-    load();
-  }, []);
-
-  const update = <K extends keyof SpmbContent>(key: K, value: SpmbContent[K]) => {
-    setContent((current) => current ? { ...current, [key]: value } : null);
-  };
-
-  const save = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setSaving(true);
-    setMessage('');
-    const { data: { user } } = await backendApi.auth.getCurrentUser();
-    if (!user) {
-      setMessage('Sesi telah habis. Silakan login ulang.');
-      setSaving(false);
-      return;
-    }
-    if (!content) return;
-    const { id, ...payload } = content;
-    try {
-      let dbError;
-      if (id) {
-        const { error } = await backendApi.database.from('spmb_content').update(payload).eq('id', id);
-        dbError = error;
-      } else {
-        const { error } = await backendApi.database.from('spmb_content').insert([payload]);
-        dbError = error;
-      }
-      if (dbError) throw dbError;
-      const { data: refreshed, error: refetchError } = await backendApi.database.from('spmb_content').select('*').limit(1).maybeSingle();
-      if (refetchError) throw refetchError;
-      if (!refreshed) throw new Error('Data tidak ditemukan setelah simpan.');
-      setContent(normalizeSpmbRow(refreshed as Record<string, unknown>));
-      setMessage('Informasi SPMB berhasil disimpan.');
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Gagal menyimpan informasi SPMB.');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  if (loading) return <LoadingInline />;
-  if (!content) return <p className="rounded-xl bg-white p-6 text-[#5B7088]">Data SPMB belum tersedia.</p>;
-
-  return (
-    <form onSubmit={save} className="mx-auto max-w-5xl space-y-6">
-      <div className="rounded-xl bg-white p-6 shadow-sm">
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-xl font-bold">Pengaturan Portal SPMB</h2>
-            <p className="mt-1 text-sm text-[#5B7088]">Semua informasi pada halaman publik diambil dari data ini.</p>
-          </div>
-          <label className="flex items-center gap-3 rounded-lg bg-[#FAF6F0] px-4 py-2 text-sm font-semibold">
-            Status pendaftaran
-            <select value={content.status} onChange={(event) => update('status', event.target.value as SpmbContent['status'])} className="rounded border border-[#1B2A4A]/20 bg-white px-2 py-1">
-              <option value="dibuka">Dibuka</option>
-              <option value="ditutup">Ditutup</option>
-            </select>
-          </label>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <Field label="Judul" value={content.title} onChange={(value) => update('title', value)} />
-          <Field label="Link pendaftaran resmi" type="url" value={content.portal_url} onChange={(value) => update('portal_url', value)} />
-          <Field label="Deskripsi" multiline value={content.description} onChange={(value) => update('description', value)} />
-          <Field label="Informasi pendaftaran terbaru" multiline value={content.latest_info} onChange={(value) => update('latest_info', value)} />
-        </div>
-      </div>
-
-      <div className="rounded-xl bg-white p-6 shadow-sm">
-        <h3 className="mb-4 text-lg font-bold">Banner SPMB</h3>
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="md:col-span-2"><ImageField label="Gambar banner" value={content.banner_image} onChange={(url) => update('banner_image', url)} hint="Unggah file gambar atau tempel URL." /></div>
-          <Field label="Judul banner" value={content.banner_title} onChange={(value) => update('banner_title', value)} />
-          <div className="md:col-span-2"><Field label="Deskripsi banner" multiline value={content.banner_description} onChange={(value) => update('banner_description', value)} /></div>
-        </div>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <ListField label="Persyaratan" hint="Satu persyaratan per baris." value={content.requirements.join('\n')} onChange={(value) => update('requirements', lines(value))} />
-        <ListField label="Jadwal" hint="Satu baris: kategori | tanggal | judul. Kategori: pendaftaran, seleksi, pengumuman, daftar_ulang." value={content.schedule.map((item) => `${item.category} | ${item.date} | ${item.title}`).join('\n')} onChange={(value) => update('schedule', lines(value).map((line) => { const [category = 'pendaftaran', date = '', title = ''] = line.split('|').map((part) => part.trim()); return { category: ['pendaftaran', 'seleksi', 'pengumuman', 'daftar_ulang'].includes(category) ? category as SpmbScheduleItem['category'] : 'pendaftaran', date, title }; }))} />
-        <ListField label="Alur pendaftaran" hint="Satu baris: judul | deskripsi." value={content.flow_steps.map((item) => `${item.title} | ${item.description}`).join('\n')} onChange={(value) => update('flow_steps', lines(value).map((line) => { const [title = '', ...description] = line.split('|'); return { title: title.trim(), description: description.join('|').trim() }; }))} />
-        <ListField label="FAQ" hint="Satu baris: pertanyaan | jawaban." value={content.faq.map((item) => `${item.question} | ${item.answer}`).join('\n')} onChange={(value) => update('faq', lines(value).map((line) => { const [question = '', ...answer] = line.split('|'); return { question: question.trim(), answer: answer.join('|').trim() }; }))} />
-      </div>
-
-      {message && <p className={`rounded-lg p-3 text-sm ${message.startsWith('Informasi') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>{message}</p>}
-      <div className="flex justify-end"><button disabled={saving} className="inline-flex items-center gap-2 rounded-lg bg-[#1B2A4A] px-5 py-3 font-bold text-white disabled:opacity-60"><Save size={18} /> {saving ? 'Menyimpan...' : 'Simpan Pengaturan SPMB'}</button></div>
-    </form>
-  );
-}
-
-function lines(value: string) {
-  return value.split('\n').map((item) => item.trim()).filter(Boolean);
-}
-
-function Field({ label, value, onChange, multiline = false, type = 'text' }: { label: string; value: string; onChange: (value: string) => void; multiline?: boolean; type?: string }) {
-  const className = 'mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal';
-  return <label className="block text-sm font-semibold">{label}{multiline ? <textarea value={value} onChange={(event) => onChange(event.target.value)} rows={4} className={className} /> : <input type={type} value={value} onChange={(event) => onChange(event.target.value)} className={className} />}</label>;
-}
-
-function ListField({ label, hint, value, onChange }: { label: string; hint: string; value: string; onChange: (value: string) => void }) {
-  return <label className="block rounded-xl bg-white p-6 text-sm font-semibold shadow-sm">{label}<span className="mt-1 block font-normal text-[#5B7088]">{hint}</span><textarea value={value} onChange={(event) => onChange(event.target.value)} rows={8} className="mt-3 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" /></label>;
-}
-
 function slugify(value: string) {
   return value.toLowerCase().trim().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
@@ -1318,6 +1198,94 @@ function HomeContentManagement() {
   );
 }
 
+const DEFAULT_CONTACT_SETTINGS: Record<string, string> = {
+  address: 'Kp. Saradan RT. 03/01, Desa Pangkat,\nKec. Jayanti, Kab. Tangerang, Banten 15610',
+  phone: '0812 9922 0831',
+  email: 'smkn11kabtangschool@gmail.com',
+  hours: 'Senin - Jumat, 07:00 - 15:00 WIB',
+  map_query: 'Kp. Saradan RT. 03/01, Pangkat, Jayanti, Kabupaten Tangerang, Banten 15610',
+};
+
+function ContactSettings() {
+  const [record, setRecord] = useState<Item | null>(null);
+  const [contact, setContact] = useState<Record<string, string>>({});
+  const [state, setState] = useState<'loading' | 'ready' | 'saving'>('loading');
+  const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    backendApi.database.from('content_records').select('*').eq('content_type', 'home').limit(1).maybeSingle().then((result: any) => {
+      if (cancelled) return;
+      if (result.error) setMessage({ type: 'error', text: result.error.message });
+      else if (!result.data) setMessage({ type: 'error', text: 'Record konten home tidak ditemukan.' });
+      else {
+        setRecord(result.data);
+        const data = homeData(result.data);
+        setContact({
+          address: String(data.contact?.address ?? DEFAULT_CONTACT_SETTINGS.address),
+          phone: String(data.contact?.phone ?? DEFAULT_CONTACT_SETTINGS.phone),
+          email: String(data.contact?.email ?? DEFAULT_CONTACT_SETTINGS.email),
+          hours: String(data.contact?.hours ?? DEFAULT_CONTACT_SETTINGS.hours),
+          map_query: String(data.contact?.map_query ?? DEFAULT_CONTACT_SETTINGS.map_query),
+        });
+      }
+      setState('ready');
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  const save = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!record?.id) return;
+    setState('saving');
+    setMessage(null);
+    const data = homeData(record);
+    data.contact = {
+      address: contact.address,
+      phone: contact.phone,
+      email: contact.email,
+      hours: contact.hours,
+      map_query: contact.map_query,
+    };
+    const result = await backendApi.database.from('content_records').update({ content_type: 'home', data }).eq('id', record.id);
+    if (result.error) setMessage({ type: 'error', text: result.error.message });
+    else setMessage({ type: 'success', text: 'Pengaturan kontak berhasil disimpan.' });
+    setState('ready');
+  };
+
+  const input = (label: string, key: string, multiline = false) => (
+    <label className="block text-sm font-semibold">
+      {label}
+      {multiline
+        ? <textarea rows={3} value={contact[key]} onChange={e => setContact(current => ({ ...current, [key]: e.target.value }))} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />
+        : <input value={contact[key]} onChange={e => setContact(current => ({ ...current, [key]: e.target.value }))} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />}
+    </label>
+  );
+
+  if (state === 'loading') return <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-[#C8A951]" /></div>;
+
+  return (
+    <form onSubmit={save} className="space-y-6">
+      {message && <p className={`rounded-lg p-3 text-sm ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>{message.text}</p>}
+      <fieldset className="space-y-4 rounded-lg border border-[#1B2A4A]/10 bg-white p-4 shadow-sm">
+        <legend className="px-1 font-bold">Informasi Kontak</legend>
+        <p className="text-sm font-normal text-[#5B7088]">Data ini dipakai pada halaman Kontak, footer, dan peta Google Maps.</p>
+        {input('Alamat', 'address', true)}
+        <div className="grid gap-4 sm:grid-cols-2">
+          {input('Telepon / WhatsApp', 'phone')}
+          {input('Email', 'email')}
+        </div>
+        {input('Jam Operasional', 'hours')}
+        {input('Query Google Maps', 'map_query')}
+        <p className="text-xs font-normal text-[#5B7088]">Contoh: Kp. Saradan RT. 03/01, Pangkat, Jayanti, Kabupaten Tangerang, Banten 15610</p>
+      </fieldset>
+      <div className="flex justify-end">
+        <button type="submit" disabled={state === 'saving'} className="inline-flex items-center gap-2 rounded-lg bg-[#1B2A4A] px-5 py-2.5 font-bold text-white hover:bg-[#15203a] disabled:opacity-60"><Save className="h-4 w-4" />{state === 'saving' ? 'Menyimpan...' : 'Simpan Pengaturan Kontak'}</button>
+      </div>
+    </form>
+  );
+}
+
 function HomeContentFields({ data, onChange }: { data: Record<string, any>; onChange: (data: Record<string, any>) => void }) {
   const [autoStats, setAutoStats] = useState<{ value: string; label: string }[]>([]);
 
@@ -1411,7 +1379,6 @@ function HomeContentFields({ data, onChange }: { data: Record<string, any>; onCh
     <fieldset className="space-y-4 rounded-lg border border-[#1B2A4A]/10 p-4">
       <legend className="px-1 font-bold">Sosial Media (Tampil di Footer)</legend>
       {input('Instagram', 'social', 'instagram')}
-      {input('Facebook', 'social', 'facebook')}
       {input('TikTok', 'social', 'tiktok')}
       {input('Email Sekolah', 'social', 'email')}
       <p className="text-xs font-normal text-[#5B7088]">Isi URL atau email lengkap. Kosongkan untuk menyembunyikan tautan di footer.</p>
@@ -1551,7 +1518,6 @@ function Editor({ config, item, onClose, onSave, section, options }: { config: {
           stats: [0, 1, 2, 3].map(index => ({ value: value(`stat_${index}_value`), label: value(`stat_${index}_label`) })),
           social: {
             instagram: value('social_instagram'),
-            facebook: value('social_facebook'),
             tiktok: value('social_tiktok'),
             email: value('social_email'),
           },
@@ -1569,6 +1535,7 @@ function Editor({ config, item, onClose, onSave, section, options }: { config: {
       onSave({
         ...(item ?? {}),
         ...formValues,
+        ...imageValues,
         source_type: sourceTypeValue,
         source_label: sourceLabelValue,
         source_note: sourceNoteValue,
@@ -1581,6 +1548,7 @@ function Editor({ config, item, onClose, onSave, section, options }: { config: {
     onSave({
       ...(item ?? {}),
       ...formValues,
+      ...imageValues,
       ...Object.fromEntries(listFields.map((key) => [key, String(formValues[key] ?? '').split('\n').map((value) => value.trim()).filter(Boolean)])),
     });
   };

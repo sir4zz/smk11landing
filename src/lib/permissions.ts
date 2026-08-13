@@ -56,6 +56,12 @@ export const PERMISSION_CATALOG: PermissionDef[] = [
   { slug: 'gallery.publish', name: 'Publish', module: 'gallery' },
 
   { slug: 'management.view', name: 'View', module: 'management' },
+
+  { slug: 'kelulusan.view', name: 'View', module: 'kelulusan' },
+  { slug: 'kelulusan.create', name: 'Create', module: 'kelulusan' },
+  { slug: 'kelulusan.edit', name: 'Edit', module: 'kelulusan' },
+  { slug: 'kelulusan.delete', name: 'Delete', module: 'kelulusan' },
+  { slug: 'kelulusan.verify', name: 'Verify', module: 'kelulusan' },
 ];
 
 export const PERMISSION_MODULES: { key: string; label: string }[] = [
@@ -67,6 +73,7 @@ export const PERMISSION_MODULES: { key: string; label: string }[] = [
   { key: 'mading', label: 'Mading' },
   { key: 'spmb', label: 'SPMB' },
   { key: 'gallery', label: 'Galeri' },
+  { key: 'kelulusan', label: 'Kelulusan Siswa' },
   { key: 'management', label: 'Manajemen' },
 ];
 

@@ -34,9 +34,9 @@ const Achievements: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#FAF6F0]">
       <PageHero
-        title="Prestasi"
+        title="Prestasi Siswa"
         subtitle="Raihan prestasi membanggakan siswa SMKN 11 Kabupaten Tangerang"
-        breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Prestasi' }]}
+        breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Prestasi Siswa' }]}
       />
 
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 md:py-20">

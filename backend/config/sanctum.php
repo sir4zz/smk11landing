@@ -3,7 +3,10 @@
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Laravel\Sanctum\Http\Middleware\AuthenticateSession;
-use Laravel\Sanctum\Sanctum;
+
+$appUrl = (string) env('APP_URL', 'http://localhost');
+$appHost = trim((string) parse_url($appUrl, PHP_URL_HOST));
+$appPort = parse_url($appUrl, PHP_URL_PORT);
 
 return [
 
@@ -16,14 +19,28 @@ return [
     | authentication cookies. Typically, these should include your local
     | and production domains which access your API via a frontend SPA.
     |
+    | The SANCTUM_STATEFUL_DOMAINS env value is merged with sensible defaults
+    | (common local dev ports and the app's own origin) instead of replacing
+    | them, so cookie-based SPA auth always works for the app's origin in both
+    | dev and production even when the env var is not configured.
+    |
     */
 
-    'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', sprintf(
-        '%s%s',
-        'localhost,localhost:3000,127.0.0.1,127.0.0.1:8000,::1',
-        Sanctum::currentApplicationUrlWithPort(),
-        // Sanctum::currentRequestHost(),
-    ))),
+    'stateful' => array_values(array_unique(array_filter(array_merge(
+        array_map('trim', explode(',', (string) env('SANCTUM_STATEFUL_DOMAINS', ''))),
+        [
+            'localhost',
+            'localhost:3000',
+            'localhost:5173',
+            'localhost:8000',
+            '127.0.0.1',
+            '127.0.0.1:5173',
+            '127.0.0.1:8000',
+            '::1',
+            $appHost,
+            $appPort ? $appHost.':'.$appPort : '',
+        ],
+    )))),
 
     /*
     |--------------------------------------------------------------------------

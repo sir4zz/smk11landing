@@ -1,10 +1,11 @@
 import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Home, Briefcase, Contact } from 'lucide-react'
+import { Home, Briefcase, Contact, GraduationCap } from 'lucide-react'
 
 const links = [
   { label: 'Beranda BKK', href: '/bkk', icon: Home },
   { label: 'Lowongan Kerja', href: '/bkk/lowongan', icon: Briefcase },
+  { label: 'Kelulusan Siswa', href: '/bkk/kelulusan', icon: GraduationCap },
   { label: 'Kontak BKK', href: '/bkk/kontak', icon: Contact },
 ]
 

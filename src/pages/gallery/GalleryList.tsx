@@ -44,12 +44,14 @@ function GalleryCard({ gallery, index }: { gallery: GalleryRow; index: number })
         to={`/galeri/${gallery.slug}`}
         className="group relative block aspect-[4/3] overflow-hidden rounded-[1.25rem] bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
       >
-        <img
-          src={resolveImageUrl(gallery.cover_image)}
-          alt={gallery.title}
-          loading="lazy"
-          className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-        />
+        {resolveImageUrl(gallery.cover_image) && (
+          <img
+            src={resolveImageUrl(gallery.cover_image)!}
+            alt={gallery.title}
+            loading="lazy"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+          />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-[#1B2A4A]/90 via-[#1B2A4A]/20 to-transparent opacity-80 transition-opacity duration-300 group-hover:opacity-100" />
 
         <span className="absolute left-3 top-3 rounded-full bg-[#C8A951]/95 px-3 py-1 text-xs font-semibold text-[#1B2A4A] shadow">
