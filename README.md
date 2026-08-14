@@ -64,7 +64,7 @@ Website resmi SMKN 11 Kabupaten Tangerang.
    cd ..
    ```
 
-   `db:seed` membuat akun test:
+   Pada lingkungan lokal (`APP_ENV=local`), `db:seed` membuat akun test. Seeder tidak membuat akun demo atau mengganti password akun yang sudah ada pada production:
 
    | Role  | Email / Identitas             | Password         |
    | ----- | ----------------------------- | ---------------- |

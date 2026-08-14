@@ -24,7 +24,8 @@ import SectionHeading from '../components/ui/SectionHeading';
 import StatsBar from '../components/ui/StatsBar';
 import Card from '../components/ui/Card';
 import { isImportedNews } from '../lib/content-types';
-import { fetchPublicContent, fetchGalleries, fetchHomeContent, fetchStats, resolveImageUrl, type GalleryRow, type HomeContent } from '../lib/api';
+import { fetchPublicContent, fetchGalleries, fetchHomeContent, fetchSpmbContent, fetchStats, resolveImageUrl, type GalleryRow, type HomeContent } from '../lib/api';
+import type { SpmbContent, Staff } from '../lib/content-types';
 
 const getProgramIcon = (slug: string) => {
   switch (slug) {
@@ -54,6 +55,8 @@ const Home: React.FC = () => {
   const [gallery, setGallery] = useState<GalleryRow[]>([]);
   const [galleryLoading, setGalleryLoading] = useState(true);
   const [home, setHome] = useState<HomeContent | null>(null);
+  const [principal, setPrincipal] = useState<Staff | null>(null);
+  const [spmb, setSpmb] = useState<SpmbContent | null>(null);
   const [stats, setStats] = useState<{ value: string; label: string }[]>([]);
 
   useEffect(() => {
@@ -62,6 +65,8 @@ const Home: React.FC = () => {
     fetchPublicContent<any[]>('news', { limit: 2 }).then((data) => { if (active) setPublicNews(data); });
     fetchPublicContent<any[]>('achievements', { limit: 3 }).then((data) => { if (active) setPublicAchievements(data); });
     fetchHomeContent().then((data) => { if (active) setHome(data); });
+    fetchPublicContent<Staff[]>('staff').then((data) => { if (active) setPrincipal(data.find((item) => item.position === 'Kepala Sekolah') ?? null); });
+    fetchSpmbContent().then((data) => { if (active) setSpmb(data); });
     fetchStats().then((data) => { if (active) setStats(data); });
     fetchGalleries({ page: 1, limit: 8 })
       .then(({ rows }) => { if (active) setGallery(rows); })
@@ -72,6 +77,9 @@ const Home: React.FC = () => {
 
   const heroImages = home?.hero.images ?? [];
   const heroFrameImage = home?.hero.frame_image || heroImages[1] || '';
+  const principalName = principal?.name || home?.welcome.principal_name || '';
+  const principalPosition = principal?.position || home?.welcome.principal_title || '';
+  const principalPhoto = resolveImageUrl(principal?.photo || home?.welcome.image);
   const statIcons = [Users, GraduationCap, BookOpen];
   const statsWithIcons = (stats ?? []).map((stat, index) => ({ ...stat, icon: React.createElement(statIcons[index] ?? Users, { className: 'h-6 w-6' }) }));
 
@@ -168,7 +176,7 @@ const Home: React.FC = () => {
                   <span className="mr-3 relative flex h-3 w-3">
                     <span className="relative inline-flex rounded-full h-3 w-3 bg-[#C8A951]"></span>
                   </span>
-                  Layanan 08.00 s.d 15.30 WIB
+                  {home?.contact?.hours ?? 'Layanan sekolah'}
                 </div>
               </div>
             </div>
@@ -243,10 +251,10 @@ const Home: React.FC = () => {
             {/* Image/Photo */}
             <div className="relative mx-auto w-full max-w-md lg:max-w-none">
               <div className="relative overflow-hidden rounded-3xl rounded-tr-[80px] rounded-bl-[80px] bg-[#FAF6F0] p-4 shadow-sm">
-                <img src={home?.welcome.image} alt="Kepala Sekolah SMKN 11" loading="lazy" className="h-[250px] sm:h-[350px] md:h-[450px] w-full object-cover rounded-2xl rounded-tr-[70px] rounded-bl-[70px]" />
+                <img src={principalPhoto || ''} alt="Kepala Sekolah SMKN 11" loading="lazy" className="h-[250px] sm:h-[350px] md:h-[450px] w-full object-cover rounded-2xl rounded-tr-[70px] rounded-bl-[70px]" />
                 <div className="absolute bottom-10 left-0 bg-[#1B2A4A] text-white p-4 pr-8 rounded-r-2xl shadow-xl border-l-4 border-[#C8A951]">
-                  <h4 className="font-bold text-lg">{home?.welcome.principal_name}</h4>
-                  <p className="text-[#F9E7A8] text-sm">{home?.welcome.principal_title}</p>
+                  <h4 className="font-bold text-lg">{principalName}</h4>
+                  <p className="text-[#F9E7A8] text-sm">{principalPosition}</p>
                 </div>
               </div>
               <div className="absolute -z-10 -bottom-5 -right-5 h-full w-full rounded-3xl rounded-tr-[80px] rounded-bl-[80px] border-2 border-[#C8A951]/20"></div>
@@ -443,9 +451,9 @@ const Home: React.FC = () => {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="overflow-hidden rounded-[2rem] bg-[#1B2A4A] p-8 text-center text-white shadow-2xl md:p-16">
             <div className="mx-auto max-w-3xl">
-              <p className="text-sm uppercase tracking-[0.3em] text-[#C8A951]">SPMB 2026/2027</p>
-              <h2 className="mt-4 text-3xl font-bold sm:text-4xl">Dapatkan informasi lengkap SPMB SMKN 11 Kabupaten Tangerang.</h2>
-              <p className="mt-6 text-lg font-medium text-white/95">Lihat persyaratan, jadwal, alur, dan tautan menuju portal resmi SPMB Provinsi Banten.</p>
+              <p className="text-sm uppercase tracking-[0.3em] text-[#C8A951]">Informasi SPMB</p>
+              <h2 className="mt-4 text-3xl font-bold sm:text-4xl">{spmb?.banner_title || spmb?.title || 'Informasi SPMB SMKN 11 Kabupaten Tangerang'}</h2>
+              <p className="mt-6 text-lg font-medium text-white/95">{spmb?.banner_description || spmb?.description || 'Lihat persyaratan, jadwal, alur, dan tautan menuju portal resmi SPMB Provinsi Banten.'}</p>
               <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
                 <Button as="link" href="/spmb" variant="primary" size="lg" className="px-8">
                   Lihat Informasi SPMB

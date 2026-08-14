@@ -2,13 +2,13 @@ import React, { useEffect, useState } from 'react';
 import PageHero from '../../components/ui/PageHero';
 import type { Facility } from '../../lib/content-types';
 import Card from '../../components/ui/Card';
-import { fetchPublicContent } from '../../lib/api';
+import { fetchPublicContent, resolveImageUrl } from '../../lib/api';
 
 const Facilities: React.FC = () => {
   const [filter, setFilter] = useState<string>('Semua');
   const [items, setItems] = useState<Facility[]>([]);
   useEffect(() => { fetchPublicContent<Facility[]>('facilities').then(setItems); }, []);
-  const categories = ['Semua', 'Akademik', 'Fasilitas Umum', 'Keagamaan', 'Pendukung'];
+  const categories = ['Semua', ...new Set(items.map((facility) => facility.category).filter(Boolean))];
 
   const filteredFacilities = filter === 'Semua'
     ? items
@@ -37,7 +37,7 @@ const Facilities: React.FC = () => {
 
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           {filteredFacilities.map((facility: Facility) => (
-            <Card key={facility.id} image={facility.photo} title={facility.name} description={facility.description} badge={facility.category} className="h-full">
+            <Card key={facility.id} image={resolveImageUrl(facility.photo)} title={facility.name} description={facility.description} badge={facility.category} className="h-full">
               <div className="flex flex-col flex-1 p-6">
                 <p className="mb-3 text-xs font-semibold uppercase tracking-[0.3em] text-[#866D2C]">{facility.category}</p>
                 <h3 className="mb-3 text-xl font-semibold text-[#1B2A4A]">{facility.name}</h3>

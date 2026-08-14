@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Calendar, Image as ImageIcon, MapPin, Images, Play } from 'lucide-react';
 import PageHero from '../../components/ui/PageHero';
-import { fetchGalleries, fetchGalleryCategories, resolveImageUrl, GALLERY_CATEGORIES, type GalleryRow, type GalleryMeta } from '../../lib/api';
+import { fetchGalleries, fetchGalleryCategories, resolveImageUrl, type GalleryRow, type GalleryMeta } from '../../lib/api';
 
 const PAGE_SIZE = 9;
 
@@ -146,7 +146,7 @@ export default function GalleryList() {
   const years = Array.from(new Set(galleries.map((g) => (g.event_date ? new Date(g.event_date).getFullYear() : null)).filter(Boolean))) as number[];
   years.sort((a, b) => b - a);
 
-  const categoryOptions = Array.from(new Set([...GALLERY_CATEGORIES, ...categories]));
+  const categoryOptions = Array.from(new Set(categories));
 
   return (
     <div className="min-h-screen bg-[#FAF6F0]">

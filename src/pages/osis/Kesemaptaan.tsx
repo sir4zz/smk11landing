@@ -52,7 +52,7 @@ const Kesemaptaan: React.FC = () => {
         <SectionHeading title="Profil Kesemaptaan" subtitle="Identitas dan pengantar program kesemaptaan" align="center" />
         <div className="mt-10 flex flex-col items-center gap-8 rounded-2xl border border-[#1B2A4A]/10 bg-white p-8 shadow-sm md:flex-row md:p-10">
           <div className="grid h-44 w-44 shrink-0 place-items-center rounded-2xl bg-[#1B2A4A] p-6 text-white">
-            <Shield className="h-16 w-16 text-[#C8A951]" />
+            {profile.photo && resolveImageUrl(profile.photo) ? <img src={resolveImageUrl(profile.photo)!} alt={profile.title} className="h-full w-full rounded-xl object-cover" /> : <Shield className="h-16 w-16 text-[#C8A951]" />}
           </div>
           <div className="text-center md:text-left">
             <h3 className="text-2xl font-bold text-[#1B2A4A]">{profile.title}</h3>
@@ -80,7 +80,7 @@ const Kesemaptaan: React.FC = () => {
                   <p className="mt-3 text-sm leading-6 text-[#F3E8D0]/90">{activity.description}</p>
                   {Array.isArray(activity.documentation) && activity.documentation.length > 0 && (
                     <div className="mt-4 grid grid-cols-2 gap-2">
-                      {activity.documentation.map((url, i) => <img key={i} src={url} alt={`Dokumentasi ${i + 1}`} loading="lazy" className="h-24 w-full rounded-lg object-cover" />)}
+                      {activity.documentation.map((url, i) => <img key={i} src={resolveImageUrl(url)} alt={`Dokumentasi ${i + 1}`} loading="lazy" className="h-24 w-full rounded-lg object-cover" />)}
                     </div>
                   )}
                 </article>
@@ -158,7 +158,7 @@ const Kesemaptaan: React.FC = () => {
                 <p className="mt-2 text-sm leading-6 text-[#23314D]">{a.description}</p>
                 {Array.isArray(a.documentation) && a.documentation.length > 0 && (
                   <div className="mt-3 grid grid-cols-2 gap-2">
-                    {a.documentation.map((doc, i) => <img key={i} src={doc} alt={`Dokumentasi ${i + 1}`} loading="lazy" className="h-24 w-full rounded-lg object-cover" />)}
+                    {a.documentation.map((doc, i) => <img key={i} src={resolveImageUrl(doc)} alt={`Dokumentasi ${i + 1}`} loading="lazy" className="h-24 w-full rounded-lg object-cover" />)}
                   </div>
                 )}
               </article>

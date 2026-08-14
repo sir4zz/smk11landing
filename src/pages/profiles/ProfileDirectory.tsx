@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Users, BookOpen, Loader2, Search } from 'lucide-react';
 import PageHero from '../../components/ui/PageHero';
-import { publicProfileApi, type PublicDirectory, type PublicDirectoryEntry } from '../../lib/api';
+import { publicProfileApi, resolveImageUrl, type PublicDirectory, type PublicDirectoryEntry } from '../../lib/api';
 
 type Tab = 'guru' | 'osis';
 
@@ -91,8 +91,8 @@ function EntryCard({ entry }: { entry: PublicDirectoryEntry }) {
       className="group flex items-center gap-4 rounded-2xl bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
     >
       <div className="grid h-16 w-16 shrink-0 place-items-center overflow-hidden rounded-full bg-[#FAF6F0]">
-        {entry.photo ? (
-                        <img src={entry.photo} alt={entry.name} loading="lazy" className="h-full w-full object-cover" />
+        {resolveImageUrl(entry.photo) ? (
+                        <img src={resolveImageUrl(entry.photo)} alt={entry.name} loading="lazy" className="h-full w-full object-cover" />
         ) : (
           <Users className="h-7 w-7 text-[#C8A951]/60" />
         )}

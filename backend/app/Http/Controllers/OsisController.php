@@ -73,7 +73,7 @@ class OsisController extends Controller
     // ---------- ACTIVITIES ----------
     public function activities()
     {
-        return response()->json(OsisActivity::query()->orderBy('activity_date', 'desc')->get());
+        return response()->json(OsisActivity::query()->where('status', 'published')->orderBy('activity_date', 'desc')->get());
     }
 
     public function storeActivity(Request $request)
