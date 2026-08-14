@@ -3,7 +3,7 @@ import type { ChangeEvent } from 'react';
 import {
   Plus, Pencil, Trash2, X, Save, Loader2, Search, ChevronLeft, ChevronRight,
   GraduationCap, BarChart3, ClipboardCheck, FileText, Download, Users,
-  Briefcase, BookOpen, Store, Clock, CheckCircle, XCircle, AlertCircle,
+  Briefcase, BookOpen, Store, Clock, CheckCircle,
 } from 'lucide-react';
 import {
   kelulusanAdminApi,
@@ -40,7 +40,7 @@ const verificationStyles: Record<string, string> = {
   ditolak: 'bg-red-50 text-red-700',
 };
 
-export default function KelulusanSiswaManagement({ permissions, isAdmin }: Props) {
+export default function KelulusanSiswaManagement({ permissions, isAdmin: _isAdmin }: Props) {
   const [tab, setTab] = useState<'dashboard' | 'data' | 'rekap'>('dashboard');
 
   const tabs = [
@@ -219,7 +219,7 @@ function DashboardTab() {
 // TAB: DATA KELULUSAN
 // ==========================================================================
 
-function DataTab({ permissions, isAdmin }: { permissions: string[]; isAdmin: boolean }) {
+function DataTab({ permissions, isAdmin: _isAdmin }: { permissions: string[]; isAdmin: boolean }) {
   const [rows, setRows] = useState<AlumniGraduationRow[]>([]);
   const [meta, setMeta] = useState<JobListMeta>({ total: 0, page: 1, limit: PAGE_SIZE, last_page: 1 });
   const [loading, setLoading] = useState(true);

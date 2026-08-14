@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Globe, Link2, Mail, Phone, MapPin, Medal, Award, Briefcase, GraduationCap, Users, BookOpen, Compass, ArrowLeft, Loader2, Trophy, Camera, ThumbsUp, MessageCircle, Music2, Video, Contact, Code } from 'lucide-react';
 import PageHero from '../../components/ui/PageHero';
-import { publicProfileApi, type PublicProfile, type PublicProfileType } from '../../lib/api';
+import { publicProfileApi, resolveImageUrl, type PublicProfile, type PublicProfileType } from '../../lib/api';
 
 const ROLE_META: Record<string, { label: string; badge: string }> = {
   guru: { label: 'Guru', badge: 'bg-blue-50 text-blue-700' },
@@ -97,8 +97,8 @@ function ProfilePage() {
           <div>
             <div className="rounded-2xl bg-white p-6 text-center shadow-sm">
               <div className="mx-auto mb-4 grid h-40 w-40 place-items-center overflow-hidden rounded-full border-4 border-[#C8A951]/50 bg-[#FAF6F0]">
-                {profile.photo ? (
-                  <img src={profile.photo} alt={profile.name} className="h-full w-full object-cover" />
+                {resolveImageUrl(profile.photo) ? (
+                  <img src={resolveImageUrl(profile.photo)} alt={profile.name} className="h-full w-full object-cover" />
                 ) : (
                   <Users className="h-16 w-16 text-[#C8A951]/60" />
                 )}

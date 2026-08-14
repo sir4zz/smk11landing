@@ -40,7 +40,7 @@ class KesemaptaanController extends Controller
     // ---------- ACTIVITIES ----------
     public function activities()
     {
-        return response()->json(KesemaptaanActivity::query()->orderBy('activity_date', 'desc')->get());
+        return response()->json(KesemaptaanActivity::query()->where('status', 'published')->orderBy('activity_date', 'desc')->get());
     }
 
     public function storeActivity(Request $request)

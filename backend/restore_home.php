@@ -2,7 +2,11 @@
 
 use App\Models\ContentRecord;
 
-ContentRecord::updateOrCreate(
+if (! app()->environment(['local', 'testing'])) {
+    throw new RuntimeException('restore_home.php is restricted to local and testing environments.');
+}
+
+ContentRecord::firstOrCreate(
     ['content_type' => 'home'],
     ['data' => [
         'hero' => ['images' => ['/images/hero/hero-1.jpg', '/images/hero/hero-2.jpg', '/images/hero/hero-3.jpg'], 'frame_image' => '/images/hero/frame.jpg', 'description' => 'Sekolah kejuruan favorit yang menyiapkan lulusan unggul, berkarakter, dan memiliki kompetensi tinggi sesuai kebutuhan industri masa depan.', 'accreditation' => 'Peringkat B', 'facility_title' => 'Fasilitas Modern', 'facility_description' => 'Mendukung penuh kompetensi siswa di era digital.'],
