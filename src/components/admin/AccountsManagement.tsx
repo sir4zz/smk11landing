@@ -19,6 +19,8 @@ const ROLE_HINTS: Record<AccountRole, string> = {
   student: 'Login ke Mading menggunakan NISN + PIN.',
 };
 
+const RELIGION_OPTIONS = ['', 'Islam', 'Kristen Protestan', 'Kristen Katolik', 'Hindu', 'Buddha', 'Khonghucu'];
+
 interface FormValues {
   role: AccountRole;
   name: string;
@@ -30,11 +32,13 @@ interface FormValues {
   position: string;
   division: string;
   nisn: string;
+  nis: string;
   class: string;
   major: string;
   gender: string;
   date_of_birth: string;
   place_of_birth: string;
+  religion: string;
   address: string;
   pin: string;
   status: 'active' | 'inactive';
@@ -47,7 +51,7 @@ interface FormValues {
 const emptyForm = (role: AccountRole = 'guru'): FormValues => ({
   role, name: '', email: '', password: '',
   nip: '', nuptk: '', subject: '', position: '', division: '',
-  nisn: '', class: '', major: '', gender: '', date_of_birth: '', place_of_birth: '', address: '', pin: '',
+  nisn: '', nis: '', class: '', major: '', gender: '', date_of_birth: '', place_of_birth: '', religion: '', address: '', pin: '',
   status: 'active', must_change_password: false,
   achievements: '', certifications: '', work_programs: '',
 });
@@ -108,11 +112,13 @@ export default function AccountsManagement() {
       position: account.guru?.position ?? account.osis?.position ?? '',
       division: account.osis?.division ?? '',
       nisn: account.nisn ?? account.osis?.nisn ?? '',
+      nis: account.nis ?? '',
       class: account.class ?? '',
       major: account.major ?? '',
       gender: account.gender ?? '',
       date_of_birth: account.date_of_birth ?? '',
       place_of_birth: account.place_of_birth ?? '',
+      religion: account.religion ?? '',
       address: account.address ?? '',
       pin: '',
       status: account.status === 'inactive' ? 'inactive' : 'active',
@@ -150,10 +156,12 @@ export default function AccountsManagement() {
         if (needsPin) throw new Error('PIN minimal 4 karakter.');
         payload = {
           role: 'student', name, nisn,
+          nis: form.nis.trim(),
           class: form.class.trim(), major: form.major.trim(),
           gender: form.gender,
           date_of_birth: form.date_of_birth,
           place_of_birth: form.place_of_birth.trim(),
+          religion: form.religion,
           address: form.address.trim(),
           achievements: splitLines(form.achievements),
           status: form.status, must_change_password: form.must_change_password,
@@ -281,7 +289,7 @@ export default function AccountsManagement() {
                 <td className="p-4"><span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${ROLE_BADGES[account.role]}`}>{ROLE_LABELS[account.role]}</span></td>
                 <td className="p-4 text-[#23314D]">
                   {account.role === 'student' && (
-                    <div className="font-mono text-xs"><p>NISN {account.nisn || '-'} · PIN {account.pin || '-'}</p><p className="text-[#5B7088]">{account.class || '-'} · {account.major || '-'}</p></div>
+                    <div className="font-mono text-xs"><p>NISN {account.nisn || '-'} · PIN {account.pin || '-'}</p><p className="text-[#5B7088]">{account.class || '-'} · {account.major || '-'}</p><p className="text-[#5B7088]">{[account.nis ? `NIS ${account.nis}` : '', account.religion].filter(Boolean).join(' · ')}</p></div>
                   )}
                   {account.role === 'guru' && account.guru && (
                     <div className="font-mono text-xs"><p>ID Guru {account.guru.teacher_id || '-'}</p><p className="text-[#5B7088]">{account.guru.nip ? `NIP ${account.guru.nip}` : ''}{account.guru.nip && account.guru.nuptk ? ' · ' : ''}{account.guru.nuptk ? `NUPTK ${account.guru.nuptk}` : ''}</p><p className="text-[#5B7088]">{[account.guru.position, account.guru.subject].filter(Boolean).join(' · ')}</p></div>
@@ -336,6 +344,7 @@ export default function AccountsManagement() {
               {form.role === 'student' && (
                 <>
                   <Field label="NISN" value={form.nisn} onChange={setField('nisn')} placeholder="cth. 0061234567" />
+                  <Field label="NIS (Nomor Induk)" value={form.nis} onChange={setField('nis')} placeholder="cth. 12345" />
                   <Field label="Kelas" value={form.class} onChange={setField('class')} placeholder="cth. X TJKT 1" />
                   <Field label="Jurusan" value={form.major} onChange={setField('major')} placeholder="cth. Teknik Jaringan" />
                   <label className="block text-sm font-semibold">Jenis Kelamin
@@ -349,6 +358,11 @@ export default function AccountsManagement() {
                     <input value={form.date_of_birth} type="date" onChange={setField('date_of_birth')} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />
                   </label>
                   <Field label="Tempat Lahir" value={form.place_of_birth} onChange={setField('place_of_birth')} placeholder="cth. Bandung" />
+                  <label className="block text-sm font-semibold">Agama
+                    <select value={form.religion} onChange={setField('religion')} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 bg-white px-3 py-2 font-normal">
+                      {RELIGION_OPTIONS.map((r) => <option key={r} value={r}>{r || 'Pilih'}</option>)}
+                    </select>
+                  </label>
                   <div className="sm:col-span-2">
                     <label className="block text-sm font-semibold">Alamat
                       <textarea value={form.address} onChange={setField('address')} rows={2} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" placeholder="Alamat lengkap" />
