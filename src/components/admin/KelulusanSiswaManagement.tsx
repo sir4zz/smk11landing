@@ -40,7 +40,7 @@ const verificationStyles: Record<string, string> = {
   ditolak: 'bg-red-50 text-red-700',
 };
 
-export default function KelulusanSiswaManagement({ permissions, isAdmin: _isAdmin }: Props) {
+export default function KelulusanSiswaManagement({ permissions, isAdmin }: Props) {
   const [tab, setTab] = useState<'dashboard' | 'data' | 'rekap'>('dashboard');
 
   const tabs = [

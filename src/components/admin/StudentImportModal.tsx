@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { AlertTriangle, CheckCircle2, Download, FileSpreadsheet, Loader2, Upload, X } from 'lucide-react';
-import { backendApi } from '../../lib/api';
+import { accountsApi } from '../../lib/api';
 import { TEMPLATE_COLUMNS, TEMPLATE_HEADER_ROWS, normalizeGender, toDateString } from '../../lib/studentBiodata';
 
 interface ImportResult {
@@ -85,7 +85,7 @@ export default function StudentImportModal({ onClose, onImported }: { onClose: (
     setProgress('');
     setResult(null);
 
-    const { data, error: apiError } = await backendApi.database.rpc('admin_import_students', { rows });
+    const { data, error: apiError } = await accountsApi.importStudents(rows);
 
     if (apiError) {
       setResult({ imported: 0, skipped: rows.length, errors: [{ row: 9, message: apiError.message ?? 'Gagal mengimport siswa.' }] });

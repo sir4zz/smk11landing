@@ -17,7 +17,7 @@ use Illuminate\Support\Str;
 class AccountService
 {
     /**
-     * Resolve a login identifier (email, NIP, NUPTK, teacher_id, NISN or
+     * Resolve a login identifier (email, NIP, NUPTK, teacher_id, NIS, NISN or
      * member_id) to a user account, or null when not found.
      */
     public function resolveUser(string $identifier): ?User
@@ -51,7 +51,10 @@ class AccountService
             return User::query()->find($osis->id);
         }
 
-        $student = Student::query()->where('nisn', $term)->first();
+        $student = Student::query()
+            ->where('nisn', $term)
+            ->orWhere('nis', $term)
+            ->first();
 
         if ($student) {
             return User::query()->find($student->id);
@@ -125,6 +128,14 @@ class AccountService
         return 'nisn-'.$nisn.'@mading.smkn11.sch.id';
     }
 
+    /** Keep all email mirrors for a student account identical. */
+    public function syncStudentEmails(User $user, string $email): void
+    {
+        $user->update(['email' => $email]);
+        $user->profileRecord?->update(['email' => $email]);
+        $user->student?->account?->update(['email' => $email]);
+    }
+
     /**
      * Daftar seluruh kolom biodata (Section 1-9 template BIODATA) pada tabel
      * students. Dipakai oleh AccountController & StudentController.
@@ -133,33 +144,7 @@ class AccountService
      */
     public function biodataKeys(): array
     {
-        $parentCols = ['nama', 'tempat', 'tanggal_lahir', 'agama', 'kewarganegaraan', 'pendidikan', 'pekerjaan', 'penghasilan', 'alamat', 'no_telp', 'status_hidup'];
-        $keys = [
-            // Section 1
-            'nickname', 'kewarganegaraan', 'anak_ke', 'jml_saudara_kandung', 'jml_saudara_tiri',
-            'anak_yatim_piatu', 'bahasa_sehari_hari',
-            // Section 2
-            'phone', 'tinggal_dengan', 'jarak_sekolah',
-            // Section 3
-            'golongan_darah', 'penyakit', 'kelainan_jasmani', 'tinggi_cm', 'berat_kg',
-            // Section 4
-            'lulusan_dari', 'tanggal_sttb', 'nomor_sttb', 'lama_belajar', 'pindahan_dari',
-            'alasan_pindah', 'diangkat', 'kompetensi_keahlian', 'tanggal_diterima',
-            // Section 5-7
-        ];
-
-        foreach (['ayah', 'ibu', 'wali'] as $p) {
-            foreach ($parentCols as $c) {
-                $keys[] = "{$p}_{$c}";
-            }
-        }
-
-        return array_merge($keys, [
-            // Section 8
-            'gemar_kesenian', 'gemar_olahraga', 'gemar_kemasyarakatan', 'gemar_lain',
-            // Section 9
-            'siswa_status', 'siswa_tanggal',
-        ]);
+        return Student::BIODATA_KEYS;
     }
 
     /**
@@ -276,18 +261,19 @@ class AccountService
     public function profilePayload(User $user): array
     {
         $profile = $user->profileRecord;
+        $student = $user->student;
 
         return [
             'id' => $user->id,
             'role' => $profile?->role,
             'status' => $profile?->status ?? 'active',
             'must_change_password' => (bool) ($profile?->must_change_password ?? false),
-            'name' => $user->name,
+            'name' => $student?->name ?? $user->name,
             'email' => $user->email,
-            'phone' => $profile?->phone ?? '',
-            'photo' => $profile?->photo ?? '',
+            'phone' => $student?->phone ?? $profile?->phone ?? '',
+            'photo' => $student?->foto ?? $profile?->photo ?? '',
             'bio' => $profile?->bio ?? '',
-            'address' => $profile?->address ?? '',
+            'address' => $student?->address ?? $profile?->address ?? '',
             'social' => [
                 'instagram' => $profile?->instagram ?? '',
                 'facebook' => $profile?->facebook ?? '',
@@ -315,7 +301,7 @@ class AccountService
                 'achievements' => $user->osisAccount->achievements ?? [],
                 'work_programs' => $user->osisAccount->work_programs ?? [],
             ] : null,
-            'student' => $user->student ? $this->studentPayload($user->student) : null,
+            'student' => $student ? $this->studentPayload($student) : null,
         ];
     }
 

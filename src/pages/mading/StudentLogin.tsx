@@ -80,8 +80,8 @@ export default function StudentLogin() {
           {error && <p className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
 
           <label className="mb-4 block text-sm font-semibold text-[#1B2A4A]">
-            NISN
-            <input name="nisn" inputMode="numeric" pattern="[0-9]*" required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2" placeholder="cth. 0061234567" />
+            NIS / NISN
+            <input name="nisn" inputMode="numeric" pattern="[0-9]*" required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2" placeholder="cth. 12345 atau 0061234567" />
           </label>
           <label className="mb-6 block text-sm font-semibold text-[#1B2A4A]">
             PIN / Password

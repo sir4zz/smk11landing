@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Profile;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ProfileController extends Controller
 {
@@ -27,6 +28,15 @@ class ProfileController extends Controller
             return response()->json(null, 403);
         }
 
+        $profile = $profile->fresh();
+        if ($user->student) {
+            $student = $user->student->fresh();
+            $profile->name = $student->name;
+            $profile->phone = $student->phone;
+            $profile->address = $student->address;
+            $profile->photo = $student->foto;
+        }
+
         return response()->json($profile);
     }
 
@@ -43,14 +53,25 @@ class ProfileController extends Controller
         $payload = $request->all();
         unset($payload['id'], $payload['role']);
 
-        if (isset($payload['phone'])) {
-            $profile->phone = $payload['phone'];
-        }
-        if (isset($payload['name'])) {
-            $profile->name = $payload['name'];
-        }
-        $profile->updated_at = now();
-        $profile->save();
+        DB::transaction(function () use ($user, $profile, $payload) {
+            if ($user->student) {
+                $studentUpdates = [];
+                foreach (['name', 'address'] as $field) {
+                    if (isset($payload[$field])) $studentUpdates[$field] = $payload[$field];
+                }
+                if (isset($payload['phone'])) $studentUpdates['phone'] = $payload['phone'];
+                if (isset($payload['photo'])) $studentUpdates['foto'] = $payload['photo'];
+                if ($studentUpdates) {
+                    $user->student->update($studentUpdates);
+                    if (isset($studentUpdates['name'])) $user->update(['name' => $studentUpdates['name']]);
+                }
+            } else {
+                if (isset($payload['phone'])) $profile->phone = $payload['phone'];
+                if (isset($payload['name'])) $profile->name = $payload['name'];
+                $profile->updated_at = now();
+                $profile->save();
+            }
+        });
 
         return response()->json($profile);
     }

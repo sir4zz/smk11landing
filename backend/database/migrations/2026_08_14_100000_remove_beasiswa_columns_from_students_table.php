@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -21,6 +22,17 @@ return new class extends Migration
                 $columns[] = 'menerima_beasiswa';
             }
 
+            // Keep legacy scholarship data instead of silently destroying it.
+            if ($columns !== [] && DB::table('students')->where(function ($query) use ($columns) {
+                foreach ($columns as $column) {
+                    $query->orWhereNotNull($column);
+                }
+            })->exists()) {
+                throw new \RuntimeException(
+                    'Cannot remove scholarship columns: students table contains scholarship data. Export or migrate it first.'
+                );
+            }
+
             if ($columns !== []) {
                 $table->dropColumn($columns);
             }
@@ -35,6 +47,9 @@ return new class extends Migration
             }
             if (! Schema::hasColumn('students', 'beasiswa_dari')) {
                 $table->string('beasiswa_dari', 100)->nullable();
+            }
+            if (! Schema::hasColumn('students', 'menerima_beasiswa')) {
+                $table->boolean('menerima_beasiswa')->nullable();
             }
         });
     }

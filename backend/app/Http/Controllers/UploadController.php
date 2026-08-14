@@ -41,7 +41,7 @@ class UploadController extends Controller
             @unlink($imagePath->getPathname());
         }
 
-        $url = Storage::disk('public')->url($key);
+        $url = '/storage/'.$key;
 
         return response()->json([
             'data' => [

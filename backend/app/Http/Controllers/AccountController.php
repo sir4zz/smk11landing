@@ -43,7 +43,7 @@ class AccountController extends Controller
                     ->orWhere('name', 'like', $term)
                     ->orWhereHas('guru', fn ($g) => $g->where('nip', 'like', $term)->orWhere('nuptk', 'like', $term)->orWhere('teacher_id', 'like', $term))
                     ->orWhereHas('osisAccount', fn ($o) => $o->where('member_id', 'like', $term)->orWhere('nisn', 'like', $term))
-                    ->orWhereHas('student', fn ($s) => $s->where('nisn', 'like', $term));
+                    ->orWhereHas('student', fn ($s) => $s->where('nisn', 'like', $term)->orWhere('nis', 'like', $term));
             });
         }
 
@@ -346,8 +346,7 @@ class AccountController extends Controller
             if (User::query()->where('email', $email)->exists()) {
                 throw $this->httpFail('NISN sudah terdaftar.');
             }
-            $user->update(['email' => $email]);
-            StudentAccount::query()->where('student_id', $user->id)->update(['email' => $email]);
+            $this->accounts->syncStudentEmails($user, $email);
         }
 
         if ($student) {
@@ -385,6 +384,7 @@ class AccountController extends Controller
         }
         $user->update($updates);
         $user->profileRecord?->update($this->profileStatusUpdates($request) + ['name' => $name]);
+        $this->accounts->syncStudentEmails($user, $this->accounts->studentEmail($nisn));
     }
 
     private function updateStaff(User $user, Request $request, string $targetRole): void
@@ -607,9 +607,10 @@ class AccountController extends Controller
         $payload = [
             'id' => $user->id,
             'email' => $user->email,
-            'name' => $user->name,
+            'name' => $user->student?->name ?? $user->name,
             'role' => $profile?->role ?? 'applicant',
-            'phone' => $profile?->phone ?? '',
+            'phone' => $user->student?->phone ?? $profile?->phone ?? '',
+            'photo' => $user->student?->foto ?? $profile?->photo ?? '',
             'status' => $profile?->status ?? 'active',
             'must_change_password' => (bool) ($profile?->must_change_password ?? false),
             'nisn' => $user->student?->nisn ?? '',
@@ -621,7 +622,7 @@ class AccountController extends Controller
             'date_of_birth' => $user->student?->date_of_birth?->toDateString() ?? '',
             'place_of_birth' => $user->student?->place_of_birth ?? '',
             'religion' => $user->student?->religion ?? '',
-            'address' => $user->student?->address ?? '',
+            'address' => $user->student?->address ?? $profile?->address ?? '',
             'achievements' => $this->roleAchievements($user),
             'guru' => $user->guru ? [
                 'nip' => $user->guru->nip ?? '',
