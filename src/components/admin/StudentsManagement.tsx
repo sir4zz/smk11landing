@@ -480,16 +480,9 @@ function StudentDetailView({ student, onBack, onEdit }: { student: StudentRow; o
   return (
     <div className="overflow-hidden rounded-xl bg-white shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#1B2A4A]/10 p-6">
-        <div className="flex items-center gap-4">
-          {student.foto ? (
-            <img src={resolveImageUrl(student.foto)} alt={student.name} className="h-16 w-16 rounded-full object-cover" />
-          ) : (
-            <span className="grid h-16 w-16 place-items-center rounded-full bg-[#FAF6F0]"><UserRound className="h-8 w-8 text-[#866D2C]" /></span>
-          )}
-          <div>
-            <h2 className="text-xl font-bold text-[#1B2A4A]">Detail Siswa</h2>
-            <p className="mt-1 text-sm text-[#5B7088]">{student.name} — NISN {student.nisn}</p>
-          </div>
+        <div>
+          <h2 className="text-xl font-bold text-[#1B2A4A]">Detail Siswa</h2>
+          <p className="mt-1 text-sm text-[#5B7088]">{student.name} — NISN {student.nisn}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button onClick={onEdit} className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-4 py-2 font-bold text-[#1B2A4A]"><Pencil size={16} /> Edit Siswa</button>
@@ -500,20 +493,32 @@ function StudentDetailView({ student, onBack, onEdit }: { student: StudentRow; o
       <div className="space-y-6 p-6">
         {BIODATA_SECTIONS.map((section) => {
           const fields = BIODATA_FIELDS.filter((f) => f.section === section.id);
+          const isIdentity = section.id === 'identity';
           return (
             <div key={section.id} className="rounded-xl border border-[#1B2A4A]/10 p-4">
               <p className="mb-3 font-bold text-[#1B2A4A]">{section.title}</p>
-              <dl className="grid gap-x-8 gap-y-1.5 text-sm sm:grid-cols-2">
-                {section.id === 'identity' && (
-                  <DetailRow label="PIN Login" value={student.pin} />
+              <div className={`flex flex-col gap-4 sm:flex-row ${isIdentity ? '' : 'sm:flex-col'}`}>
+                {isIdentity && (
+                  <div className="shrink-0">
+                    {student.foto ? (
+                      <img src={resolveImageUrl(student.foto)} alt={student.name} className="h-32 w-32 rounded-lg border border-[#1B2A4A]/10 object-cover" />
+                    ) : (
+                      <span className="grid h-32 w-32 place-items-center rounded-lg border border-dashed border-[#1B2A4A]/20 bg-[#FAF6F0]"><UserRound className="h-12 w-12 text-[#866D2C]/50" /></span>
+                    )}
+                  </div>
                 )}
-                {fields.map((field) => (
-                  <DetailRow key={field.key} label={field.label} value={detailValue(field, student[field.key])} />
-                ))}
-                {section.id === 'identity' && achievementsText && (
-                  <DetailRow label="Prestasi" value={achievementsText} />
-                )}
-              </dl>
+                <dl className="grid flex-1 gap-x-8 gap-y-1.5 text-sm sm:grid-cols-2">
+                  {isIdentity && (
+                    <DetailRow label="PIN Login" value={student.pin} />
+                  )}
+                  {fields.map((field) => (
+                    <DetailRow key={field.key} label={field.label} value={detailValue(field, student[field.key])} />
+                  ))}
+                  {isIdentity && achievementsText && (
+                    <DetailRow label="Prestasi" value={achievementsText} />
+                  )}
+                </dl>
+              </div>
             </div>
           );
         })}
