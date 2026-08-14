@@ -11,7 +11,7 @@ class StudentAuthController extends Controller
 {
     /**
      * Replica of public.get_student_login_email(p_nisn):
-     * resolve NISN -> student account email.
+     * resolve NIS/NISN -> student account email.
      */
     public function studentEmail(Request $request)
     {
@@ -23,6 +23,7 @@ class StudentAuthController extends Controller
 
         $email = Student::query()
             ->where('nisn', $nisn)
+            ->orWhere('nis', $nisn)
             ->with('account')
             ->get()
             ->first()
@@ -32,7 +33,7 @@ class StudentAuthController extends Controller
         if (! $email) {
             return response()->json([
                 'data' => null,
-                'error' => ['message' => 'NISN tidak terdaftar.'],
+                'error' => ['message' => 'NIS/NISN tidak terdaftar.'],
             ], 404);
         }
 

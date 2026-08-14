@@ -1,7 +1,7 @@
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { ChevronRight, Plus, Trash2, X, Loader2, KeyRound, Search, UserRound, Upload, Pencil, Eye, ArrowLeft } from 'lucide-react';
-import { accountsApi, backendApi, resolveImageUrl } from '../../lib/api';
+import { accountsApi, resolveImageUrl } from '../../lib/api';
 import StudentImportModal from './StudentImportModal';
 import ImageField from './ImageField';
 import { BIODATA_FIELDS, BIODATA_SECTIONS, emptyBiodata, normalizeGender } from '../../lib/studentBiodata';
@@ -68,7 +68,7 @@ export default function StudentsManagement() {
   const totalSteps = BIODATA_SECTIONS.length;
 
   const load = useCallback(async () => {
-    const { data, error } = await backendApi.database.from('students').select('*').order('name', { ascending: true });
+    const { data, error } = await accountsApi.list({ role: 'student' });
     if (!error && data) setStudents(data as StudentRow[]);
     setLoading(false);
   }, []);
@@ -81,7 +81,7 @@ export default function StudentsManagement() {
   };
 
   const filtered = students.filter((s) =>
-    !search || s.name.toLowerCase().includes(search.toLowerCase()) || s.nisn.toLowerCase().includes(search.toLowerCase())
+    !search || s.name.toLowerCase().includes(search.toLowerCase()) || String(s.nisn ?? '').toLowerCase().includes(search.toLowerCase()) || (s.nis ?? '').toLowerCase().includes(search.toLowerCase())
   );
 
   const detailStudent = detailId ? students.find((s) => s.id === detailId) ?? null : null;
@@ -250,15 +250,15 @@ export default function StudentsManagement() {
       flash('err', 'PIN minimal 4 karakter.');
       return;
     }
-    const r = await backendApi.database.rpc('admin_reset_student_pin', { p_student_id: student.id, p_new_pin: newPin });
-    if (r.error) { flash('err', r.error.message); return; }
+    const r = await accountsApi.update(student.id, { pin: newPin });
+    if (r.error) { flash('err', String(r.error.message ?? 'Gagal mereset PIN.')); return; }
     flash('ok', `PIN siswa ${student.name} berhasil direset.`);
   };
 
   const removeStudent = async (student: StudentRow) => {
     if (!confirm(`Hapus akun ${student.name}? Akun login siswa akan ikut terhapus.`)) return;
-    const r = await backendApi.database.rpc('admin_delete_student', { p_student_id: student.id });
-    if (r.error) { flash('err', r.error.message); return; }
+    const r = await accountsApi.remove(student.id);
+    if (r.error) { flash('err', String(r.error.message ?? 'Gagal menghapus siswa.')); return; }
     await load();
     flash('ok', 'Akun siswa dihapus.');
   };

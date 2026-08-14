@@ -158,7 +158,7 @@ class SpmbController extends Controller
                 if ($temp !== false && imagewebp($image, $temp, 88)) {
                     $key = $base.'/'.$name.'.webp';
                     Storage::disk('public')->putFileAs($base, new File($temp), $name.'.webp');
-                    $url = Storage::disk('public')->url($key);
+                    $url = '/storage/'.$key;
                     @unlink($temp);
                 }
             } catch (\Throwable) {
@@ -171,7 +171,7 @@ class SpmbController extends Controller
         if (! $url) {
             $key = $base.'/'.$name.'.'.$ext;
             Storage::disk('public')->putFileAs($base, $file, $name.'.'.$ext);
-            $url = Storage::disk('public')->url($key);
+            $url = '/storage/'.$key;
         }
 
         return response()->json([

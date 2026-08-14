@@ -86,6 +86,7 @@ export default function AccountsManagement() {
     const q = search.toLowerCase();
     const ids = [
       acc.nisn ?? '',
+      acc.nis ?? '',
       acc.guru?.nip ?? '', acc.guru?.nuptk ?? '', acc.guru?.teacher_id ?? '',
       acc.osis?.member_id ?? '', acc.osis?.nisn ?? '',
     ].join(' ').toLowerCase();
