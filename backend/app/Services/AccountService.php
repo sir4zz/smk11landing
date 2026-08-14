@@ -126,7 +126,7 @@ class AccountService
     }
 
     /**
-     * Daftar seluruh kolom biodata (Section 1-10 template BIODATA) pada tabel
+     * Daftar seluruh kolom biodata (Section 1-9 template BIODATA) pada tabel
      * students. Dipakai oleh AccountController & StudentController.
      *
      * @return string[]
@@ -158,8 +158,6 @@ class AccountService
             // Section 8
             'gemar_kesenian', 'gemar_olahraga', 'gemar_kemasyarakatan', 'gemar_lain',
             // Section 9
-            'beasiswa_tk', 'beasiswa_dari',
-            // Section 10
             'siswa_status', 'siswa_tanggal',
         ]);
     }
@@ -201,7 +199,7 @@ class AccountService
             'lama_belajar' => 20, 'pindahan_dari' => 255, 'alasan_pindah' => 255,
             'diangkat' => 100, 'kompetensi_keahlian' => 255, 'gemar_kesenian' => 100,
             'gemar_olahraga' => 100, 'gemar_kemasyarakatan' => 100, 'gemar_lain' => 100,
-            'beasiswa_tk' => 60, 'beasiswa_dari' => 100, 'siswa_status' => 60,
+            'siswa_status' => 60,
             '_nama' => 255, '_tempat' => 255, '_agama' => 50, '_kewarganegaraan' => 50,
             '_pendidikan' => 100, '_pekerjaan' => 100, '_penghasilan' => 100,
             '_no_telp' => 30, '_status_hidup' => 60,
@@ -367,8 +365,6 @@ class AccountService
             'gemar_olahraga' => $student->gemar_olahraga ?? '',
             'gemar_kemasyarakatan' => $student->gemar_kemasyarakatan ?? '',
             'gemar_lain' => $student->gemar_lain ?? '',
-            'beasiswa_tk' => $student->beasiswa_tk ?? '',
-            'beasiswa_dari' => $student->beasiswa_dari ?? '',
             'siswa_status' => $student->siswa_status ?? '',
             'siswa_tanggal' => $student->siswa_tanggal?->toDateString() ?? '',
         ];

@@ -25,8 +25,7 @@ export const BIODATA_SECTIONS: BiodataSectionDef[] = [
   { id: 'mother', title: 'F. Keterangan Ibu Kandung' },
   { id: 'guardian', title: 'G. Keterangan Wali' },
   { id: 'hobby', title: 'H. Kegemaran Siswa' },
-  { id: 'development', title: 'I. Keterangan Perkembangan Siswa' },
-  { id: 'student', title: 'J. Keterangan Siswa' },
+  { id: 'student', title: 'I. Keterangan Siswa' },
 ];
 
 const GENDER_OPTIONS = ['', 'L', 'P'];
@@ -106,11 +105,7 @@ export const BIODATA_FIELDS: BiodataFieldDef[] = [
   { key: 'gemar_kemasyarakatan', label: 'Kemasyarakatan', section: 'hobby' },
   { key: 'gemar_lain', label: 'Lain-lain', section: 'hobby' },
 
-  // I. Keterangan Perkembangan Siswa
-  { key: 'beasiswa_tk', label: 'Menerima Beasiswa (TK)', section: 'development' },
-  { key: 'beasiswa_dari', label: 'Beasiswa Dari', section: 'development' },
-
-  // J. Keterangan Siswa
+  // I. Keterangan Siswa
   { key: 'siswa_status', label: 'Status', section: 'student' },
   { key: 'siswa_tanggal', label: 'Tanggal', section: 'student', type: 'date' },
 ];
@@ -192,10 +187,8 @@ export const TEMPLATE_COLUMNS: Record<number, string> = {
   68: 'gemar_olahraga',
   69: 'gemar_kemasyarakatan',
   70: 'gemar_lain',
-  72: 'beasiswa_tk',
-  73: 'beasiswa_dari',
-  74: 'siswa_status',
-  75: 'siswa_tanggal',
+  71: 'siswa_status',
+  72: 'siswa_tanggal',
 };
 
 // Baris header template (index 0-7), data mulai index 8.

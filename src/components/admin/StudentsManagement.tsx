@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
-import { ChevronRight, Plus, Trash2, X, Loader2, KeyRound, Search, UserRound, Upload, Pencil } from 'lucide-react';
+import { ChevronRight, Plus, Trash2, X, Loader2, KeyRound, Search, UserRound, Upload, Pencil, Eye, ArrowLeft } from 'lucide-react';
 import { accountsApi, backendApi } from '../../lib/api';
 import StudentImportModal from './StudentImportModal';
 import { BIODATA_FIELDS, BIODATA_SECTIONS, emptyBiodata, normalizeGender } from '../../lib/studentBiodata';
@@ -60,6 +60,7 @@ export default function StudentsManagement() {
   const [step, setStep] = useState(1);
   const [maxStep, setMaxStep] = useState(1);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [detailId, setDetailId] = useState<string | null>(null);
 
   const totalSteps = BIODATA_SECTIONS.length;
 
@@ -79,6 +80,8 @@ export default function StudentsManagement() {
   const filtered = students.filter((s) =>
     !search || s.name.toLowerCase().includes(search.toLowerCase()) || s.nisn.toLowerCase().includes(search.toLowerCase())
   );
+
+  const detailStudent = detailId ? students.find((s) => s.id === detailId) ?? null : null;
 
   const openCreate = () => {
     setEditing(null);
@@ -260,67 +263,87 @@ export default function StudentsManagement() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-[#23314D]">Buat dan kelola akun siswa untuk Mading (login NISN + PIN) beserta data BIODATA lengkap.</p>
-        <div className="flex flex-wrap gap-2">
-          <button onClick={() => setImportOpen(true)} className="inline-flex items-center gap-2 rounded-lg border-2 border-[#1B2A4A] px-4 py-2 font-bold text-[#1B2A4A] hover:bg-[#1B2A4A]/5"><Upload size={18} /> Import Excel</button>
-          <button onClick={openCreate} className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-4 py-2 font-bold text-[#1B2A4A]"><Plus size={18} /> Tambah Siswa</button>
-        </div>
+        {!detailId && (
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => setImportOpen(true)} className="inline-flex items-center gap-2 rounded-lg border-2 border-[#1B2A4A] px-4 py-2 font-bold text-[#1B2A4A] hover:bg-[#1B2A4A]/5"><Upload size={18} /> Import Excel</button>
+            <button onClick={openCreate} className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-4 py-2 font-bold text-[#1B2A4A]"><Plus size={18} /> Tambah Siswa</button>
+          </div>
+        )}
       </div>
 
       {msg && <p className={`rounded-lg p-3 text-sm ${msg.type === 'ok' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>{msg.text}</p>}
 
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#23314D]/50" />
-        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Cari nama / NISN..." className="w-full rounded-lg border border-[#1B2A4A]/20 bg-white py-2 pl-10 pr-4 text-sm" />
-      </div>
+      {detailId ? (
+        detailStudent ? (
+          <StudentDetailView
+            student={detailStudent}
+            onBack={() => setDetailId(null)}
+            onEdit={() => openEdit(detailStudent)}
+          />
+        ) : (
+          <div className="rounded-xl bg-white p-8 text-center text-[#5B7088] shadow-sm">
+            Data siswa tidak ditemukan.{' '}
+            <button onClick={() => setDetailId(null)} className="font-semibold text-[#866D2C]">Kembali ke Data Siswa</button>
+          </div>
+        )
+      ) : (
+        <>
+          <div className="relative max-w-sm">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#23314D]/50" />
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Cari nama / NISN..." className="w-full rounded-lg border border-[#1B2A4A]/20 bg-white py-2 pl-10 pr-4 text-sm" />
+          </div>
 
-      <div className="overflow-x-auto rounded-xl bg-white shadow-sm">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-[#FAF6F0] text-[#1B2A4A]">
-            <tr>
-              <th className="p-4">Siswa</th>
-              <th className="p-4">NISN</th>
-              <th className="p-4">NIS</th>
-              <th className="p-4">PIN Login</th>
-              <th className="p-4">Kelas</th>
-              <th className="p-4">Jurusan</th>
-              <th className="p-4">Jenis Kelamin</th>
-              <th className="p-4">Tanggal Lahir</th>
-              <th className="p-4">Tempat Lahir</th>
-              <th className="p-4">Agama</th>
-              <th className="p-4">Alamat</th>
-              <th className="p-4">Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.length === 0 && <tr><td colSpan={12} className="p-8 text-center text-[#5B7088]">Belum ada siswa terdaftar.</td></tr>}
-            {filtered.map((student) => (
-              <tr key={student.id} className="border-t border-[#1B2A4A]/10">
-                <td className="p-4">
-                  <div className="flex items-center gap-3">
-                    <span className="grid h-9 w-9 place-items-center rounded-full bg-[#FAF6F0]"><UserRound className="h-4 w-4 text-[#866D2C]" /></span>
-                    <span className="font-semibold">{student.name}</span>
-                  </div>
-                </td>
-                <td className="p-4 font-mono text-xs">{student.nisn}</td>
-                <td className="p-4 font-mono text-xs">{student.nis || '-'}</td>
-                <td className="p-4 font-mono text-xs">{student.pin || '-'}</td>
-                <td className="p-4">{student.class || '-'}</td>
-                <td className="p-4">{student.major || '-'}</td>
-                <td className="p-4">{genderLabel(student.gender)}</td>
-                <td className="p-4 whitespace-nowrap">{formatDate(student.date_of_birth)}</td>
-                <td className="p-4">{student.place_of_birth || '-'}</td>
-                <td className="p-4">{student.religion || '-'}</td>
-                <td className="p-4 max-w-[200px] truncate" title={String(student.address ?? '')}>{student.address || '-'}</td>
-                <td className="p-4 whitespace-nowrap">
-                  <button onClick={() => openEdit(student)} className="mr-3 inline-flex items-center gap-1 text-sm font-semibold text-[#866D2C]"><Pencil size={15} /> Edit</button>
-                  <button onClick={() => resetPin(student)} className="mr-3 inline-flex items-center gap-1 text-sm font-semibold text-[#866D2C]"><KeyRound size={15} /> Reset PIN</button>
-                  <button onClick={() => removeStudent(student)} className="text-red-600"><Trash2 size={16} /></button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          <div className="overflow-x-auto rounded-xl bg-white shadow-sm">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-[#FAF6F0] text-[#1B2A4A]">
+                <tr>
+                  <th className="p-4">Siswa</th>
+                  <th className="p-4">NISN</th>
+                  <th className="p-4">NIS</th>
+                  <th className="p-4">PIN Login</th>
+                  <th className="p-4">Kelas</th>
+                  <th className="p-4">Jurusan</th>
+                  <th className="p-4">Jenis Kelamin</th>
+                  <th className="p-4">Tanggal Lahir</th>
+                  <th className="p-4">Tempat Lahir</th>
+                  <th className="p-4">Agama</th>
+                  <th className="p-4">Alamat</th>
+                  <th className="p-4">Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.length === 0 && <tr><td colSpan={12} className="p-8 text-center text-[#5B7088]">Belum ada siswa terdaftar.</td></tr>}
+                {filtered.map((student) => (
+                  <tr key={student.id} className="border-t border-[#1B2A4A]/10">
+                    <td className="p-4">
+                      <div className="flex items-center gap-3">
+                        <span className="grid h-9 w-9 place-items-center rounded-full bg-[#FAF6F0]"><UserRound className="h-4 w-4 text-[#866D2C]" /></span>
+                        <span className="font-semibold">{student.name}</span>
+                      </div>
+                    </td>
+                    <td className="p-4 font-mono text-xs">{student.nisn}</td>
+                    <td className="p-4 font-mono text-xs">{student.nis || '-'}</td>
+                    <td className="p-4 font-mono text-xs">{student.pin || '-'}</td>
+                    <td className="p-4">{student.class || '-'}</td>
+                    <td className="p-4">{student.major || '-'}</td>
+                    <td className="p-4">{genderLabel(student.gender)}</td>
+                    <td className="p-4 whitespace-nowrap">{formatDate(student.date_of_birth)}</td>
+                    <td className="p-4">{student.place_of_birth || '-'}</td>
+                    <td className="p-4">{student.religion || '-'}</td>
+                    <td className="p-4 max-w-[200px] truncate" title={String(student.address ?? '')}>{student.address || '-'}</td>
+                    <td className="p-4 whitespace-nowrap">
+                      <button onClick={() => setDetailId(student.id)} className="mr-3 inline-flex items-center gap-1 text-sm font-semibold text-[#866D2C]"><Eye size={15} /> Detail</button>
+                      <button onClick={() => openEdit(student)} className="mr-3 inline-flex items-center gap-1 text-sm font-semibold text-[#866D2C]"><Pencil size={15} /> Edit</button>
+                      <button onClick={() => resetPin(student)} className="mr-3 inline-flex items-center gap-1 text-sm font-semibold text-[#866D2C]"><KeyRound size={15} /> Reset PIN</button>
+                      <button onClick={() => removeStudent(student)} className="text-red-600"><Trash2 size={16} /></button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
 
       {open && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4">
@@ -433,6 +456,65 @@ function BiodataField({ field, value, onChange, placeholder, error }: { field: B
 
 function stepShortLabel(title: string): string {
   return title.replace(/^[A-J]\.\s*/, '');
+}
+
+function StudentDetailView({ student, onBack, onEdit }: { student: StudentRow; onBack: () => void; onEdit: () => void }) {
+  const achievements = Array.isArray(student.achievements) ? (student.achievements as unknown[]).filter(Boolean) : [];
+  const achievementsText = achievements.map(String).join(', ');
+
+  return (
+    <div className="overflow-hidden rounded-xl bg-white shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#1B2A4A]/10 p-6">
+        <div>
+          <h2 className="text-xl font-bold text-[#1B2A4A]">Detail Siswa</h2>
+          <p className="mt-1 text-sm text-[#5B7088]">{student.name} — NISN {student.nisn}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button onClick={onEdit} className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-4 py-2 font-bold text-[#1B2A4A]"><Pencil size={16} /> Edit Siswa</button>
+          <button onClick={onBack} className="inline-flex items-center gap-2 rounded-lg border-2 border-[#1B2A4A] px-4 py-2 font-bold text-[#1B2A4A] hover:bg-[#1B2A4A]/5"><ArrowLeft size={16} /> Kembali</button>
+        </div>
+      </div>
+
+      <div className="space-y-6 p-6">
+        {BIODATA_SECTIONS.map((section) => {
+          const fields = BIODATA_FIELDS.filter((f) => f.section === section.id);
+          return (
+            <div key={section.id} className="rounded-xl border border-[#1B2A4A]/10 p-4">
+              <p className="mb-3 font-bold text-[#1B2A4A]">{section.title}</p>
+              <dl className="grid gap-x-8 gap-y-1.5 text-sm sm:grid-cols-2">
+                {section.id === 'identity' && (
+                  <DetailRow label="PIN Login" value={student.pin} />
+                )}
+                {fields.map((field) => (
+                  <DetailRow key={field.key} label={field.label} value={detailValue(field, student[field.key])} />
+                ))}
+                {section.id === 'identity' && achievementsText && (
+                  <DetailRow label="Prestasi" value={achievementsText} />
+                )}
+              </dl>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function DetailRow({ label, value }: { label: string; value: unknown }) {
+  const display = value === null || value === undefined || value === '' ? '-' : String(value);
+  return (
+    <div className="flex gap-2">
+      <dt className="w-40 shrink-0 font-medium text-[#5B7088]">{label}</dt>
+      <dd className="font-semibold text-[#1B2A4A]">{display}</dd>
+    </div>
+  );
+}
+
+function detailValue(field: BiodataFieldDef, raw: unknown): string {
+  if (raw === null || raw === undefined || raw === '') return '-';
+  if (field.type === 'date') return formatDate(String(raw));
+  if (field.key === 'gender') return genderLabel(String(raw));
+  return String(raw);
 }
 
 function selectLabel(key: string, value: string): string {

@@ -65,9 +65,7 @@ class Student extends Model
         'wali_pendidikan', 'wali_pekerjaan', 'wali_penghasilan', 'wali_alamat', 'wali_no_telp', 'wali_status_hidup',
         // Section 8 — Kegemaran
         'gemar_kesenian', 'gemar_olahraga', 'gemar_kemasyarakatan', 'gemar_lain',
-        // Section 9 — Perkembangan
-        'beasiswa_tk', 'beasiswa_dari',
-        // Section 10 — Ket Siswa
+        // Section 9 — Ket Siswa
         'siswa_status', 'siswa_tanggal',
     ];
 
