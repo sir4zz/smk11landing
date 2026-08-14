@@ -28,6 +28,7 @@ class Student extends Model
         'religion',
         'address',
         'achievements',
+        'foto',
         // Section 1 — Ket Peserta Didik
         'nickname',
         'kewarganegaraan',

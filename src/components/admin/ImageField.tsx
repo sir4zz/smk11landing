@@ -9,15 +9,22 @@ interface ImageFieldProps {
   hint?: string;
   disabled?: boolean;
   bucket?: string;
+  accept?: string;
+  maxSizeMb?: number;
 }
 
-export default function ImageField({ label, value, onChange, hint, disabled = false, bucket = 'photos' }: ImageFieldProps) {
+export default function ImageField({ label, value, onChange, hint, disabled = false, bucket = 'photos', accept = 'image/*', maxSizeMb }: ImageFieldProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
 
   const upload = async (file: File | undefined) => {
     if (!file) return;
+    if (maxSizeMb && file.size > maxSizeMb * 1024 * 1024) {
+      setError(`Ukuran file melebihi ${maxSizeMb} MB.`);
+      if (inputRef.current) inputRef.current.value = '';
+      return;
+    }
     setUploading(true);
     setError('');
     try {
@@ -60,7 +67,7 @@ export default function ImageField({ label, value, onChange, hint, disabled = fa
           <input
             ref={inputRef}
             type="file"
-            accept="image/*"
+            accept={accept}
             disabled={disabled || uploading}
             onChange={(e) => upload(e.target.files?.[0])}
             className="block w-full text-sm text-[#1B2A4A] file:mr-3 file:rounded-lg file:border-0 file:bg-[#1B2A4A] file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-[#15203a] disabled:opacity-60"

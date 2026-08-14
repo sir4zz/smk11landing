@@ -55,6 +55,7 @@ class StudentController extends Controller
             'p_religion' => ['nullable', 'string'],
             'p_address' => ['nullable', 'string'],
             'p_pin' => ['required', 'string'],
+            'p_foto' => ['nullable', 'string'],
         ]);
 
         if (strlen(trim($data['p_nisn'])) < 4) {
@@ -109,6 +110,7 @@ class StudentController extends Controller
                     'place_of_birth' => $data['p_place_of_birth'] ?? '',
                     'religion' => $data['p_religion'] ?? '',
                     'address' => $data['p_address'] ?? '',
+                    'foto' => $data['p_foto'] ?? null,
                 ], $this->accounts->biodata($data)));
 
                 StudentAccount::create([
@@ -277,10 +279,35 @@ class StudentController extends Controller
     {
         $student = Student::findOrFail($studentId);
 
+        if ($student->foto) {
+            $this->deleteStoredFile($student->foto);
+        }
+
         StudentAccount::query()->where('student_id', $student->id)->delete();
         Student::query()->where('id', $student->id)->delete();
         User::query()->where('id', $student->id)->delete();
 
         return response()->json(['data' => null, 'error' => null]);
+    }
+
+    private function deleteStoredFile(?string $url): void
+    {
+        if (! $url) {
+            return;
+        }
+
+        $path = parse_url($url, PHP_URL_PATH) ?? '';
+        $prefix = '/storage/';
+        if (str_starts_with($path, $prefix)) {
+            $path = substr($path, strlen($prefix));
+        }
+
+        if ($path !== '') {
+            try {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
+            } catch (\Throwable) {
+                // Kegagalan menghapus file tidak boleh menggagalkan operasi database.
+            }
+        }
     }
 }

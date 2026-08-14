@@ -327,6 +327,7 @@ class AccountService
         $parentCols = ['nama', 'tempat', 'tanggal_lahir', 'agama', 'kewarganegaraan', 'pendidikan', 'pekerjaan', 'penghasilan', 'alamat', 'no_telp', 'status_hidup'];
 
         $payload = [
+            'foto' => $student->foto ?? '',
             'nisn' => $student->nisn ?? '',
             'nis' => $student->nis ?? '',
             'class' => $student->class ?? '',

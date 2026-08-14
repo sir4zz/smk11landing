@@ -1,8 +1,9 @@
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { ChevronRight, Plus, Trash2, X, Loader2, KeyRound, Search, UserRound, Upload, Pencil, Eye, ArrowLeft } from 'lucide-react';
-import { accountsApi, backendApi } from '../../lib/api';
+import { accountsApi, backendApi, resolveImageUrl } from '../../lib/api';
 import StudentImportModal from './StudentImportModal';
+import ImageField from './ImageField';
 import { BIODATA_FIELDS, BIODATA_SECTIONS, emptyBiodata, normalizeGender } from '../../lib/studentBiodata';
 import type { BiodataFieldDef } from '../../lib/studentBiodata';
 
@@ -19,6 +20,7 @@ interface StudentRow {
   place_of_birth?: string;
   religion?: string;
   address?: string;
+  foto?: string;
   [key: string]: unknown;
 }
 
@@ -44,6 +46,7 @@ function initFormFrom(student: StudentRow | null): Record<string, string> {
   form.religion = String(student.religion ?? '');
   form.address = String(student.address ?? '');
   form.pin = '';
+  form.foto = String(student.foto ?? '');
   return form;
 }
 
@@ -85,7 +88,9 @@ export default function StudentsManagement() {
 
   const openCreate = () => {
     setEditing(null);
-    setForm(emptyBiodata());
+    const fresh = emptyBiodata();
+    fresh.foto = '';
+    setForm(fresh);
     setStep(1);
     setMaxStep(1);
     setErrors({});
@@ -201,6 +206,7 @@ export default function StudentsManagement() {
       payload[field.key] = value;
     }
     payload.achievements = [];
+    payload.foto = form.foto ?? '';
 
     if (editing) {
       if (pin) payload.pin = pin;
@@ -317,7 +323,11 @@ export default function StudentsManagement() {
                   <tr key={student.id} className="border-t border-[#1B2A4A]/10">
                     <td className="p-4">
                       <div className="flex items-center gap-3">
-                        <span className="grid h-9 w-9 place-items-center rounded-full bg-[#FAF6F0]"><UserRound className="h-4 w-4 text-[#866D2C]" /></span>
+                        {student.foto ? (
+                          <img src={resolveImageUrl(student.foto)} alt={student.name} className="h-9 w-9 rounded-full object-cover" />
+                        ) : (
+                          <span className="grid h-9 w-9 place-items-center rounded-full bg-[#FAF6F0]"><UserRound className="h-4 w-4 text-[#866D2C]" /></span>
+                        )}
                         <span className="font-semibold">{student.name}</span>
                       </div>
                     </td>
@@ -397,6 +407,11 @@ export default function StudentsManagement() {
                     {section.id === 'identity' && (
                       <BiodataField field={{ key: 'pin', label: editing ? 'PIN Baru (opsional, min. 4 karakter)' : 'PIN Siswa (min. 4 karakter)', section: 'identity', type: 'text' }} value={form.pin} onChange={setValue('pin')} placeholder={editing ? 'Kosongkan jika tidak diubah' : 'cth. 1234'} error={errors.pin} />
                     )}
+                    {section.id === 'identity' && (
+                      <div className="sm:col-span-2">
+                        <ImageField label="Foto Siswa (opsional)" value={form.foto ?? ''} onChange={(url) => { setForm((v) => ({ ...v, foto: url })); if (url) setErrors((p) => { if (!p.foto) return p; const n = { ...p }; delete n.foto; return n; }); }} accept="image/jpeg,image/png" maxSizeMb={2} hint="JPG/JPEG atau PNG, maks. 2 MB, direkomendasikan persegi (1:1)." />
+                      </div>
+                    )}
                     {fields.map((field) => (
                       <BiodataField key={field.key} field={field} value={form[field.key] ?? ''} onChange={setValue(field.key)} error={errors[field.key]} />
                     ))}
@@ -465,9 +480,16 @@ function StudentDetailView({ student, onBack, onEdit }: { student: StudentRow; o
   return (
     <div className="overflow-hidden rounded-xl bg-white shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#1B2A4A]/10 p-6">
-        <div>
-          <h2 className="text-xl font-bold text-[#1B2A4A]">Detail Siswa</h2>
-          <p className="mt-1 text-sm text-[#5B7088]">{student.name} — NISN {student.nisn}</p>
+        <div className="flex items-center gap-4">
+          {student.foto ? (
+            <img src={resolveImageUrl(student.foto)} alt={student.name} className="h-16 w-16 rounded-full object-cover" />
+          ) : (
+            <span className="grid h-16 w-16 place-items-center rounded-full bg-[#FAF6F0]"><UserRound className="h-8 w-8 text-[#866D2C]" /></span>
+          )}
+          <div>
+            <h2 className="text-xl font-bold text-[#1B2A4A]">Detail Siswa</h2>
+            <p className="mt-1 text-sm text-[#5B7088]">{student.name} — NISN {student.nisn}</p>
+          </div>
         </div>
         <div className="flex flex-wrap gap-2">
           <button onClick={onEdit} className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-4 py-2 font-bold text-[#1B2A4A]"><Pencil size={16} /> Edit Siswa</button>

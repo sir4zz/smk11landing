@@ -139,6 +139,10 @@ class AccountController extends Controller
             return response()->json(['error' => ['message' => 'Tidak dapat menghapus admin terakhir.']], 403);
         }
 
+        if ($user->student?->foto) {
+            $this->deleteStoredFile($user->student->foto);
+        }
+
         $user->delete();
 
         return response()->json(['data' => null, 'error' => null]);
@@ -347,6 +351,7 @@ class AccountController extends Controller
         }
 
         if ($student) {
+            $newFoto = (string) $request->input('foto', '');
             $student->update(array_merge([
                 'nisn' => $nisn,
                 'nis' => $nis !== '' ? $nis : null,
@@ -366,7 +371,12 @@ class AccountController extends Controller
                 'achievements' => $request->has('achievements')
                     ? $this->jsonList($request->input('achievements'))
                     : $student->achievements,
+                'foto' => $newFoto !== '' ? $newFoto : null,
             ], $this->accounts->biodataFromRequest($request)));
+
+            if ($student->wasChanged('foto') && $student->getOriginal('foto')) {
+                $this->deleteStoredFile($student->getOriginal('foto'));
+            }
         }
 
         $updates = ['name' => $name];
@@ -535,6 +545,7 @@ class AccountController extends Controller
             'religion' => (string) $request->input('religion', ''),
             'address' => (string) $request->input('address', ''),
             'achievements' => $this->jsonList($request->input('achievements')),
+            'foto' => (string) $request->input('foto', ''),
         ], $this->accounts->biodata($request->all())));
 
         StudentAccount::create([
@@ -655,6 +666,27 @@ class AccountController extends Controller
     private function fail(string $message)
     {
         return response()->json(['error' => ['message' => $message]], 422);
+    }
+
+    private function deleteStoredFile(?string $url): void
+    {
+        if (! $url) {
+            return;
+        }
+
+        $path = parse_url($url, PHP_URL_PATH) ?? '';
+        $prefix = '/storage/';
+        if (str_starts_with($path, $prefix)) {
+            $path = substr($path, strlen($prefix));
+        }
+
+        if ($path !== '') {
+            try {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
+            } catch (\Throwable) {
+                // Kegagalan menghapus file tidak boleh menggagalkan operasi database.
+            }
+        }
     }
 
     private function httpFail(string $message): HttpException
