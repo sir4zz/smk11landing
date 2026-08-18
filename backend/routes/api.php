@@ -21,6 +21,7 @@ use App\Http\Controllers\JobVacancyController;
 use App\Http\Controllers\ProxyController;
 use App\Http\Controllers\PublicProfileController;
 use App\Http\Controllers\RolePermissionController;
+use App\Http\Controllers\SdmController;
 use App\Http\Controllers\SpmbController;
 use App\Http\Controllers\StatsController;
 use App\Http\Controllers\StudentController;
@@ -45,9 +46,11 @@ Route::post('/auth/student-email', [StudentAuthController::class, 'studentEmail'
 
 // ---------- PUBLIC PROFILES ----------
 Route::get('/public/directory', [PublicProfileController::class, 'directory']);
+Route::get('/public/leadership', [PublicProfileController::class, 'leadership']);
 Route::get('/public/guru/{identifier}', [PublicProfileController::class, 'guru']);
 Route::get('/public/siswa/{identifier}', [PublicProfileController::class, 'siswa']);
 Route::get('/public/osis/{identifier}', [PublicProfileController::class, 'osis']);
+Route::get('/public/tendik/{identifier}', [PublicProfileController::class, 'tendik']);
 
 // ---------- PROFILES ----------
 Route::get('/profiles/{id}', [ProfileController::class, 'show']);
@@ -217,6 +220,16 @@ Route::middleware(['auth:sanctum', 'staff'])->group(function () {
     Route::get('/admin/student-change-requests', [StudentDataChangeRequestController::class, 'adminIndex'])->middleware('permission:mading.edit_all');
     Route::get('/admin/student-change-requests/{id}', [StudentDataChangeRequestController::class, 'adminShow'])->middleware('permission:mading.edit_all');
     Route::patch('/admin/student-change-requests/{id}/verify', [StudentDataChangeRequestController::class, 'verify'])->middleware('permission:mading.edit_all');
+
+    // SDM (Guru & Tenaga Kependidikan) management
+    Route::get('/admin/sdm/{type}', [SdmController::class, 'index'])->where('type', 'guru|tendik')->middleware('permission:sdm.view');
+    Route::post('/admin/sdm/{type}', [SdmController::class, 'store'])->where('type', 'guru|tendik')->middleware('permission:sdm.create');
+    Route::post('/admin/sdm/{type}/preview', [SdmController::class, 'preview'])->where('type', 'guru|tendik')->middleware('permission:sdm.import');
+    Route::post('/admin/sdm/{type}/import', [SdmController::class, 'import'])->where('type', 'guru|tendik')->middleware('permission:sdm.import');
+    Route::get('/admin/sdm/{type}/export', [SdmController::class, 'export'])->where('type', 'guru|tendik')->middleware('permission:sdm.export');
+    Route::get('/admin/sdm/{type}/{id}', [SdmController::class, 'show'])->where('type', 'guru|tendik')->middleware('permission:sdm.view');
+    Route::patch('/admin/sdm/{type}/{id}', [SdmController::class, 'update'])->where('type', 'guru|tendik')->middleware('permission:sdm.edit');
+    Route::delete('/admin/sdm/{type}/{id}', [SdmController::class, 'destroy'])->where('type', 'guru|tendik')->middleware('permission:sdm.delete');
 });
 
 // ============================================================

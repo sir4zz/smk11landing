@@ -14,6 +14,7 @@ import KesemaptaanManagement from '../components/admin/KesemaptaanManagement';
 import MadingManagement from '../components/admin/MadingManagement';
 import GalleryManagement from '../components/admin/GalleryManagement';
 import BkkManagement from '../components/admin/BkkManagement';
+import SdmManagement from '../components/admin/SdmManagement';
 import KelulusanSiswaManagement from '../components/admin/KelulusanSiswaManagement';
 import StudentsManagement from '../components/admin/StudentsManagement';
 import StudentChangeRequestsManagement from '../components/admin/StudentChangeRequestsManagement';
@@ -23,8 +24,8 @@ import MyProfile from '../components/admin/MyProfile';
 import { StaffAuthProvider, useStaffAuth } from '../lib/staffAuth';
 import { can, STAFF_ROLES } from '../lib/permissions';
 
-type Section = 'dashboard' | 'news' | 'programs' | 'facilities' | 'staff' | 'gurus' | 'achievements' | 'teacherActivities' | 'educationStaff' | 'contentRecords' | 'spmb' | 'contact' | 'contactSettings' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'gallery' | 'bkk' | 'kelulusan' | 'myProfile' | 'studentChangeRequests';
-type EditableSection = Exclude<Section, 'dashboard' | 'contact' | 'contactSettings' | 'spmb' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'gallery' | 'bkk' | 'kelulusan' | 'myProfile' | 'studentChangeRequests'>;
+type Section = 'dashboard' | 'news' | 'programs' | 'facilities' | 'staff' | 'gurus' | 'achievements' | 'teacherActivities' | 'educationStaff' | 'contentRecords' | 'spmb' | 'contact' | 'contactSettings' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'gallery' | 'bkk' | 'kelulusan' | 'myProfile' | 'studentChangeRequests' | 'sdmGurus' | 'sdmTendiks';
+type EditableSection = Exclude<Section, 'dashboard' | 'contact' | 'contactSettings' | 'spmb' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'gallery' | 'bkk' | 'kelulusan' | 'myProfile' | 'studentChangeRequests' | 'sdmGurus' | 'sdmTendiks'>;
 type Item = Record<string, unknown>;
 const ADMIN_SECTION_PATHS: Record<Section, string> = {
   dashboard: '/admin',
@@ -52,6 +53,8 @@ const ADMIN_SECTION_PATHS: Record<Section, string> = {
   bkk: '/admin/bkk',
   kelulusan: '/admin/kelulusan',
   studentChangeRequests: '/admin/verifikasi-data-siswa',
+  sdmGurus: '/admin/sdm/guru',
+  sdmTendiks: '/admin/sdm/tenaga-kependidikan',
 };
 const sessionKey = 'smkn11-admin-session';
 const TABLE_MAP: Record<string, string> = {
@@ -205,6 +208,7 @@ function AdminPanel() {
   const canViewGallery = isAdmin || can(permissions, 'gallery.view');
   const canViewBkk = isAdmin || can(permissions, 'job.view');
   const canViewKelulusan = isAdmin || can(permissions, 'job.view');
+  const canViewSdm = isAdmin || can(permissions, 'sdm.view');
 
   useEffect(() => {
     const nextSection = (Object.entries(ADMIN_SECTION_PATHS).find(([, path]) => path === location.pathname)?.[0] ?? 'dashboard') as Section;
@@ -245,7 +249,7 @@ function AdminPanel() {
     })
   }, [authLoading, isAdmin, navigate]);
 
-  const menu = (Object.keys(configs) as EditableSection[]).filter((key) => key !== 'achievements');
+  const menu = (Object.keys(configs) as EditableSection[]).filter((key) => key !== 'achievements' && key !== 'gurus' && key !== 'educationStaff' && key !== 'staff');
   const total = useMemo(() => Object.values(data).reduce((sum, list) => sum + list.length, 0), [data]);
   const fieldOptions = useMemo(() => {
     if (!(section in configs)) return {};
@@ -330,8 +334,8 @@ function AdminPanel() {
     if (data) setData(current => ({ ...current, [key]: data as Item[] }));
   };
 
-  const active = section === 'dashboard' ? null : section === 'myProfile' ? { title: 'Profil Saya', icon: UserRound, fields: [] } : section === 'contact' ? { title: 'Pesan Kontak', icon: Mail, fields: [] } : section === 'contactSettings' ? { title: 'Pengaturan Kontak', icon: MapPin, fields: [] } : section === 'spmb' ? { title: 'Kelola SPMB', icon: GraduationCap, fields: [] } : section === 'permissions' ? { title: 'Role & Permission', icon: ShieldCheck, fields: [] } : section === 'osis' ? { title: 'OSIS', icon: UsersRound, fields: [] } : section === 'extracurriculars' ? { title: 'Ekstrakurikuler', icon: Dumbbell, fields: [] } : section === 'kesemaptaan' ? { title: 'Kesemaptaan', icon: ShieldCheck, fields: [] } : section === 'mading' ? { title: 'Mading', icon: Newspaper, fields: [] } : section === 'students' ? { title: 'Data Siswa', icon: UserCog, fields: [] } : section === 'accounts' ? { title: 'Kelola Akun', icon: Users, fields: [] } : section === 'gallery' ? { title: 'Galeri', icon: Camera, fields: [] } : section === 'bkk' ? { title: 'BKK (Bursa Kerja Khusus)', icon: Briefcase, fields: [] } : section === 'kelulusan' ? { title: 'Kelulusan Siswa', icon: GraduationCap, fields: [] } : section === 'studentChangeRequests' ? { title: 'Verifikasi Data Siswa', icon: FileText, fields: [] } : configs[section];
-  const editableSections = section !== 'dashboard' && section !== 'myProfile' && section !== 'contact' && section !== 'contactSettings' && section !== 'spmb' && section !== 'permissions' && section !== 'osis' && section !== 'extracurriculars' && section !== 'kesemaptaan' && section !== 'mading' && section !== 'students' && section !== 'accounts' && section !== 'gallery' && section !== 'bkk' && section !== 'kelulusan' && section !== 'studentChangeRequests';
+  const active = section === 'dashboard' ? null : section === 'myProfile' ? { title: 'Profil Saya', icon: UserRound, fields: [] } : section === 'contact' ? { title: 'Pesan Kontak', icon: Mail, fields: [] } : section === 'contactSettings' ? { title: 'Pengaturan Kontak', icon: MapPin, fields: [] } : section === 'spmb' ? { title: 'Kelola SPMB', icon: GraduationCap, fields: [] } : section === 'permissions' ? { title: 'Role & Permission', icon: ShieldCheck, fields: [] } : section === 'osis' ? { title: 'OSIS', icon: UsersRound, fields: [] } : section === 'extracurriculars' ? { title: 'Ekstrakurikuler', icon: Dumbbell, fields: [] } : section === 'kesemaptaan' ? { title: 'Kesemaptaan', icon: ShieldCheck, fields: [] } : section === 'mading' ? { title: 'Mading', icon: Newspaper, fields: [] } : section === 'students' ? { title: 'Data Siswa', icon: UserCog, fields: [] } : section === 'accounts' ? { title: 'Kelola Akun', icon: Users, fields: [] } : section === 'gallery' ? { title: 'Galeri', icon: Camera, fields: [] } : section === 'bkk' ? { title: 'BKK (Bursa Kerja Khusus)', icon: Briefcase, fields: [] } : section === 'kelulusan' ? { title: 'Kelulusan Siswa', icon: GraduationCap, fields: [] } : section === 'studentChangeRequests' ? { title: 'Verifikasi Data Siswa', icon: FileText, fields: [] } : section === 'sdmGurus' ? { title: 'Data Guru', icon: Users, fields: [] } : section === 'sdmTendiks' ? { title: 'Tenaga Kependidikan', icon: Briefcase, fields: [] } : configs[section];
+  const editableSections = section !== 'dashboard' && section !== 'myProfile' && section !== 'contact' && section !== 'contactSettings' && section !== 'spmb' && section !== 'permissions' && section !== 'osis' && section !== 'extracurriculars' && section !== 'kesemaptaan' && section !== 'mading' && section !== 'students' && section !== 'accounts' && section !== 'gallery' && section !== 'bkk' && section !== 'kelulusan' && section !== 'studentChangeRequests' && section !== 'sdmGurus' && section !== 'sdmTendiks';
 
   const navGroups: { label: string; items: { key: Section; label: string; icon: typeof FileText; visible: boolean }[] }[] = [
     { label: 'Menu', items: [
@@ -353,6 +357,10 @@ function AdminPanel() {
       { key: 'kelulusan', label: 'Kelulusan Siswa', icon: GraduationCap, visible: canViewKelulusan },
       { key: 'gallery', label: 'Galeri', icon: Camera, visible: canViewGallery },
       { key: 'students', label: 'Data Siswa', icon: UserCog, visible: canViewStudents },
+    ]},
+    { label: 'SDM', items: [
+      { key: 'sdmGurus', label: 'Data Guru', icon: Users, visible: canViewSdm },
+      { key: 'sdmTendiks', label: 'Tenaga Kependidikan', icon: Briefcase, visible: canViewSdm },
     ]},
     { label: 'Sistem', items: [
       { key: 'contact', label: 'Pesan Kontak', icon: Mail, visible: isAdmin },
@@ -443,6 +451,10 @@ function AdminPanel() {
           {section === 'students' && canViewStudents && <StudentsManagement />}
 
           {section === 'studentChangeRequests' && canViewStudents && <StudentChangeRequestsManagement />}
+
+          {section === 'sdmGurus' && canViewSdm && <SdmManagement type="guru" permissions={permissions} />}
+
+          {section === 'sdmTendiks' && canViewSdm && <SdmManagement type="tendik" permissions={permissions} />}
 
           {section === 'accounts' && isAdmin && <AccountsManagement />}
 

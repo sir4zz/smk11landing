@@ -2,13 +2,18 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Globe, Link2, Mail, Phone, MapPin, Medal, Award, Briefcase, GraduationCap, Users, BookOpen, Compass, ArrowLeft, Loader2, Trophy, Camera, ThumbsUp, MessageCircle, Music2, Video, Contact, Code } from 'lucide-react';
 import PageHero from '../../components/ui/PageHero';
-import { publicProfileApi, resolveImageUrl, type PublicProfile, type PublicProfileType } from '../../lib/api';
+import { publicProfileApi, resolveImageUrl, type PublicProfile, type PublicProfileType, type PublicSdmProfile } from '../../lib/api';
 
 const ROLE_META: Record<string, { label: string; badge: string }> = {
   guru: { label: 'Guru', badge: 'bg-blue-50 text-blue-700' },
+  tendik: { label: 'Tenaga Kependidikan', badge: 'bg-purple-50 text-purple-700' },
   siswa: { label: 'Siswa', badge: 'bg-green-50 text-green-700' },
   osis: { label: 'Pengurus OSIS', badge: 'bg-[#C8A951]/20 text-[#866D2C]' },
 };
+
+function isSdmProfile(p: PublicProfile | PublicSdmProfile): p is PublicSdmProfile {
+  return p.role === 'tendik' || Array.isArray((p as PublicSdmProfile).education);
+}
 
 const SOCIAL_ICONS: Record<string, typeof Link2> = {
   instagram: Camera,
@@ -34,7 +39,7 @@ const SOCIAL_LABELS: Record<string, string> = {
 
 function ProfilePage() {
   const { role, id } = useParams<{ role: string; id: string }>();
-  const [profile, setProfile] = useState<PublicProfile | null>(null);
+  const [profile, setProfile] = useState<PublicProfile | PublicSdmProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
@@ -80,6 +85,10 @@ function ProfilePage() {
         </div>
       </div>
     );
+  }
+
+  if (isSdmProfile(profile)) {
+    return <SdmProfileView profile={profile} meta={ROLE_META[role ?? ''] ?? ROLE_META.guru} />;
   }
 
   const socials = Object.entries(profile.social ?? {}).filter(([, value]) => value && String(value).trim());
@@ -211,3 +220,117 @@ function ProfilePage() {
 }
 
 export default ProfilePage;
+
+function SdmProfileView({ profile, meta }: { profile: PublicSdmProfile; meta: { label: string; badge: string } }) {
+  const educations = profile.education ?? [];
+  const assignments = profile.assignments ?? [];
+  const socials = Object.entries(profile.social ?? {}).filter(([, value]) => value && String(value).trim());
+
+  return (
+    <div className="min-h-screen bg-[#FAF6F0]">
+      <PageHero
+        title={profile.name}
+        subtitle={`${meta.label} SMKN 11 Kabupaten Tangerang`}
+        breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Profil', href: '/profil/direktori' }, { label: meta.label }]}
+      />
+
+      <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="grid gap-6 md:grid-cols-[320px_1fr]">
+          <div>
+            <div className="rounded-2xl bg-white p-6 text-center shadow-sm">
+              <div className="mx-auto mb-4 grid h-40 w-40 place-items-center overflow-hidden rounded-full border-4 border-[#C8A951]/50 bg-[#FAF6F0]">
+                {resolveImageUrl(profile.photo) ? (
+                  <img src={resolveImageUrl(profile.photo)} alt={profile.name} className="h-full w-full object-cover" />
+                ) : (
+                  <Users className="h-16 w-16 text-[#C8A951]/60" />
+                )}
+              </div>
+              <h1 className="text-xl font-bold text-[#1B2A4A]">{profile.name}</h1>
+              <span className={`mt-2 inline-block rounded-full px-3 py-1 text-xs font-semibold ${meta.badge}`}>{meta.label}</span>
+              {profile.position && <p className="mt-3 text-sm font-semibold text-[#866D2C]">{profile.position}</p>}
+              {profile.subject && <p className="mt-1 text-sm text-[#5B7088]">{profile.subject}</p>}
+              {profile.certified && (
+                <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
+                  <Award size={13} /> Sertifikasi Pendidik
+                </p>
+              )}
+
+              {(profile.email || profile.phone) && (
+                <div className="mt-5 space-y-2 border-t border-[#1B2A4A]/10 pt-5 text-left text-sm">
+                  {profile.email && (
+                    <a href={`mailto:${profile.email}`} className="flex items-center gap-2 text-[#23314D] hover:text-[#866D2C]"><Mail size={15} className="shrink-0 text-[#866D2C]" /> <span className="break-all">{profile.email}</span></a>
+                  )}
+                  {profile.phone && (
+                    <a href={`tel:${profile.phone}`} className="flex items-center gap-2 text-[#23314D] hover:text-[#866D2C]"><Phone size={15} className="shrink-0 text-[#866D2C]" /> {profile.phone}</a>
+                  )}
+                </div>
+              )}
+
+              {socials.length > 0 && (
+                <div className="mt-5 flex flex-wrap justify-center gap-2 border-t border-[#1B2A4A]/10 pt-5">
+                  {socials.map(([key, value]) => {
+                    const Icon = SOCIAL_ICONS[key] ?? Link2;
+                    const href = String(value).startsWith('http') ? String(value) : `https://${String(value)}`;
+                    return (
+                      <a key={key} href={href} target="_blank" rel="noreferrer" title={SOCIAL_LABELS[key] ?? key}
+                        className="grid h-10 w-10 place-items-center rounded-full bg-[#1B2A4A] text-white transition-colors hover:bg-[#866D2C]">
+                        <Icon size={18} />
+                      </a>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            {profile.bio && (
+              <div className="rounded-2xl bg-white p-6 shadow-sm">
+                <h2 className="mb-3 flex items-center gap-2 font-bold text-[#1B2A4A]"><Compass size={18} className="text-[#866D2C]" /> Tentang</h2>
+                <p className="whitespace-pre-wrap text-sm leading-7 text-[#23314D]">{profile.bio}</p>
+              </div>
+            )}
+
+            {educations.length > 0 && (
+              <div className="rounded-2xl bg-white p-6 shadow-sm">
+                <h2 className="mb-4 flex items-center gap-2 font-bold text-[#1B2A4A]"><GraduationCap size={18} className="text-[#866D2C]" /> Pendidikan</h2>
+                <ul className="space-y-3">
+                  {educations.map((e, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-[#23314D]">
+                      <GraduationCap size={15} className="mt-0.5 shrink-0 text-[#C8A951]" />
+                      <span>
+                        <strong>{e.jenjang}</strong>{e.jurusan ? ` - ${e.jurusan}` : ''} — {e.perguruan_tinggi}
+                        {e.tahun_lulus ? ` (${e.tahun_lulus})` : ''}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {assignments.length > 0 && (
+              <div className="rounded-2xl bg-white p-6 shadow-sm">
+                <h2 className="mb-4 flex items-center gap-2 font-bold text-[#1B2A4A]"><Briefcase size={18} className="text-[#866D2C]" /> Tugas & Tanggung Jawab</h2>
+                <ul className="space-y-2">
+                  {assignments.map((a, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-[#23314D]">
+                      <Briefcase size={15} className="mt-0.5 shrink-0 text-[#C8A951]" />
+                      <span>
+                        {a.uraian}
+                        {a.jumlah_jam ? ` (${a.jumlah_jam} jam)` : ''}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="text-center">
+              <Link to="/profil/direktori" className="inline-flex items-center gap-2 text-sm font-bold text-[#866D2C] hover:text-[#C8A951]"><ArrowLeft size={16} /> Kembali ke Direktori Profil</Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

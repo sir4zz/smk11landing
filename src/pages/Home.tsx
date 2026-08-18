@@ -24,8 +24,9 @@ import SectionHeading from '../components/ui/SectionHeading';
 import StatsBar from '../components/ui/StatsBar';
 import Card from '../components/ui/Card';
 import { isImportedNews } from '../lib/content-types';
-import { fetchPublicContent, fetchGalleries, fetchHomeContent, fetchSpmbContent, fetchStats, resolveImageUrl, type GalleryRow, type HomeContent } from '../lib/api';
-import type { SpmbContent, Staff } from '../lib/content-types';
+import { formatLeadershipTitle } from './management/ManagementShared';
+import { fetchPublicContent, fetchGalleries, fetchHomeContent, fetchSpmbContent, fetchStats, publicProfileApi, resolveImageUrl, type GalleryRow, type HomeContent, type LeadershipEntry } from '../lib/api';
+import type { SpmbContent } from '../lib/content-types';
 
 const getProgramIcon = (slug: string) => {
   switch (slug) {
@@ -55,7 +56,7 @@ const Home: React.FC = () => {
   const [gallery, setGallery] = useState<GalleryRow[]>([]);
   const [galleryLoading, setGalleryLoading] = useState(true);
   const [home, setHome] = useState<HomeContent | null>(null);
-  const [principal, setPrincipal] = useState<Staff | null>(null);
+  const [principal, setPrincipal] = useState<LeadershipEntry | null>(null);
   const [spmb, setSpmb] = useState<SpmbContent | null>(null);
   const [stats, setStats] = useState<{ value: string; label: string }[]>([]);
 
@@ -65,7 +66,7 @@ const Home: React.FC = () => {
     fetchPublicContent<any[]>('news', { limit: 2 }).then((data) => { if (active) setPublicNews(data); });
     fetchPublicContent<any[]>('achievements', { limit: 3 }).then((data) => { if (active) setPublicAchievements(data); });
     fetchHomeContent().then((data) => { if (active) setHome(data); });
-    fetchPublicContent<Staff[]>('staff').then((data) => { if (active) setPrincipal(data.find((item) => item.position === 'Kepala Sekolah') ?? null); });
+    publicProfileApi.leadership().then(({ data }) => { if (active && data) setPrincipal(data.principal); });
     fetchSpmbContent().then((data) => { if (active) setSpmb(data); });
     fetchStats().then((data) => { if (active) setStats(data); });
     fetchGalleries({ page: 1, limit: 8 })
@@ -78,7 +79,7 @@ const Home: React.FC = () => {
   const heroImages = home?.hero.images ?? [];
   const heroFrameImage = home?.hero.frame_image || heroImages[1] || '';
   const principalName = principal?.name || home?.welcome.principal_name || '';
-  const principalPosition = principal?.position || home?.welcome.principal_title || '';
+  const principalPosition = formatLeadershipTitle(principal?.title) || principal?.position || home?.welcome.principal_title || '';
   const principalPhoto = resolveImageUrl(home?.welcome.image || principal?.photo);
   const statIcons = [Users, GraduationCap, BookOpen];
   const statsWithIcons = (stats ?? []).map((stat, index) => ({ ...stat, icon: React.createElement(statIcons[index] ?? Users, { className: 'h-6 w-6' }) }));

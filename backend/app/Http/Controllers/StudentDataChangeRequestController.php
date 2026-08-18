@@ -182,8 +182,8 @@ class StudentDataChangeRequestController extends Controller
         $search = $request->input('search');
         if ($search) {
             $query->whereHas('student', function ($q) use ($search) {
-                $q->where('name', 'ilike', "%{$search}%")
-                    ->orWhere('nisn', 'ilike', "%{$search}%");
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('nisn', 'like', "%{$search}%");
             });
         }
 

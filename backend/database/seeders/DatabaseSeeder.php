@@ -123,6 +123,13 @@ class DatabaseSeeder extends Seeder
             ['kelulusan.edit', 'Kelulusan Siswa - Ubah', 'kelulusan'],
             ['kelulusan.delete', 'Kelulusan Siswa - Hapus', 'kelulusan'],
             ['kelulusan.verify', 'Kelulusan Siswa - Verifikasi', 'kelulusan'],
+
+            ['sdm.view', 'SDM - Lihat', 'sdm'],
+            ['sdm.create', 'SDM - Buat', 'sdm'],
+            ['sdm.edit', 'SDM - Ubah', 'sdm'],
+            ['sdm.delete', 'SDM - Hapus', 'sdm'],
+            ['sdm.import', 'SDM - Import Data', 'sdm'],
+            ['sdm.export', 'SDM - Export Data', 'sdm'],
         ];
 
         $permissionIds = [];
@@ -170,6 +177,7 @@ class DatabaseSeeder extends Seeder
             'management.view',
             'mading.edit_all',
             'gallery.view', 'gallery.create', 'gallery.edit', 'gallery.delete',
+            'sdm.view', 'sdm.create', 'sdm.edit', 'sdm.delete', 'sdm.import', 'sdm.export',
         ];
 
         $bkkSlugs = [
