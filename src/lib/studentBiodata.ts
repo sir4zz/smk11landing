@@ -42,16 +42,16 @@ function parentFields(prefix: string, section: string): BiodataFieldDef[] {
     { key: `${prefix}_kewarganegaraan`, label: 'Kewarganegaraan', section },
     { key: `${prefix}_pendidikan`, label: 'Pendidikan', section },
     { key: `${prefix}_pekerjaan`, label: 'Pekerjaan', section },
-    { key: `${prefix}_penghasilan`, label: 'Penghasilan per Bulan', section },
+    { key: `${prefix}_penghasilan`, label: 'Penghasilan per Bulan', section, type: 'number' },
     { key: `${prefix}_alamat`, label: 'Alamat Rumah', section, type: 'textarea', full: true },
-    { key: `${prefix}_no_telp`, label: 'No. HP/Telp', section },
+    { key: `${prefix}_no_telp`, label: 'No. HP/Telp', section, type: 'number' },
   ];
 }
 
 export const BIODATA_FIELDS: BiodataFieldDef[] = [
   // A. Keterangan Peserta Didik
-  { key: 'nisn', label: 'NISN', section: 'identity', placeholder: 'cth. 0061234567' },
-  { key: 'nis', label: 'NIS', section: 'identity', placeholder: 'cth. 12345' },
+  { key: 'nisn', label: 'NISN', section: 'identity', placeholder: 'cth. 0061234567', type: 'number' },
+  { key: 'nis', label: 'NIS', section: 'identity', placeholder: 'cth. 12345', type: 'number' },
   { key: 'name', label: 'Nama Lengkap', section: 'identity', full: true },
   { key: 'nickname', label: 'Nama Panggilan', section: 'identity' },
   { key: 'class', label: 'Kelas', section: 'identity', placeholder: 'cth. X TJKT 1' },
@@ -69,7 +69,7 @@ export const BIODATA_FIELDS: BiodataFieldDef[] = [
 
   // B. Keterangan Tempat Tinggal
   { key: 'address', label: 'Alamat Tempat Tinggal', section: 'residence', type: 'textarea', full: true },
-  { key: 'phone', label: 'No. Telp / HP', section: 'residence' },
+  { key: 'phone', label: 'No. Telp / HP', section: 'residence', type: 'number' },
   { key: 'tinggal_dengan', label: 'Tinggal Dengan (Orang Tua/Saudara/Asrama/Kost)', section: 'residence' },
   { key: 'jarak_sekolah', label: 'Jarak Tempat Tinggal ke Sekolah (KM)', section: 'residence', type: 'number' },
 
@@ -83,8 +83,8 @@ export const BIODATA_FIELDS: BiodataFieldDef[] = [
   // D. Keterangan Pendidikan
   { key: 'lulusan_dari', label: 'Pendidikan Sebelumnya (Lulusan Dari)', section: 'education' },
   { key: 'tanggal_sttb', label: 'Tanggal STTB/Ijazah', section: 'education', type: 'date' },
-  { key: 'nomor_sttb', label: 'Nomor STTB/Ijazah', section: 'education' },
-  { key: 'lama_belajar', label: 'Lama Belajar (Tahun)', section: 'education' },
+  { key: 'nomor_sttb', label: 'Nomor STTB/Ijazah', section: 'education', type: 'number' },
+  { key: 'lama_belajar', label: 'Lama Belajar (Tahun)', section: 'education', type: 'number' },
   { key: 'pindahan_dari', label: 'Pindahan Dari Sekolah', section: 'education' },
   { key: 'alasan_pindah', label: 'Alasan Pindah', section: 'education' },
   { key: 'diangkat', label: 'Diangkat', section: 'education' },

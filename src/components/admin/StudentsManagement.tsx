@@ -1,5 +1,5 @@
-import { Fragment, useCallback, useEffect, useState } from 'react';
-import type { ChangeEvent, FormEvent } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
+import type { ChangeEvent, FormEvent, KeyboardEvent } from 'react';
 import { ChevronRight, Plus, Trash2, X, Loader2, KeyRound, Search, UserRound, Upload, Pencil, Eye, ArrowLeft } from 'lucide-react';
 import { accountsApi, resolveImageUrl } from '../../lib/api';
 import StudentImportModal from './StudentImportModal';
@@ -61,9 +61,9 @@ export default function StudentsManagement() {
   const [importOpen, setImportOpen] = useState(false);
   const [form, setForm] = useState<Record<string, string>>(emptyBiodata());
   const [step, setStep] = useState(1);
-  const [maxStep, setMaxStep] = useState(1);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [detailId, setDetailId] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement | null>(null);
 
   const totalSteps = BIODATA_SECTIONS.length;
 
@@ -92,7 +92,6 @@ export default function StudentsManagement() {
     fresh.foto = '';
     setForm(fresh);
     setStep(1);
-    setMaxStep(1);
     setErrors({});
     setOpen(true);
   };
@@ -101,7 +100,6 @@ export default function StudentsManagement() {
     setEditing(student);
     setForm(initFormFrom(student));
     setStep(1);
-    setMaxStep(1);
     setErrors({});
     setOpen(true);
   };
@@ -150,7 +148,6 @@ export default function StudentsManagement() {
     }
     const next = Math.min(step + 1, totalSteps);
     setStep(next);
-    setMaxStep((prev) => Math.max(prev, next));
     setErrors({});
   };
 
@@ -159,8 +156,12 @@ export default function StudentsManagement() {
     setErrors({});
   };
 
+  const goSubmit = () => {
+    formRef.current?.requestSubmit();
+  };
+
   const jumpTo = (target: number) => {
-    if (target <= maxStep && target >= 1) {
+    if (target >= 1 && target <= totalSteps) {
       setStep(target);
       setErrors({});
     }
@@ -220,7 +221,6 @@ export default function StudentsManagement() {
       await load();
       flash('ok', `Data siswa ${name} berhasil diperbarui.`);
       setStep(1);
-      setMaxStep(1);
       setErrors({});
       setSaving(false);
       return;
@@ -238,7 +238,6 @@ export default function StudentsManagement() {
     await load();
     flash('ok', `Akun siswa ${name} berhasil dibuat. Login siswa: NISN + PIN.`);
     setStep(1);
-    setMaxStep(1);
     setErrors({});
     setSaving(false);
   };
@@ -357,7 +356,7 @@ export default function StudentsManagement() {
 
       {open && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4">
-          <form onSubmit={submit} className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
+          <form ref={formRef} onSubmit={submit} className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
             <div className="mb-5 flex justify-between">
               <h2 className="text-xl font-bold text-[#1B2A4A]">{editing ? 'Edit Data Siswa' : 'Tambah Akun Siswa'}</h2>
               <button type="button" onClick={() => setOpen(false)}><X /></button>
@@ -374,20 +373,17 @@ export default function StudentsManagement() {
                 const n = i + 1;
                 const active = n === step;
                 const done = n < step;
-                const reachable = n <= maxStep;
                 return (
                   <Fragment key={section.id}>
                     {i > 0 && <ChevronRight className="h-4 w-4 shrink-0 text-[#5B7088]/40" />}
                     <button
                       type="button"
-                      disabled={!reachable}
                       onClick={() => jumpTo(n)}
                       title={section.title}
                       className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
                         active ? 'bg-[#1B2A4A] text-white'
-                          : done ? 'bg-[#C8A951] text-[#1B2A4A]'
-                            : reachable ? 'bg-[#FAF6F0] text-[#5B7088] hover:bg-[#1B2A4A]/10'
-                              : 'cursor-not-allowed bg-[#FAF6F0] text-[#5B7088]/40'
+                          : done ? 'bg-[#C8A951] text-[#1B2A4A] hover:opacity-80'
+                            : 'bg-[#FAF6F0] text-[#5B7088] hover:bg-[#1B2A4A]/10'
                       }`}
                     >
                       {n}. {stepShortLabel(section.title)}
@@ -403,9 +399,23 @@ export default function StudentsManagement() {
               return (
                 <div key={section.id} className="rounded-xl border border-[#1B2A4A]/10 p-4">
                   <p className="mb-3 font-bold text-[#1B2A4A]">{section.title}</p>
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  <div
+                    className="grid gap-4 sm:grid-cols-2"
+                    onKeyDown={(e) => {
+                      if (e.key !== 'Enter' || (e.target as HTMLElement).tagName !== 'INPUT') return;
+                      e.preventDefault();
+                      const grid = e.currentTarget;
+                      const inputs = Array.from(grid.querySelectorAll('input')) as HTMLInputElement[];
+                      const target = e.target as HTMLInputElement;
+                      const idx = inputs.indexOf(target);
+                      const next = idx >= 0 ? inputs[idx + 1] : undefined;
+                      if (next) next.focus();
+                      else if (step < totalSteps) goNext();
+                      else goSubmit();
+                    }}
+                  >
                     {section.id === 'identity' && (
-                      <BiodataField field={{ key: 'pin', label: editing ? 'PIN Baru (opsional, min. 4 karakter)' : 'PIN Siswa (min. 4 karakter)', section: 'identity', type: 'text' }} value={form.pin} onChange={setValue('pin')} placeholder={editing ? 'Kosongkan jika tidak diubah' : 'cth. 1234'} error={errors.pin} />
+                      <BiodataField field={{ key: 'pin', label: editing ? 'PIN Baru (opsional, min. 4 karakter)' : 'PIN Siswa (min. 4 karakter)', section: 'identity', type: 'number' }} value={form.pin} onChange={setValue('pin')} placeholder={editing ? 'Kosongkan jika tidak diubah' : 'cth. 1234'} error={errors.pin} />
                     )}
                     {section.id === 'identity' && (
                       <div className="sm:col-span-2">
@@ -448,6 +458,13 @@ function BiodataField({ field, value, onChange, placeholder, error }: { field: B
   const cls = field.full ? 'sm:col-span-2' : '';
   const inputCls = `mt-1 w-full rounded-lg border bg-white px-3 py-2 font-normal ${error ? 'border-red-400' : 'border-[#1B2A4A]/20'}`;
 
+  const isNumeric = field.type === 'number';
+  const blockNonDigits = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (!isNumeric) return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key.length === 1 && !/[0-9]/.test(e.key)) e.preventDefault();
+  };
+
   return (
     <label className={`block text-sm font-semibold ${cls}`}>
       {field.label}
@@ -462,7 +479,19 @@ function BiodataField({ field, value, onChange, placeholder, error }: { field: B
       ) : field.type === 'textarea' ? (
         <textarea value={value} onChange={onChange} rows={2} className={inputCls} placeholder={placeholder ?? field.placeholder} />
       ) : (
-        <input value={value} type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'} onChange={onChange} className={inputCls} placeholder={placeholder ?? field.placeholder} />
+        <input
+          value={value}
+          type={field.type === 'date' ? 'date' : 'text'}
+          inputMode={isNumeric ? 'decimal' : undefined}
+          pattern={isNumeric ? '[0-9]*' : undefined}
+          onKeyDown={blockNonDigits}
+          onChange={(e) => {
+            if (isNumeric) e.target.value = e.target.value.replace(/[^0-9]/g, '');
+            onChange(e);
+          }}
+          className={inputCls}
+          placeholder={placeholder ?? field.placeholder}
+        />
       )}
       {error && <span className="mt-1 block text-xs font-medium text-red-600">{error}</span>}
     </label>
