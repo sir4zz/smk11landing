@@ -184,8 +184,9 @@ export default function ImportModal({ config, table, onClose, onImported }: Impo
         errors.push(`Baris ${i + 2}: kolom ${primaryField} kosong.`);
         continue;
       }
-      if (needsSlug) {
-        const base = slugify(row.slug ?? row[primaryField]);
+       if (needsSlug) {
+         const slugSource = table === 'programs' ? row.short_name ?? row.name : row.title;
+         const base = slugify(slugSource);
         let slug = base;
         let n = 2;
         while (usedSlugs.has(slug)) {
