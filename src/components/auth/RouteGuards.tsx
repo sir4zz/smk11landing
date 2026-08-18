@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { backendApi } from '../../lib/api';
 import { STAFF_ROLES } from '../../lib/permissions';
 import { LoadingInline } from '../ui/LoadingScreen';
@@ -53,6 +53,7 @@ export function AdminRouteGuard() {
 
 export function StudentRouteGuard() {
   const [state, setState] = useState<'loading' | 'allowed' | 'denied'>('loading');
+  const location = useLocation();
 
   useEffect(() => {
     let active = true;
@@ -92,7 +93,7 @@ export function StudentRouteGuard() {
   }
 
   if (state === 'denied') {
-    return <Navigate to="/mading/login" replace />;
+    return <Navigate to={`/mading/login?returnUrl=${encodeURIComponent(location.pathname)}`} replace />;
   }
 
   return <Outlet />;

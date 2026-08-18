@@ -4,6 +4,8 @@ import { Menu, X, Search, ChevronDown, ChevronUp, ChevronRight } from 'lucide-re
 import { navItems, type NavItem } from '../../data/navigation';
 import logoSekolah from '../../assets/logo.png';
 
+const studentSessionKey = 'smkn11-student-session';
+
 interface NavbarProps {
   onSearchOpen: () => void;
 }
@@ -11,7 +13,25 @@ interface NavbarProps {
 const Navbar: React.FC<NavbarProps> = ({ onSearchOpen }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [expandedMobileItem, setExpandedMobileItem] = useState<string | null>(null);
+  const [isStudentLoggedIn, setIsStudentLoggedIn] = useState(false);
   const location = useLocation();
+
+  useEffect(() => {
+    setIsStudentLoggedIn(localStorage.getItem(studentSessionKey) === 'true');
+  }, [location.pathname]);
+
+  useEffect(() => {
+    const handleStorage = () => {
+      setIsStudentLoggedIn(localStorage.getItem(studentSessionKey) === 'true');
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
+  const visibleNavItems = navItems.map((item) => ({
+    ...item,
+    children: item.children?.filter((child) => !child.studentOnly || isStudentLoggedIn),
+  })).filter((item) => !item.studentOnly || isStudentLoggedIn);
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -46,7 +66,7 @@ const Navbar: React.FC<NavbarProps> = ({ onSearchOpen }) => {
 
         {/* Desktop Navigation */}
         <div className="hidden xl:flex items-center space-x-1 xl:space-x-2">
-          {navItems.map((item) => (
+          {visibleNavItems.map((item) => (
             <div key={item.label} className="relative group">
               {item.children ? (
                 <div className="flex items-center cursor-pointer px-2 py-1.5 text-white hover:text-[#C8A951] transition-colors duration-300 ease-in-out">
@@ -143,7 +163,7 @@ const Navbar: React.FC<NavbarProps> = ({ onSearchOpen }) => {
       {isMobileMenuOpen && (
         <div className="xl:hidden absolute top-[64px] left-0 w-full bg-[#1B2A4A] border-t border-[#2a3f6e] shadow-xl max-h-[calc(100vh-64px)] overflow-y-auto">
           <div className="flex flex-col py-4 px-4 space-y-2">
-            {navItems.map((item) => (
+            {visibleNavItems.map((item) => (
               <div key={item.label} className="border-b border-[#2a3f6e] last:border-0 pb-2">
                 {item.children ? (
                   <div>

@@ -24,6 +24,7 @@ use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\SpmbController;
 use App\Http\Controllers\StatsController;
 use App\Http\Controllers\StudentController;
+use App\Http\Controllers\StudentDataChangeRequestController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\DataController;
 use Illuminate\Support\Facades\Route;
@@ -148,6 +149,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Upload
     Route::post('/upload', [UploadController::class, 'upload'])->middleware('throttle:upload');
+
+    // Student: own data & change requests
+    Route::get('/student/data-siswa', [StudentDataChangeRequestController::class, 'myData']);
+    Route::get('/student/data-siswa/change-requests', [StudentDataChangeRequestController::class, 'myRequests']);
+    Route::post('/student/data-siswa/change-requests', [StudentDataChangeRequestController::class, 'store']);
+    Route::delete('/student/data-siswa/change-requests/{id}', [StudentDataChangeRequestController::class, 'cancel']);
 });
 
 // ============================================================
@@ -205,6 +212,11 @@ Route::middleware(['auth:sanctum', 'staff'])->group(function () {
     Route::patch('/admin/kelulusan/{id}', [AlumniGraduationController::class, 'update'])->middleware('permission:job.edit');
     Route::delete('/admin/kelulusan/{id}', [AlumniGraduationController::class, 'destroy'])->middleware('permission:job.delete');
     Route::patch('/admin/kelulusan/{id}/verify', [AlumniGraduationController::class, 'verify'])->middleware('permission:job.edit');
+
+    // Student data change request verification (operator_sekolah)
+    Route::get('/admin/student-change-requests', [StudentDataChangeRequestController::class, 'adminIndex'])->middleware('permission:mading.edit_all');
+    Route::get('/admin/student-change-requests/{id}', [StudentDataChangeRequestController::class, 'adminShow'])->middleware('permission:mading.edit_all');
+    Route::patch('/admin/student-change-requests/{id}/verify', [StudentDataChangeRequestController::class, 'verify'])->middleware('permission:mading.edit_all');
 });
 
 // ============================================================

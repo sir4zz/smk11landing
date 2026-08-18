@@ -1,4 +1,4 @@
-export const STAFF_ROLES = ['admin', 'guru', 'osis'] as const;
+export const STAFF_ROLES = ['admin', 'operator_sekolah', 'guru', 'osis', 'bkk'] as const;
 export type StaffRole = (typeof STAFF_ROLES)[number];
 
 export interface PermissionDef {
@@ -57,6 +57,12 @@ export const PERMISSION_CATALOG: PermissionDef[] = [
 
   { slug: 'management.view', name: 'View', module: 'management' },
 
+  { slug: 'job.view', name: 'View', module: 'bkk' },
+  { slug: 'job.create', name: 'Create', module: 'bkk' },
+  { slug: 'job.edit', name: 'Edit', module: 'bkk' },
+  { slug: 'job.delete', name: 'Delete', module: 'bkk' },
+  { slug: 'job.publish', name: 'Publish', module: 'bkk' },
+
   { slug: 'kelulusan.view', name: 'View', module: 'kelulusan' },
   { slug: 'kelulusan.create', name: 'Create', module: 'kelulusan' },
   { slug: 'kelulusan.edit', name: 'Edit', module: 'kelulusan' },
@@ -73,6 +79,7 @@ export const PERMISSION_MODULES: { key: string; label: string }[] = [
   { key: 'mading', label: 'Mading' },
   { key: 'spmb', label: 'SPMB' },
   { key: 'gallery', label: 'Galeri' },
+  { key: 'bkk', label: 'BKK' },
   { key: 'kelulusan', label: 'Kelulusan Siswa' },
   { key: 'management', label: 'Manajemen' },
 ];

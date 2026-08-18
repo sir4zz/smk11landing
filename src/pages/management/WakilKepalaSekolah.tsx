@@ -24,7 +24,7 @@ const WakilKepalaSekolah: React.FC = () => {
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <SectionHeading
           title="Wakil Kepala Sekolah"
-          subtitle="Wakil kepala sekolah membantu kepala sekolah dalam mengelola bidang kurikulum, kesiswaan, sarana prasarana, serta humas dan hubungan industri"
+          subtitle="Wakil kepala sekolah membantu kepala sekolah dalam mengelola bidang kurikulum, keamanan, security, serta hubungan industri"
           align="center"
         />
 

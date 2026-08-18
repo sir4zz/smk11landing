@@ -56,7 +56,7 @@ class DatabaseSeeder extends Seeder
 
     protected function seedRbac(): void
     {
-        $roles = ['admin' => 'Admin', 'guru' => 'Guru', 'osis' => 'OSIS'];
+        $roles = ['admin' => 'Admin', 'operator_sekolah' => 'Operator Sekolah', 'guru' => 'Guru', 'osis' => 'OSIS', 'bkk' => 'BKK'];
 
         $roleIds = [];
         foreach ($roles as $slug => $name) {
@@ -117,6 +117,12 @@ class DatabaseSeeder extends Seeder
             ['job.publish', 'BKK - Publikasi', 'bkk'],
 
             ['management.view', 'Manajemen - Lihat', 'management'],
+
+            ['kelulusan.view', 'Kelulusan Siswa - Lihat', 'kelulusan'],
+            ['kelulusan.create', 'Kelulusan Siswa - Buat', 'kelulusan'],
+            ['kelulusan.edit', 'Kelulusan Siswa - Ubah', 'kelulusan'],
+            ['kelulusan.delete', 'Kelulusan Siswa - Hapus', 'kelulusan'],
+            ['kelulusan.verify', 'Kelulusan Siswa - Verifikasi', 'kelulusan'],
         ];
 
         $permissionIds = [];
@@ -159,7 +165,21 @@ class DatabaseSeeder extends Seeder
             'job.view', 'job.create', 'job.edit', 'job.publish',
         ];
 
-        foreach ([['guru', $guruSlugs], ['osis', $osisSlugs]] as [$roleSlug, $slugs]) {
+        $operatorSekolahSlugs = [
+            'dashboard.view',
+            'management.view',
+            'mading.edit_all',
+            'gallery.view', 'gallery.create', 'gallery.edit', 'gallery.delete',
+        ];
+
+        $bkkSlugs = [
+            'dashboard.view',
+            'management.view',
+            'job.view', 'job.create', 'job.edit', 'job.delete', 'job.publish',
+            'kelulusan.view', 'kelulusan.create', 'kelulusan.edit', 'kelulusan.delete', 'kelulusan.verify',
+        ];
+
+        foreach ([['guru', $guruSlugs], ['osis', $osisSlugs], ['operator_sekolah', $operatorSekolahSlugs], ['bkk', $bkkSlugs]] as [$roleSlug, $slugs]) {
             foreach ($slugs as $slug) {
                 if (! isset($permissionIds[$slug])) {
                     continue;
@@ -195,6 +215,20 @@ class DatabaseSeeder extends Seeder
                 'password' => 'smkn11osis',
                 'name' => 'OSIS Test',
                 'role' => 'osis',
+            ],
+            [
+                'id' => 'a1b2c3d4-5678-4000-8000-operator0001',
+                'email' => 'operator.test@smkn11.sch.id',
+                'password' => 'smkn11operator',
+                'name' => 'Operator Test',
+                'role' => 'operator_sekolah',
+            ],
+            [
+                'id' => 'b2c3d4e5-6789-4000-8000-000000000001',
+                'email' => 'bkk.test@smkn11.sch.id',
+                'password' => 'smkn11bkk',
+                'name' => 'BKK Test',
+                'role' => 'bkk',
             ],
         ];
 
@@ -273,18 +307,18 @@ class DatabaseSeeder extends Seeder
     protected function seedGurus(): void
     {
         $rows = [
-            ['id' => 'b1b0c1a2-0001-4000-8000-000000000001', 'name' => 'Rudi Hartono, S.Kom.', 'email' => 'rudi.hartono@smkn11.sch.id', 'teacher_id' => 'GR-SMKN11-01', 'subject' => 'Produktif TJKT', 'position' => 'Guru Produktif TJKT', 'photo' => '/images/uploads/profiles/guru-1.jpg'],
-            ['id' => 'b1b0c1a2-0002-4000-8000-000000000002', 'name' => 'Novi Lestari, S.Kom.', 'email' => 'novi.lestari@smkn11.sch.id', 'teacher_id' => 'GR-SMKN11-02', 'subject' => 'Produktif DKV', 'position' => 'Guru Produktif DKV', 'photo' => '/images/uploads/profiles/guru-2.jpg'],
-            ['id' => 'b1b0c1a2-0003-4000-8000-000000000003', 'name' => 'Rahmat Hidayat, S.Pd.T.', 'email' => 'rahmat.hidayat@smkn11.sch.id', 'teacher_id' => 'GR-SMKN11-03', 'subject' => 'Produktif Teknik Otomotif', 'position' => 'Guru Produktif Teknik Otomotif', 'photo' => '/images/uploads/profiles/guru-3.jpg'],
-            ['id' => 'b1b0c1a2-0004-4000-8000-000000000004', 'name' => 'Dewi Anggraini, S.T.', 'email' => 'dewi.anggraini@smkn11.sch.id', 'teacher_id' => 'GR-SMKN11-04', 'subject' => 'Produktif TITL', 'position' => 'Guru Produktif TITL', 'photo' => '/images/uploads/profiles/guru-4.jpg'],
-            ['id' => 'b1b0c1a2-0005-4000-8000-000000000005', 'name' => 'Bambang Priyadi, S.E.', 'email' => 'bambang.priyadi@smkn11.sch.id', 'teacher_id' => 'GR-SMKN11-05', 'subject' => 'Produktif MPLB', 'position' => 'Guru Produktif MPLB', 'photo' => '/images/uploads/profiles/guru-5.jpg'],
-            ['id' => 'b1b0c1a2-0006-4000-8000-000000000006', 'name' => 'Sri Rahayu, S.Pd.', 'email' => 'sri.rahayu@smkn11.sch.id', 'teacher_id' => 'GR-SMKN11-06', 'subject' => 'Produktif Busana', 'position' => 'Guru Produktif Busana', 'photo' => '/images/uploads/profiles/guru-1.jpg'],
-            ['id' => 'b1b0c1a2-0007-4000-8000-000000000007', 'name' => 'Agus Salim, S.Pd.', 'email' => 'agus.salim@smkn11.sch.id', 'teacher_id' => 'GR-SMKN11-07', 'subject' => 'Matematika', 'position' => 'Guru Mapel Matematika', 'photo' => '/images/uploads/profiles/guru-2.jpg'],
-            ['id' => 'b1b0c1a2-0008-4000-8000-000000000008', 'name' => 'Ratna Sari, S.Pd.', 'email' => 'ratna.sari@smkn11.sch.id', 'teacher_id' => 'GR-SMKN11-08', 'subject' => 'Bahasa Indonesia', 'position' => 'Guru Mapel Bahasa Indonesia', 'photo' => '/images/uploads/profiles/guru-3.jpg'],
-            ['id' => 'b1b0c1a2-0009-4000-8000-000000000009', 'name' => 'Hendra Gunawan, S.Pd.', 'email' => 'hendra.gunawan@smkn11.sch.id', 'teacher_id' => 'GR-SMKN11-09', 'subject' => 'Bahasa Inggris', 'position' => 'Guru Mapel Bahasa Inggris', 'photo' => '/images/uploads/profiles/guru-4.jpg'],
-            ['id' => 'b1b0c1a2-0010-4000-8000-000000000010', 'name' => 'Siti Maesaroh, M.Pd.', 'email' => 'siti.maesaroh@smkn11.sch.id', 'teacher_id' => 'GR-SMKN11-10', 'subject' => 'Pendidikan Agama Islam', 'position' => 'Guru PAI', 'photo' => '/images/uploads/profiles/guru-5.jpg'],
-            ['id' => 'b1b0c1a2-0011-4000-8000-000000000011', 'name' => 'Fajar Nugroho, S.Kom.', 'email' => 'fajar.nugroho@smkn11.sch.id', 'teacher_id' => 'GR-SMKN11-11', 'subject' => 'Informatika', 'position' => 'Guru Mapel Informatika', 'photo' => '/images/uploads/profiles/kepala-tu.jpg'],
-            ['id' => 'b1b0c1a2-0012-4000-8000-000000000012', 'name' => 'Yulia Febrianti, S.Pd.', 'email' => 'yulia.febrianti@smkn11.sch.id', 'teacher_id' => 'GR-SMKN11-12', 'subject' => 'PKWU', 'position' => 'Guru Mapel PKWU', 'photo' => '/images/uploads/profiles/kepala-sekolah.jpg'],
+            ['id' => 'b1b0c1a2-0001-4000-8000-000000000001', 'name' => 'Rudi Hartono, S.Kom.', 'email' => 'rudi.hartono@smkn11.sch.id', 'teacher_id' => 'GR-SMKN11-01', 'subject' => 'Produktif TJKT', 'position' => 'Guru Produktif TJKT', 'photo' => 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=800&q=80'],
+            ['id' => 'b1b0c1a2-0002-4000-8000-000000000002', 'name' => 'Novi Lestari, S.Kom.', 'email' => 'novi.lestari@smkn11.sch.id', 'teacher_id' => 'GR-SMKN11-02', 'subject' => 'Produktif DKV', 'position' => 'Guru Produktif DKV', 'photo' => 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=800&q=80'],
+            ['id' => 'b1b0c1a2-0003-4000-8000-000000000003', 'name' => 'Rahmat Hidayat, S.Pd.T.', 'email' => 'rahmat.hidayat@smkn11.sch.id', 'teacher_id' => 'GR-SMKN11-03', 'subject' => 'Produktif Teknik Otomotif', 'position' => 'Guru Produktif Teknik Otomotif', 'photo' => 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80'],
+            ['id' => 'b1b0c1a2-0004-4000-8000-000000000004', 'name' => 'Dewi Anggraini, S.T.', 'email' => 'dewi.anggraini@smkn11.sch.id', 'teacher_id' => 'GR-SMKN11-04', 'subject' => 'Produktif TITL', 'position' => 'Guru Produktif TITL', 'photo' => 'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=800&q=80'],
+            ['id' => 'b1b0c1a2-0005-4000-8000-000000000005', 'name' => 'Bambang Priyadi, S.E.', 'email' => 'bambang.priyadi@smkn11.sch.id', 'teacher_id' => 'GR-SMKN11-05', 'subject' => 'Produktif MPLB', 'position' => 'Guru Produktif MPLB', 'photo' => 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80'],
+            ['id' => 'b1b0c1a2-0006-4000-8000-000000000006', 'name' => 'Sri Rahayu, S.Pd.', 'email' => 'sri.rahayu@smkn11.sch.id', 'teacher_id' => 'GR-SMKN11-06', 'subject' => 'Produktif Busana', 'position' => 'Guru Produktif Busana', 'photo' => 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=800&q=80'],
+            ['id' => 'b1b0c1a2-0007-4000-8000-000000000007', 'name' => 'Agus Salim, S.Pd.', 'email' => 'agus.salim@smkn11.sch.id', 'teacher_id' => 'GR-SMKN11-07', 'subject' => 'Matematika', 'position' => 'Guru Mapel Matematika', 'photo' => 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=800&q=80'],
+            ['id' => 'b1b0c1a2-0008-4000-8000-000000000008', 'name' => 'Ratna Sari, S.Pd.', 'email' => 'ratna.sari@smkn11.sch.id', 'teacher_id' => 'GR-SMKN11-08', 'subject' => 'Bahasa Indonesia', 'position' => 'Guru Mapel Bahasa Indonesia', 'photo' => 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=800&q=80'],
+            ['id' => 'b1b0c1a2-0009-4000-8000-000000000009', 'name' => 'Hendra Gunawan, S.Pd.', 'email' => 'hendra.gunawan@smkn11.sch.id', 'teacher_id' => 'GR-SMKN11-09', 'subject' => 'Bahasa Inggris', 'position' => 'Guru Mapel Bahasa Inggris', 'photo' => 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=800&q=80'],
+            ['id' => 'b1b0c1a2-0010-4000-8000-000000000010', 'name' => 'Siti Maesaroh, M.Pd.', 'email' => 'siti.maesaroh@smkn11.sch.id', 'teacher_id' => 'GR-SMKN11-10', 'subject' => 'Pendidikan Agama Islam', 'position' => 'Guru PAI', 'photo' => 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=800&q=80'],
+            ['id' => 'b1b0c1a2-0011-4000-8000-000000000011', 'name' => 'Fajar Nugroho, S.Kom.', 'email' => 'fajar.nugroho@smkn11.sch.id', 'teacher_id' => 'GR-SMKN11-11', 'subject' => 'Informatika', 'position' => 'Guru Mapel Informatika', 'photo' => 'https://images.unsplash.com/photo-1507591064344-4c6ce005b128?auto=format&fit=crop&w=800&q=80'],
+            ['id' => 'b1b0c1a2-0012-4000-8000-000000000012', 'name' => 'Yulia Febrianti, S.Pd.', 'email' => 'yulia.febrianti@smkn11.sch.id', 'teacher_id' => 'GR-SMKN11-12', 'subject' => 'PKWU', 'position' => 'Guru Mapel PKWU', 'photo' => 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=800&q=80'],
         ];
 
         foreach ($rows as $row) {
@@ -998,9 +1032,9 @@ class DatabaseSeeder extends Seeder
         $rows = [
             ['name' => 'Drs. H. Ahmad Fauzi, M.Pd.', 'position' => 'Kepala Sekolah', 'department' => 'Manajemen', 'photo' => 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=800&q=80', 'description' => 'Memimpin SMKN 11 Kabupaten Tangerang dengan visi sekolah vokasi yang unggul, berkarakter, dan siap kerja, didukung tata kelola yang transparan dan partisipatif.'],
             ['name' => 'Sri Mulyani, S.Pd., M.Si.', 'position' => 'Wakil Kepala Sekolah Bid. Kurikulum', 'department' => 'Kurikulum', 'photo' => 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=800&q=80', 'description' => 'Mengoordinasikan pelaksanaan kurikulum, kegiatan belajar mengajar, serta asesmen agar mutu pembelajaran terus meningkat.'],
-            ['name' => 'Budi Santoso, S.Kom.', 'position' => 'Wakil Kepala Sekolah Bid. Kesiswaan', 'department' => 'Kesiswaan', 'photo' => 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80', 'description' => 'Membina pengembangan karakter, kedisiplinan, dan kegiatan kesiswaan agar murid tumbuh menjadi pribadi yang berakhlak mulia.'],
-            ['name' => 'Haryanto, S.T.', 'position' => 'Wakil Kepala Sekolah Bid. Sarana Prasarana', 'department' => 'Sarana Prasarana', 'photo' => 'https://images.unsplash.com/photo-1507591064344-4c6ce005b128?auto=format&fit=crop&w=800&q=80', 'description' => 'Mengelola sarana dan prasarana sekolah agar mendukung proses pembelajaran yang aman, nyaman, dan optimal.'],
-            ['name' => 'Dra. Rini Wulandari', 'position' => 'Wakil Kepala Sekolah Bid. Humas & Hubin', 'department' => 'Humas', 'photo' => 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=800&q=80', 'description' => 'Menjalin kemitraan dengan dunia usaha dan industri serta membangun citra sekolah melalui hubungan masyarakat yang baik.'],
+            ['name' => 'Budi Santoso, S.Kom.', 'position' => 'Wakil Kepala Sekolah Bid. Keamanan', 'department' => 'Keamanan', 'photo' => 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80', 'description' => 'Membina pengembangan karakter, kedisiplinan, dan kegiatan kesiswaan agar murid tumbuh menjadi pribadi yang berakhlak mulia.'],
+            ['name' => 'Haryanto, S.T.', 'position' => 'Wakil Kepala Sekolah Bid. Security', 'department' => 'Keamanan', 'photo' => 'https://images.unsplash.com/photo-1507591064344-4c6ce005b128?auto=format&fit=crop&w=800&q=80', 'description' => 'Mengelola sarana dan prasarana sekolah agar mendukung proses pembelajaran yang aman, nyaman, dan optimal.'],
+            ['name' => 'Dra. Rini Wulandari', 'position' => 'Wakil Kepala Sekolah Bid. Keamanan & Hubin', 'department' => 'Keamanan', 'photo' => 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=800&q=80', 'description' => 'Menjalin kemitraan dengan dunia usaha dan industri serta membangun citra sekolah melalui hubungan masyarakat yang baik.'],
             ['name' => 'Eko Prasetyo, S.Kom.', 'position' => 'Kepala Program Keahlian TJKT', 'department' => 'Teknik Jaringan Komputer dan Telekomunikasi', 'photo' => 'https://images.unsplash.com/photo-1504593811423-6dd665756598?auto=format&fit=crop&w=800&q=80', 'description' => 'Memimpin pengembangan kurikulum dan praktik industri jurusan TJKT agar lulusan siap kerja di bidang jaringan dan telekomunikasi.'],
             ['name' => 'Anita Rahmawati, S.Kom., M.Kom.', 'position' => 'Kepala Program Keahlian DKV', 'department' => 'Desain Komunikasi Visual', 'photo' => 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=800&q=80', 'description' => 'Mengarahkan pembelajaran kreatif jurusan DKV dengan fokus pada desain grafis, multimedia, dan produksi konten digital.'],
             ['name' => 'Asep Saepudin, S.Pd.T.', 'position' => 'Kepala Program Keahlian Teknik Otomotif', 'department' => 'Teknik Otomotif', 'photo' => 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=800&q=80', 'description' => 'Mengelola praktik otomotif standar industri dan menjalin kemitraan dengan bengkel resmi untuk peningkatan kompetensi siswa.'],
@@ -1060,9 +1094,8 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Rina Kartika, S.Pd.', 'position' => 'Pustakawan', 'department' => 'Perpustakaan', 'photo' => 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=800&q=80'],
             ['name' => 'Maman Suherman', 'position' => 'Staf Perpustakaan', 'department' => 'Perpustakaan', 'photo' => 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=800&q=80'],
             ['name' => 'Yusuf Hidayat, A.Md.', 'position' => 'Laboran', 'department' => 'Laboratorium', 'photo' => 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=800&q=80'],
-            ['name' => 'Titi Maryati', 'position' => 'Staf Kesiswaan', 'department' => 'Kesiswaan', 'photo' => 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=800&q=80'],
-            ['name' => 'Ahmad Rifai', 'position' => 'Staf Sarana Prasarana', 'department' => 'Sarana Prasarana', 'photo' => 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80'],
-            ['name' => 'Siti Nurhaliza, A.Md.', 'position' => 'Staf Humas', 'department' => 'Humas', 'photo' => 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=800&q=80'],
+            ['name' => 'Titi Maryati', 'position' => 'Staf Keamanan', 'department' => 'Keamanan', 'photo' => 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=800&q=80'],
+            ['name' => 'Ahmad Rifai', 'position' => 'Security', 'department' => 'Keamanan', 'photo' => 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80'],
         ];
 
         foreach ($rows as $row) {

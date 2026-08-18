@@ -331,7 +331,7 @@ export const madingAiApi = {
 };
 
 // ---------- ACCOUNT MANAGEMENT (admin) ----------
-export type AccountRole = 'admin' | 'guru' | 'osis' | 'student';
+export type AccountRole = 'admin' | 'operator_sekolah' | 'guru' | 'osis' | 'bkk' | 'student';
 
 export interface AccountRow {
   id: string;
@@ -858,5 +858,86 @@ export const kelulusanAdminApi = {
     if (params?.status) q.set('status', params.status);
     const suffix = q.size ? `?${q}` : '';
     return `${apiBaseUrl}/admin/kelulusan/export${suffix}`;
+  },
+};
+
+// ---------- STUDENT DATA SISWA & CHANGE REQUESTS ----------
+export type StudentChangeRequestStatus = 'menunggu' | 'disetujui' | 'ditolak' | 'dibatalkan';
+
+export const STUDENT_CHANGE_REQUEST_STATUS_LABELS: Record<StudentChangeRequestStatus, string> = {
+  menunggu: 'Menunggu Verifikasi',
+  disetujui: 'Disetujui',
+  ditolak: 'Ditolak',
+  dibatalkan: 'Dibatalkan',
+};
+
+export interface StudentChangeRequestRow {
+  id: string;
+  student_id: string;
+  old_data: Record<string, unknown>;
+  proposed_data: Record<string, unknown>;
+  status: StudentChangeRequestStatus;
+  rejection_reason: string | null;
+  verified_by: string | null;
+  verified_at: string | null;
+  student?: { id: string; name: string; nisn: string; class: string; major: string };
+  verifier?: { id: string; name: string } | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface StudentDataPayload {
+  id: string;
+  nisn: string;
+  nis: string;
+  name: string;
+  class: string;
+  major: string;
+  gender: string;
+  date_of_birth: string;
+  place_of_birth: string;
+  religion: string;
+  address: string;
+  foto: string;
+  phone: string;
+  [key: string]: unknown;
+}
+
+export const studentDataApi = {
+  myData(): ApiResult<StudentDataPayload> {
+    return request<StudentDataPayload>('/student/data-siswa');
+  },
+  myChangeRequests(): ApiResult<StudentChangeRequestRow[]> {
+    return request<StudentChangeRequestRow[]>('/student/data-siswa/change-requests');
+  },
+  submitChangeRequest(proposedData: Record<string, unknown>): ApiResult<StudentChangeRequestRow> {
+    return request<StudentChangeRequestRow>('/student/data-siswa/change-requests', {
+      method: 'POST',
+      body: JSON.stringify({ proposed_data: proposedData }),
+    });
+  },
+  cancelChangeRequest(id: string): ApiResult<StudentChangeRequestRow> {
+    return request<StudentChangeRequestRow>(`/student/data-siswa/change-requests/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+export const studentChangeRequestAdminApi = {
+  list(params?: { status?: string; search?: string }): ApiResult<StudentChangeRequestRow[]> {
+    const q = new URLSearchParams();
+    if (params?.status) q.set('status', params.status);
+    if (params?.search) q.set('search', params.search);
+    const suffix = q.size ? `?${q}` : '';
+    return request<StudentChangeRequestRow[]>(`/admin/student-change-requests${suffix}`);
+  },
+  get(id: string): ApiResult<StudentChangeRequestRow> {
+    return request<StudentChangeRequestRow>(`/admin/student-change-requests/${encodeURIComponent(id)}`);
+  },
+  verify(id: string, payload: { status: 'disetujui' | 'ditolak'; rejection_reason?: string }): ApiResult<StudentChangeRequestRow> {
+    return request<StudentChangeRequestRow>(`/admin/student-change-requests/${encodeURIComponent(id)}/verify`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
   },
 };

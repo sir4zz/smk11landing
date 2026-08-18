@@ -16,14 +16,15 @@ import GalleryManagement from '../components/admin/GalleryManagement';
 import BkkManagement from '../components/admin/BkkManagement';
 import KelulusanSiswaManagement from '../components/admin/KelulusanSiswaManagement';
 import StudentsManagement from '../components/admin/StudentsManagement';
+import StudentChangeRequestsManagement from '../components/admin/StudentChangeRequestsManagement';
 import AccountsManagement from '../components/admin/AccountsManagement';
 import SpmbManagement from '../components/admin/SpmbManagement';
 import MyProfile from '../components/admin/MyProfile';
 import { StaffAuthProvider, useStaffAuth } from '../lib/staffAuth';
 import { can, STAFF_ROLES } from '../lib/permissions';
 
-type Section = 'dashboard' | 'news' | 'programs' | 'facilities' | 'staff' | 'achievements' | 'teacherActivities' | 'educationStaff' | 'contentRecords' | 'spmb' | 'contact' | 'contactSettings' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'gallery' | 'bkk' | 'kelulusan' | 'myProfile';
-type EditableSection = Exclude<Section, 'dashboard' | 'contact' | 'contactSettings' | 'spmb' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'gallery' | 'bkk' | 'kelulusan' | 'myProfile'>;
+type Section = 'dashboard' | 'news' | 'programs' | 'facilities' | 'staff' | 'gurus' | 'achievements' | 'teacherActivities' | 'educationStaff' | 'contentRecords' | 'spmb' | 'contact' | 'contactSettings' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'gallery' | 'bkk' | 'kelulusan' | 'myProfile' | 'studentChangeRequests';
+type EditableSection = Exclude<Section, 'dashboard' | 'contact' | 'contactSettings' | 'spmb' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'gallery' | 'bkk' | 'kelulusan' | 'myProfile' | 'studentChangeRequests'>;
 type Item = Record<string, unknown>;
 const ADMIN_SECTION_PATHS: Record<Section, string> = {
   dashboard: '/admin',
@@ -31,7 +32,8 @@ const ADMIN_SECTION_PATHS: Record<Section, string> = {
   news: '/admin/berita',
   programs: '/admin/program-keahlian',
   facilities: '/admin/fasilitas',
-  staff: '/admin/staf-guru',
+  staff: '/admin/staf',
+  gurus: '/admin/guru',
   achievements: '/admin/prestasi',
   teacherActivities: '/admin/kegiatan-guru',
   educationStaff: '/admin/tenaga-kependidikan',
@@ -49,17 +51,18 @@ const ADMIN_SECTION_PATHS: Record<Section, string> = {
   gallery: '/admin/galeri',
   bkk: '/admin/bkk',
   kelulusan: '/admin/kelulusan',
+  studentChangeRequests: '/admin/verifikasi-data-siswa',
 };
 const sessionKey = 'smkn11-admin-session';
 const TABLE_MAP: Record<string, string> = {
   news: 'news', programs: 'programs', facilities: 'facilities',
-  staff: 'staff', achievements: 'achievements',
+  staff: 'staff', gurus: 'gurus', achievements: 'achievements',
   teacherActivities: 'teacher_activities', educationStaff: 'education_staff',
   contentRecords: 'content_records',
 };
 
 const seed = {
-  news: [] as Item[], programs: [] as Item[], facilities: [] as Item[], staff: [] as Item[], achievements: [] as Item[], teacherActivities: [] as Item[], educationStaff: [] as Item[], contentRecords: [] as Item[],
+  news: [] as Item[], programs: [] as Item[], facilities: [] as Item[], staff: [] as Item[], gurus: [] as Item[], achievements: [] as Item[], teacherActivities: [] as Item[], educationStaff: [] as Item[], contentRecords: [] as Item[],
   contact: [] as Item[],
 };
 
@@ -68,6 +71,7 @@ const configs: Record<EditableSection, { title: string; icon: typeof FileText; f
   programs: { title: 'Program Keahlian', icon: BookOpen, fields: [{ key: 'name', label: 'Nama Program' }, { key: 'slug', label: 'Slug' }, { key: 'short_name', label: 'Singkatan' }, { key: 'short_description', label: 'Deskripsi Singkat', multiline: true }, { key: 'description', label: 'Deskripsi Lengkap', multiline: true }, { key: 'competencies', label: 'Kompetensi', type: 'list' }, { key: 'career_prospects', label: 'Prospek Karir', type: 'list' }, { key: 'facilities', label: 'Fasilitas Pendukung', type: 'list' }, { key: 'image', label: 'Gambar', type: 'image' }] },
   facilities: { title: 'Fasilitas', icon: Building2, fields: [{ key: 'name', label: 'Nama Fasilitas' }, { key: 'category', label: 'Kategori', type: 'select' }, { key: 'description', label: 'Deskripsi', multiline: true }, { key: 'photo', label: 'Foto', type: 'image' }] },
   staff: { title: 'Staf & Guru', icon: Users, fields: [{ key: 'name', label: 'Nama' }, { key: 'position', label: 'Jabatan', type: 'select' }, { key: 'department', label: 'Unit / Departemen', type: 'select' }, { key: 'photo', label: 'Foto', type: 'image' }, { key: 'description', label: 'Deskripsi Singkat', multiline: true }] },
+  gurus: { title: 'Guru', icon: Users, fields: [{ key: 'name', label: 'Nama' }, { key: 'subject', label: 'Mata Pelajaran' }, { key: 'position', label: 'Jabatan', type: 'select' }, { key: 'photo', label: 'Foto', type: 'image' }] },
   achievements: { title: 'Prestasi Siswa', icon: Trophy, fields: [{ key: 'title', label: 'Judul Prestasi' }, { key: 'event', label: 'Acara' }, { key: 'level', label: 'Tingkat', type: 'select' }, { key: 'rank', label: 'Peringkat', type: 'select' }, { key: 'year', label: 'Tahun', type: 'number' }, { key: 'photo', label: 'Foto', type: 'image' }] },
   teacherActivities: { title: 'Kegiatan Guru', icon: CalendarDays, fields: [{ key: 'title', label: 'Judul Kegiatan' }, { key: 'category', label: 'Kategori', type: 'select' }, { key: 'date', label: 'Tanggal', type: 'date' }, { key: 'photo', label: 'Foto', type: 'image' }, { key: 'description', label: 'Deskripsi', multiline: true }] },
   educationStaff: { title: 'Tenaga Kependidikan', icon: Briefcase, fields: [{ key: 'name', label: 'Nama' }, { key: 'position', label: 'Jabatan', type: 'select' }, { key: 'department', label: 'Unit / Departemen', type: 'select' }, { key: 'photo', label: 'Foto', type: 'image' }] },
@@ -76,10 +80,10 @@ const configs: Record<EditableSection, { title: string; icon: typeof FileText; f
 
 const FIELD_OPTION_PRESETS: Record<string, string[]> = {
   category: ['Informasi', 'Kegiatan', 'Prestasi', 'Pengumuman', 'Akademik', 'Fasilitas Umum', 'Keagamaan', 'Pendukung'],
-  author: ['Tim Humas', 'Admin', 'Pembina OSIS', 'Kesiswaan'],
+  author: ['Tim Keamanan', 'Admin', 'Pembina OSIS', 'Operator'],
   source_label: ['Berita mandiri', 'Diambil dari URL', 'Rilis resmi', 'Kerja sama media'],
-  position: ['Kepala Sekolah', 'Wakil Kepala Sekolah', 'Kepala Tata Usaha', 'Guru', 'Staf Kesiswaan', 'Staf Humas', 'Laboran', 'Pustakawan', 'Operator Sekolah (Dapodik)'],
-  department: ['Manajemen', 'Kurikulum', 'Kesiswaan', 'Humas', 'Sarana Prasarana', 'Tata Usaha', 'Perpustakaan', 'Laboratorium'],
+  position: ['Kepala Sekolah', 'Wakil Kepala Sekolah', 'Kepala Tata Usaha', 'Guru', 'Staf Keamanan', 'Security', 'Laboran', 'Pustakawan', 'Operator Sekolah (Dapodik)'],
+  department: ['Manajemen', 'Kurikulum', 'Keamanan', 'Tata Usaha', 'Perpustakaan', 'Laboratorium'],
   level: ['Kabupaten', 'Provinsi', 'Nasional', 'Internasional'],
   rank: ['Juara 1', 'Juara 2', 'Juara 3', 'Medali Emas', 'Medali Perak', 'Medali Perunggu', 'Harapan', 'Peserta', 'Partisipasi'],
 };
@@ -229,13 +233,14 @@ function AdminPanel() {
         backendApi.database.from(TABLE_MAP.programs).select('*').then((r: any) => r.data || []),
         backendApi.database.from(TABLE_MAP.facilities).select('*').then((r: any) => r.data || []),
         backendApi.database.from(TABLE_MAP.staff).select('*').then((r: any) => r.data || []),
+        backendApi.database.from(TABLE_MAP.gurus).select('*').then((r: any) => r.data || []),
         backendApi.database.from(TABLE_MAP.achievements).select('*').then((r: any) => r.data || []),
         backendApi.database.from(TABLE_MAP.teacherActivities).select('*').then((r: any) => r.data || []),
         backendApi.database.from(TABLE_MAP.educationStaff).select('*').then((r: any) => r.data || []),
         backendApi.database.from(TABLE_MAP.contentRecords).select('*').eq('content_type', 'home').then((r: any) => r.data || []),
         backendApi.database.from('contact_messages').select('*').then((r: any) => r.data || []),
-      ]).then(([news, programs, facilities, staff, achievements, teacherActivities, educationStaff, contentRecords, contact]) => setData({
-        news, programs, facilities, staff, achievements, teacherActivities, educationStaff, contentRecords, contact,
+      ]).then(([news, programs, facilities, staff, gurus, achievements, teacherActivities, educationStaff, contentRecords, contact]) => setData({
+        news, programs, facilities, staff, gurus, achievements, teacherActivities, educationStaff, contentRecords, contact,
       })).catch(() => {});
     })
   }, [authLoading, isAdmin, navigate]);
@@ -325,8 +330,8 @@ function AdminPanel() {
     if (data) setData(current => ({ ...current, [key]: data as Item[] }));
   };
 
-  const active = section === 'dashboard' ? null : section === 'myProfile' ? { title: 'Profil Saya', icon: UserRound, fields: [] } : section === 'contact' ? { title: 'Pesan Kontak', icon: Mail, fields: [] } : section === 'contactSettings' ? { title: 'Pengaturan Kontak', icon: MapPin, fields: [] } : section === 'spmb' ? { title: 'Kelola SPMB', icon: GraduationCap, fields: [] } : section === 'permissions' ? { title: 'Role & Permission', icon: ShieldCheck, fields: [] } : section === 'osis' ? { title: 'OSIS', icon: UsersRound, fields: [] } : section === 'extracurriculars' ? { title: 'Ekstrakurikuler', icon: Dumbbell, fields: [] } : section === 'kesemaptaan' ? { title: 'Kesemaptaan', icon: ShieldCheck, fields: [] } : section === 'mading' ? { title: 'Mading', icon: Newspaper, fields: [] } : section === 'students' ? { title: 'Data Siswa', icon: UserCog, fields: [] } : section === 'accounts' ? { title: 'Kelola Akun', icon: Users, fields: [] } : section === 'gallery' ? { title: 'Galeri', icon: Camera, fields: [] } : section === 'bkk' ? { title: 'BKK (Bursa Kerja Khusus)', icon: Briefcase, fields: [] } : section === 'kelulusan' ? { title: 'Kelulusan Siswa', icon: GraduationCap, fields: [] } : configs[section];
-  const editableSections = section !== 'dashboard' && section !== 'myProfile' && section !== 'contact' && section !== 'contactSettings' && section !== 'spmb' && section !== 'permissions' && section !== 'osis' && section !== 'extracurriculars' && section !== 'kesemaptaan' && section !== 'mading' && section !== 'students' && section !== 'accounts' && section !== 'gallery' && section !== 'bkk' && section !== 'kelulusan';
+  const active = section === 'dashboard' ? null : section === 'myProfile' ? { title: 'Profil Saya', icon: UserRound, fields: [] } : section === 'contact' ? { title: 'Pesan Kontak', icon: Mail, fields: [] } : section === 'contactSettings' ? { title: 'Pengaturan Kontak', icon: MapPin, fields: [] } : section === 'spmb' ? { title: 'Kelola SPMB', icon: GraduationCap, fields: [] } : section === 'permissions' ? { title: 'Role & Permission', icon: ShieldCheck, fields: [] } : section === 'osis' ? { title: 'OSIS', icon: UsersRound, fields: [] } : section === 'extracurriculars' ? { title: 'Ekstrakurikuler', icon: Dumbbell, fields: [] } : section === 'kesemaptaan' ? { title: 'Kesemaptaan', icon: ShieldCheck, fields: [] } : section === 'mading' ? { title: 'Mading', icon: Newspaper, fields: [] } : section === 'students' ? { title: 'Data Siswa', icon: UserCog, fields: [] } : section === 'accounts' ? { title: 'Kelola Akun', icon: Users, fields: [] } : section === 'gallery' ? { title: 'Galeri', icon: Camera, fields: [] } : section === 'bkk' ? { title: 'BKK (Bursa Kerja Khusus)', icon: Briefcase, fields: [] } : section === 'kelulusan' ? { title: 'Kelulusan Siswa', icon: GraduationCap, fields: [] } : section === 'studentChangeRequests' ? { title: 'Verifikasi Data Siswa', icon: FileText, fields: [] } : configs[section];
+  const editableSections = section !== 'dashboard' && section !== 'myProfile' && section !== 'contact' && section !== 'contactSettings' && section !== 'spmb' && section !== 'permissions' && section !== 'osis' && section !== 'extracurriculars' && section !== 'kesemaptaan' && section !== 'mading' && section !== 'students' && section !== 'accounts' && section !== 'gallery' && section !== 'bkk' && section !== 'kelulusan' && section !== 'studentChangeRequests';
 
   const navGroups: { label: string; items: { key: Section; label: string; icon: typeof FileText; visible: boolean }[] }[] = [
     { label: 'Menu', items: [
@@ -340,6 +345,7 @@ function AdminPanel() {
       { key: 'kesemaptaan', label: 'Kesemaptaan', icon: ShieldCheck, visible: canViewKesemaptaan },
       { key: 'mading', label: 'Mading', icon: Newspaper, visible: canViewMading },
       { key: 'achievements', label: 'Prestasi Siswa', icon: Trophy, visible: isAdmin },
+      { key: 'studentChangeRequests', label: 'Verifikasi Data Siswa', icon: FileText, visible: canViewStudents },
     ]},
     { label: 'Modul Sekolah', items: [
       { key: 'spmb', label: 'Kelola SPMB', icon: GraduationCap, visible: isAdmin },
@@ -435,6 +441,8 @@ function AdminPanel() {
           {section === 'gallery' && canViewGallery && <GalleryManagement />}
 
           {section === 'students' && canViewStudents && <StudentsManagement />}
+
+          {section === 'studentChangeRequests' && canViewStudents && <StudentChangeRequestsManagement />}
 
           {section === 'accounts' && isAdmin && <AccountsManagement />}
 
