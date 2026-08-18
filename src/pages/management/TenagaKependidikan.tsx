@@ -2,24 +2,57 @@ import React, { useEffect, useMemo, useState } from 'react';
 import PageHero from '../../components/ui/PageHero';
 import SectionHeading from '../../components/ui/SectionHeading';
 import type { EducationStaff } from '../../lib/content-types';
-import { fetchPublicContent } from '../../lib/api';
+import { fetchPublicContent, publicProfileApi, type PublicDirectoryEntry } from '../../lib/api';
 import { PersonAvatar, EmptyState } from './ManagementShared';
+
+interface DisplayMember {
+  id: string;
+  name: string;
+  position: string;
+  department: string;
+  photo: string;
+}
 
 const TenagaKependidikan: React.FC = () => {
   const [items, setItems] = useState<EducationStaff[]>([]);
+  const [gurus, setGurus] = useState<PublicDirectoryEntry[]>([]);
   useEffect(() => {
     fetchPublicContent<EducationStaff[]>('educationStaff').then(setItems);
+    publicProfileApi.directory().then(({ data }) => { if (data) setGurus(data.gurus); });
   }, []);
 
   const grouped = useMemo(() => {
-    const map = new Map<string, EducationStaff[]>();
-    items.forEach((member) => {
-      const key = member.department || 'Lainnya';
+    const guruMembers: DisplayMember[] = gurus.map((g) => ({
+      id: g.slug,
+      name: g.name,
+      position: g.position || g.subject || 'Guru',
+      department: 'Guru',
+      photo: g.photo,
+    }));
+
+    const eduMembers: DisplayMember[] = items.map((e) => ({
+      id: e.id,
+      name: e.name,
+      position: e.position,
+      department: e.department || 'Lainnya',
+      photo: e.photo,
+    }));
+
+    const all = [...guruMembers, ...eduMembers];
+    const map = new Map<string, DisplayMember[]>();
+    all.forEach((member) => {
+      const key = member.department;
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(member);
     });
-    return Array.from(map.entries());
-  }, [items]);
+
+    const order = ['Guru', 'Tata Usaha', 'Perpustakaan', 'Laboratorium', 'Keamanan'];
+    return Array.from(map.entries()).sort(([a], [b]) => {
+      const ia = order.indexOf(a);
+      const ib = order.indexOf(b);
+      return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+    });
+  }, [items, gurus]);
 
   return (
     <div className="min-h-screen bg-[#FAF6F0]">
