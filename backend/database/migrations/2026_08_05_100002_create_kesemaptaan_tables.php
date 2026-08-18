@@ -25,6 +25,7 @@ return new class extends Migration
             $table->jsonb('documentation')->default('[]');
             $table->string('status', 20)->default('published');
             $table->timestamps();
+            $table->index('activity_date', 'kesemaptaan_activities_activity_date_index');
         });
 
         Schema::create('kesemaptaan_schedules', function (Blueprint $table) {
@@ -42,6 +43,7 @@ return new class extends Migration
             $table->text('photo')->default('');
             $table->integer('sort_order')->default(0);
             $table->timestamp('created_at')->useCurrent();
+            $table->index('sort_order', 'kesemaptaan_instructors_sort_order_index');
         });
 
         Schema::create('kesemaptaan_achievements', function (Blueprint $table) {
