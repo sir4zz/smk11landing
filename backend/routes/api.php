@@ -276,6 +276,7 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::post('/roles/{roleId}/permissions', [RolePermissionController::class, 'syncRolePermissions']);
 
     // Account management (admin, guru, osis, siswa)
+    Route::post('/accounts/import', [StudentController::class, 'import'])->middleware('permission:mading.edit_all');
     Route::get('/accounts', [AccountController::class, 'index']);
     Route::post('/accounts', [AccountController::class, 'store']);
     Route::patch('/accounts/{id}', [AccountController::class, 'update']);

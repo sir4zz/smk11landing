@@ -3,6 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\Gallery;
+use App\Models\AlumniGraduation;
+use App\Models\Extracurricular;
+use App\Models\OsisActivity;
+use App\Models\KesemaptaanActivity;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
@@ -72,5 +76,29 @@ class OptimizationTest extends TestCase
         $this->assertContains('throttle:auth', $routes->first(fn ($route) => $route->uri() === 'api/auth/login')->gatherMiddleware());
         $this->assertContains('throttle:contact', $routes->first(fn ($route) => $route->uri() === 'api/contact')->gatherMiddleware());
         $this->assertContains('throttle:mading-ai', $routes->first(fn ($route) => $route->uri() === 'api/mading/ai/generate')->gatherMiddleware());
+    }
+
+    public function test_alumni_graduations_are_not_publicly_readable(): void
+    {
+        AlumniGraduation::create(['name' => 'Private Alumni', 'nisn' => '123']);
+
+        $this->getJson('/api/data/alumni_graduations')
+            ->assertUnauthorized();
+    }
+
+    public function test_public_activity_endpoints_hide_drafts(): void
+    {
+        OsisActivity::create(['title' => 'Draft OSIS', 'status' => 'draft']);
+        OsisActivity::create(['title' => 'Published OSIS', 'status' => 'published']);
+        KesemaptaanActivity::create(['title' => 'Draft Kesemaptaan', 'status' => 'draft']);
+        KesemaptaanActivity::create(['title' => 'Published Kesemaptaan', 'status' => 'published']);
+        Extracurricular::create(['name' => 'Draft Ekstra', 'slug' => 'draft-ekstra', 'status' => 'draft']);
+        Extracurricular::create(['name' => 'Published Ekstra', 'slug' => 'published-ekstra', 'status' => 'published']);
+
+        $this->getJson('/api/osis/activities')->assertJsonCount(1)->assertJsonPath('0.title', 'Published OSIS');
+        $this->getJson('/api/kesemaptaan/activities')->assertJsonCount(1)->assertJsonPath('0.title', 'Published Kesemaptaan');
+        $this->getJson('/api/extracurriculars')->assertJsonCount(1)->assertJsonPath('0.slug', 'published-ekstra');
+        $this->getJson('/api/extracurriculars/draft-ekstra')->assertNotFound();
+        $this->getJson('/api/data/osis_activities')->assertJsonPath('data.0.title', 'Published OSIS');
     }
 }

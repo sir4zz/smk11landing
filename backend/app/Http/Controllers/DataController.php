@@ -38,7 +38,7 @@ class DataController extends Controller
         'ppdb_activity_log' => \App\Models\PpdbActivityLog::class, 'content_records' => \App\Models\ContentRecord::class,
         'alumni_graduations' => \App\Models\AlumniGraduation::class,
     ];
-    private const PUBLIC = ['news','programs','facilities','staff','achievements','teacher_activities','education_staff','spmb_content','osis','osis_members','osis_activities','extracurriculars','kesemaptaan','kesemaptaan_activities','kesemaptaan_schedules','kesemaptaan_instructors','kesemaptaan_achievements','mading_categories','content_records','alumni_graduations'];
+    private const PUBLIC = ['news','programs','facilities','staff','achievements','teacher_activities','education_staff','spmb_content','osis','osis_members','osis_activities','extracurriculars','kesemaptaan','kesemaptaan_activities','kesemaptaan_schedules','kesemaptaan_instructors','kesemaptaan_achievements','mading_categories','content_records'];
 
     public function __construct(private PermissionService $permissions, private MadingService $mading) {}
 
@@ -51,6 +51,12 @@ class DataController extends Controller
         foreach ($request->query() as $key => $value) {
             if (in_array($key, ['order','limit','single','count'], true) || !in_array($key, (new $model)->getFillable(), true)) continue;
             $query->where($key, $value);
+        }
+        if ((! $user || ! $this->permissions->isAdmin($user)) && in_array($table, ['osis_activities', 'extracurriculars', 'kesemaptaan_activities'], true) && in_array($table, self::PUBLIC, true)) {
+            $query->where('status', 'published');
+        }
+        if ($table === 'content_records' && ! $user && ! in_array($request->query('content_type'), ['home', 'bkk_home', 'bkk_contact'], true)) {
+            abort(404);
         }
         if ($table === 'mading_posts' && $user && !$this->permissions->hasPermission($user, 'mading.view')) {
             $query->where(fn ($q) => $q->where('status', 'published')->orWhere('author_id', $user->id));

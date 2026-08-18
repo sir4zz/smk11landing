@@ -103,7 +103,7 @@ Kosongkan jika tidak perlu fitur AI (fitur lain tetap jalan).
    cd ..
    ```
 
-`php artisan db:seed` membuat akun test:
+`php artisan db:seed` membuat akun test jika `APP_ENV=local`. Pada production, seeder tidak membuat akun demo atau mengganti password akun yang sudah ada:
 
 | Role   | Email / Identitas              | Password     |
 | ------ | ------------------------------ | ------------ |

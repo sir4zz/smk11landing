@@ -7,19 +7,7 @@ const apiOrigin = configuredApiUrl.replace(/\/api$/, '');
 
 export function resolveImageUrl(url: string | null | undefined): string | undefined {
   if (!url || !url.trim()) return undefined;
-  if (/^https?:\/\//.test(url)) {
-    try {
-      const parsed = new URL(url);
-      // File storage selalu disajikan dari origin backend (apiOrigin). URL absolut
-      // yang dihasilkan UploadController berbasis APP_URL bisa salah host (mis. di
-      // dev APP_URL=localhost), jadi tulis ulang origin-nya agar gambar selalu tampil.
-      if (parsed.pathname.startsWith('/storage/')) {
-        return `${apiOrigin}${parsed.pathname}${parsed.search}`;
-      }
-    } catch { /* ignore */ }
-    return url;
-  }
-  if (url.startsWith('/')) return `${apiOrigin}${url}`;
+  if (url.startsWith('/') && !url.startsWith('//')) return `${apiOrigin}${url}`;
   return url;
 }
 
@@ -352,12 +340,14 @@ export interface AccountRow {
   role: AccountRole;
   phone?: string;
   nisn?: string;
+  nis?: string;
   pin?: string;
   class?: string;
   major?: string;
   gender?: string;
   date_of_birth?: string;
   place_of_birth?: string;
+  religion?: string;
   address?: string;
   status?: string;
   must_change_password?: boolean;
@@ -365,6 +355,7 @@ export interface AccountRow {
   guru?: { nip?: string; nuptk?: string; teacher_id?: string; subject?: string; position?: string; certifications?: string[] } | null;
   osis?: { member_id?: string; nisn?: string; division?: string; position?: string; work_programs?: string[] } | null;
   created_at?: string;
+  [key: string]: unknown;
 }
 
 export const accountsApi = {
@@ -383,6 +374,9 @@ export const accountsApi = {
   },
   remove(id: string): ApiResult<null> {
     return request<null>(`/admin/accounts/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  },
+  importStudents(rows: Record<string, string>[]): ApiResult<{ imported: number; skipped: number; errors: { row: number; nisn?: string; message: string }[] }> {
+    return request('/admin/accounts/import', { method: 'POST', body: JSON.stringify({ rows }) });
   },
 };
 
@@ -530,7 +524,11 @@ export interface MyProfilePayload {
   social: MyProfileSocial;
   guru?: { nip?: string; nuptk?: string; teacher_id?: string; subject?: string; position?: string; achievements?: string[]; certifications?: string[] } | null;
   osis?: { member_id?: string; nisn?: string; division?: string; position?: string; achievements?: string[]; work_programs?: string[] } | null;
-  student?: { nisn?: string; class?: string; major?: string; gender?: string; date_of_birth?: string; place_of_birth?: string; address?: string; achievements?: string[] } | null;
+  student?: {
+    nisn?: string; nis?: string; class?: string; major?: string; gender?: string;
+    date_of_birth?: string; place_of_birth?: string; religion?: string; address?: string; achievements?: string[];
+    [key: string]: unknown;
+  } | null;
 }
 
 export const myProfileApi = {

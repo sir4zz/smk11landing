@@ -47,8 +47,10 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->seedRbac();
-        $this->seedAccounts();
-        $this->seedGurus();
+        if (app()->environment(['local', 'testing'])) {
+            $this->seedAccounts();
+            $this->seedGurus();
+        }
         $this->seedContent();
     }
 
@@ -197,7 +199,7 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($accounts as $account) {
-            $user = User::updateOrCreate(
+            $user = User::firstOrCreate(
                 ['id' => $account['id']],
                 [
                     'email' => $account['email'],
@@ -222,7 +224,7 @@ class DatabaseSeeder extends Seeder
         $studentId = 'da55f59e-1389-4a13-b19e-34c7e62f1a78';
         $studentEmail = 'nisn-1234567890@mading.smkn11.sch.id';
 
-        User::updateOrCreate(
+        User::firstOrCreate(
             ['id' => $studentId],
             [
                 'email' => $studentEmail,
@@ -286,7 +288,7 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($rows as $row) {
-            $user = User::updateOrCreate(
+            $user = User::firstOrCreate(
                 ['id' => $row['id']],
                 [
                     'email' => $row['email'],
@@ -645,7 +647,7 @@ class DatabaseSeeder extends Seeder
 
     protected function seedBkkSettings(): void
     {
-        ContentRecord::updateOrCreate(
+        ContentRecord::firstOrCreate(
             ['content_type' => 'bkk_home'],
             ['data' => [
                 'banner' => [
@@ -669,7 +671,7 @@ class DatabaseSeeder extends Seeder
             ]]
         );
 
-        ContentRecord::updateOrCreate(
+        ContentRecord::firstOrCreate(
             ['content_type' => 'bkk_contact'],
             ['data' => [
                 'whatsapp' => '0812 9922 0831',
@@ -716,7 +718,7 @@ class DatabaseSeeder extends Seeder
 
     protected function seedHome(): void
     {
-        ContentRecord::updateOrCreate(
+        ContentRecord::firstOrCreate(
             ['content_type' => 'home'],
             ['data' => [
                 'hero' => ['images' => ['/images/hero/hero-1.jpg', '/images/hero/hero-2.jpg', '/images/hero/hero-3.jpg'], 'frame_image' => '/images/hero/frame.jpg', 'description' => 'Sekolah kejuruan favorit yang menyiapkan lulusan unggul, berkarakter, dan memiliki kompetensi tinggi sesuai kebutuhan industri masa depan.', 'accreditation' => 'Peringkat B', 'facility_title' => 'Fasilitas Modern', 'facility_description' => 'Mendukung penuh kompetensi siswa di era digital.'],

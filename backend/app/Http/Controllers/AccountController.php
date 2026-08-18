@@ -43,7 +43,7 @@ class AccountController extends Controller
                     ->orWhere('name', 'like', $term)
                     ->orWhereHas('guru', fn ($g) => $g->where('nip', 'like', $term)->orWhere('nuptk', 'like', $term)->orWhere('teacher_id', 'like', $term))
                     ->orWhereHas('osisAccount', fn ($o) => $o->where('member_id', 'like', $term)->orWhere('nisn', 'like', $term))
-                    ->orWhereHas('student', fn ($s) => $s->where('nisn', 'like', $term));
+                    ->orWhereHas('student', fn ($s) => $s->where('nisn', 'like', $term)->orWhere('nis', 'like', $term));
             });
         }
 
@@ -137,6 +137,10 @@ class AccountController extends Controller
         }
         if ($user->profileRecord?->role === 'admin' && $this->adminCount() <= 1) {
             return response()->json(['error' => ['message' => 'Tidak dapat menghapus admin terakhir.']], 403);
+        }
+
+        if ($user->student?->foto) {
+            $this->deleteStoredFile($user->student->foto);
         }
 
         $user->delete();
@@ -236,6 +240,7 @@ class AccountController extends Controller
     private function createStudent(string $id, Request $request, string $name): void
     {
         $nisn = trim((string) $request->input('nisn', ''));
+        $nis = trim((string) $request->input('nis', ''));
         $pin = (string) $request->input('pin', '');
 
         if (mb_strlen($nisn) < 4) {
@@ -249,6 +254,9 @@ class AccountController extends Controller
 
         if (User::query()->where('email', $email)->exists() || Student::query()->where('nisn', $nisn)->exists()) {
             throw $this->httpFail('NISN sudah terdaftar.');
+        }
+        if ($nis !== '' && Student::query()->where('nis', $nis)->exists()) {
+            throw $this->httpFail('NIS sudah terdaftar.');
         }
 
         $this->createUserWithProfile($id, $name, $email, $pin, 'student', $request);
@@ -316,6 +324,7 @@ class AccountController extends Controller
     {
         $student = $user->student;
         $nisn = trim((string) $request->input('nisn', $student?->nisn ?? ''));
+        $nis = trim((string) $request->input('nis', $student?->nis ?? ''));
         $pin = (string) $request->input('pin', '');
         $name = trim((string) $request->input('name', $user->name));
 
@@ -324,6 +333,9 @@ class AccountController extends Controller
         }
         if (Student::query()->where('nisn', $nisn)->where('id', '!=', $user->id)->exists()) {
             throw $this->httpFail('NISN sudah terdaftar.');
+        }
+        if ($nis !== '' && Student::query()->where('nis', $nis)->where('id', '!=', $user->id)->exists()) {
+            throw $this->httpFail('NIS sudah terdaftar.');
         }
         if ($pin !== '' && mb_strlen($pin) < 4) {
             throw $this->httpFail('PIN minimal 4 karakter.');
@@ -334,13 +346,14 @@ class AccountController extends Controller
             if (User::query()->where('email', $email)->exists()) {
                 throw $this->httpFail('NISN sudah terdaftar.');
             }
-            $user->update(['email' => $email]);
-            StudentAccount::query()->where('student_id', $user->id)->update(['email' => $email]);
+            $this->accounts->syncStudentEmails($user, $email);
         }
 
         if ($student) {
-            $student->update([
+            $newFoto = (string) $request->input('foto', '');
+            $student->update(array_merge([
                 'nisn' => $nisn,
+                'nis' => $nis !== '' ? $nis : null,
                 'pin' => $pin !== '' ? $pin : $student->pin,
                 'name' => $name,
                 'class' => (string) $request->input('class', $student->class),
@@ -352,11 +365,17 @@ class AccountController extends Controller
                     ? $this->accounts->normalizeDate($request->input('date_of_birth'))
                     : $student->date_of_birth,
                 'place_of_birth' => (string) $request->input('place_of_birth', $student->place_of_birth ?? ''),
+                'religion' => (string) $request->input('religion', $student->religion ?? ''),
                 'address' => (string) $request->input('address', $student->address ?? ''),
                 'achievements' => $request->has('achievements')
                     ? $this->jsonList($request->input('achievements'))
                     : $student->achievements,
-            ]);
+                'foto' => $newFoto !== '' ? $newFoto : null,
+            ], $this->accounts->biodataFromRequest($request)));
+
+            if ($student->wasChanged('foto') && $student->getOriginal('foto')) {
+                $this->deleteStoredFile($student->getOriginal('foto'));
+            }
         }
 
         $updates = ['name' => $name];
@@ -365,6 +384,7 @@ class AccountController extends Controller
         }
         $user->update($updates);
         $user->profileRecord?->update($this->profileStatusUpdates($request) + ['name' => $name]);
+        $this->accounts->syncStudentEmails($user, $this->accounts->studentEmail($nisn));
     }
 
     private function updateStaff(User $user, Request $request, string $targetRole): void
@@ -509,9 +529,12 @@ class AccountController extends Controller
 
     private function createStudentRecords(string $id, string $nisn, string $name, string $email, Request $request): void
     {
-        Student::create([
+        $nis = trim((string) $request->input('nis', ''));
+
+        Student::create(array_merge([
             'id' => $id,
             'nisn' => $nisn,
+            'nis' => $nis !== '' ? $nis : null,
             'pin' => (string) $request->input('pin', ''),
             'name' => $name,
             'class' => (string) $request->input('class', ''),
@@ -519,9 +542,11 @@ class AccountController extends Controller
             'gender' => $this->accounts->normalizeGender($request->input('gender', '')),
             'date_of_birth' => $this->accounts->normalizeDate($request->input('date_of_birth')),
             'place_of_birth' => (string) $request->input('place_of_birth', ''),
+            'religion' => (string) $request->input('religion', ''),
             'address' => (string) $request->input('address', ''),
             'achievements' => $this->jsonList($request->input('achievements')),
-        ]);
+            'foto' => (string) $request->input('foto', ''),
+        ], $this->accounts->biodata($request->all())));
 
         StudentAccount::create([
             'id' => $id,
@@ -579,22 +604,25 @@ class AccountController extends Controller
     {
         $profile = $user->profileRecord;
 
-        return [
+        $payload = [
             'id' => $user->id,
             'email' => $user->email,
-            'name' => $user->name,
+            'name' => $user->student?->name ?? $user->name,
             'role' => $profile?->role ?? 'applicant',
-            'phone' => $profile?->phone ?? '',
+            'phone' => $user->student?->phone ?? $profile?->phone ?? '',
+            'photo' => $user->student?->foto ?? $profile?->photo ?? '',
             'status' => $profile?->status ?? 'active',
             'must_change_password' => (bool) ($profile?->must_change_password ?? false),
             'nisn' => $user->student?->nisn ?? '',
+            'nis' => $user->student?->nis ?? '',
             'pin' => $user->student?->pin ?? '',
             'class' => $user->student?->class ?? '',
             'major' => $user->student?->major ?? '',
             'gender' => $user->student?->gender ?? '',
             'date_of_birth' => $user->student?->date_of_birth?->toDateString() ?? '',
             'place_of_birth' => $user->student?->place_of_birth ?? '',
-            'address' => $user->student?->address ?? '',
+            'religion' => $user->student?->religion ?? '',
+            'address' => $user->student?->address ?? $profile?->address ?? '',
             'achievements' => $this->roleAchievements($user),
             'guru' => $user->guru ? [
                 'nip' => $user->guru->nip ?? '',
@@ -613,6 +641,12 @@ class AccountController extends Controller
             ] : null,
             'created_at' => $user->created_at?->toIso8601String(),
         ];
+
+        if ($user->student) {
+            $payload = array_merge($payload, $this->accounts->studentPayload($user->student));
+        }
+
+        return $payload;
     }
 
     private function roleAchievements(User $user): array
@@ -633,6 +667,27 @@ class AccountController extends Controller
     private function fail(string $message)
     {
         return response()->json(['error' => ['message' => $message]], 422);
+    }
+
+    private function deleteStoredFile(?string $url): void
+    {
+        if (! $url) {
+            return;
+        }
+
+        $path = parse_url($url, PHP_URL_PATH) ?? '';
+        $prefix = '/storage/';
+        if (str_starts_with($path, $prefix)) {
+            $path = substr($path, strlen($prefix));
+        }
+
+        if ($path !== '') {
+            try {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($path);
+            } catch (\Throwable) {
+                // Kegagalan menghapus file tidak boleh menggagalkan operasi database.
+            }
+        }
     }
 
     private function httpFail(string $message): HttpException

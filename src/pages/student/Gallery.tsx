@@ -1,15 +1,21 @@
 import React, { useEffect, useState } from 'react'
 import PageHero from '../../components/ui/PageHero'
-import { fetchGalleries, type GalleryRow } from '../../lib/api'
+import { fetchGalleries, fetchGalleryCategories, resolveImageUrl, type GalleryRow } from '../../lib/api'
 import { X } from 'lucide-react'
 
 const Gallery: React.FC = () => {
   const [items, setItems] = useState<GalleryRow[]>([])
   const [filter, setFilter] = useState<string>('Semua')
   const [selected, setSelected] = useState<GalleryRow | null>(null)
-  useEffect(() => { fetchGalleries({ limit: 500 }).then(({ rows }) => setItems(rows)) }, [])
+  const [categories, setCategories] = useState<string[]>([])
+  useEffect(() => {
+    Promise.all([fetchGalleries({ limit: 500 }), fetchGalleryCategories()]).then(([{ rows }, apiCategories]) => {
+      setItems(rows)
+      setCategories(apiCategories)
+    })
+  }, [])
 
-  const categories = ['Semua', ...new Set(items.map((g) => g.category).filter(Boolean) as string[])]
+  const categoryOptions = ['Semua', ...categories]
   const filtered = filter === 'Semua' ? items : items.filter((g) => g.category === filter)
 
   return (
@@ -23,7 +29,7 @@ const Gallery: React.FC = () => {
 
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 md:py-20">
         <div className="mb-12 flex flex-wrap justify-center gap-4">
-          {categories.map((cat) => (
+          {categoryOptions.map((cat) => (
             <button
               key={cat}
               onClick={() => setFilter(cat)}
@@ -46,7 +52,7 @@ const Gallery: React.FC = () => {
               className="group relative mb-6 block w-full overflow-hidden rounded-2xl shadow-sm transition-all hover:shadow-lg"
             >
               <img
-                src={item.cover_image}
+                src={resolveImageUrl(item.cover_image)}
                 alt={item.title}
                 className="w-full object-cover transition-transform duration-300 group-hover:scale-105"
                 loading="lazy"
@@ -77,7 +83,7 @@ const Gallery: React.FC = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <img
-              src={selected.cover_image}
+              src={resolveImageUrl(selected.cover_image)}
               alt={selected.title}
               className="max-h-[50vh] sm:max-h-[80vh] w-full object-contain"
             />

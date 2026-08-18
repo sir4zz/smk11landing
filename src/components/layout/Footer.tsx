@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, MapPin, Phone } from 'lucide-react';
-import { fetchHomeContent } from '../../lib/api';
+import { fetchHomeContent, fetchPublicContent } from '../../lib/api';
 import logoSekolah from '../../assets/logo.png';
 
 const InstagramIcon = ({ size = 20 }: { size?: number }) => (
@@ -18,31 +18,33 @@ const TiktokIcon = ({ size = 20 }: { size?: number }) => (
   </svg>
 );
 
-const DEFAULT_SOCIAL = {
-  instagram: 'https://instagram.com/official_smkn11kab.tng',
-  tiktok: 'https://tiktok.com/@osis_smkn11kabtangeran',
-  email: 'smkn11kabtangschool@gmail.com',
+const EMPTY_SOCIAL = {
+  instagram: '',
+  tiktok: '',
+  email: '',
 };
 
-const DEFAULT_CONTACT = {
-  address: 'Kp. Saradan RT. 03/01, Desa Pangkat, Kec. Jayanti, Kab. Tangerang, Banten 15610',
-  phone: '0812 9922 0831',
-  email: 'smkn11kabtangschool@gmail.com',
+const EMPTY_CONTACT = {
+  address: '',
+  phone: '',
+  email: '',
 };
 
 const Footer: React.FC = () => {
-  const [social, setSocial] = useState(DEFAULT_SOCIAL);
-  const [contact, setContact] = useState(DEFAULT_CONTACT);
+  const [social, setSocial] = useState(EMPTY_SOCIAL);
+  const [contact, setContact] = useState(EMPTY_CONTACT);
+  const [programs, setPrograms] = useState<{ id?: string; slug?: string; name: string }[]>([]);
 
   useEffect(() => {
     fetchHomeContent().then((home) => {
       if (home?.social) {
-        setSocial({ ...DEFAULT_SOCIAL, ...home.social });
+        setSocial(home.social);
       }
       if (home?.contact) {
-        setContact({ ...DEFAULT_CONTACT, ...home.contact });
+        setContact(home.contact);
       }
     }).catch(() => {});
+    fetchPublicContent<{ id?: string; slug?: string; name: string }[]>('programs').then(setPrograms);
   }, []);
 
   const socialLinks = [
@@ -58,7 +60,7 @@ const Footer: React.FC = () => {
     },
     {
       label: 'Email Sekolah',
-      href: social.email.startsWith('mailto:') ? social.email : `mailto:${social.email}`,
+      href: social.email ? (social.email.startsWith('mailto:') ? social.email : `mailto:${social.email}`) : '',
       icon: <Mail size={20} />,
     },
   ].filter((item) => item.href.trim());
@@ -113,12 +115,13 @@ const Footer: React.FC = () => {
           <div>
             <h3 className="text-[#C8A951] font-bold text-lg mb-4">Program Keahlian</h3>
             <ul className="space-y-2">
-              <li className="text-[#F3E8D0]">Teknik Jaringan Komputer dan Telekomunikasi</li>
-              <li className="text-[#F3E8D0]">Desain Komunikasi Visual</li>
-              <li className="text-[#F3E8D0]">Teknik Otomotif</li>
-              <li className="text-[#F3E8D0]">Teknik Ketenagalistrikan</li>
-              <li className="text-[#F3E8D0]">Manajemen Perkantoran dan Layanan Bisnis</li>
-              <li className="text-[#F3E8D0]">Busana</li>
+              {programs.map((program) => (
+                <li key={program.id ?? program.slug ?? program.name}>
+                  <Link to={program.slug ? `/akademik/program/${program.slug}` : '/akademik/program-keahlian'} className="text-[#F3E8D0] hover:text-white transition-colors">
+                    {program.name}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 

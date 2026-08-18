@@ -6,6 +6,7 @@ use App\Models\Guru;
 use App\Models\OsisAccount;
 use App\Models\Student;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 /**
@@ -16,7 +17,7 @@ use Illuminate\Support\Str;
 class AccountService
 {
     /**
-     * Resolve a login identifier (email, NIP, NUPTK, teacher_id, NISN or
+     * Resolve a login identifier (email, NIP, NUPTK, teacher_id, NIS, NISN or
      * member_id) to a user account, or null when not found.
      */
     public function resolveUser(string $identifier): ?User
@@ -50,7 +51,10 @@ class AccountService
             return User::query()->find($osis->id);
         }
 
-        $student = Student::query()->where('nisn', $term)->first();
+        $student = Student::query()
+            ->where('nisn', $term)
+            ->orWhere('nis', $term)
+            ->first();
 
         if ($student) {
             return User::query()->find($student->id);
@@ -124,6 +128,115 @@ class AccountService
         return 'nisn-'.$nisn.'@mading.smkn11.sch.id';
     }
 
+    /** Keep all email mirrors for a student account identical. */
+    public function syncStudentEmails(User $user, string $email): void
+    {
+        $user->update(['email' => $email]);
+        $user->profileRecord?->update(['email' => $email]);
+        $user->student?->account?->update(['email' => $email]);
+    }
+
+    /**
+     * Daftar seluruh kolom biodata (Section 1-9 template BIODATA) pada tabel
+     * students. Dipakai oleh AccountController & StudentController.
+     *
+     * @return string[]
+     */
+    public function biodataKeys(): array
+    {
+        return Student::BIODATA_KEYS;
+    }
+
+    /**
+     * Normalize satu kolom biodata untuk disimpan ke database. Kosong => null.
+     */
+    public function biodataValue(string $key, mixed $value): mixed
+    {
+        $raw = trim((string) $value);
+
+        if ($raw === '') {
+            return null;
+        }
+
+        $ints = ['anak_ke', 'jml_saudara_kandung', 'jml_saudara_tiri', 'tinggi_cm', 'berat_kg'];
+        if (in_array($key, $ints, true)) {
+            return is_numeric($raw) ? (int) $raw : null;
+        }
+
+        if ($key === 'jarak_sekolah') {
+            return is_numeric($raw) ? (float) $raw : null;
+        }
+
+        $dates = ['tanggal_sttb', 'tanggal_diterima', 'siswa_tanggal', 'tanggal_lahir'];
+        if (in_array($key, $dates, true) || str_ends_with($key, '_tanggal_lahir')) {
+            return $this->normalizeDate($value);
+        }
+
+        $texts = ['penyakit', 'kelainan_jasmani', 'ayah_alamat', 'ibu_alamat', 'wali_alamat'];
+        if (in_array($key, $texts, true)) {
+            return $raw;
+        }
+
+        $limits = [
+            'nickname' => 100, 'kewarganegaraan' => 50, 'anak_yatim_piatu' => 30,
+            'bahasa_sehari_hari' => 50, 'phone' => 30, 'tinggal_dengan' => 60,
+            'golongan_darah' => 5, 'lulusan_dari' => 255, 'nomor_sttb' => 100,
+            'lama_belajar' => 20, 'pindahan_dari' => 255, 'alasan_pindah' => 255,
+            'diangkat' => 100, 'kompetensi_keahlian' => 255, 'gemar_kesenian' => 100,
+            'gemar_olahraga' => 100, 'gemar_kemasyarakatan' => 100, 'gemar_lain' => 100,
+            'siswa_status' => 60,
+            '_nama' => 255, '_tempat' => 255, '_agama' => 50, '_kewarganegaraan' => 50,
+            '_pendidikan' => 100, '_pekerjaan' => 100, '_penghasilan' => 100,
+            '_no_telp' => 30, '_status_hidup' => 60,
+        ];
+
+        $limit = null;
+        foreach ($limits as $k => $max) {
+            if ($key === $k || str_ends_with($key, $k)) {
+                $limit = $max;
+                break;
+            }
+        }
+
+        return $limit !== null ? mb_substr($raw, 0, $limit) : $raw;
+    }
+
+    /**
+     * Bangun array kolom biodata (Section 1-10) dari satu baris sumber.
+     *
+     * @param  array<string, mixed>  $src
+     * @return array<string, mixed>
+     */
+    public function biodata(array $src): array
+    {
+        $out = [];
+
+        foreach ($this->biodataKeys() as $key) {
+            $out[$key] = $this->biodataValue($key, $src[$key] ?? null);
+        }
+
+        return $out;
+    }
+
+    /**
+     * Hanya kolom biodata yang benar-benar dikirim dalam request. Dipakai pada
+     * update agar field yang tidak dikirim tidak menimpa data lama dengan null.
+     *
+     * @return array<string, mixed>
+     */
+    public function biodataFromRequest(Request $request): array
+    {
+        $out = [];
+
+        foreach ($this->biodataKeys() as $key) {
+            if ($request->has($key)) {
+                $out[$key] = $this->biodataValue($key, $request->input($key));
+            }
+        }
+
+        return $out;
+    }
+
     public function generateTeacherId(): string
     {
         do {
@@ -148,18 +261,19 @@ class AccountService
     public function profilePayload(User $user): array
     {
         $profile = $user->profileRecord;
+        $student = $user->student;
 
         return [
             'id' => $user->id,
             'role' => $profile?->role,
             'status' => $profile?->status ?? 'active',
             'must_change_password' => (bool) ($profile?->must_change_password ?? false),
-            'name' => $user->name,
+            'name' => $student?->name ?? $user->name,
             'email' => $user->email,
-            'phone' => $profile?->phone ?? '',
-            'photo' => $profile?->photo ?? '',
+            'phone' => $student?->phone ?? $profile?->phone ?? '',
+            'photo' => $student?->foto ?? $profile?->photo ?? '',
             'bio' => $profile?->bio ?? '',
-            'address' => $profile?->address ?? '',
+            'address' => $student?->address ?? $profile?->address ?? '',
             'social' => [
                 'instagram' => $profile?->instagram ?? '',
                 'facebook' => $profile?->facebook ?? '',
@@ -187,16 +301,71 @@ class AccountService
                 'achievements' => $user->osisAccount->achievements ?? [],
                 'work_programs' => $user->osisAccount->work_programs ?? [],
             ] : null,
-            'student' => $user->student ? [
-                'nisn' => $user->student->nisn ?? '',
-                'class' => $user->student->class ?? '',
-                'major' => $user->student->major ?? '',
-                'gender' => $user->student->gender ?? '',
-                'date_of_birth' => $user->student->date_of_birth?->toDateString() ?? '',
-                'place_of_birth' => $user->student->place_of_birth ?? '',
-                'address' => $user->student->address ?? '',
-                'achievements' => $user->student->achievements ?? [],
-            ] : null,
+            'student' => $student ? $this->studentPayload($student) : null,
         ];
+    }
+
+    /**
+     * Payload data siswa (Section 1-10 template BIODATA).
+     */
+    public function studentPayload(Student $student): array
+    {
+        $parentCols = ['nama', 'tempat', 'tanggal_lahir', 'agama', 'kewarganegaraan', 'pendidikan', 'pekerjaan', 'penghasilan', 'alamat', 'no_telp', 'status_hidup'];
+
+        $payload = [
+            'foto' => $student->foto ?? '',
+            'nisn' => $student->nisn ?? '',
+            'nis' => $student->nis ?? '',
+            'class' => $student->class ?? '',
+            'major' => $student->major ?? '',
+            'gender' => $student->gender ?? '',
+            'date_of_birth' => $student->date_of_birth?->toDateString() ?? '',
+            'place_of_birth' => $student->place_of_birth ?? '',
+            'religion' => $student->religion ?? '',
+            'address' => $student->address ?? '',
+            'achievements' => $student->achievements ?? [],
+            'nickname' => $student->nickname ?? '',
+            'kewarganegaraan' => $student->kewarganegaraan ?? '',
+            'anak_ke' => $student->anak_ke,
+            'jml_saudara_kandung' => $student->jml_saudara_kandung,
+            'jml_saudara_tiri' => $student->jml_saudara_tiri,
+            'anak_yatim_piatu' => $student->anak_yatim_piatu ?? '',
+            'bahasa_sehari_hari' => $student->bahasa_sehari_hari ?? '',
+            'phone' => $student->phone ?? '',
+            'tinggal_dengan' => $student->tinggal_dengan ?? '',
+            'jarak_sekolah' => $student->jarak_sekolah,
+            'golongan_darah' => $student->golongan_darah ?? '',
+            'penyakit' => $student->penyakit ?? '',
+            'kelainan_jasmani' => $student->kelainan_jasmani ?? '',
+            'tinggi_cm' => $student->tinggi_cm,
+            'berat_kg' => $student->berat_kg,
+            'lulusan_dari' => $student->lulusan_dari ?? '',
+            'tanggal_sttb' => $student->tanggal_sttb?->toDateString() ?? '',
+            'nomor_sttb' => $student->nomor_sttb ?? '',
+            'lama_belajar' => $student->lama_belajar ?? '',
+            'pindahan_dari' => $student->pindahan_dari ?? '',
+            'alasan_pindah' => $student->alasan_pindah ?? '',
+            'diangkat' => $student->diangkat ?? '',
+            'kompetensi_keahlian' => $student->kompetensi_keahlian ?? '',
+            'tanggal_diterima' => $student->tanggal_diterima?->toDateString() ?? '',
+            'gemar_kesenian' => $student->gemar_kesenian ?? '',
+            'gemar_olahraga' => $student->gemar_olahraga ?? '',
+            'gemar_kemasyarakatan' => $student->gemar_kemasyarakatan ?? '',
+            'gemar_lain' => $student->gemar_lain ?? '',
+            'siswa_status' => $student->siswa_status ?? '',
+            'siswa_tanggal' => $student->siswa_tanggal?->toDateString() ?? '',
+        ];
+
+        foreach (['ayah', 'ibu', 'wali'] as $p) {
+            foreach ($parentCols as $c) {
+                $key = "{$p}_{$c}";
+                $value = $student->$key ?? '';
+                $payload[$key] = in_array($c, ['tanggal_lahir'], true) && $value instanceof \DateTimeInterface
+                    ? $value->toDateString()
+                    : $value;
+            }
+        }
+
+        return $payload;
     }
 }

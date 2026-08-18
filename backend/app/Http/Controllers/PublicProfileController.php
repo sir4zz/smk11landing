@@ -57,6 +57,7 @@ class PublicProfileController extends Controller
         }
 
         $profile = Profile::query()->find($student->id);
+        $user = $student->user;
 
         $works = MadingPost::query()
             ->where('author_id', $student->id)
@@ -76,14 +77,15 @@ class PublicProfileController extends Controller
                 'role' => 'siswa',
                 'slug' => $student->nisn,
                 'nisn' => $student->nisn,
-                'name' => $profile?->name ?: $student->name,
-                'photo' => $profile?->photo ?? '',
+                'name' => $student->name,
+                'photo' => $student->foto ?? '',
                 'class' => $student->class,
                 'major' => $student->major,
                 'bio' => $profile?->bio ?? '',
+                // Login email is derived from NISN and must not be public.
                 'email' => $profile?->email ?? '',
-                'phone' => $profile?->phone ?? '',
-                'address' => $profile?->address ?? '',
+                'phone' => $student->phone ?? '',
+                'address' => $student->address ?? '',
                 'social' => $this->social($profile),
                 'achievements' => $student->achievements ?? [],
                 'works' => $works,
@@ -149,8 +151,8 @@ class PublicProfileController extends Controller
             ->map(fn (Student $student) => [
                 'role' => 'siswa',
                 'slug' => $student->nisn,
-                'name' => $student->user->profileRecord?->name ?: $student->name,
-                'photo' => $student->user->profileRecord?->photo ?? '',
+                'name' => $student->name,
+                'photo' => $student->foto ?? '',
                 'class' => $student->class,
                 'major' => $student->major,
             ]);

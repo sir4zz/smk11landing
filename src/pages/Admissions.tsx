@@ -92,9 +92,9 @@ const Admissions: React.FC = () => {
           <span className="mb-4 inline-flex items-center gap-2 rounded-full bg-[#C8A951]/20 px-4 py-1.5 text-sm font-semibold text-[#C8A951]">
             <GraduationCap className="h-4 w-4" /> Portal Informasi SPMB
           </span>
-          <h1 className="mb-4 text-3xl font-bold text-white md:text-5xl">{content.title}</h1>
-          {content.description && (
-            <p className="mb-6 max-w-2xl text-lg text-white/80 md:text-xl">{content.description}</p>
+          <h1 className="mb-4 text-3xl font-bold text-white md:text-5xl">{content.banner_title || content.title}</h1>
+          {(content.banner_description || content.description) && (
+            <p className="mb-6 max-w-2xl text-lg text-white/80 md:text-xl">{content.banner_description || content.description}</p>
           )}
           <nav className="flex text-sm text-[#FAF6F0]" aria-label="Breadcrumb">
             <ol className="inline-flex items-center space-x-1 md:space-x-3">

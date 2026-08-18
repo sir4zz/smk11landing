@@ -10,11 +10,7 @@ class ExtracurricularController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Extracurricular::query();
-
-        if ($request->has('status')) {
-            $query->where('status', $request->query('status'));
-        }
+        $query = Extracurricular::query()->where('status', 'published');
         if ($request->has('slug')) {
             $query->where('slug', $request->query('slug'));
         }
@@ -26,7 +22,10 @@ class ExtracurricularController extends Controller
 
     public function show(string $slug)
     {
-        $row = Extracurricular::query()->where('slug', $slug)->first();
+        $row = Extracurricular::query()
+            ->where('slug', $slug)
+            ->where('status', 'published')
+            ->first();
 
         if (! $row) {
             return response()->json(null, 404);

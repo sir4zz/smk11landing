@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Services\AccountService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 /**
@@ -45,11 +46,24 @@ class MyProfileController extends Controller
         }
 
         $profileUpdates = [];
+        $studentUpdates = [];
+        $isStudent = $profile->role === 'student' && $user->student;
+        $userUpdates = [];
 
-        foreach (['photo', 'bio', 'address', 'instagram', 'facebook', 'twitter', 'tiktok', 'youtube', 'linkedin', 'website', 'github'] as $field) {
+        foreach (['bio', 'instagram', 'facebook', 'twitter', 'tiktok', 'youtube', 'linkedin', 'website', 'github'] as $field) {
             if ($request->has($field)) {
                 $profileUpdates[$field] = trim((string) $request->input($field));
             }
+        }
+
+        if ($isStudent) {
+            foreach (['photo' => 'foto', 'address' => 'address', 'phone' => 'phone'] as $input => $column) {
+                if ($request->has($input)) {
+                    $studentUpdates[$column] = trim((string) $request->input($input)) ?: null;
+                }
+            }
+        } elseif ($request->has('photo')) {
+            $profileUpdates['photo'] = trim((string) $request->input('photo'));
         }
 
         if ($request->has('name')) {
@@ -57,70 +71,64 @@ class MyProfileController extends Controller
             if (mb_strlen($name) < 2) {
                 return $this->fail('Nama wajib diisi.');
             }
-            $profileUpdates['name'] = $name;
-            $user->update(['name' => $name]);
+            if (! $isStudent) {
+                $profileUpdates['name'] = $name;
+            }
+            $userUpdates['name'] = $name;
+            if ($isStudent) {
+                $studentUpdates['name'] = $name;
+            }
         }
 
-        if ($request->has('phone')) {
+        if ($request->has('phone') && ! $isStudent) {
             $profileUpdates['phone'] = trim((string) $request->input('phone'));
         }
 
         if ($request->has('email')) {
             $email = strtolower(trim((string) $request->input('email')));
+            if ($profile->role === 'student') {
+                $email = $this->accounts->studentEmail((string) $user->student?->nisn);
+            }
             if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 return $this->fail('Email wajib diisi dengan benar.');
             }
             if (User::query()->where('email', $email)->where('id', '!=', $user->id)->exists()) {
                 return $this->fail('Email sudah digunakan akun lain.');
             }
-            $user->update(['email' => $email]);
+            $userUpdates['email'] = $email;
             $profileUpdates['email'] = $email;
         }
 
-        if ($profileUpdates) {
-            $profile->update($profileUpdates);
-        }
-
         $role = $profile->role;
+        DB::transaction(function () use ($profile, $profileUpdates, $studentUpdates, $user, $userUpdates, $role, $request) {
+            if ($userUpdates) {
+                $user->update($userUpdates);
+            }
+            if ($profileUpdates) {
+                $profile->update($profileUpdates);
+            }
 
-        if ($role === 'guru' && $user->guru) {
-            $guruUpdates = [];
-            foreach (['subject', 'position'] as $field) {
-                if ($request->has($field)) {
-                    $guruUpdates[$field] = trim((string) $request->input($field));
+            if ($role === 'guru' && $user->guru) {
+                $guruUpdates = [];
+                foreach (['subject', 'position'] as $field) {
+                    if ($request->has($field)) $guruUpdates[$field] = trim((string) $request->input($field));
                 }
+                if ($request->has('achievements')) $guruUpdates['achievements'] = $this->jsonList($request->input('achievements'));
+                if ($request->has('certifications')) $guruUpdates['certifications'] = $this->jsonList($request->input('certifications'));
+                if ($guruUpdates) $user->guru->update($guruUpdates);
             }
-            if ($request->has('achievements')) {
-                $guruUpdates['achievements'] = $this->jsonList($request->input('achievements'));
-            }
-            if ($request->has('certifications')) {
-                $guruUpdates['certifications'] = $this->jsonList($request->input('certifications'));
-            }
-            if ($guruUpdates) {
-                $user->guru->update($guruUpdates);
-            }
-        }
 
-        if ($role === 'osis' && $user->osisAccount) {
-            $osisUpdates = [];
-            foreach (['division', 'position'] as $field) {
-                if ($request->has($field)) {
-                    $osisUpdates[$field] = trim((string) $request->input($field));
+            if ($role === 'osis' && $user->osisAccount) {
+                $osisUpdates = [];
+                foreach (['division', 'position'] as $field) {
+                    if ($request->has($field)) $osisUpdates[$field] = trim((string) $request->input($field));
                 }
+                if ($request->has('achievements')) $osisUpdates['achievements'] = $this->jsonList($request->input('achievements'));
+                if ($request->has('work_programs')) $osisUpdates['work_programs'] = $this->jsonList($request->input('work_programs'));
+                if ($osisUpdates) $user->osisAccount->update($osisUpdates);
             }
-            if ($request->has('achievements')) {
-                $osisUpdates['achievements'] = $this->jsonList($request->input('achievements'));
-            }
-            if ($request->has('work_programs')) {
-                $osisUpdates['work_programs'] = $this->jsonList($request->input('work_programs'));
-            }
-            if ($osisUpdates) {
-                $user->osisAccount->update($osisUpdates);
-            }
-        }
 
-        if ($role === 'student' && $user->student) {
-            $studentUpdates = [];
+            if ($role === 'student' && $user->student) {
             foreach (['class', 'major'] as $field) {
                 if ($request->has($field)) {
                     $studentUpdates[$field] = trim((string) $request->input($field));
@@ -132,7 +140,11 @@ class MyProfileController extends Controller
             if ($studentUpdates) {
                 $user->student->update($studentUpdates);
             }
+
+            // Student login emails remain derived from NISN.
+            $this->accounts->syncStudentEmails($user, $this->accounts->studentEmail($user->student->nisn));
         }
+        });
 
         $user->load(['profileRecord', 'guru', 'osisAccount', 'student']);
 
