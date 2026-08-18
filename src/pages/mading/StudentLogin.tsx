@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { BookOpen, LogIn, Loader2 } from 'lucide-react';
 import { backendApi } from '../../lib/api';
 import PageHero from '../../components/ui/PageHero';
@@ -9,6 +9,8 @@ const studentSessionKey = 'smkn11-student-session';
 
 export default function StudentLogin() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const returnUrl = searchParams.get('returnUrl') || '/mading/area';
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [alreadyIn, setAlreadyIn] = useState(false);
@@ -24,7 +26,7 @@ export default function StudentLogin() {
     return () => { cancelled = true; };
   }, []);
 
-  if (alreadyIn) return <Navigate to="/mading/area" replace />;
+  if (alreadyIn) return <Navigate to={returnUrl} replace />;
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -54,7 +56,7 @@ export default function StudentLogin() {
       }
 
       localStorage.setItem(studentSessionKey, 'true');
-      navigate('/mading/area');
+      navigate(returnUrl);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login gagal.');
     } finally {

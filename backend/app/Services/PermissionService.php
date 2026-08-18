@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Cache;
 
 class PermissionService
 {
-    public const STAFF_ROLES = ['admin', 'guru', 'osis'];
+    public const STAFF_ROLES = ['admin', 'operator_sekolah', 'guru', 'osis', 'bkk'];
 
     /**
      * Replica of public.has_permission(p_perm):

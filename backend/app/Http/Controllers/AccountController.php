@@ -20,7 +20,7 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
  */
 class AccountController extends Controller
 {
-    private const MANAGED_ROLES = ['admin', 'guru', 'osis', 'student'];
+    private const MANAGED_ROLES = ['admin', 'operator_sekolah', 'guru', 'osis', 'bkk', 'student'];
 
     public function __construct(protected AccountService $accounts)
     {

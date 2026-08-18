@@ -79,7 +79,7 @@ const Home: React.FC = () => {
   const heroFrameImage = home?.hero.frame_image || heroImages[1] || '';
   const principalName = principal?.name || home?.welcome.principal_name || '';
   const principalPosition = principal?.position || home?.welcome.principal_title || '';
-  const principalPhoto = resolveImageUrl(principal?.photo || home?.welcome.image);
+  const principalPhoto = resolveImageUrl(home?.welcome.image || principal?.photo);
   const statIcons = [Users, GraduationCap, BookOpen];
   const statsWithIcons = (stats ?? []).map((stat, index) => ({ ...stat, icon: React.createElement(statIcons[index] ?? Users, { className: 'h-6 w-6' }) }));
 

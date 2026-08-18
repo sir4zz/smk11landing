@@ -4,18 +4,22 @@ import { Plus, Trash2, X, Loader2, KeyRound, Search, Upload, Pencil, Users, Shie
 import { accountsApi, type AccountRole, type AccountRow } from '../../lib/api';
 import AccountImportModal from './AccountImportModal';
 
-const ROLE_LABELS: Record<AccountRole, string> = { admin: 'Admin', guru: 'Guru', osis: 'OSIS', student: 'Siswa' };
+const ROLE_LABELS: Record<AccountRole, string> = { admin: 'Admin', operator_sekolah: 'Operator Sekolah', guru: 'Guru', osis: 'OSIS', bkk: 'BKK', student: 'Siswa' };
 const ROLE_BADGES: Record<AccountRole, string> = {
   admin: 'bg-[#1B2A4A] text-white',
+  operator_sekolah: 'bg-teal-50 text-teal-700',
   guru: 'bg-blue-50 text-blue-700',
   osis: 'bg-[#C8A951]/20 text-[#866D2C]',
+  bkk: 'bg-purple-50 text-purple-700',
   student: 'bg-green-50 text-green-700',
 };
 
 const ROLE_HINTS: Record<AccountRole, string> = {
   admin: 'Login menggunakan email + password.',
+  operator_sekolah: 'Login menggunakan email + password. Mengelola data operasional sekolah.',
   guru: 'Login menggunakan NIP, NUPTK, atau ID Guru yang dibuat sistem.',
   osis: 'Login menggunakan ID Anggota yang dibuat sistem atau NISN.',
+  bkk: 'Login menggunakan email + password. Mengelola data BKK.',
   student: 'Login ke Mading menggunakan NISN + PIN.',
 };
 
@@ -240,7 +244,7 @@ export default function AccountsManagement() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-[#23314D]">Kelola semua akun login: admin, guru, OSIS, dan siswa. Guru/OSIS dapat login memakai identitas yang ditentukan sistem.</p>
+        <p className="text-[#23314D]">Kelola semua akun login: admin, operator sekolah, guru, OSIS, BKK, dan siswa. Staff dapat login memakai email + password.</p>
         <div className="flex flex-wrap gap-2">
           <button onClick={() => setImportOpen(true)} className="inline-flex items-center gap-2 rounded-lg border-2 border-[#1B2A4A] px-4 py-2 font-bold text-[#1B2A4A] hover:bg-[#1B2A4A]/5"><Upload size={18} /> Import Excel/CSV</button>
           <button onClick={openCreate} className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-4 py-2 font-bold text-[#1B2A4A]"><Plus size={18} /> Tambah Akun</button>
@@ -299,6 +303,8 @@ export default function AccountsManagement() {
                     <div className="font-mono text-xs"><p>ID Anggota {account.osis.member_id || '-'}</p><p className="text-[#5B7088]">{account.osis.nisn ? `NISN ${account.osis.nisn}` : ''}</p><p className="text-[#5B7088]">{[account.osis.division, account.osis.position].filter(Boolean).join(' · ')}</p></div>
                   )}
                   {account.role === 'admin' && <span className="text-[#5B7088]">Akses penuh</span>}
+                  {account.role === 'operator_sekolah' && <span className="text-[#5B7088]">Operator data sekolah</span>}
+                  {account.role === 'bkk' && <span className="text-[#5B7088]">Bursa Kerja Khusus</span>}
                   {account.must_change_password && <p className="mt-1 text-xs font-semibold text-amber-600">Wajib ganti password saat login</p>}
                 </td>
                 <td className="p-4">
@@ -394,7 +400,7 @@ export default function AccountsManagement() {
                 </>
               )}
 
-              {(form.role === 'admin' || form.role === 'guru' || form.role === 'osis') && (
+              {(form.role === 'admin' || form.role === 'operator_sekolah' || form.role === 'guru' || form.role === 'osis' || form.role === 'bkk') && (
                 <>
                   <div className="sm:col-span-2"><Field label="Email" type="email" value={form.email} onChange={setField('email')} placeholder="cth. nama@smkn11.sch.id" /></div>
                   <div className="sm:col-span-2">

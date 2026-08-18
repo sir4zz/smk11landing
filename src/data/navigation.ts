@@ -3,6 +3,7 @@ export interface NavItem {
     href: string;
     children?: NavItem[];
     isHighlighted?: boolean;
+    studentOnly?: boolean;
 }
 
 export const navigationData: NavItem[] = [
@@ -49,6 +50,7 @@ export const navigationData: NavItem[] = [
         label: 'Ruang Siswa',
         href: '/osis',
         children: [
+            { label: 'Data Diri', href: '/siswa/data-diri', studentOnly: true },
             {
                 label: 'OSIS',
                 href: '/osis',

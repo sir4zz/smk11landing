@@ -36,6 +36,7 @@ const Kesemaptaan = lazy(() => import('./pages/osis/Kesemaptaan'))
 const Mading = lazy(() => import('./pages/mading/Mading'))
 const StudentLogin = lazy(() => import('./pages/mading/StudentLogin'))
 const StudentArea = lazy(() => import('./pages/mading/StudentArea'))
+const DataSiswa = lazy(() => import('./pages/student/DataSiswa'))
 const BkkList = lazy(() => import('./pages/bkk/BkkList'))
 const BkkDetail = lazy(() => import('./pages/bkk/BkkDetail'))
 const BkkHome = lazy(() => import('./pages/bkk/BkkHome'))
@@ -114,6 +115,7 @@ function App() {
           <Route path="mading/login" element={suspend(<StudentLogin />)} />
           <Route element={<StudentRouteGuard />}>
             <Route path="mading/area" element={suspend(<StudentArea />)} />
+            <Route path="siswa/data-diri" element={suspend(<DataSiswa />)} />
           </Route>
 
           {/* BKK (Bursa Kerja Khusus) */}
