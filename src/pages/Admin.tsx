@@ -471,7 +471,12 @@ function AdminPanel() {
                   <button onClick={() => { setEditing(null); setOpen(true); }} className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-4 py-2 font-bold text-[#1B2A4A]"><Plus size={18} /> Tambah</button>
                 </div>
               </div>
-              <Table items={data[section]} config={active!} onEdit={item => { setEditing(item); setOpen(true); }} onDelete={id => remove(id)} />
+              <Table
+                items={data[section]}
+                config={section === 'news' || section === 'programs' ? { ...active!, fields: active!.fields.filter(field => field.key !== 'slug') } : active!}
+                onEdit={item => { setEditing(item); setOpen(true); }}
+                onDelete={id => remove(id)}
+              />
             </>
           )}
 
@@ -1562,6 +1567,7 @@ function Editor({ config, item, onClose, onSave, section, options }: { config: {
     onSave({
       ...(item ?? {}),
       ...formValues,
+      slug: slugify(section === 'programs' ? formValues.short_name || formValues.name : formValues.title),
       ...imageValues,
       ...Object.fromEntries(listFields.map((key) => [key, String(formValues[key] ?? '').split('\n').map((value) => value.trim()).filter(Boolean)])),
     });
@@ -1622,7 +1628,7 @@ function Editor({ config, item, onClose, onSave, section, options }: { config: {
                         </select>
                       );
                     })()
-                 : <input ref={(element) => { fieldRefs.current[field.key] = element; }} name={field.key} type={field.type || 'text'} defaultValue={field.type === 'date' ? dateInputValue(item?.[field.key]) : String(item?.[field.key] ?? '')} required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />}
+                  : <input ref={(element) => { fieldRefs.current[field.key] = element; }} name={field.key} type={field.type || 'text'} defaultValue={field.type === 'date' ? dateInputValue(item?.[field.key]) : (field.key === 'slug' ? slugify(section === 'programs' ? String(item?.short_name || item?.name || '') : String(item?.title || '')) : String(item?.[field.key] ?? ''))} onChange={event => { if ((section === 'news' && field.key === 'title') || (section === 'programs' && ['name', 'short_name'].includes(field.key))) { const slugField = fieldRefs.current.slug; if (slugField) slugField.value = slugify(section === 'programs' ? (field.key === 'short_name' ? event.target.value : String(fieldRefs.current.short_name?.value || event.target.value)) : event.target.value); } }} readOnly={field.key === 'slug'} required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 bg-gray-50 px-3 py-2 font-normal" />}
             </label>
           ))}
         </div>}

@@ -120,6 +120,9 @@ return new class extends Migration
         $table->string('akta_lahir', 100)->default('');
         $table->string('bpjs', 100)->default('');
         $table->string('email', 255)->default('');
+        foreach (['instagram', 'facebook', 'twitter', 'tiktok', 'youtube', 'linkedin', 'website', 'github'] as $social) {
+            $table->string($social, 255)->default('');
+        }
         $table->string('photo', 500)->default('');
         $table->text('bio')->nullable();
         $table->boolean('is_active')->default(true);

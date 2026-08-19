@@ -28,6 +28,7 @@ return new class extends Migration
             $table->text('photo')->default('');
             $table->integer('sort_order')->default(0);
             $table->timestamps();
+            $table->index('sort_order', 'osis_members_sort_order_index');
         });
 
         Schema::create('osis_activities', function (Blueprint $table) {
@@ -38,6 +39,7 @@ return new class extends Migration
             $table->date('activity_date')->nullable();
             $table->string('status', 20)->default('published');
             $table->timestamps();
+            $table->index('activity_date', 'osis_activities_activity_date_index');
         });
 
         // EXTRACURRICULARS
