@@ -33,6 +33,7 @@ function initFormFrom(student: StudentRow | null): Record<string, string> {
     const raw = student[field.key];
     if (raw === null || raw === undefined) continue;
     if (field.type === 'date') form[field.key] = dateForInput(raw);
+    else if (field.type === 'decimal') form[field.key] = trimDecimal(String(raw));
     else form[field.key] = String(raw);
   }
   form.nisn = String(student.nisn ?? '');
@@ -133,7 +134,7 @@ export default function StudentsManagement() {
     for (const f of fields) {
       const value = (current[f.key] ?? '').trim();
       if (!value) continue;
-      if (f.type === 'number' && !/^\d+(\.\d+)?$/.test(value)) fieldErrors[f.key] = 'Harus berupa angka.';
+      if ((f.type === 'number' || f.type === 'decimal') && !/^\d+(\.\d+)?$/.test(value)) fieldErrors[f.key] = 'Harus berupa angka.';
       if (f.type === 'date' && !/^\d{4}-\d{2}-\d{2}$/.test(value)) fieldErrors[f.key] = 'Tanggal tidak valid.';
     }
 
@@ -459,10 +460,12 @@ function BiodataField({ field, value, onChange, placeholder, error }: { field: B
   const inputCls = `mt-1 w-full rounded-lg border bg-white px-3 py-2 font-normal ${error ? 'border-red-400' : 'border-[#1B2A4A]/20'}`;
 
   const isNumeric = field.type === 'number';
-  const blockNonDigits = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (!isNumeric) return;
+  const isDecimal = field.type === 'decimal';
+  const blockLetters = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (!isNumeric && !isDecimal) return;
     if (e.ctrlKey || e.metaKey || e.altKey) return;
-    if (e.key.length === 1 && !/[0-9]/.test(e.key)) e.preventDefault();
+    const allowDot = isDecimal && e.key === '.';
+    if (e.key.length === 1 && !/[0-9]/.test(e.key) && !allowDot) e.preventDefault();
   };
 
   return (
@@ -482,11 +485,20 @@ function BiodataField({ field, value, onChange, placeholder, error }: { field: B
         <input
           value={value}
           type={field.type === 'date' ? 'date' : 'text'}
-          inputMode={isNumeric ? 'decimal' : undefined}
-          pattern={isNumeric ? '[0-9]*' : undefined}
-          onKeyDown={blockNonDigits}
+          inputMode={isNumeric || isDecimal ? 'decimal' : undefined}
+          pattern={isNumeric ? '[0-9]*' : isDecimal ? '[0-9]*[.]?[0-9]*' : undefined}
+          onKeyDown={blockLetters}
           onChange={(e) => {
-            if (isNumeric) e.target.value = e.target.value.replace(/[^0-9]/g, '');
+            if (isNumeric) {
+              e.target.value = e.target.value.replace(/[^0-9]/g, '');
+            } else if (isDecimal) {
+              let clean = e.target.value.replace(/[^0-9.]/g, '');
+              const firstDot = clean.indexOf('.');
+              if (firstDot !== -1) {
+                clean = clean.slice(0, firstDot + 1) + clean.slice(firstDot + 1).replace(/\./g, '');
+              }
+              e.target.value = clean;
+            }
             onChange(e);
           }}
           className={inputCls}
@@ -570,7 +582,17 @@ function detailValue(field: BiodataFieldDef, raw: unknown): string {
   if (raw === null || raw === undefined || raw === '') return '-';
   if (field.type === 'date') return formatDate(String(raw));
   if (field.key === 'gender') return genderLabel(String(raw));
+  if (field.type === 'decimal') return trimDecimal(String(raw));
   return String(raw);
+}
+
+function trimDecimal(value: string): string {
+  const clean = value.trim();
+  if (!clean) return '';
+  if (!/^[+-]?\d*\.?\d+$/.test(clean)) return clean;
+  const num = Number(clean);
+  if (Number.isNaN(num)) return clean;
+  return String(num);
 }
 
 function selectLabel(key: string, value: string): string {

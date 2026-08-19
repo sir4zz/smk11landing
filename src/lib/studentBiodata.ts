@@ -5,7 +5,7 @@ export interface BiodataFieldDef {
   key: string;
   label: string;
   section: string;
-  type?: 'text' | 'number' | 'date' | 'select' | 'textarea';
+  type?: 'text' | 'number' | 'decimal' | 'date' | 'select' | 'textarea';
   options?: string[];
   placeholder?: string;
   full?: boolean;
@@ -71,7 +71,7 @@ export const BIODATA_FIELDS: BiodataFieldDef[] = [
   { key: 'address', label: 'Alamat Tempat Tinggal', section: 'residence', type: 'textarea', full: true },
   { key: 'phone', label: 'No. Telp / HP', section: 'residence', type: 'number' },
   { key: 'tinggal_dengan', label: 'Tinggal Dengan (Orang Tua/Saudara/Asrama/Kost)', section: 'residence' },
-  { key: 'jarak_sekolah', label: 'Jarak Tempat Tinggal ke Sekolah (KM)', section: 'residence', type: 'number' },
+  { key: 'jarak_sekolah', label: 'Jarak Tempat Tinggal ke Sekolah (KM)', section: 'residence', type: 'decimal' },
 
   // C. Keterangan Kesehatan
   { key: 'golongan_darah', label: 'Golongan Darah', section: 'health', type: 'select', options: BLOOD_OPTIONS },

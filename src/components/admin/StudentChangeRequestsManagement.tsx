@@ -236,8 +236,8 @@ function DetailContent({ request, onClose, onVerified }: { request: StudentChang
               return (
                 <tr key={key} className={`border-t border-[#1B2A4A]/10 ${isChanged ? 'bg-green-50/50' : ''}`}>
                   <td className="p-3 font-medium text-[#5B7088]">{label}</td>
-                  <td className="p-3 text-[#1B2A4A]">{oldVal === null || oldVal === undefined || oldVal === '' ? '-' : String(oldVal)}</td>
-                  <td className="p-3 font-semibold text-green-700">{newVal === null || newVal === undefined || newVal === '' ? '-' : String(newVal)}</td>
+                  <td className="p-3 text-[#1B2A4A]">{displayValue(fieldDef, oldVal)}</td>
+                  <td className="p-3 font-semibold text-green-700">{displayValue(fieldDef, newVal)}</td>
                 </tr>
               );
             })}
@@ -296,4 +296,13 @@ function DetailContent({ request, onClose, onVerified }: { request: StudentChang
       )}
     </div>
   );
+}
+
+function displayValue(field: BiodataFieldDef | undefined, raw: unknown): string {
+  if (raw === null || raw === undefined || raw === '') return '-';
+  if (field?.type === 'decimal') {
+    const n = Number(String(raw));
+    if (!Number.isNaN(n)) return String(n);
+  }
+  return String(raw);
 }

@@ -64,7 +64,7 @@ class Student extends Model
         'ayah_tanggal_lahir' => 'date',
         'ibu_tanggal_lahir' => 'date',
         'wali_tanggal_lahir' => 'date',
-        'jarak_sekolah' => 'decimal:2',
+        'jarak_sekolah' => 'float',
     ];
 
     public function account(): HasOne
