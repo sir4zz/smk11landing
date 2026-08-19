@@ -2,10 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import PageHero from '../../components/ui/PageHero';
 import SectionHeading from '../../components/ui/SectionHeading';
-import type { Staff } from '../../lib/content-types';
-import { fetchPublicContent } from '../../lib/api';
+import { publicProfileApi, type LeadershipEntry } from '../../lib/api';
 import { ArrowRight, CheckCircle2 } from 'lucide-react';
-import { PersonAvatar, EmptyState } from './ManagementShared';
+import { PersonAvatar, EmptyState, formatLeadershipTitle } from './ManagementShared';
 
 const responsibilities = [
   'Menetapkan kebijakan, program, dan rencana kerja sekolah',
@@ -16,12 +15,10 @@ const responsibilities = [
 ];
 
 const KepalaSekolah: React.FC = () => {
-  const [staff, setStaff] = useState<Staff[]>([]);
+  const [principal, setPrincipal] = useState<LeadershipEntry | null>(null);
   useEffect(() => {
-    fetchPublicContent<Staff[]>('staff').then(setStaff);
+    publicProfileApi.leadership().then(({ data }) => { if (data) setPrincipal(data.principal); });
   }, []);
-
-  const principal = staff.find((item) => item.position === 'Kepala Sekolah');
 
   if (!principal) {
     return (
@@ -52,12 +49,18 @@ const KepalaSekolah: React.FC = () => {
               iconClassName="h-20 w-20"
             />
             <div className="p-8 md:col-span-2 md:p-12">
-              <p className="text-sm font-semibold uppercase tracking-widest text-[#866D2C]">{principal.department || 'Manajemen'}</p>
+              <p className="text-sm font-semibold uppercase tracking-widest text-[#866D2C]">{formatLeadershipTitle(principal.title) || 'Manajemen'}</p>
               <h2 className="mt-2 text-2xl font-bold text-[#1B2A4A] md:text-4xl">{principal.name}</h2>
-              <p className="mt-2 text-lg font-semibold text-[#23314D]">{principal.position}</p>
-              {principal.description && (
-                <p className="mt-6 max-w-3xl leading-relaxed text-[#23314D]">{principal.description}</p>
+              {principal.position && <p className="mt-2 text-lg font-semibold text-[#23314D]">{principal.position}</p>}
+              {principal.bio && (
+                <p className="mt-6 max-w-3xl leading-relaxed text-[#23314D]">{principal.bio}</p>
               )}
+              <Link
+                to={`/profil/guru/${encodeURIComponent(principal.slug)}`}
+                className="mt-6 inline-flex items-center gap-2 rounded-lg bg-[#1B2A4A] px-5 py-2.5 font-bold text-[#C8A951] transition-colors hover:bg-[#23314D]"
+              >
+                Profil Lengkap <ArrowRight className="h-4 w-4" />
+              </Link>
             </div>
           </div>
         </div>

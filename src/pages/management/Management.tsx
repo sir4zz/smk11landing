@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import PageHero from '../../components/ui/PageHero';
 import SectionHeading from '../../components/ui/SectionHeading';
-import type { Staff, TeacherActivity, EducationStaff } from '../../lib/content-types';
-import { fetchPublicContent, resolveImageUrl } from '../../lib/api';
+import type { TeacherActivity } from '../../lib/content-types';
+import { fetchPublicContent, publicProfileApi, resolveImageUrl, type LeadershipEntry, type PublicDirectoryEntry } from '../../lib/api';
 import { ArrowRight, Briefcase, CalendarDays, User, Users } from 'lucide-react';
 import { PersonAvatar, formatDate } from './ManagementShared';
 
@@ -15,16 +15,15 @@ const sections = [
 ];
 
 const Management: React.FC = () => {
-  const [staff, setStaff] = useState<Staff[]>([]);
+  const [principal, setPrincipal] = useState<LeadershipEntry | null>(null);
   const [activities, setActivities] = useState<TeacherActivity[]>([]);
-  const [educationStaffList, setEducationStaffList] = useState<EducationStaff[]>([]);
+  const [tendiks, setTendiks] = useState<PublicDirectoryEntry[]>([]);
   useEffect(() => {
-    fetchPublicContent<Staff[]>('staff').then(setStaff);
+    publicProfileApi.leadership().then(({ data }) => { if (data) setPrincipal(data.principal); });
     fetchPublicContent<TeacherActivity[]>('teacherActivities', { limit: 3 }).then(setActivities);
-    fetchPublicContent<EducationStaff[]>('educationStaff').then(setEducationStaffList);
+    publicProfileApi.directory().then(({ data }) => { if (data) setTendiks(data.tendiks); });
   }, []);
 
-  const principal = staff.find((item) => item.position === 'Kepala Sekolah');
   const latestActivities = activities.slice(0, 3);
 
   return (
@@ -68,11 +67,14 @@ const Management: React.FC = () => {
               <div className="p-8 text-[#FAF6F0] md:col-span-2 md:p-12">
                 <p className="text-sm font-semibold uppercase tracking-widest text-[#C8A951]">Kepala Sekolah</p>
                 <h2 className="mt-2 text-2xl font-bold md:text-3xl">{principal.name}</h2>
-                {principal.description && (
-                  <p className="mt-4 max-w-2xl leading-relaxed text-[#F3E8D0]">{principal.description}</p>
+                {principal.position && (
+                  <p className="mt-1 text-[#F3E8D0]">{principal.position}</p>
+                )}
+                {principal.bio && (
+                  <p className="mt-4 max-w-2xl leading-relaxed text-[#F3E8D0]">{principal.bio}</p>
                 )}
                 <Link
-                  to="/manajemen/kepala-sekolah"
+                  to={`/profil/guru/${encodeURIComponent(principal.slug)}`}
                   className="mt-6 inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-5 py-2.5 font-bold text-[#1B2A4A] transition-colors hover:bg-[#B59640]"
                 >
                   Profil Kepala Sekolah <ArrowRight className="h-4 w-4" />
@@ -109,21 +111,20 @@ const Management: React.FC = () => {
         </section>
       )}
 
-      {educationStaffList.length > 0 && (
+      {tendiks.length > 0 && (
         <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-end justify-between gap-4">
-            <SectionHeading title="Tenaga Kependidikan" subtitle={`${educationStaffList.length} staf yang mendukung operasional sekolah`} />
+            <SectionHeading title="Tenaga Kependidikan" subtitle={`${tendiks.length} staf yang mendukung operasional sekolah`} />
             <Link to="/manajemen/tenaga-kependidikan" className="mb-8 inline-flex items-center gap-1 text-sm font-semibold text-[#866D2C] hover:text-[#1B2A4A]">
               Lihat semua <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {educationStaffList.slice(0, 4).map((member) => (
-              <div key={member.id} className="rounded-2xl border border-[#1B2A4A]/10 bg-white p-6 text-center shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
+            {tendiks.slice(0, 4).map((member) => (
+              <div key={member.slug} className="rounded-2xl border border-[#1B2A4A]/10 bg-white p-6 text-center shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
                 <PersonAvatar photo={member.photo} name={member.name} className="mx-auto h-20 w-20 rounded-full object-cover" iconClassName="h-10 w-10" />
                 <h3 className="mt-4 font-bold text-[#1B2A4A]">{member.name}</h3>
-                <p className="mt-1 text-sm text-[#23314D]">{member.position}</p>
-                <span className="mt-3 inline-block rounded-full bg-[#FAF6F0] px-3 py-1 text-xs font-semibold text-[#866D2C]">{member.department}</span>
+                <p className="mt-1 text-sm text-[#23314D]">{member.position || member.subject || 'Tenaga Kependidikan'}</p>
               </div>
             ))}
           </div>

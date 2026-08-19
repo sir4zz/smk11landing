@@ -123,6 +123,13 @@ class DatabaseSeeder extends Seeder
             ['kelulusan.edit', 'Kelulusan Siswa - Ubah', 'kelulusan'],
             ['kelulusan.delete', 'Kelulusan Siswa - Hapus', 'kelulusan'],
             ['kelulusan.verify', 'Kelulusan Siswa - Verifikasi', 'kelulusan'],
+
+            ['sdm.view', 'SDM - Lihat', 'sdm'],
+            ['sdm.create', 'SDM - Buat', 'sdm'],
+            ['sdm.edit', 'SDM - Ubah', 'sdm'],
+            ['sdm.delete', 'SDM - Hapus', 'sdm'],
+            ['sdm.import', 'SDM - Import Data', 'sdm'],
+            ['sdm.export', 'SDM - Export Data', 'sdm'],
         ];
 
         $permissionIds = [];
@@ -170,6 +177,7 @@ class DatabaseSeeder extends Seeder
             'management.view',
             'mading.edit_all',
             'gallery.view', 'gallery.create', 'gallery.edit', 'gallery.delete',
+            'sdm.view', 'sdm.create', 'sdm.edit', 'sdm.delete', 'sdm.import', 'sdm.export',
         ];
 
         $bkkSlugs = [
@@ -770,7 +778,6 @@ class DatabaseSeeder extends Seeder
         $rows = [
             [
                 'title' => 'Siswa SMKN 11 Kabupaten Tangerang Raih Medali Ajang Prestasi 2025',
-                'slug' => 'ajang-prestasi-2025',
                 'date' => '2025-10-15',
                 'excerpt' => 'Febriyani, siswa SMKN 11 Kabupaten Tangerang, berhasil meraih medali perak pada Ajang Prestasi SMK Tingkat Kabupaten Tangerang tahun 2025.',
                 'content' => '<p>Prestasi membanggakan kembali diraih oleh siswa SMKN 11 Kabupaten Tangerang. Febriyani berhasil meraih medali perak pada Ajang Prestasi SMK Tingkat Kabupaten Tangerang tahun 2025 yang diselenggarakan di Sub Rayon 03.</p><p>Keberhasilan ini merupakan buah dari persiapan matang dan bimbingan intensif dari para guru pembimbing. "Febriyani menunjukkan dedikasi yang luar biasa dan penguasaan materi yang sangat baik," ujar pembimbing.</p><p>Prestasi ini menjadi motivasi bagi siswa lainnya untuk terus berprestasi di berbagai ajang kompetisi. Pihak sekolah berkomitmen penuh untuk memberikan dukungan fasilitas dan pembimbingan intensif agar siswa dapat terus menorehkan prestasi gemilang.</p>',
@@ -780,7 +787,6 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'title' => 'Penerimaan Peserta Didik Baru (PPDB) Tahun Ajaran 2026/2027 Segera Dibuka',
-                'slug' => 'info-ppdb-2026',
                 'date' => '2026-06-15',
                 'excerpt' => 'Informasi lengkap terkait jadwal, persyaratan, dan alur pendaftaran PPDB SMKN 11 Kabupaten Tangerang tahun ajaran 2026/2027.',
                 'content' => '<p>Penerimaan Peserta Didik Baru (PPDB) SMKN 11 Kabupaten Tangerang tahun ajaran 2026/2027 akan segera dibuka secara online (daring) melalui portal resmi PPDB Provinsi Banten. Pendaftaran tahap pertama direncanakan mulai tanggal 20 hingga 25 Juni 2026.</p><p>Untuk tahun ini, SMKN 11 Kabupaten Tangerang membuka pendaftaran untuk 6 Program Keahlian, yaitu TJKT (Teknik Jaringan Komputer dan Telekomunikasi), DKV (Desain Komunikasi Visual), Teknik Otomotif, TITL (Teknik Ketenagalistrikan), MPLB (Manajemen Perkantoran dan Layanan Bisnis), dan Busana. Daya tampung total diperkirakan mencapai 400 siswa yang akan terbagi dalam 11 rombongan belajar. Jalur pendaftaran meliputi jalur zonasi, prestasi akademik/non-akademik, afirmasi, dan perpindahan tugas orang tua.</p><p>Calon peserta didik dan orang tua diimbau untuk menyiapkan dokumen persyaratan seperti SKL, Kartu Keluarga, dan sertifikat prestasi (jika ada) jauh-jauh hari. Informasi petunjuk teknis pendaftaran dapat diunduh melalui halaman utama website ini.</p>',
@@ -790,7 +796,6 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'title' => 'Kunjungan Industri Jurusan Teknik Otomotif ke Pabrik Perakitan Mobil',
-                'slug' => 'kunjungan-industri-otomotif',
                 'date' => '2026-05-10',
                 'excerpt' => 'Siswa kelas XI Teknik Otomotif mengikuti kegiatan Kunjungan Industri (KI) ke salah satu pabrik perakitan mobil ternama di Cikarang.',
                 'content' => '<p>Dalam rangka menyelaraskan kurikulum dengan dunia industri, sebanyak 65 siswa kelas XI jurusan Teknik Otomotif beserta guru pendamping melaksanakan Kunjungan Industri (KI) ke sebuah pabrik perakitan mobil skala internasional di kawasan industri Cikarang pada hari Rabu lalu.</p><p>Selama kunjungan, para siswa diajak mengelilingi fasilitas produksi dan mengamati langsung proses perakitan kendaraan mulai dari pengelasan bodi (welding), pengecatan (painting), hingga tahap perakitan akhir (assembling) dan uji kualitas. Kegiatan ini memberikan gambaran nyata tentang standar operasional kerja dan teknologi mutakhir yang digunakan dalam industri otomotif.</p><p>Kepala Program Keahlian Teknik Otomotif berharap kegiatan KI ini dapat memotivasi siswa untuk terus mengasah keterampilan mereka agar kelak menjadi mekanik dan teknisi andal yang siap bersaing di dunia kerja nyata setelah lulus.</p>',
@@ -800,7 +805,6 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'title' => 'Peresmian Laboratorium Desain Komunikasi Visual Baru',
-                'slug' => 'peresmian-lab-dkv',
                 'date' => '2026-04-22',
                 'excerpt' => 'SMKN 11 Kabupaten Tangerang resmi membuka laboratorium multimedia baru khusus untuk praktik siswa jurusan Desain Komunikasi Visual (DKV).',
                 'content' => '<p>Dalam upaya meningkatkan kualitas pendidikan vokasi, Kepala SMKN 11 Kabupaten Tangerang resmi meresmikan Laboratorium Desain Komunikasi Visual (DKV) yang baru pada Kamis, 22 April 2026. Lab baru ini dilengkapi dengan 35 unit komputer spesifikasi tinggi (Core i7, RAM 16GB, SSD 512GB) yang sangat memadai untuk aktivitas desain grafis, editing video, dan rendering 3D.</p><p>Selain peningkatan perangkat keras, lab ini juga difasilitasi dengan koneksi internet serat optik dedicated, studio mini, dan perangkat kamera untuk praktik fotografi dan videografi. Pembaruan fasilitas ini diharapkan dapat mendukung pembelajaran produktif seperti desain grafis, animasi, dan produksi konten digital.</p><p>Siswa menyambut baik kehadiran lab ini. "Kami sangat senang dengan adanya lab baru ini, sekarang kami bisa melakukan rendering dan editing video dengan jauh lebih lancar tanpa kendala," ungkap salah satu siswa jurusan DKV.</p>',
@@ -810,7 +814,6 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'title' => 'Pelaksanaan Uji Kompetensi Keahlian (UKK) Tahun 2026 Berjalan Lancar',
-                'slug' => 'pelaksanaan-ukk-2026',
                 'date' => '2026-03-05',
                 'excerpt' => 'Seluruh siswa kelas XII dari enam program keahlian sukses mengikuti Uji Kompetensi Keahlian (UKK) sebagai syarat kelulusan.',
                 'content' => '<p>Uji Kompetensi Keahlian (UKK) bagi siswa kelas XII SMKN 11 Kabupaten Tangerang tahun pelajaran 2025/2026 telah selesai diselenggarakan dengan sukses dan lancar. Kegiatan yang berlangsung selama satu pekan ini melibatkan penguji internal (guru produktif) maupun penguji eksternal dari dunia usaha dan industri (DUDI).</p><p>UKK bertujuan mengukur pencapaian kompetensi siswa pada jenjang tertentu sesuai dengan kompetensi keahlian yang ditempuh. Tiap jurusan menyajikan tantangan yang berbeda, misalnya jurusan MPLB dengan ujian praktik administrasi perkantoran, sedangkan jurusan Teknik Otomotif dengan praktik troubleshooting sistem injeksi dan perbaikan mesin.</p><p>Para penguji eksternal mengapresiasi kemampuan dan kedisiplinan kerja para siswa selama ujian. Sebagian besar siswa dinyatakan sangat kompeten dan memenuhi standar yang dibutuhkan oleh industri. Sertifikat kompetensi yang akan mereka peroleh nantinya sangat berguna sebagai bekal melamar pekerjaan.</p>',
@@ -820,7 +823,6 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'title' => 'Peringatan Hari Guru Nasional di SMKN 11 Kab. Tangerang',
-                'slug' => 'hari-guru-nasional',
                 'date' => '2025-11-25',
                 'excerpt' => 'Rangkaian acara meriah peringatan Hari Guru Nasional dirayakan oleh seluruh guru dan siswa dengan penuh rasa kekeluargaan.',
                 'content' => '<p>Peringatan Hari Guru Nasional (HGN) tahun ini di SMKN 11 Kabupaten Tangerang berlangsung sangat meriah dan penuh makna. Kegiatan diawali dengan upacara bendera di lapangan utama sekolah, di mana petugas upacara merupakan perwakilan dari bapak/ibu guru sendiri. Hal ini memberikan suasana berbeda dan sangat berkesan bagi para siswa.</p><p>Setelah upacara, acara dilanjutkan dengan pemotongan tumpeng dan penampilan pentas seni persembahan dari ekstrakurikuler serta perwakilan setiap kelas. Puncak acara ditandai dengan penyerahan buket bunga secara simbolis oleh pengurus OSIS kepada Kepala Sekolah dan para guru, sebagai bentuk penghormatan dan rasa terima kasih atas jasa mereka dalam mendidik siswa-siswi.</p><p>"Guru adalah pahlawan tanpa tanda jasa. Kami berharap semua guru senantiasa diberikan kesehatan dan kesabaran dalam mencetak generasi penerus bangsa yang unggul, terampil, dan berkarakter," tutur Ketua OSIS dalam sambutannya.</p>',
@@ -830,7 +832,6 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'title' => 'Tim Futsal SMKN 11 Juara 1 Bupati Cup Kabupaten Tangerang 2025',
-                'slug' => 'juara-futsal-bupati-cup-2025',
                 'date' => '2025-09-20',
                 'excerpt' => 'Tim futsal putra SMKN 11 Kabupaten Tangerang berhasil meraih juara 1 pada Turnamen Futsal Bupati Cup Kabupaten Tangerang 2025.',
                 'content' => '<p>Tim futsal putra SMKN 11 Kabupaten Tangerang berhasil mengukir prestasi gemilang dengan meraih juara 1 pada Turnamen Futsal Bupati Cup Kabupaten Tangerang 2025. Turnamen yang berlangsung selama dua pekan ini diikuti oleh 24 tim SMK se-Kabupaten Tangerang.</p><p>Di partai final yang berlangsung ketat, tim futsal SMKN 11 berhasil mengalahkan tim asal SMKN 2 dengan skor akhir 3-2. Kapten tim, Reza Pratama, mencetak dua gol penentu kemenangan yang membawa tim meraih trofi juara.</p><p>Kepala Sekolah menyampaikan apresiasi tinggi kepada tim dan pelatih atas prestasi membanggakan ini. "Prestasi ini membuktikan bahwa siswa SMKN 11 tidak hanya unggul dalam akademik dan keahlian, tetapi juga dalam bidang olahraga," ujar beliau. Tim futsal berharap prestasi ini dapat memotivasi siswa lain untuk terus berprestasi di berbagai bidang.</p>',
@@ -840,7 +841,6 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'title' => 'Praktik Kerja Lapangan (PKL) Siswa Kelas XI Dimulai',
-                'slug' => 'pkl-kelas-xi-2026',
                 'date' => '2026-07-01',
                 'excerpt' => 'Siswa kelas XI dari seluruh program keahlian memulai kegiatan Praktik Kerja Lapangan (PKL) di berbagai perusahaan mitra DUDI.',
                 'content' => '<p>Praktik Kerja Lapangan (PKL) bagi siswa kelas XI SMKN 11 Kabupaten Tangerang tahun pelajaran 2025/2026 resmi dimulai pada 1 Juli 2026. Kegiatan ini melibatkan ratusan siswa dari enam program keahlian yang ditempatkan di berbagai perusahaan mitra dunia usaha dan dunia industri (DUDI).</p><p>Penempatan PKL disesuaikan dengan kompetensi masing-masing jurusan. Siswa TJKT ditempatkan di perusahaan teknologi dan ISP, siswa DKV di agensi kreatif dan production house, siswa Teknik Otomotif di bengkel resmi dan dealer, siswa TITL di kontraktor listrik dan industri manufaktur, siswa MPLB di bank dan kantor, serta siswa Busana di butik dan konveksi.</p><p>Kepala Program Keahlian Hubin menyampaikan bahwa PKL merupakan momen penting bagi siswa untuk mengaplikasikan ilmu yang dipelajari di sekolah dalam dunia kerja nyata. "Melalui PKL, siswa dapat membangun jejaring dengan industri dan mempersiapkan diri untuk dunia kerja setelah lulus," tuturnya. Kegiatan PKL akan berlangsung selama tiga bulan hingga akhir September 2026.</p>',
@@ -850,7 +850,6 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'title' => 'Sosialisasi Bahaya Perundungan (Bullying) dan Kenakalan Remaja',
-                'slug' => 'sosialisasi-anti-bullying-2026',
                 'date' => '2026-04-10',
                 'excerpt' => 'Sekolah mengadakan sosialisasi pencegahan perundungan dan kenakalan remaja yang diikuti seluruh siswa dengan narasumber dari Kepolisian.',
                 'content' => '<p>Dalam upaya menciptakan lingkungan sekolah yang aman dan nyaman, SMKN 11 Kabupaten Tangerang mengadakan sosialisasi pencegahan perundungan (bullying) dan kenakalan remaja pada 10 April 2026. Kegiatan ini menghadirkan narasumber dari Kepolisian Resor Kabupaten Tangerang dan diikuti oleh seluruh siswa.</p><p>Sosialisasi membahas berbagai topik penting, antara lain jenis-jenis perundungan, dampak psikologis bagi korban dan pelaku, serta cara mencegah dan melaporkan tindakan perundungan. Selain itu, narasumber juga menyampaikan materi tentang bahaya penyalahgunaan narkoba dan pentingnya hukum bagi remaja.</p><p>Kepala Sekolah dalam sambutannya menekankan pentingnya rasa hormat dan empati antar siswa. "Sekolah berkomitmen menciptakan lingkungan belajar yang bebas dari perundungan. Setiap laporan akan kami tindak lanjuti dengan serius," tegas beliau. Kegiatan ini ditutup dengan penandatanganan komitmen anti-bullying oleh perwakilan OSIS dan seluruh ketua kelas.</p>',
@@ -860,7 +859,6 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'title' => 'SMKN 11 Kabupaten Tangerang Raih Akreditasi "A" Unggul',
-                'slug' => 'akreditasi-a-unggul-2025',
                 'date' => '2025-12-10',
                 'excerpt' => 'SMKN 11 Kabupaten Tangerang berhasil meraih predikat akreditasi "A" Unggul dari Badan Akreditasi Nasional Sekolah/Madrasah (BAN-S/M).',
                 'content' => '<p>SMKN 11 Kabupaten Tangerang berhasil meraih prestasi membanggakan dengan memperoleh predikat akreditasi "A" Unggul dari Badan Akreditasi Nasional Sekolah/Madrasah (BAN-S/M) hasil asesmen tahun 2025. Predikat ini diberikan setelah melalui proses asesmen menyeluruh terhadap delapan standar nasional pendidikan.</p><p>Asesmen akreditasi menilai berbagai aspek, mulai dari kualitas pendidik dan tenaga kependidikan, sarana prasarana, pengelolaan, pembiayaan, hingga prestasi siswa baik akademik maupun non-akademik. Sekolah mendapatkan nilai yang sangat memuaskan pada hampir seluruh komponen penilaian.</p><p>"Capaian akreditasi A Unggul ini adalah hasil kerja keras seluruh keluarga besar SMKN 11 Kabupaten Tangerang. Kami akan terus berinovasi dan meningkatkan mutu pendidikan agar lulusan semakin siap kerja dan berdaya saing tinggi," ujar Kepala Sekolah dalam rilis resmi. Predikat akreditasi A Unggul berlaku selama lima tahun dan menjadi bukti komitmen sekolah dalam menyelenggarakan pendidikan vokasi berkualitas.</p>',
@@ -870,7 +868,6 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'title' => 'Lowongan Kerja Terbaru PT Teknologi Nusantara untuk Lulusan TJKT',
-                'slug' => 'pengumuman-lowongan-tjkt-teknologi-nusantara',
                 'date' => '2026-08-05',
                 'excerpt' => 'PT Teknologi Nusantara membuka lowongan Network Administrator untuk lulusan TJKT melalui BKK SMKN 11 Kabupaten Tangerang.',
                 'content' => '<p>BKK SMKN 11 Kabupaten Tangerang menerima informasi lowongan kerja terbaru dari PT Teknologi Nusantara. Perusahaan penyedia layanan infrastruktur IT dan telekomunikasi tersebut membutuhkan kandidat untuk posisi Network Administrator.</p><p>Posisi ini terbuka bagi lulusan SMK jurusan Teknik Jaringan Komputer dan Telekomunikasi (TJKT) yang memahami MikroTik, Cisco, serta dasar TCP/IP dan VLAN. Fresh graduate dipersilakan untuk mendaftar.</p><p>Alumni yang berminat dapat melihat detail lowongan melalui halaman Lowongan Kerja BKK atau menghubungi petugas BKK pada jam pelayanan. Batas akhir pendaftaran adalah 30 September 2026.</p>',
@@ -880,7 +877,6 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'title' => 'Pendaftaran Program Magang Batch 2 PT Multimedia Kreatif Dibuka',
-                'slug' => 'pendaftaran-magang-multimedia-kreatif-batch-2',
                 'date' => '2026-07-28',
                 'excerpt' => 'PT Multimedia Kreatif Indonesia kembali membuka program magang bagi siswa dan alumni DKV. Pendaftaran melalui BKK SMKN 11.',
                 'content' => '<p>BKK SMKN 11 Kabupaten Tangerang mengumumkan dibukanya pendaftaran program magang batch kedua dari PT Multimedia Kreatif Indonesia. Production house yang menangani berbagai merek nasional ini mencari kandidat untuk posisi Videografer &amp; Editor.</p><p>Program magang ini terbuka bagi siswa SMK jurusan DKV atau Multimedia yang sedang melaksanakan PKL maupun alumni baru. Kandidat diharapkan menguasai dasar videografi dan editing video menggunakan Adobe Premiere atau CapCut.</p><p>Peserta magang akan mendapatkan uang saku, sertifikat pengalaman kerja, dan kesempatan diangkat sebagai karyawan kontrak. Silakan hubungi BKK SMKN 11 untuk informasi pendaftaran lebih lanjut.</p>',
@@ -890,7 +886,6 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'title' => 'BKK Buka Layanan Konsultasi Karir untuk Alumni',
-                'slug' => 'layanan-konsultasi-karir-bkk',
                 'date' => '2026-07-20',
                 'excerpt' => 'BKK SMKN 11 Kabupaten Tangerang menyediakan layanan konsultasi karir gratis bagi alumni setiap hari kerja.',
                 'content' => '<p>BKK SMKN 11 Kabupaten Tangerang membuka layanan konsultasi karir bagi alumni yang ingin mempersiapkan diri memasuki dunia kerja. Layanan ini mencakup bimbingan penyusunan curriculum vitae (CV), tips menghadapi wawancara kerja, serta informasi tren lowongan di berbagai sektor industri.</p><p>Konsultasi dapat dilakukan secara langsung di kantor BKK atau melalui WhatsApp pada jam pelayanan, Senin hingga Jumat pukul 07.00 - 15.00 WIB. Layanan ini gratis dan terbuka untuk seluruh alumni dari semua program keahlian.</p><p>Melalui layanan ini, BKK berharap alumni semakin siap bersaing dan mendapatkan pekerjaan yang sesuai dengan kompetensi masing-masing.</p>',
@@ -900,7 +895,6 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'title' => 'Rekrutmen Bersama Perusahaan Mitra BKK Tahun 2026',
-                'slug' => 'rekrutmen-bersama-mitra-bkk-2026',
                 'date' => '2026-07-12',
                 'excerpt' => 'BKK SMKN 11 mengadakan rekrutmen bersama yang diikuti perusahaan mitra dari berbagai sektor industri untuk menyalurkan lulusan.',
                 'content' => '<p>BKK SMKN 11 Kabupaten Tangerang akan menyelenggarakan kegiatan rekrutmen bersama yang diikuti oleh sejumlah perusahaan mitra dari berbagai sektor industri. Kegiatan ini menjadi wadah bagi alumni untuk bertemu langsung dengan perwakilan perusahaan dan mengajukan lamaran kerja.</p><p>Rekrutmen bersama menghadirkan perusahaan dari sektor teknologi informasi, otomotif, manufaktur, ritel, hingga perbankan. Alumni diharapkan membawa berkas lamaran lengkap dan berpakaian rapi saat mengikuti kegiatan.</p><p>Informasi jadwal dan daftar perusahaan peserta akan diumumkan melalui halaman Lowongan Kerja BKK. Pantau terus informasi terbaru agar tidak ketinggalan kesempatan ini.</p>',
@@ -910,7 +904,6 @@ class DatabaseSeeder extends Seeder
             ],
             [
                 'title' => 'Workshop Persiapan Kerja: Tips CV dan Wawancara bagi Calon Lulusan',
-                'slug' => 'workshop-persiapan-kerja-bkk',
                 'date' => '2026-06-25',
                 'excerpt' => 'BKK SMKN 11 menggelar workshop persiapan kerja untuk siswa kelas XII dalam menyusun CV dan menghadapi wawancara kerja.',
                 'content' => '<p>Dalam rangka mempersiapkan siswa kelas XII memasuki dunia kerja setelah lulus, BKK SMKN 11 Kabupaten Tangerang menyelenggarakan workshop persiapan kerja. Materi workshop meliputi teknik menyusun CV yang menarik, strategi menjawab wawancara kerja, dan etika berkomunikasi di lingkungan profesional.</p><p>Workshop menghadirkan praktisi dari perusahaan mitra yang membagikan pengalaman dan tips langsung dari dunia industri. Peserta juga berkesempatan melakukan simulasi wawancara kerja.</p><p>Kegiatan ini merupakan bagian dari program bimbingan karir BKK yang diadakan secara rutin setiap tahun menjelang kelulusan siswa kelas XII.</p>',
@@ -921,7 +914,8 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($rows as $row) {
-            News::updateOrCreate(['slug' => $row['slug']], $row);
+            $row['slug'] = Str::slug($row['title']);
+            News::updateOrCreate(['title' => $row['title']], $row);
         }
     }
 
@@ -929,7 +923,6 @@ class DatabaseSeeder extends Seeder
     {
         $rows = [
             [
-                'slug' => 'tkj',
                 'name' => 'Teknik Jaringan Komputer dan Telekomunikasi',
                 'short_name' => 'TJKT',
                 'icon' => 'Network',
@@ -941,7 +934,6 @@ class DatabaseSeeder extends Seeder
                 'facilities' => ['Laboratorium Komputer', 'Peralatan Jaringan (Router, Switch, MikroTik)', 'Server Khusus Praktik', 'Koneksi Internet Fiber Optik', 'Toolkit Perbaikan Komputer'],
             ],
             [
-                'slug' => 'dkv',
                 'name' => 'Desain Komunikasi Visual',
                 'short_name' => 'DKV',
                 'icon' => 'Code',
@@ -953,7 +945,6 @@ class DatabaseSeeder extends Seeder
                 'facilities' => ['Laboratorium Multimedia', 'Kamera DSLR/Mirrorless', 'Studio Fotografi', 'Green Screen Studio', 'Komputer Spesifikasi Tinggi untuk Desain'],
             ],
             [
-                'slug' => 'otomotif',
                 'name' => 'Teknik Otomotif',
                 'short_name' => 'TO',
                 'icon' => 'Car',
@@ -965,7 +956,6 @@ class DatabaseSeeder extends Seeder
                 'facilities' => ['Bengkel Otomotif Standar Industri', 'Engine Stand', 'Car Lift', 'Alat Uji Emisi', 'Scanner EFI', 'Unit Sepeda Motor Berbagai Tipe'],
             ],
             [
-                'slug' => 'titl',
                 'name' => 'Teknik Ketenagalistrikan',
                 'short_name' => 'TITL',
                 'icon' => 'Zap',
@@ -977,7 +967,6 @@ class DatabaseSeeder extends Seeder
                 'facilities' => ['Laboratorium Instalasi Listrik', 'Panel Listrik Praktik', 'Motor Listrik Berbagai Jenis', 'Trainer PLC', 'Peralatan Keselamatan Kerja (K3)'],
             ],
             [
-                'slug' => 'mplb',
                 'name' => 'Manajemen Perkantoran dan Layanan Bisnis',
                 'short_name' => 'MPLB',
                 'icon' => 'Calculator',
@@ -989,7 +978,6 @@ class DatabaseSeeder extends Seeder
                 'facilities' => ['Laboratorium Administrasi Perkantoran', 'Bank Mini', 'Perangkat Multimedia', 'Software Administrasi Perkantoran'],
             ],
             [
-                'slug' => 'busana',
                 'name' => 'Busana',
                 'short_name' => 'Busana',
                 'icon' => 'Scissors',
@@ -1003,7 +991,8 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($rows as $row) {
-            Program::updateOrCreate(['slug' => $row['slug']], $row);
+            $row['slug'] = Str::slug($row['short_name']);
+            Program::updateOrCreate(['short_name' => $row['short_name']], $row);
         }
     }
 

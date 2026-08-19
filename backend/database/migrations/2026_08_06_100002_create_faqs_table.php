@@ -16,6 +16,7 @@ return new class extends Migration
             $table->text('category')->default('');
             $table->integer('sort_order')->default(0);
             $table->timestamp('created_at')->useCurrent();
+            $table->index('sort_order', 'faqs_sort_order_index');
         });
     }
 

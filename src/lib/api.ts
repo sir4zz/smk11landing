@@ -544,8 +544,6 @@ export const myProfileApi = {
 };
 
 // ---------- PUBLIC PROFILES ----------
-export type PublicProfileType = 'guru' | 'siswa' | 'osis';
-
 export interface PublicProfile {
   role: string;
   slug: string;
@@ -570,7 +568,7 @@ export interface PublicProfile {
 }
 
 export interface PublicDirectoryEntry {
-  role: 'guru' | 'siswa' | 'osis';
+  role: 'guru' | 'siswa' | 'osis' | 'tendik';
   slug: string;
   name: string;
   photo: string;
@@ -585,14 +583,30 @@ export interface PublicDirectory {
   gurus: PublicDirectoryEntry[];
   siswa: PublicDirectoryEntry[];
   osis: PublicDirectoryEntry[];
+  tendiks: PublicDirectoryEntry[];
+}
+
+export interface LeadershipEntry extends PublicDirectoryEntry {
+  title: string;
+  bio?: string;
+  subject?: string;
+}
+
+export interface Leadership {
+  principal: LeadershipEntry | null;
+  vice_principals: LeadershipEntry[];
+  program_heads: LeadershipEntry[];
 }
 
 export const publicProfileApi = {
-  get(type: PublicProfileType, slug: string): ApiResult<PublicProfile> {
-    return request<PublicProfile>(`/public/${type}/${encodeURIComponent(slug)}`);
+  get(type: PublicProfileType, slug: string): ApiResult<PublicProfile | PublicSdmProfile> {
+    return request<PublicProfile | PublicSdmProfile>(`/public/${type}/${encodeURIComponent(slug)}`);
   },
   directory(): ApiResult<PublicDirectory> {
     return request<PublicDirectory>('/public/directory');
+  },
+  leadership(): ApiResult<Leadership> {
+    return request<Leadership>('/public/leadership');
   },
 };
 
@@ -941,3 +955,177 @@ export const studentChangeRequestAdminApi = {
     });
   },
 };
+
+// ---------- SDM (DATA GURU & TENAGA KEPENDIDIKAN) ----------
+export type SdmType = 'guru' | 'tendik';
+
+export interface SdmEducationRow {
+  id?: string;
+  jenjang: string;
+  jurusan: string;
+  perguruan_tinggi: string;
+  tahun_lulus?: number | null;
+  tempat: string;
+  nomor_ijazah: string;
+  tanggal_ijazah?: string | null;
+}
+
+export interface SdmAssignmentRow {
+  id?: string;
+  jenis: 'tugas_tambahan' | 'tugas_mengajar';
+  uraian: string;
+  jumlah_jam: string;
+}
+
+export interface SdmCertificationRow {
+  id?: string;
+  status: string;
+  no_sertifikat: string;
+  no_peserta: string;
+  no_nrg: string;
+  bidang_studi: string;
+  penyelenggara: string;
+  tahun_lulus?: number | null;
+}
+
+export interface SdmKgbRow {
+  id?: string;
+  no_sk: string;
+  tanggal_sk?: string | null;
+  gaji_pokok: string;
+  mkg: string;
+  tmt_kgb_akhir?: string | null;
+  tmt_kgb_berikutnya?: string | null;
+}
+
+export interface SdmSkPengangkatanRow {
+  id?: string;
+  kategori: string;
+  nomor_sk: string;
+  tanggal_sk?: string | null;
+  pejabat: string;
+}
+
+export interface SdmPersonRow {
+  id?: string;
+  name: string;
+  nip?: string | null;
+  nipppk?: string | null;
+  nuptk?: string | null;
+  gender?: string;
+  religion?: string;
+  birth_place?: string;
+  birth_date?: string | null;
+  status_kepegawaian?: string;
+  pangkat_golongan?: string;
+  jabatan?: string;
+  tmt_golongan?: string | null;
+  tmt_cpns?: string | null;
+  tmt_pns_pppk?: string | null;
+  tmt_sk_sekolah?: string | null;
+  nik?: string | null;
+  address?: string;
+  phone?: string;
+  npwp?: string;
+  akta_lahir?: string;
+  bpjs?: string;
+  email?: string;
+  instagram?: string;
+  facebook?: string;
+  twitter?: string;
+  tiktok?: string;
+  youtube?: string;
+  linkedin?: string;
+  website?: string;
+  github?: string;
+  photo?: string;
+  bio?: string;
+  is_active?: boolean;
+  linked_account?: boolean;
+  created_at?: string;
+  educations?: SdmEducationRow[];
+  assignments?: SdmAssignmentRow[];
+  certifications?: SdmCertificationRow[];
+  kgb?: SdmKgbRow | null;
+  sk_pengangkatans?: SdmSkPengangkatanRow[];
+}
+
+export interface SdmListResult {
+  type: SdmType;
+  items: SdmPersonRow[];
+  total: number;
+  per_page: number;
+  page: number;
+}
+
+export interface SdmPreviewItem {
+  index: number;
+  name: string;
+  identifier: string;
+  status: 'new' | 'update' | 'duplicate' | 'problematic';
+  issues: string[];
+  gender: string;
+  jabatan: string;
+}
+
+export interface SdmPreviewResult {
+  summary: { total: number; valid: number; new: number; update: number; duplicates: number; problematic: number };
+  items: SdmPreviewItem[];
+}
+
+export interface SdmImportResult {
+  summary: { total: number; imported: number; updated: number; skipped: number };
+  errors: { row: number; name: string; message: string }[];
+}
+
+export const sdmApi = {
+  list(type: SdmType, params?: { search?: string; jabatan?: string; is_active?: boolean; page?: number; per_page?: number }): ApiResult<SdmListResult> {
+    const q = new URLSearchParams();
+    if (params?.search) q.set('search', params.search);
+    if (params?.jabatan) q.set('jabatan', params.jabatan);
+    if (typeof params?.is_active === 'boolean') q.set('is_active', params.is_active ? '1' : '0');
+    if (params?.page) q.set('page', String(params.page));
+    if (params?.per_page) q.set('per_page', String(params.per_page));
+    const suffix = q.size ? `?${q}` : '';
+    return request<SdmListResult>(`/admin/sdm/${type}${suffix}`);
+  },
+  get(type: SdmType, id: string): ApiResult<SdmPersonRow> {
+    return request<SdmPersonRow>(`/admin/sdm/${type}/${encodeURIComponent(id)}`);
+  },
+  create(type: SdmType, payload: Record<string, unknown>): ApiResult<SdmPersonRow> {
+    return request<SdmPersonRow>(`/admin/sdm/${type}`, { method: 'POST', body: JSON.stringify(payload) });
+  },
+  update(type: SdmType, id: string, payload: Record<string, unknown>): ApiResult<SdmPersonRow> {
+    return request<SdmPersonRow>(`/admin/sdm/${type}/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(payload) });
+  },
+  remove(type: SdmType, id: string): ApiResult<null> {
+    return request<null>(`/admin/sdm/${type}/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  },
+  preview(type: SdmType, persons: SdmPersonRow[]): ApiResult<SdmPreviewResult> {
+    return request<SdmPreviewResult>(`/admin/sdm/${type}/preview`, { method: 'POST', body: JSON.stringify({ persons }) });
+  },
+  import(type: SdmType, persons: SdmPersonRow[]): ApiResult<SdmImportResult> {
+    return request<SdmImportResult>(`/admin/sdm/${type}/import`, { method: 'POST', body: JSON.stringify({ persons }) });
+  },
+  exportUrl(type: SdmType): string {
+    return `${apiBaseUrl}/admin/sdm/${type}/export`;
+  },
+};
+
+export interface PublicSdmProfile {
+  role: 'guru' | 'tendik';
+  slug: string;
+  name: string;
+  photo: string;
+  position: string;
+  subject: string;
+  bio: string;
+  email: string;
+  phone: string;
+  social: Record<string, string>;
+  education: { jenjang: string; jurusan: string; perguruan_tinggi: string; tahun_lulus?: number | null }[];
+  assignments: { jenis: string; uraian: string; jumlah_jam: string }[];
+  certified: boolean;
+}
+
+export type PublicProfileType = 'guru' | 'siswa' | 'osis' | 'tendik';

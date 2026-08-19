@@ -1,17 +1,15 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import PageHero from '../../components/ui/PageHero';
 import SectionHeading from '../../components/ui/SectionHeading';
-import type { Staff } from '../../lib/content-types';
-import { fetchPublicContent } from '../../lib/api';
-import { PersonAvatar, EmptyState } from './ManagementShared';
+import { publicProfileApi, type LeadershipEntry } from '../../lib/api';
+import { PersonAvatar, EmptyState, formatLeadershipTitle } from './ManagementShared';
 
 const WakilKepalaSekolah: React.FC = () => {
-  const [staff, setStaff] = useState<Staff[]>([]);
+  const [vicePrincipals, setVicePrincipals] = useState<LeadershipEntry[]>([]);
   useEffect(() => {
-    fetchPublicContent<Staff[]>('staff').then(setStaff);
+    publicProfileApi.leadership().then(({ data }) => { if (data) setVicePrincipals(data.vice_principals); });
   }, []);
-
-  const vicePrincipals = staff.filter((item) => item.position.startsWith('Wakil'));
 
   return (
     <div className="min-h-screen bg-[#FAF6F0]">
@@ -33,15 +31,18 @@ const WakilKepalaSekolah: React.FC = () => {
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {vicePrincipals.map((vp) => (
-              <div key={vp.id} className="overflow-hidden rounded-2xl border border-[#1B2A4A]/10 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
+              <Link
+                key={vp.slug}
+                to={`/profil/guru/${encodeURIComponent(vp.slug)}`}
+                className="overflow-hidden rounded-2xl border border-[#1B2A4A]/10 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg"
+              >
                 <PersonAvatar photo={vp.photo} name={vp.name} className="h-52 w-full object-cover" iconClassName="h-14 w-14" />
                 <div className="p-6 text-center">
-                  <span className="inline-block rounded-full bg-[#FAF6F0] px-3 py-1 text-xs font-semibold text-[#866D2C]">{vp.department}</span>
+                  <span className="inline-block rounded-full bg-[#FAF6F0] px-3 py-1 text-xs font-semibold text-[#866D2C]">{formatLeadershipTitle(vp.title)}</span>
                   <h3 className="mt-3 text-lg font-bold text-[#1B2A4A]">{vp.name}</h3>
-                  <p className="mt-1 text-sm font-medium text-[#23314D]">{vp.position}</p>
-                  {vp.description && <p className="mt-3 text-sm leading-relaxed text-[#23314D]">{vp.description}</p>}
+                  {vp.position && <p className="mt-1 text-sm font-medium text-[#23314D]">{vp.position}</p>}
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}

@@ -59,11 +59,18 @@ class AddNewRolesSeeder extends Seeder
             'kelulusan.edit' => ['name' => 'Kelulusan Siswa - Ubah', 'module' => 'kelulusan'],
             'kelulusan.delete' => ['name' => 'Kelulusan Siswa - Hapus', 'module' => 'kelulusan'],
             'kelulusan.verify' => ['name' => 'Kelulusan Siswa - Verifikasi', 'module' => 'kelulusan'],
+            'sdm.view' => ['name' => 'SDM - Lihat', 'module' => 'sdm'],
+            'sdm.create' => ['name' => 'SDM - Buat', 'module' => 'sdm'],
+            'sdm.edit' => ['name' => 'SDM - Ubah', 'module' => 'sdm'],
+            'sdm.delete' => ['name' => 'SDM - Hapus', 'module' => 'sdm'],
+            'sdm.import' => ['name' => 'SDM - Import Data', 'module' => 'sdm'],
+            'sdm.export' => ['name' => 'SDM - Export Data', 'module' => 'sdm'],
         ];
 
         $operatorPerms = [
             'dashboard.view', 'management.view', 'mading.edit_all',
             'gallery.view', 'gallery.create', 'gallery.edit', 'gallery.delete',
+            'sdm.view', 'sdm.create', 'sdm.edit', 'sdm.delete', 'sdm.import', 'sdm.export',
         ];
 
         $bkkPerms = [

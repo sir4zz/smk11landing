@@ -4,15 +4,16 @@ import { Users, BookOpen, Loader2, Search } from 'lucide-react';
 import PageHero from '../../components/ui/PageHero';
 import { publicProfileApi, resolveImageUrl, type PublicDirectory, type PublicDirectoryEntry } from '../../lib/api';
 
-type Tab = 'guru' | 'osis';
+type Tab = 'guru' | 'tendik' | 'osis';
 
 const TABS: { key: Tab; label: string; icon: typeof Users }[] = [
   { key: 'guru', label: 'Guru', icon: Users },
+  { key: 'tendik', label: 'Tenaga Kependidikan', icon: BookOpen },
   { key: 'osis', label: 'Pengurus OSIS', icon: BookOpen },
 ];
 
-const TAB_KEY: Record<Tab, 'gurus' | 'osis'> = { guru: 'gurus', osis: 'osis' };
-const SLUG_PREFIX: Record<Tab, string> = { guru: 'guru', osis: 'osis' };
+const TAB_KEY: Record<Tab, 'gurus' | 'tendiks' | 'osis'> = { guru: 'gurus', tendik: 'tendiks', osis: 'osis' };
+const SLUG_PREFIX: Record<Tab, string> = { guru: 'guru', tendik: 'tendik', osis: 'osis' };
 
 function ProfileDirectory() {
   const [directory, setDirectory] = useState<PublicDirectory | null>(null);
@@ -101,6 +102,7 @@ function EntryCard({ entry }: { entry: PublicDirectoryEntry }) {
         <p className="truncate font-bold text-[#1B2A4A] group-hover:text-[#866D2C]">{entry.name}</p>
         <p className="truncate text-sm text-[#5B7088]">
           {entry.role === 'guru' && [entry.position, entry.subject].filter(Boolean).join(' · ')}
+          {entry.role === 'tendik' && [entry.position, entry.subject].filter(Boolean).join(' · ')}
           {entry.role === 'osis' && [entry.division, entry.position].filter(Boolean).join(' · ')}
         </p>
       </div>

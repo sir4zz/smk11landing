@@ -106,9 +106,10 @@ class ContentCrudController extends Controller
         $payload = $request->all();
         unset($payload['id'], $payload['created_at'], $payload['updated_at']);
 
-        // Auto-slug for news/programs if missing.
-        if (in_array($type, ['news', 'programs'], true) && empty($payload['slug'])) {
-            $name = $payload['name'] ?? $payload['title'] ?? 'untitled';
+        if (in_array($type, ['news', 'programs'], true)) {
+            $name = $type === 'programs'
+                ? ($payload['short_name'] ?? $payload['name'] ?? 'untitled')
+                : ($payload['title'] ?? 'untitled');
             $payload['slug'] = $this->uniqueSlug($model, $name);
         }
 
@@ -126,6 +127,13 @@ class ContentCrudController extends Controller
 
         $payload = $request->all();
         unset($payload['id'], $payload['created_at'], $payload['updated_at']);
+
+        if (in_array($type, ['news', 'programs'], true)) {
+            $name = $type === 'programs'
+                ? ($payload['short_name'] ?? $payload['name'] ?? $row->short_name ?? $row->name ?? 'untitled')
+                : ($payload['title'] ?? $row->title ?? 'untitled');
+            $payload['slug'] = $this->uniqueSlug($model, $name, $row->id);
+        }
 
         $row->update($payload);
         $this->invalidatePublicCache($type);
@@ -173,12 +181,12 @@ class ContentCrudController extends Controller
         }
     }
 
-    protected function uniqueSlug(string $model, string $name): string
+    protected function uniqueSlug(string $model, string $name, ?string $ignoreId = null): string
     {
         $base = Str::slug($name);
         $slug = $base ?: 'item';
         $i = 2;
-        while ($model::query()->where('slug', $slug)->exists()) {
+        while ($model::query()->where('slug', $slug)->when($ignoreId, fn ($query) => $query->where('id', '!=', $ignoreId))->exists()) {
             $slug = $base.'-'.$i;
             $i++;
         }

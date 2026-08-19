@@ -1,12 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import PageHero from '../../components/ui/PageHero';
 import SectionHeading from '../../components/ui/SectionHeading';
-import type { EducationStaff } from '../../lib/content-types';
-import { fetchPublicContent, publicProfileApi, type PublicDirectoryEntry } from '../../lib/api';
+import { publicProfileApi, type PublicDirectoryEntry } from '../../lib/api';
 import { PersonAvatar, EmptyState } from './ManagementShared';
 
 interface DisplayMember {
   id: string;
+  slug: string;
+  role: 'guru' | 'tendik';
   name: string;
   position: string;
   department: string;
@@ -14,31 +16,38 @@ interface DisplayMember {
 }
 
 const TenagaKependidikan: React.FC = () => {
-  const [items, setItems] = useState<EducationStaff[]>([]);
   const [gurus, setGurus] = useState<PublicDirectoryEntry[]>([]);
+  const [tendiks, setTendiks] = useState<PublicDirectoryEntry[]>([]);
   useEffect(() => {
-    fetchPublicContent<EducationStaff[]>('educationStaff').then(setItems);
-    publicProfileApi.directory().then(({ data }) => { if (data) setGurus(data.gurus); });
+    publicProfileApi.directory().then(({ data }) => {
+      if (!data) return;
+      setGurus(data.gurus);
+      setTendiks(data.tendiks);
+    });
   }, []);
 
   const grouped = useMemo(() => {
     const guruMembers: DisplayMember[] = gurus.map((g) => ({
       id: g.slug,
+      slug: g.slug,
+      role: 'guru',
       name: g.name,
       position: g.position || g.subject || 'Guru',
       department: 'Guru',
       photo: g.photo,
     }));
 
-    const eduMembers: DisplayMember[] = items.map((e) => ({
-      id: e.id,
-      name: e.name,
-      position: e.position,
-      department: e.department || 'Lainnya',
-      photo: e.photo,
+    const tendikMembers: DisplayMember[] = tendiks.map((t) => ({
+      id: t.slug,
+      slug: t.slug,
+      role: 'tendik',
+      name: t.name,
+      position: t.position || t.subject || 'Tenaga Kependidikan',
+      department: 'Tenaga Kependidikan',
+      photo: t.photo,
     }));
 
-    const all = [...guruMembers, ...eduMembers];
+    const all = [...guruMembers, ...tendikMembers];
     const map = new Map<string, DisplayMember[]>();
     all.forEach((member) => {
       const key = member.department;
@@ -46,13 +55,13 @@ const TenagaKependidikan: React.FC = () => {
       map.get(key)!.push(member);
     });
 
-    const order = ['Guru', 'Tata Usaha', 'Perpustakaan', 'Laboratorium', 'Keamanan'];
+    const order = ['Guru', 'Tenaga Kependidikan'];
     return Array.from(map.entries()).sort(([a], [b]) => {
       const ia = order.indexOf(a);
       const ib = order.indexOf(b);
       return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
     });
-  }, [items, gurus]);
+  }, [gurus, tendiks]);
 
   return (
     <div className="min-h-screen bg-[#FAF6F0]">
@@ -77,11 +86,11 @@ const TenagaKependidikan: React.FC = () => {
               <h3 className="mb-6 text-center text-xl font-bold text-[#1B2A4A] md:text-2xl">{department}</h3>
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 {members.map((member) => (
-                  <div key={member.id} className="rounded-2xl border border-[#1B2A4A]/10 bg-white p-6 text-center shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
+                  <Link key={member.id} to={`/profil/${member.role}/${encodeURIComponent(member.slug)}`} className="rounded-2xl border border-[#1B2A4A]/10 bg-white p-6 text-center shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
                     <PersonAvatar photo={member.photo} name={member.name} className="mx-auto h-24 w-24 rounded-full object-cover" iconClassName="h-12 w-12" />
                     <h4 className="mt-4 font-bold text-[#1B2A4A]">{member.name}</h4>
                     <p className="mt-1 text-sm font-medium text-[#23314D]">{member.position}</p>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </div>

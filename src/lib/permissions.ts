@@ -68,6 +68,13 @@ export const PERMISSION_CATALOG: PermissionDef[] = [
   { slug: 'kelulusan.edit', name: 'Edit', module: 'kelulusan' },
   { slug: 'kelulusan.delete', name: 'Delete', module: 'kelulusan' },
   { slug: 'kelulusan.verify', name: 'Verify', module: 'kelulusan' },
+
+  { slug: 'sdm.view', name: 'View', module: 'sdm' },
+  { slug: 'sdm.create', name: 'Create', module: 'sdm' },
+  { slug: 'sdm.edit', name: 'Edit', module: 'sdm' },
+  { slug: 'sdm.delete', name: 'Delete', module: 'sdm' },
+  { slug: 'sdm.import', name: 'Import Data', module: 'sdm' },
+  { slug: 'sdm.export', name: 'Export Data', module: 'sdm' },
 ];
 
 export const PERMISSION_MODULES: { key: string; label: string }[] = [
@@ -81,6 +88,7 @@ export const PERMISSION_MODULES: { key: string; label: string }[] = [
   { key: 'gallery', label: 'Galeri' },
   { key: 'bkk', label: 'BKK' },
   { key: 'kelulusan', label: 'Kelulusan Siswa' },
+  { key: 'sdm', label: 'SDM (Guru & Tenaga Kependidikan)' },
   { key: 'management', label: 'Manajemen' },
 ];
 

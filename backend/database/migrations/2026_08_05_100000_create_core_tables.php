@@ -17,6 +17,19 @@ return new class extends Migration
             $table->text('name')->nullable();
             $table->text('phone')->nullable();
             $table->text('email')->nullable();
+            $table->text('photo')->default('');
+            $table->text('bio')->default('');
+            $table->text('address')->default('');
+            $table->text('instagram')->default('');
+            $table->text('facebook')->default('');
+            $table->text('twitter')->default('');
+            $table->text('tiktok')->default('');
+            $table->text('youtube')->default('');
+            $table->text('linkedin')->default('');
+            $table->text('website')->default('');
+            $table->text('github')->default('');
+            $table->string('status', 20)->default('active');
+            $table->boolean('must_change_password')->default(false);
             $table->timestamp('updated_at')->useCurrent();
         });
 
@@ -26,6 +39,7 @@ return new class extends Migration
             $table->text('content_type');
             $table->jsonb('data');
             $table->timestamps();
+            $table->unique('content_type', 'content_records_content_type_unique');
         });
 
         // CONTACT MESSAGES
@@ -37,6 +51,7 @@ return new class extends Migration
             $table->text('message');
             $table->smallInteger('is_read')->default(0);
             $table->timestamp('created_at')->useCurrent();
+            $table->index('created_at', 'contact_messages_created_at_index');
         });
 
         // NEWS
@@ -55,6 +70,7 @@ return new class extends Migration
             $table->text('source_note')->default('');
             $table->text('source_url')->default('');
             $table->timestamps();
+            $table->index('date', 'news_date_index');
         });
 
         // PROGRAMS
@@ -109,6 +125,7 @@ return new class extends Migration
             $table->jsonb('students')->default('[]');
             $table->text('photo')->default('');
             $table->timestamps();
+            $table->index('year', 'achievements_year_index');
         });
 
         // TEACHER ACTIVITIES
@@ -120,6 +137,7 @@ return new class extends Migration
             $table->text('description')->default('');
             $table->text('photo')->default('');
             $table->timestamps();
+            $table->index('date', 'teacher_activities_date_index');
         });
 
         // EDUCATION STAFF

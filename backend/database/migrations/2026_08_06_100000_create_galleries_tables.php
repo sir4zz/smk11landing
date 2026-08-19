@@ -25,6 +25,7 @@ return new class extends Migration
             $table->index('is_published');
             $table->index('event_date');
             $table->index('category');
+            $table->index(['is_published', 'event_date', 'created_at'], 'galleries_public_listing_index');
         });
 
         Schema::create('gallery_images', function (Blueprint $table) {
@@ -35,6 +36,16 @@ return new class extends Migration
             $table->integer('sort_order')->default(0);
             $table->timestamp('created_at')->useCurrent();
 
+            $table->index('gallery_id');
+        });
+
+        Schema::create('gallery_videos', function (Blueprint $table) {
+            $table->uuid('id')->primary()->default(DB::raw('(UUID())'));
+            $table->foreignUuid('gallery_id')->references('id')->on('galleries')->onDelete('cascade');
+            $table->text('youtube_url')->default('');
+            $table->text('title')->default('');
+            $table->integer('sort_order')->default(0);
+            $table->timestamp('created_at')->useCurrent();
             $table->index('gallery_id');
         });
 
@@ -97,6 +108,7 @@ return new class extends Migration
             DB::table('permissions')->whereIn('id', $ids)->delete();
         }
 
+        Schema::dropIfExists('gallery_videos');
         Schema::dropIfExists('gallery_images');
         Schema::dropIfExists('galleries');
     }

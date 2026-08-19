@@ -39,3 +39,25 @@ export function EmptyState({ message }: { message: string }) {
     </div>
   );
 }
+
+const titleWords: Record<string, string> = {
+  WAKASEK: 'Wakil Kepala Sekolah',
+  'KEPALA KONSENTRASI KEAHLIAN': 'Kepala Program Keahlian',
+  'KEPALA SEKOLAH': 'Kepala Sekolah',
+  BIDANG: 'Bidang',
+};
+
+export function formatLeadershipTitle(raw?: string): string {
+  if (!raw) return '';
+  return raw
+    .split(/\s+/)
+    .map((word) => {
+      const upper = word.toUpperCase();
+      const mapped = titleWords[upper];
+      if (mapped) return mapped;
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join(' ')
+    .replace(/\s*:\s*/g, ': ')
+    .replace(/[.:]\s*$/, '');
+}

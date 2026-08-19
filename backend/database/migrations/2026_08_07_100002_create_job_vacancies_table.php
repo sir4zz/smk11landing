@@ -40,6 +40,7 @@ return new class extends Migration
             $table->index('major');
             $table->index('employment_type');
             $table->index('deadline');
+            $table->index(['is_published', 'status', 'deadline', 'created_at'], 'jobs_public_listing_index');
         });
 
         $permissions = [

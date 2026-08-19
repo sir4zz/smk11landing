@@ -76,6 +76,7 @@ function App() {
           <Route path="profil/struktur-organisasi" element={suspend(<OrganizationStructure />)} />
           <Route path="profil/direktori" element={suspend(<ProfileDirectory />)} />
           <Route path="profil/guru/:id" element={suspend(<ProfilePage />)} />
+          <Route path="profil/tendik/:id" element={suspend(<ProfilePage />)} />
           <Route path="profil/osis/:id" element={suspend(<ProfilePage />)} />
 
           {/* Academics */}
