@@ -62,7 +62,7 @@ export default function StudentImportModal({ onClose, onImported }: { onClose: (
         .filter((row) => Object.values(row).some((v) => v !== ''));
 
       if (mapped.length === 0) {
-        setError('File tidak berisi data pada kolom template. Isi mulai baris ke-9 pada template (di bawah baris nomor 1-73).');
+        setError('File tidak berisi data pada kolom template. Isi mulai baris ke-9 pada template (di bawah baris contoh).');
       }
       setRows(mapped);
     } catch (e) {
@@ -115,7 +115,7 @@ export default function StudentImportModal({ onClose, onImported }: { onClose: (
             <p className="font-semibold text-[#1B2A4A]">Ketentuan</p>
             <ul className="mt-1 list-disc space-y-0.5 pl-5">
               <li>Gunakan <strong>template asli BIODATA PESERTA DIDIK BARU</strong> (73 kolom, 9 seksi) dari tombol Unduh Template.</li>
-              <li>Isi data dimulai pada <strong>baris ke-9</strong> (tepat di bawah baris nomor kolom 1-73). Baris header 1-8 otomatis dilewati.</li>
+              <li>Isi data dimulai pada <strong>baris ke-9</strong> (tepat di bawah baris contoh). Baris header 1-7 dan contoh di baris 8 otomatis dilewati.</li>
               <li>Kolom <strong>NISN</strong> dan <strong>Nama</strong> wajib diisi. Pastikan kolom NISN &amp; NIS berformat teks agar angka nol di depan tidak hilang.</li>
               <li><strong>Jenis Kelamin</strong> diisi <code>L</code> atau <code>P</code> (Laki-laki/Perempuan diterima juga). <strong>Tanggal</strong> menerima format <code>DD/MM/YYYY</code>, <code>YYYY-MM-DD</code>, atau serial Excel.</li>
               <li>PIN login siswa dibuat otomatis (4 digit terakhir NISN). Baris dengan NISN/NIS duplikat atau tidak valid akan dilewati dan dicatat dalam laporan.</li>
