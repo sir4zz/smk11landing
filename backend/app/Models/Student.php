@@ -11,6 +11,18 @@ class Student extends Model
 {
     use HasUuids;
 
+    public const CLASSES = ['X', 'XI', 'XII'];
+
+    public static function isValidClass(mixed $value): bool
+    {
+        return in_array(self::normalizeClass($value), self::CLASSES, true);
+    }
+
+    public static function normalizeClass(mixed $value): string
+    {
+        return strtoupper(trim((string) $value));
+    }
+
     public const BIODATA_KEYS = [
         // Section 1
         'nickname', 'kewarganegaraan', 'anak_ke', 'jml_saudara_kandung', 'jml_saudara_tiri',

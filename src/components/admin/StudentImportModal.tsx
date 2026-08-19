@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { AlertTriangle, CheckCircle2, Download, FileSpreadsheet, Loader2, Upload, X } from 'lucide-react';
 import { accountsApi } from '../../lib/api';
-import { TEMPLATE_COLUMNS, TEMPLATE_HEADER_ROWS, normalizeGender, toDateString } from '../../lib/studentBiodata';
+import { TEMPLATE_COLUMNS, TEMPLATE_HEADER_ROWS, normalizeClass, normalizeGender, toDateString } from '../../lib/studentBiodata';
 
 interface ImportResult {
   imported: number;
@@ -51,6 +51,7 @@ export default function StudentImportModal({ onClose, onImported }: { onClose: (
             const value = cells[Number(colIdx)];
             if (value === null || value === undefined || String(value).trim() === '') continue;
             if (key === 'gender') out.gender = normalizeGender(value);
+            else if (key === 'class') out.class = normalizeClass(value);
             else if (key === 'date_of_birth' || key === 'tanggal_sttb' || key === 'tanggal_diterima' || key === 'ayah_tanggal_lahir' || key === 'ibu_tanggal_lahir' || key === 'wali_tanggal_lahir' || key === 'siswa_tanggal') {
               out[key] = toDateString(value);
             } else {
@@ -114,9 +115,10 @@ export default function StudentImportModal({ onClose, onImported }: { onClose: (
           <div className="rounded-xl bg-[#FAF6F0] p-4 text-sm text-[#5B7088]">
             <p className="font-semibold text-[#1B2A4A]">Ketentuan</p>
             <ul className="mt-1 list-disc space-y-0.5 pl-5">
-              <li>Gunakan <strong>template asli BIODATA PESERTA DIDIK BARU</strong> (73 kolom, 9 seksi) dari tombol Unduh Template.</li>
+              <li>Gunakan <strong>template asli BIODATA PESERTA DIDIK BARU</strong> (73 kolom, 9 seksi) dari tombol Unduh Template. Template juga berisi sheet <strong>Petunjuk Penggunaan</strong>.</li>
               <li>Isi data dimulai pada <strong>baris ke-9</strong> (tepat di bawah baris contoh). Baris header 1-7 dan contoh di baris 8 otomatis dilewati.</li>
               <li>Kolom <strong>NISN</strong> dan <strong>Nama</strong> wajib diisi. Pastikan kolom NISN &amp; NIS berformat teks agar angka nol di depan tidak hilang.</li>
+              <li><strong>Kelas</strong> hanya boleh <code>X</code>, <code>XI</code>, atau <code>XII</code> (tingkat kelas saja, bukan gabungan jurusan). <strong>Jurusan</strong> diisi terpisah pada kolom JURUSAN.</li>
               <li><strong>Jenis Kelamin</strong> diisi <code>L</code> atau <code>P</code> (Laki-laki/Perempuan diterima juga). <strong>Tanggal</strong> menerima format <code>DD/MM/YYYY</code>, <code>YYYY-MM-DD</code>, atau serial Excel.</li>
               <li>PIN login siswa dibuat otomatis (4 digit terakhir NISN). Baris dengan NISN/NIS duplikat atau tidak valid akan dilewati dan dicatat dalam laporan.</li>
             </ul>

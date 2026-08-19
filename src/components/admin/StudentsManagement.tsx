@@ -4,7 +4,7 @@ import { ChevronRight, Plus, Trash2, X, Loader2, KeyRound, Search, UserRound, Up
 import { accountsApi, resolveImageUrl } from '../../lib/api';
 import StudentImportModal from './StudentImportModal';
 import ImageField from './ImageField';
-import { BIODATA_FIELDS, BIODATA_SECTIONS, emptyBiodata, formatRupiah, isRupiahField, normalizeGender } from '../../lib/studentBiodata';
+import { BIODATA_FIELDS, BIODATA_SECTIONS, emptyBiodata, formatRupiah, isRupiahField, isValidClass, normalizeClass, normalizeGender } from '../../lib/studentBiodata';
 import type { BiodataFieldDef } from '../../lib/studentBiodata';
 
 interface StudentRow {
@@ -43,7 +43,8 @@ function initFormFrom(student: StudentRow | null): Record<string, string> {
   form.nisn = String(student.nisn ?? '');
   form.nis = String(student.nis ?? '');
   form.name = String(student.name ?? '');
-  form.class = String(student.class ?? '');
+  const normalizedClass = normalizeClass(student.class);
+  form.class = isValidClass(normalizedClass) ? normalizedClass : '';
   form.major = String(student.major ?? '');
   form.gender = String(student.gender ?? '');
   form.date_of_birth = dateForInput(student.date_of_birth);
