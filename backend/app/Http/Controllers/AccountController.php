@@ -139,8 +139,10 @@ class AccountController extends Controller
             return response()->json(['error' => ['message' => 'Tidak dapat menghapus admin terakhir.']], 403);
         }
 
-        if ($user->student?->foto) {
-            $this->deleteStoredFile($user->student->foto);
+        foreach (['foto', 'doc_kk', 'doc_akta', 'doc_ijazah', 'doc_lainnya'] as $fileKey) {
+            if ($user->student?->{$fileKey}) {
+                $this->deleteStoredFile($user->student->{$fileKey});
+            }
         }
 
         $user->delete();
@@ -282,6 +284,12 @@ class AccountController extends Controller
             throw $this->httpFail('Password minimal 6 karakter.');
         }
 
+        foreach (['foto', 'doc_kk', 'doc_akta', 'doc_ijazah', 'doc_lainnya'] as $fileKey) {
+            if ($user->student?->{$fileKey}) {
+                $this->deleteStoredFile($user->student->{$fileKey});
+            }
+        }
+
         StudentAccount::query()->where('student_id', $user->id)->delete();
         Student::query()->where('id', $user->id)->delete();
 
@@ -351,6 +359,15 @@ class AccountController extends Controller
 
         if ($student) {
             $newFoto = (string) $request->input('foto', '');
+
+            $docUpdates = [];
+            foreach (['doc_kk', 'doc_akta', 'doc_ijazah', 'doc_lainnya'] as $docKey) {
+                if ($request->has($docKey)) {
+                    $value = (string) $request->input($docKey, '');
+                    $docUpdates[$docKey] = $value !== '' ? $value : null;
+                }
+            }
+
             $student->update(array_merge([
                 'nisn' => $nisn,
                 'nis' => $nis !== '' ? $nis : null,
@@ -371,10 +388,15 @@ class AccountController extends Controller
                     ? $this->jsonList($request->input('achievements'))
                     : $student->achievements,
                 'foto' => $newFoto !== '' ? $newFoto : null,
-            ], $this->accounts->biodataFromRequest($request)));
+            ], $docUpdates, $this->accounts->biodataFromRequest($request)));
 
             if ($student->wasChanged('foto') && $student->getOriginal('foto')) {
                 $this->deleteStoredFile($student->getOriginal('foto'));
+            }
+            foreach (['doc_kk', 'doc_akta', 'doc_ijazah', 'doc_lainnya'] as $docKey) {
+                if ($student->wasChanged($docKey) && $student->getOriginal($docKey)) {
+                    $this->deleteStoredFile($student->getOriginal($docKey));
+                }
             }
         }
 
@@ -546,6 +568,10 @@ class AccountController extends Controller
             'address' => (string) $request->input('address', ''),
             'achievements' => $this->jsonList($request->input('achievements')),
             'foto' => (string) $request->input('foto', ''),
+            'doc_kk' => $this->nullableString($request->input('doc_kk')),
+            'doc_akta' => $this->nullableString($request->input('doc_akta')),
+            'doc_ijazah' => $this->nullableString($request->input('doc_ijazah')),
+            'doc_lainnya' => $this->nullableString($request->input('doc_lainnya')),
         ], $this->accounts->biodata($request->all())));
 
         StudentAccount::create([
@@ -583,6 +609,13 @@ class AccountController extends Controller
         }
 
         return [];
+    }
+
+    private function nullableString(mixed $value): ?string
+    {
+        $value = trim((string) $value);
+
+        return $value !== '' ? $value : null;
     }
 
     private function studentEmail(string $nisn): string

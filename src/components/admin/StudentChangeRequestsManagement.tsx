@@ -6,7 +6,7 @@ import {
   type StudentChangeRequestRow,
   type StudentChangeRequestStatus,
 } from '../../lib/api';
-import { BIODATA_FIELDS } from '../../lib/studentBiodata';
+import { BIODATA_FIELDS, formatRupiah, isRupiahField } from '../../lib/studentBiodata';
 import type { BiodataFieldDef } from '../../lib/studentBiodata';
 
 const statusStyles: Record<string, string> = {
@@ -300,6 +300,7 @@ function DetailContent({ request, onClose, onVerified }: { request: StudentChang
 
 function displayValue(field: BiodataFieldDef | undefined, raw: unknown): string {
   if (raw === null || raw === undefined || raw === '') return '-';
+  if (field && isRupiahField(field.key)) return formatRupiah(raw);
   if (field?.type === 'decimal') {
     const n = Number(String(raw));
     if (!Number.isNaN(n)) return String(n);

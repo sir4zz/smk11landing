@@ -279,8 +279,10 @@ class StudentController extends Controller
     {
         $student = Student::findOrFail($studentId);
 
-        if ($student->foto) {
-            $this->deleteStoredFile($student->foto);
+        foreach (['foto', 'doc_kk', 'doc_akta', 'doc_ijazah', 'doc_lainnya'] as $fileKey) {
+            if ($student->{$fileKey}) {
+                $this->deleteStoredFile($student->{$fileKey});
+            }
         }
 
         StudentAccount::query()->where('student_id', $student->id)->delete();

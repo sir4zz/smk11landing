@@ -231,3 +231,17 @@ export function toDateString(value: unknown): string {
   }
   return raw;
 }
+
+const RUPIAH_KEYS = new Set(['ayah_penghasilan', 'ibu_penghasilan', 'wali_penghasilan']);
+
+export function isRupiahField(key: string): boolean {
+  return RUPIAH_KEYS.has(key);
+}
+
+export function formatRupiah(raw: unknown): string {
+  if (raw === null || raw === undefined || String(raw).trim() === '') return '-';
+  const str = String(raw).trim();
+  const num = Number(str.replace(/[^\d.-]/g, ''));
+  if (Number.isNaN(num)) return str;
+  return `Rp${num.toLocaleString('id-ID')}`;
+}

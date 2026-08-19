@@ -52,6 +52,10 @@ class Student extends Model
         'address',
         'achievements',
         'foto',
+        'doc_kk',
+        'doc_akta',
+        'doc_ijazah',
+        'doc_lainnya',
         ...self::BIODATA_KEYS,
     ];
 
