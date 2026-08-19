@@ -29,7 +29,8 @@ class DataController extends Controller
         'osis_activities' => \App\Models\OsisActivity::class, 'extracurriculars' => \App\Models\Extracurricular::class,
         'kesemaptaan' => \App\Models\Kesemaptaan::class, 'kesemaptaan_activities' => \App\Models\KesemaptaanActivity::class,
         'kesemaptaan_schedules' => \App\Models\KesemaptaanSchedule::class, 'kesemaptaan_instructors' => \App\Models\KesemaptaanInstructor::class,
-        'kesemaptaan_achievements' => \App\Models\KesemaptaanAchievement::class, 'mading_categories' => \App\Models\MadingCategory::class,
+        'kesemaptaan_achievements' => \App\Models\KesemaptaanAchievement::class, 'kesemaptaan_gallery' => \App\Models\KesemaptaanGallery::class,
+        'kesemaptaan_videos' => \App\Models\KesemaptaanVideo::class, 'mading_categories' => \App\Models\MadingCategory::class,
         'mading_posts' => \App\Models\MadingPost::class, 'roles' => \App\Models\Role::class,
         'permissions' => \App\Models\Permission::class, 'role_permissions' => \App\Models\RolePermission::class,
         'students' => \App\Models\Student::class, 'student_accounts' => \App\Models\StudentAccount::class,
@@ -101,6 +102,7 @@ class DataController extends Controller
         if ($table === 'mading_posts') $payload = $this->mading->guardUpdate($request->user(), $row, $payload);
         if ($table === 'ppdb_registrations' && $row->user_id !== $request->user()?->id && !$this->permissions->isAdmin($request->user())) abort(403);
         if ($table === 'ppdb_documents' && $row->application->user_id !== $request->user()?->id && !$this->permissions->isAdmin($request->user())) abort(403);
+        if ($table === 'programs') $this->cleanupReplacedProgramFiles($row, $payload);
         $row->update($payload); return response()->json(['data' => $this->serialize($table, $row->fresh()), 'error' => null]);
     }
 
@@ -109,7 +111,6 @@ class DataController extends Controller
         $this->authorizeWrite($table, $request->user()); $model = $this->model($table); $query = $model::query();
         foreach ($request->query() as $key => $value) if (in_array($key, (new $model)->getFillable(), true) || $key === 'id') $query->where($key, $value);
         $rows = $query->get();
-        abort_if($rows->isEmpty(), 404);
         foreach ($rows as $row) {
             if ($table === 'mading_posts') {
                 $isOwnerDraft = $row->author_id === $request->user()?->id && in_array($row->status, ['draft', 'rejected'], true);
@@ -117,6 +118,10 @@ class DataController extends Controller
             }
             if ($table === 'ppdb_documents' && $row->application->user_id !== $request->user()?->id && !$this->permissions->isStaff($request->user())) abort(403);
             if ($table === 'ppdb_documents' && $row->file_path) Storage::disk('public')->delete($row->file_path);
+            if ($table === 'programs') {
+                $this->deleteStoredFile($row->logo ?? null);
+                $this->deleteStoredFile($row->image ?? null);
+            }
             $row->delete();
         }
         return response()->json(['data' => null, 'error' => null]);
@@ -126,6 +131,25 @@ class DataController extends Controller
     private function requestBody(Request $request): array {
         if ($request->isJson()) return $request->json()->all();
         return $request->except(['single', 'order', 'limit', 'count']);
+    }
+    private function cleanupReplacedProgramFiles($row, array $payload): void
+    {
+        foreach (['logo', 'image'] as $field) {
+            if (!array_key_exists($field, $payload)) continue;
+            $old = (string) ($row->{$field} ?? '');
+            $new = (string) ($payload[$field] ?? '');
+            if ($old !== '' && $old !== $new) {
+                $this->deleteStoredFile($old);
+            }
+        }
+    }
+    private function deleteStoredFile(?string $url): void
+    {
+        if (empty($url)) return;
+        $prefix = '/storage/';
+        if (str_starts_with($url, $prefix)) {
+            Storage::disk('public')->delete(substr($url, strlen($prefix)));
+        }
     }
     private function payload(string $model, array $payload): array { return collect($payload)->only((new $model)->getFillable())->except(['id','created_at','updated_at','user_id'])->all(); }
     private function authorizeRead(string $table, $user): void {
@@ -146,7 +170,7 @@ class DataController extends Controller
             'osis', 'osis_members' => request()->isMethod('DELETE') ? 'osis.delete' : (request()->isMethod('POST') ? 'osis.create' : 'osis.edit'),
             'osis_activities' => request()->isMethod('DELETE') ? 'osis.activities.delete' : (request()->isMethod('POST') ? 'osis.activities.create' : 'osis.activities.edit'),
             'extracurriculars' => request()->isMethod('DELETE') ? 'extracurricular.delete' : (request()->isMethod('POST') ? 'extracurricular.create' : 'extracurricular.edit'),
-            'kesemaptaan', 'kesemaptaan_activities', 'kesemaptaan_schedules', 'kesemaptaan_instructors', 'kesemaptaan_achievements' => request()->isMethod('DELETE') ? 'kesemaptaan.delete' : (request()->isMethod('POST') ? 'kesemaptaan.create' : 'kesemaptaan.edit'),
+            'kesemaptaan', 'kesemaptaan_activities', 'kesemaptaan_schedules', 'kesemaptaan_instructors', 'kesemaptaan_achievements', 'kesemaptaan_gallery', 'kesemaptaan_videos' => request()->isMethod('DELETE') ? 'kesemaptaan.delete' : (request()->isMethod('POST') ? 'kesemaptaan.create' : 'kesemaptaan.edit'),
             'mading_categories', 'students', 'student_accounts' => 'mading.edit_all',
             default => null,
         };

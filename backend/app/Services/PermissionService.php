@@ -102,6 +102,11 @@ class PermissionService
         return $user?->profileRecord?->role === 'student';
     }
 
+    public function isGuru(?User $user): bool
+    {
+        return $user?->profileRecord?->role === 'guru';
+    }
+
     protected function roleHasPermission(string $roleSlug, string $permission): bool
     {
         return in_array($permission, $this->permissionsForRole($roleSlug), true);

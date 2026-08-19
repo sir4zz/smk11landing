@@ -19,6 +19,7 @@ class KesemaptaanActivity extends Model
         'description',
         'activity_date',
         'documentation',
+        'photo',
         'status',
     ];
 

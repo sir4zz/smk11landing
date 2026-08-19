@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\StudentAuthController;
 use App\Http\Controllers\BkkPartnerController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ContentCrudController;
+use App\Http\Controllers\DatabaseBackupController;
 use App\Http\Controllers\ExtracurricularController;
 use App\Http\Controllers\FaqController;
 use App\Http\Controllers\KesemaptaanController;
@@ -17,10 +18,12 @@ use App\Http\Controllers\OsisController;
 use App\Http\Controllers\PpdbController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\GalleryController;
+use App\Http\Controllers\GuruDataChangeRequestController;
 use App\Http\Controllers\JobVacancyController;
 use App\Http\Controllers\ProxyController;
 use App\Http\Controllers\PublicProfileController;
 use App\Http\Controllers\RolePermissionController;
+use App\Http\Controllers\SdmAccountController;
 use App\Http\Controllers\SdmController;
 use App\Http\Controllers\SpmbController;
 use App\Http\Controllers\StatsController;
@@ -86,10 +89,13 @@ Route::get('/kesemaptaan/activities', [KesemaptaanController::class, 'activities
 Route::get('/kesemaptaan/schedules', [KesemaptaanController::class, 'schedules']);
 Route::get('/kesemaptaan/instructors', [KesemaptaanController::class, 'instructors']);
 Route::get('/kesemaptaan/achievements', [KesemaptaanController::class, 'achievements']);
+Route::get('/kesemaptaan/gallery', [KesemaptaanController::class, 'gallery']);
+Route::get('/kesemaptaan/videos', [KesemaptaanController::class, 'videos']);
 
 // ---------- MADING ----------
 Route::get('/mading/categories', [MadingController::class, 'categories']);
 Route::get('/mading/posts', [MadingController::class, 'index']);
+Route::get('/mading/posts/{id}', [MadingController::class, 'show']);
 
 // ---------- STATS ----------
 Route::get('/stats', [StatsController::class, 'index']);
@@ -158,6 +164,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/student/data-siswa/change-requests', [StudentDataChangeRequestController::class, 'myRequests']);
     Route::post('/student/data-siswa/change-requests', [StudentDataChangeRequestController::class, 'store']);
     Route::delete('/student/data-siswa/change-requests/{id}', [StudentDataChangeRequestController::class, 'cancel']);
+
+    // Guru: own SDM data & change requests
+    Route::get('/guru/data-saya', [GuruDataChangeRequestController::class, 'myData']);
+    Route::get('/guru/data-saya/change-requests', [GuruDataChangeRequestController::class, 'myRequests']);
+    Route::post('/guru/data-saya/change-requests', [GuruDataChangeRequestController::class, 'store']);
+    Route::delete('/guru/data-saya/change-requests/{id}', [GuruDataChangeRequestController::class, 'cancel']);
 });
 
 // ============================================================
@@ -230,6 +242,24 @@ Route::middleware(['auth:sanctum', 'staff'])->group(function () {
     Route::get('/admin/sdm/{type}/{id}', [SdmController::class, 'show'])->where('type', 'guru|tendik')->middleware('permission:sdm.view');
     Route::patch('/admin/sdm/{type}/{id}', [SdmController::class, 'update'])->where('type', 'guru|tendik')->middleware('permission:sdm.edit');
     Route::delete('/admin/sdm/{type}/{id}', [SdmController::class, 'destroy'])->where('type', 'guru|tendik')->middleware('permission:sdm.delete');
+
+    // SDM guru login accounts (create / reset / enable-disable / unlink)
+    Route::get('/admin/sdm/guru/{id}/account', [SdmAccountController::class, 'show'])->middleware('permission:sdm.view');
+    Route::post('/admin/sdm/guru/{id}/account', [SdmAccountController::class, 'store'])->middleware('permission:sdm.edit');
+    Route::patch('/admin/sdm/guru/{id}/account', [SdmAccountController::class, 'update'])->middleware('permission:sdm.edit');
+    Route::delete('/admin/sdm/guru/{id}/account', [SdmAccountController::class, 'destroy'])->middleware('permission:sdm.edit');
+
+    // Guru data change request verification (operator_sekolah)
+    Route::get('/admin/guru-change-requests', [GuruDataChangeRequestController::class, 'adminIndex'])->middleware('permission:sdm.view');
+    Route::get('/admin/guru-change-requests/{id}', [GuruDataChangeRequestController::class, 'adminShow'])->middleware('permission:sdm.view');
+    Route::patch('/admin/guru-change-requests/{id}/verify', [GuruDataChangeRequestController::class, 'verify'])->middleware('permission:sdm.edit');
+
+    // SPMB announcements (posters) management — Admin & Operator Sekolah
+    Route::get('/admin/spmb/posters', [SpmbController::class, 'adminPosters'])->middleware('permission:spmb.view');
+    Route::post('/admin/spmb/posters', [SpmbController::class, 'storePoster'])->middleware('permission:spmb.create');
+    Route::post('/admin/spmb/posters/upload', [SpmbController::class, 'uploadPoster'])->middleware('permission:spmb.edit');
+    Route::patch('/admin/spmb/posters/{id}', [SpmbController::class, 'updatePoster'])->middleware('permission:spmb.edit');
+    Route::delete('/admin/spmb/posters/{id}', [SpmbController::class, 'destroyPoster'])->middleware('permission:spmb.delete');
 });
 
 // ============================================================
@@ -254,14 +284,9 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     // News URL importer (fetches remote article pages server-side to avoid CORS)
     Route::get('/proxy/fetch', [ProxyController::class, 'fetch'])->middleware('throttle:proxy');
 
-    // SPMB
+    // SPMB (portal settings stay admin-only)
     Route::post('/spmb', [SpmbController::class, 'store']);
     Route::patch('/spmb/{id}', [SpmbController::class, 'update']);
-    Route::get('/spmb/posters', [SpmbController::class, 'adminPosters']);
-    Route::post('/spmb/posters', [SpmbController::class, 'storePoster']);
-    Route::post('/spmb/posters/upload', [SpmbController::class, 'uploadPoster']);
-    Route::patch('/spmb/posters/{id}', [SpmbController::class, 'updatePoster']);
-    Route::delete('/spmb/posters/{id}', [SpmbController::class, 'destroyPoster']);
 
     // OSIS
     Route::post('/osis', [OsisController::class, 'storeProfile']);
@@ -306,4 +331,10 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::post('/accounts', [AccountController::class, 'store']);
     Route::patch('/accounts/{id}', [AccountController::class, 'update']);
     Route::delete('/accounts/{id}', [AccountController::class, 'destroy']);
+
+    // Database backup (download .sql snapshot)
+    Route::get('/backups', [DatabaseBackupController::class, 'index']);
+    Route::post('/backups', [DatabaseBackupController::class, 'store']);
+    Route::get('/backups/{filename}', [DatabaseBackupController::class, 'download']);
+    Route::delete('/backups/{filename}', [DatabaseBackupController::class, 'destroy']);
 });

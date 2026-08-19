@@ -107,7 +107,7 @@ export default function GalleryDetail() {
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-[#1B2A4A] via-[#1B2A4A]/80 to-[#1B2A4A]/50" />
-        <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 md:py-24">
+        <div className="relative mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-16 lg:px-8 lg:py-24">
           <nav className="mb-6 flex items-center gap-2 text-sm text-white/70">
             <Link to="/" className="hover:text-[#C8A951]">Beranda</Link>
             <span>/</span>

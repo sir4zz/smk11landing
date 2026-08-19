@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { BarChart3, BookOpen, Briefcase, Building2, CalendarDays, ChevronDown, ChevronRight, FileText, GraduationCap, LogOut, Mail, MapPin, Menu, Pencil, Plus, Trophy, Trash2, Upload, Users, X, Save, ShieldCheck, UsersRound, Dumbbell, Newspaper, UserCog, Camera, UserRound, Loader2 } from 'lucide-react';
+import { BarChart3, BookOpen, Briefcase, Building2, CalendarDays, ChevronDown, ChevronRight, DatabaseBackup as DatabaseBackupIcon, FileText, GraduationCap, LogOut, Mail, MapPin, Menu, Pencil, Plus, Trophy, Trash2, Upload, Users, X, Save, ShieldCheck, UsersRound, Dumbbell, Newspaper, UserCog, Camera, UserRound, Loader2, ArrowLeft } from 'lucide-react';
 import logoSekolah from '../assets/logo.png';
 import { backendApi, apiBaseUrl, resolveImageUrl, fetchStats } from '../lib/api';
 import { LoadingInline } from '../components/ui/LoadingScreen';
@@ -18,14 +18,17 @@ import SdmManagement from '../components/admin/SdmManagement';
 import KelulusanSiswaManagement from '../components/admin/KelulusanSiswaManagement';
 import StudentsManagement from '../components/admin/StudentsManagement';
 import StudentChangeRequestsManagement from '../components/admin/StudentChangeRequestsManagement';
+import GuruChangeRequestsManagement from '../components/admin/GuruChangeRequestsManagement';
 import AccountsManagement from '../components/admin/AccountsManagement';
+import DatabaseBackup from '../components/admin/DatabaseBackup';
 import SpmbManagement from '../components/admin/SpmbManagement';
 import MyProfile from '../components/admin/MyProfile';
+import Dashboard from '../components/admin/Dashboard';
 import { StaffAuthProvider, useStaffAuth } from '../lib/staffAuth';
 import { can, STAFF_ROLES } from '../lib/permissions';
 
-type Section = 'dashboard' | 'news' | 'programs' | 'facilities' | 'staff' | 'gurus' | 'achievements' | 'teacherActivities' | 'educationStaff' | 'contentRecords' | 'spmb' | 'contact' | 'contactSettings' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'gallery' | 'bkk' | 'kelulusan' | 'myProfile' | 'studentChangeRequests' | 'sdmGurus' | 'sdmTendiks';
-type EditableSection = Exclude<Section, 'dashboard' | 'contact' | 'contactSettings' | 'spmb' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'gallery' | 'bkk' | 'kelulusan' | 'myProfile' | 'studentChangeRequests' | 'sdmGurus' | 'sdmTendiks'>;
+type Section = 'dashboard' | 'news' | 'programs' | 'facilities' | 'staff' | 'gurus' | 'achievements' | 'teacherActivities' | 'educationStaff' | 'contentRecords' | 'spmb' | 'contact' | 'contactSettings' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'gallery' | 'bkk' | 'kelulusan' | 'myProfile' | 'studentChangeRequests' | 'guruChangeRequests' | 'sdmGurus' | 'sdmTendiks' | 'backup';
+type EditableSection = Exclude<Section, 'dashboard' | 'contact' | 'contactSettings' | 'spmb' | 'permissions' | 'osis' | 'extracurriculars' | 'kesemaptaan' | 'mading' | 'students' | 'accounts' | 'gallery' | 'bkk' | 'kelulusan' | 'myProfile' | 'studentChangeRequests' | 'guruChangeRequests' | 'sdmGurus' | 'sdmTendiks' | 'backup'>;
 type Item = Record<string, unknown>;
 const ADMIN_SECTION_PATHS: Record<Section, string> = {
   dashboard: '/admin',
@@ -53,10 +56,20 @@ const ADMIN_SECTION_PATHS: Record<Section, string> = {
   bkk: '/admin/bkk',
   kelulusan: '/admin/kelulusan',
   studentChangeRequests: '/admin/verifikasi-data-siswa',
+  guruChangeRequests: '/admin/verifikasi-data-guru',
   sdmGurus: '/admin/sdm/guru',
   sdmTendiks: '/admin/sdm/tenaga-kependidikan',
+  backup: '/admin/backup',
 };
 const sessionKey = 'smkn11-admin-session';
+const ROLE_LABELS: Record<string, string> = {
+  admin: 'Administrator',
+  operator_sekolah: 'Operator Sekolah',
+  guru: 'Guru',
+  osis: 'Anggota OSIS',
+  bkk: 'BKK',
+  student: 'Siswa',
+};
 const TABLE_MAP: Record<string, string> = {
   news: 'news', programs: 'programs', facilities: 'facilities',
   staff: 'staff', gurus: 'gurus', achievements: 'achievements',
@@ -69,9 +82,9 @@ const seed = {
   contact: [] as Item[],
 };
 
-const configs: Record<EditableSection, { title: string; icon: typeof FileText; fields: { key: string; label: string; type?: string; multiline?: boolean }[] }> = {
+const configs: Record<EditableSection, { title: string; icon: typeof FileText; fields: { key: string; label: string; type?: string; multiline?: boolean; bucket?: string }[] }> = {
   news: { title: 'Berita', icon: FileText, fields: [{ key: 'title', label: 'Judul' }, { key: 'slug', label: 'Slug' }, { key: 'category', label: 'Kategori', type: 'select' }, { key: 'author', label: 'Penulis', type: 'select' }, { key: 'date', label: 'Tanggal', type: 'date' }, { key: 'excerpt', label: 'Ringkasan', multiline: true }, { key: 'content', label: 'Isi Berita', multiline: true }, { key: 'thumbnail', label: 'Gambar Sampul', type: 'image' }, { key: 'source_label', label: 'Jenis / Sumber', type: 'select' }, { key: 'source_note', label: 'Deskripsi Sumber', multiline: true }] },
-  programs: { title: 'Program Keahlian', icon: BookOpen, fields: [{ key: 'name', label: 'Nama Program' }, { key: 'slug', label: 'Slug' }, { key: 'short_name', label: 'Singkatan' }, { key: 'short_description', label: 'Deskripsi Singkat', multiline: true }, { key: 'description', label: 'Deskripsi Lengkap', multiline: true }, { key: 'competencies', label: 'Kompetensi', type: 'list' }, { key: 'career_prospects', label: 'Prospek Karir', type: 'list' }, { key: 'facilities', label: 'Fasilitas Pendukung', type: 'list' }, { key: 'image', label: 'Gambar', type: 'image' }] },
+  programs: { title: 'Program Keahlian', icon: BookOpen, fields: [{ key: 'name', label: 'Nama Program' }, { key: 'slug', label: 'Slug' }, { key: 'short_name', label: 'Singkatan' }, { key: 'logo', label: 'Logo', type: 'image', bucket: 'program-keahlian' }, { key: 'short_description', label: 'Deskripsi Singkat', multiline: true }, { key: 'description', label: 'Deskripsi Lengkap', multiline: true }, { key: 'competencies', label: 'Kompetensi', type: 'list' }, { key: 'career_prospects', label: 'Prospek Karir', type: 'list' }, { key: 'facilities', label: 'Fasilitas Pendukung', type: 'list' }, { key: 'image', label: 'Gambar', type: 'image' }] },
   facilities: { title: 'Fasilitas', icon: Building2, fields: [{ key: 'name', label: 'Nama Fasilitas' }, { key: 'category', label: 'Kategori', type: 'select' }, { key: 'description', label: 'Deskripsi', multiline: true }, { key: 'photo', label: 'Foto', type: 'image' }] },
   staff: { title: 'Staf & Guru', icon: Users, fields: [{ key: 'name', label: 'Nama' }, { key: 'position', label: 'Jabatan', type: 'select' }, { key: 'department', label: 'Unit / Departemen', type: 'select' }, { key: 'photo', label: 'Foto', type: 'image' }, { key: 'description', label: 'Deskripsi Singkat', multiline: true }] },
   gurus: { title: 'Guru', icon: Users, fields: [{ key: 'name', label: 'Nama' }, { key: 'subject', label: 'Mata Pelajaran' }, { key: 'position', label: 'Jabatan', type: 'select' }, { key: 'photo', label: 'Foto', type: 'image' }] },
@@ -175,6 +188,12 @@ export function AdminLogin() {
           <label className="mb-6 block text-sm font-semibold text-[#1B2A4A]">Kata sandi<input name="password" type="password" required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2" /></label>
           <button disabled={loading} className="w-full rounded-lg bg-[#1B2A4A] py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-70">{loading ? 'Memeriksa...' : 'Masuk ke Panel'}</button>
         </form>
+
+        <div className="mt-6 border-t border-[#1B2A4A]/10 pt-4 text-center">
+          <Link to="/" className="inline-flex items-center gap-2 text-sm font-semibold text-[#5B7088] transition-colors hover:text-[#866D2C]">
+            <ArrowLeft className="h-4 w-4" /> Kembali ke Beranda
+          </Link>
+        </div>
       </div>
     </main>
   );
@@ -198,7 +217,7 @@ function AdminPanel() {
   const [importOpen, setImportOpen] = useState(false);
   const [mobile, setMobile] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
-  const { role, permissions, loading: authLoading, mustChangePassword } = useStaffAuth();
+  const { role, permissions, loading: authLoading, mustChangePassword, user } = useStaffAuth();
   const isAdmin = role === 'admin';
   const canViewOsis = isAdmin || can(permissions, 'osis.view');
   const canViewEkstra = isAdmin || can(permissions, 'extracurricular.view');
@@ -209,6 +228,7 @@ function AdminPanel() {
   const canViewBkk = isAdmin || can(permissions, 'job.view');
   const canViewKelulusan = isAdmin || can(permissions, 'job.view');
   const canViewSdm = isAdmin || can(permissions, 'sdm.view');
+  const canViewSpmb = isAdmin || can(permissions, 'spmb.view');
 
   useEffect(() => {
     const nextSection = (Object.entries(ADMIN_SECTION_PATHS).find(([, path]) => path === location.pathname)?.[0] ?? 'dashboard') as Section;
@@ -334,8 +354,8 @@ function AdminPanel() {
     if (data) setData(current => ({ ...current, [key]: data as Item[] }));
   };
 
-  const active = section === 'dashboard' ? null : section === 'myProfile' ? { title: 'Profil Saya', icon: UserRound, fields: [] } : section === 'contact' ? { title: 'Pesan Kontak', icon: Mail, fields: [] } : section === 'contactSettings' ? { title: 'Pengaturan Kontak', icon: MapPin, fields: [] } : section === 'spmb' ? { title: 'Kelola SPMB', icon: GraduationCap, fields: [] } : section === 'permissions' ? { title: 'Role & Permission', icon: ShieldCheck, fields: [] } : section === 'osis' ? { title: 'OSIS', icon: UsersRound, fields: [] } : section === 'extracurriculars' ? { title: 'Ekstrakurikuler', icon: Dumbbell, fields: [] } : section === 'kesemaptaan' ? { title: 'Kesemaptaan', icon: ShieldCheck, fields: [] } : section === 'mading' ? { title: 'Mading', icon: Newspaper, fields: [] } : section === 'students' ? { title: 'Data Siswa', icon: UserCog, fields: [] } : section === 'accounts' ? { title: 'Kelola Akun', icon: Users, fields: [] } : section === 'gallery' ? { title: 'Galeri', icon: Camera, fields: [] } : section === 'bkk' ? { title: 'BKK (Bursa Kerja Khusus)', icon: Briefcase, fields: [] } : section === 'kelulusan' ? { title: 'Kelulusan Siswa', icon: GraduationCap, fields: [] } : section === 'studentChangeRequests' ? { title: 'Verifikasi Data Siswa', icon: FileText, fields: [] } : section === 'sdmGurus' ? { title: 'Data Guru', icon: Users, fields: [] } : section === 'sdmTendiks' ? { title: 'Tenaga Kependidikan', icon: Briefcase, fields: [] } : configs[section];
-  const editableSections = section !== 'dashboard' && section !== 'myProfile' && section !== 'contact' && section !== 'contactSettings' && section !== 'spmb' && section !== 'permissions' && section !== 'osis' && section !== 'extracurriculars' && section !== 'kesemaptaan' && section !== 'mading' && section !== 'students' && section !== 'accounts' && section !== 'gallery' && section !== 'bkk' && section !== 'kelulusan' && section !== 'studentChangeRequests' && section !== 'sdmGurus' && section !== 'sdmTendiks';
+  const active = section === 'dashboard' ? null : section === 'myProfile' ? { title: 'Profil Saya', icon: UserRound, fields: [] } : section === 'contact' ? { title: 'Pesan Kontak', icon: Mail, fields: [] } : section === 'contactSettings' ? { title: 'Pengaturan Kontak', icon: MapPin, fields: [] } : section === 'spmb' ? { title: 'Kelola SPMB', icon: GraduationCap, fields: [] } : section === 'permissions' ? { title: 'Role & Permission', icon: ShieldCheck, fields: [] } : section === 'osis' ? { title: 'OSIS', icon: UsersRound, fields: [] } : section === 'extracurriculars' ? { title: 'Ekstrakurikuler', icon: Dumbbell, fields: [] } : section === 'kesemaptaan' ? { title: 'Kesemaptaan', icon: ShieldCheck, fields: [] } : section === 'mading' ? { title: 'Mading', icon: Newspaper, fields: [] } : section === 'students' ? { title: 'Data Siswa', icon: UserCog, fields: [] } : section === 'accounts' ? { title: 'Kelola Akun', icon: Users, fields: [] } : section === 'gallery' ? { title: 'Galeri', icon: Camera, fields: [] } : section === 'bkk' ? { title: 'BKK (Bursa Kerja Khusus)', icon: Briefcase, fields: [] } : section === 'kelulusan' ? { title: 'Kelulusan Siswa', icon: GraduationCap, fields: [] } : section === 'studentChangeRequests' ? { title: 'Verifikasi Data Siswa', icon: FileText, fields: [] } : section === 'guruChangeRequests' ? { title: 'Verifikasi Data Guru', icon: FileText, fields: [] } : section === 'sdmGurus' ? { title: 'Data Guru', icon: Users, fields: [] } : section === 'sdmTendiks' ? { title: 'Tenaga Kependidikan', icon: Briefcase, fields: [] } : section === 'backup' ? { title: 'Backup Database', icon: DatabaseBackupIcon, fields: [] } : configs[section];
+  const editableSections = section !== 'dashboard' && section !== 'myProfile' && section !== 'contact' && section !== 'contactSettings' && section !== 'spmb' && section !== 'permissions' && section !== 'osis' && section !== 'extracurriculars' && section !== 'kesemaptaan' && section !== 'mading' && section !== 'students' && section !== 'accounts' && section !== 'gallery' && section !== 'bkk' && section !== 'kelulusan' && section !== 'studentChangeRequests' && section !== 'guruChangeRequests' && section !== 'sdmGurus' && section !== 'sdmTendiks' && section !== 'backup';
 
   const navGroups: { label: string; items: { key: Section; label: string; icon: typeof FileText; visible: boolean }[] }[] = [
     { label: 'Menu', items: [
@@ -352,7 +372,7 @@ function AdminPanel() {
       { key: 'studentChangeRequests', label: 'Verifikasi Data Siswa', icon: FileText, visible: canViewStudents },
     ]},
     { label: 'Modul Sekolah', items: [
-      { key: 'spmb', label: 'Kelola SPMB', icon: GraduationCap, visible: isAdmin },
+      { key: 'spmb', label: 'Kelola SPMB', icon: GraduationCap, visible: canViewSpmb },
       { key: 'bkk', label: 'BKK', icon: Briefcase, visible: canViewBkk },
       { key: 'kelulusan', label: 'Kelulusan Siswa', icon: GraduationCap, visible: canViewKelulusan },
       { key: 'gallery', label: 'Galeri', icon: Camera, visible: canViewGallery },
@@ -361,12 +381,14 @@ function AdminPanel() {
     { label: 'SDM', items: [
       { key: 'sdmGurus', label: 'Data Guru', icon: Users, visible: canViewSdm },
       { key: 'sdmTendiks', label: 'Tenaga Kependidikan', icon: Briefcase, visible: canViewSdm },
+      { key: 'guruChangeRequests', label: 'Verifikasi Data Guru', icon: FileText, visible: canViewSdm },
     ]},
     { label: 'Sistem', items: [
       { key: 'contact', label: 'Pesan Kontak', icon: Mail, visible: isAdmin },
       { key: 'contactSettings', label: 'Pengaturan Kontak', icon: MapPin, visible: isAdmin },
       { key: 'permissions', label: 'Role & Permission', icon: ShieldCheck, visible: isAdmin },
       { key: 'accounts', label: 'Kelola Akun', icon: Users, visible: isAdmin },
+      { key: 'backup', label: 'Backup Database', icon: DatabaseBackupIcon, visible: isAdmin },
     ]},
   ];
 
@@ -422,7 +444,15 @@ function AdminPanel() {
         </header>
 
         <div className="mx-auto w-full max-w-6xl p-5 md:p-8">
-          {section === 'dashboard' && <Dashboard data={data} total={total} />}
+          {section === 'dashboard' && (
+            <Dashboard
+              data={data}
+              total={total}
+              userName={user?.name || 'Administrator'}
+              roleLabel={ROLE_LABELS[role ?? ''] ?? 'Administrator'}
+              isAdmin={isAdmin}
+            />
+          )}
 
           {section === 'myProfile' && <MyProfile />}
 
@@ -430,7 +460,7 @@ function AdminPanel() {
             <ContactMessages items={data.contact} onMarkRead={markRead} onDelete={remove} />
           )}
 
-          {section === 'spmb' && <SpmbManagement isAdmin={isAdmin} permissions={permissions} />}
+          {section === 'spmb' && canViewSpmb && <SpmbManagement isAdmin={isAdmin} permissions={permissions} />}
 
           {section === 'permissions' && isAdmin && <RolePermissions />}
 
@@ -452,11 +482,15 @@ function AdminPanel() {
 
           {section === 'studentChangeRequests' && canViewStudents && <StudentChangeRequestsManagement />}
 
+          {section === 'guruChangeRequests' && canViewSdm && <GuruChangeRequestsManagement />}
+
           {section === 'sdmGurus' && canViewSdm && <SdmManagement type="guru" permissions={permissions} />}
 
           {section === 'sdmTendiks' && canViewSdm && <SdmManagement type="tendik" permissions={permissions} />}
 
           {section === 'accounts' && isAdmin && <AccountsManagement />}
+
+          {section === 'backup' && isAdmin && <DatabaseBackup />}
 
           {section === 'contentRecords' && isAdmin && <HomeContentManagement />}
 
@@ -500,24 +534,6 @@ function AdminPanel() {
 
 function Nav({ label, icon: Icon, active, onClick }: { label: string; icon: typeof FileText; active: boolean; onClick: () => void }) {
   return <button onClick={onClick} className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm ${active ? 'bg-[#C8A951] font-bold text-[#1B2A4A]' : 'text-[#F3E8D0] hover:bg-white/10'}`}><Icon size={18} />{label}</button>;
-}
-
-function Dashboard({ data, total }: { data: Record<string, Item[]>; total: number }) {
-  const cards = [{ label: 'Total Konten', value: total, icon: BarChart3 }, ...Object.entries(configs).slice(0, 3).map(([key, value]) => ({ label: value.title, value: data[key]?.length ?? 0, icon: value.icon }))];
-  return (
-    <>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {cards.map(card => {
-          const Icon = card.icon;
-          return <div key={card.label} className="rounded-xl bg-white p-5 shadow-sm"><Icon className="mb-4 text-[#866D2C]" /><p className="text-3xl font-bold">{card.value}</p><p className="text-sm text-[#5B7088]">{card.label}</p></div>;
-        })}
-      </div>
-      <div className="mt-8 rounded-xl bg-[#1B2A4A] p-6 text-white">
-        <h2 className="text-xl font-bold">Selamat datang, Administrator</h2>
-        <p className="mt-2 text-[#F3E8D0]">Gunakan menu di samping untuk memperbarui konten website sekolah.</p>
-      </div>
-    </>
-  );
 }
 
 function ContactMessages({ items, onMarkRead, onDelete }: { items: Item[]; onMarkRead: (id: unknown) => void; onDelete: (id: unknown) => void }) {
@@ -570,6 +586,11 @@ function Table({ items, config, onEdit, onDelete }: { items: Item[]; config: { f
       return photoUrl ? <img src={photoUrl} alt="" className="h-10 w-10 rounded-full object-cover" /> : null;
     }
 
+    if (field.key === 'logo' && item[field.key]) {
+      const logoUrl = resolveImageUrl(String(item[field.key]));
+      return logoUrl ? <div className="grid h-12 w-12 place-items-center rounded-xl border border-[#1B2A4A]/10 bg-white p-1.5"><img src={logoUrl} alt="" className="h-full w-full object-contain" /></div> : null;
+    }
+
     if (['image', 'thumbnail'].includes(field.key) && item[field.key]) {
       const imgUrl = resolveImageUrl(String(item[field.key]));
       return imgUrl ? <img src={imgUrl} alt="" className="h-10 w-16 rounded object-cover" /> : null;
@@ -592,7 +613,8 @@ function Table({ items, config, onEdit, onDelete }: { items: Item[]; config: { f
       return formatDateValue(item[field.key]);
     }
 
-    return String(item[field.key] ?? '-');
+    const value = String(item[field.key] ?? '-');
+    return <div className="line-clamp-2 break-words" title={value}>{value}</div>;
   };
 
   return (
@@ -1407,7 +1429,7 @@ function HomeContentFields({ data, onChange }: { data: Record<string, any>; onCh
   </div>;
 }
 
-function Editor({ config, item, onClose, onSave, section, options }: { config: { title: string; fields: { key: string; label: string; type?: string; multiline?: boolean }[] }; item: Item | null; onClose: () => void; onSave: (item: Item) => void; section?: string; options?: Record<string, string[]> }) {
+function Editor({ config, item, onClose, onSave, section, options }: { config: { title: string; fields: { key: string; label: string; type?: string; multiline?: boolean; bucket?: string }[] }; item: Item | null; onClose: () => void; onSave: (item: Item) => void; section?: string; options?: Record<string, string[]> }) {
   const [sourceUrl, setSourceUrl] = useState('');
   const [sourceMeta, setSourceMeta] = useState({ sourceType: 'manual' as 'manual' | 'imported', sourceUrl: '', sourceLabel: 'Berita mandiri', sourceNote: '' });
   const [fetching, setFetching] = useState(false);
@@ -1605,7 +1627,7 @@ function Editor({ config, item, onClose, onSave, section, options }: { config: {
           {config.fields.map(field => (
             field.type === 'image'
               ? <div key={field.key}>
-                  <ImageField label={field.label} value={imageValues[field.key] ?? ''} onChange={(url) => setImageValues(current => ({ ...current, [field.key]: url }))} />
+                  <ImageField label={field.label} value={imageValues[field.key] ?? ''} bucket={field.bucket} onChange={(url) => setImageValues(current => ({ ...current, [field.key]: url }))} />
                   <input type="hidden" name={field.key} value={imageValues[field.key] ?? ''} />
                 </div>
               : <label key={field.key} className="block text-sm font-semibold">

@@ -54,6 +54,11 @@ class User extends Authenticatable
         return $this->hasOne(Guru::class, 'id', 'id');
     }
 
+    public function sdmGuru(): HasOne
+    {
+        return $this->hasOne(SdmGuru::class, 'user_id', 'id');
+    }
+
     public function osisAccount(): HasOne
     {
         return $this->hasOne(OsisAccount::class, 'id', 'id');

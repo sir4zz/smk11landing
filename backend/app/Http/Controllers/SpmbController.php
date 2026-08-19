@@ -44,35 +44,58 @@ class SpmbController extends Controller
     // ------------------------------------------------------------------
 
     /**
-     * Public endpoint: only active posters, ordered by sort_order.
-     * Never leaks inactive posters to the public site.
+     * Public endpoint: only active, already-published announcements (posters).
+     * The featured (pengumuman utama) one is returned first, then by sort
+     * order and newest first. Inactive or scheduled posters never leak.
      */
     public function posters()
     {
         $posters = SpmbPoster::query()
             ->where('is_active', true)
+            ->where(function ($q) {
+                $q->whereNull('published_at')->orWhere('published_at', '<=', now());
+            })
+            ->orderByDesc('is_featured')
             ->orderBy('sort_order')
-            ->orderBy('created_at')
+            ->orderByDesc('created_at')
             ->get()
             ->map(fn (SpmbPoster $poster) => [
                 'id' => $poster->id,
                 'title' => $poster->title,
                 'image' => $poster->image,
                 'sort_order' => (int) $poster->sort_order,
+                'is_featured' => (bool) $poster->is_featured,
+                'published_at' => $poster->published_at?->toIso8601String(),
             ]);
 
         return response()->json(['data' => $posters, 'error' => null]);
     }
 
     /**
-     * Admin listing: all posters (active + inactive) newest managed first.
+     * Admin listing: all announcements (active + inactive, scheduled or not)
+     * with the featured one first, then by sort order and newest first.
      */
     public function adminPosters()
     {
         $posters = SpmbPoster::query()
+            ->orderByDesc('is_featured')
             ->orderBy('sort_order')
-            ->orderBy('created_at')
-            ->get();
+            ->orderByDesc('created_at')
+            ->with('creator:id,name')
+            ->get()
+            ->map(fn (SpmbPoster $poster) => [
+                'id' => $poster->id,
+                'title' => $poster->title,
+                'image' => $poster->image,
+                'is_active' => (bool) $poster->is_active,
+                'sort_order' => (int) $poster->sort_order,
+                'is_featured' => (bool) $poster->is_featured,
+                'published_at' => $poster->published_at?->toIso8601String(),
+                'created_by' => $poster->created_by,
+                'creator_name' => $poster->creator?->name,
+                'created_at' => $poster->created_at?->toIso8601String(),
+                'updated_at' => $poster->updated_at?->toIso8601String(),
+            ]);
 
         return response()->json(['data' => $posters, 'error' => null]);
     }
@@ -84,6 +107,8 @@ class SpmbController extends Controller
             'image' => ['required', 'string', 'max:1000'],
             'is_active' => ['sometimes', 'boolean'],
             'sort_order' => ['sometimes', 'integer', 'min:0'],
+            'published_at' => ['sometimes', 'nullable', 'date'],
+            'is_featured' => ['sometimes', 'boolean'],
         ]);
 
         $poster = SpmbPoster::create([
@@ -91,7 +116,12 @@ class SpmbController extends Controller
             'image' => $data['image'],
             'is_active' => (bool) ($data['is_active'] ?? true),
             'sort_order' => (int) ($data['sort_order'] ?? 0),
+            'published_at' => $data['published_at'] ?? null,
+            'is_featured' => (bool) ($data['is_featured'] ?? false),
+            'created_by' => $request->user()?->id,
         ]);
+
+        $this->enforceSingleFeatured($poster);
 
         return response()->json(['data' => $poster, 'error' => null], 201);
     }
@@ -105,10 +135,14 @@ class SpmbController extends Controller
             'image' => ['sometimes', 'string', 'max:1000'],
             'is_active' => ['sometimes', 'boolean'],
             'sort_order' => ['sometimes', 'integer', 'min:0'],
+            'published_at' => ['sometimes', 'nullable', 'date'],
+            'is_featured' => ['sometimes', 'boolean'],
         ]);
 
         if (array_key_exists('title', $data)) $data['title'] = trim($data['title']);
         $poster->update($data);
+
+        $this->enforceSingleFeatured($poster);
 
         return response()->json(['data' => $poster->fresh(), 'error' => null]);
     }
@@ -116,9 +150,31 @@ class SpmbController extends Controller
     public function destroyPoster(string $id)
     {
         $poster = SpmbPoster::findOrFail($id);
+
+        if ($poster->image) {
+            $key = preg_replace('#^/storage/#', '', $poster->image);
+            if ($key && Storage::disk('public')->exists($key)) {
+                Storage::disk('public')->delete($key);
+            }
+        }
+
         $poster->delete();
 
         return response()->json(['data' => null, 'error' => null]);
+    }
+
+    /**
+     * Only one announcement can be the featured "Pengumuman Utama" at a time.
+     * When a poster is marked as featured, all other posters are unmarked.
+     */
+    private function enforceSingleFeatured(SpmbPoster $poster): void
+    {
+        if (! $poster->is_featured) return;
+
+        SpmbPoster::query()
+            ->where('is_featured', true)
+            ->where('id', '!=', $poster->id)
+            ->update(['is_featured' => false]);
     }
 
     /**

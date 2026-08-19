@@ -42,8 +42,8 @@ const Osis: React.FC = () => {
       {/* Profil OSIS */}
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 md:py-20">
         <SectionHeading title="Profil OSIS" subtitle="Identitas dan pengantar organisasi siswa SMKN 11" align="center" />
-        <div className="mt-10 flex flex-col items-center gap-8 rounded-2xl border border-[#1B2A4A]/10 bg-white p-8 shadow-sm md:flex-row md:p-10">
-          <div className="grid h-44 w-44 shrink-0 place-items-center rounded-2xl bg-[#FAF6F0] p-4">
+        <div className="mt-10 flex flex-col items-center gap-6 rounded-2xl border border-[#1B2A4A]/10 bg-white p-6 shadow-sm sm:gap-8 md:flex-row md:p-10">
+          <div className="grid h-32 w-32 sm:h-44 sm:w-44 shrink-0 place-items-center rounded-2xl bg-[#FAF6F0] p-4">
             {profile.logo ? (
               <img src={resolveImageUrl(profile.logo)} alt={profile.name} className="h-full w-full object-contain" />
             ) : (
@@ -67,7 +67,7 @@ const Osis: React.FC = () => {
         <div className="mt-10 grid gap-6 md:grid-cols-2">
           <Link
             to="/osis/struktur"
-            className="group flex items-center justify-between gap-4 rounded-2xl bg-[#1B2A4A] p-8 text-white shadow-sm transition-all hover:-translate-y-1 hover:bg-[#15203a]"
+            className="group flex items-center justify-between gap-4 rounded-2xl bg-[#1B2A4A] p-6 text-white shadow-sm transition-all hover:-translate-y-1 hover:bg-[#15203a] sm:p-8"
           >
             <div className="flex items-center gap-4">
               <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-[#C8A951]/20">
@@ -82,7 +82,7 @@ const Osis: React.FC = () => {
           </Link>
           <Link
             to="/osis/kegiatan"
-            className="group flex items-center justify-between gap-4 rounded-2xl border border-[#1B2A4A]/10 bg-white p-8 text-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md"
+            className="group flex items-center justify-between gap-4 rounded-2xl border border-[#1B2A4A]/10 bg-white p-6 text-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-md sm:p-8"
           >
             <div className="flex items-center gap-4">
               <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-[#C8A951]/20">

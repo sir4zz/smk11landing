@@ -1,4 +1,4 @@
-import type { SpmbContent, SpmbPoster } from './content-types';
+import type { SpmbContent, SpmbPoster, MadingVideo } from './content-types';
 
 const configuredApiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/$/, '');
 const apiBaseUrl = configuredApiUrl.endsWith('/api') ? configuredApiUrl : `${configuredApiUrl}/api`;
@@ -278,6 +278,8 @@ export const fetchKesemaptaanActivities = <T>() => fetchFromApi<T>('/kesemaptaan
 export const fetchKesemaptaanSchedules = <T>() => fetchFromApi<T>('/kesemaptaan/schedules');
 export const fetchKesemaptaanInstructors = <T>() => fetchFromApi<T>('/kesemaptaan/instructors');
 export const fetchKesemaptaanAchievements = <T>() => fetchFromApi<T>('/kesemaptaan/achievements');
+export const fetchKesemaptaanGallery = <T>() => fetchFromApi<T>('/kesemaptaan/gallery');
+export const fetchKesemaptaanVideos = <T>() => fetchFromApi<T>('/kesemaptaan/videos');
 export const fetchMadingCategories = <T>() => fetchFromApi<T>('/mading/categories');
 
 // ---------- FAQ ----------
@@ -289,9 +291,10 @@ export interface FaqRow {
   sort_order?: number;
 }
 export const fetchFaqs = <T>() => fetchFromApi<T>('/faqs');
-export interface MadingPostRow extends Record<string, unknown> { id?: string; title?: string; content?: string; category_id?: string | null; author_id?: string | null; author_name?: string; author_role?: string; cover_image?: string; status?: string; feedback?: string; ai_assisted?: boolean; published_at?: string | null; created_at?: string; updated_at?: string; }
+export interface MadingPostRow extends Record<string, unknown> { id?: string; title?: string; content?: string; category_id?: string | null; author_id?: string | null; author_name?: string; author_role?: string; cover_image?: string; images?: string[]; videos?: MadingVideo[]; status?: string; feedback?: string; ai_assisted?: boolean; published_at?: string | null; created_at?: string; updated_at?: string; }
 export async function fetchMadingPosts(filter?: { status?: string; authorId?: string; categoryId?: string }): Promise<MadingPostRow[]> { const params = new URLSearchParams(); if (filter?.status) params.set('status', filter.status); if (filter?.authorId) params.set('author_id', filter.authorId); if (filter?.categoryId) params.set('category_id', filter.categoryId); const result = await request<MadingPostRow[]>(`/mading/posts${params.size ? `?${params}` : ''}`); return result.data ?? []; }
 export async function fetchMadingPublished(): Promise<MadingPostRow[]> { return fetchMadingPosts({ status: 'published' }); }
+export async function fetchMadingPostById(id: string): Promise<MadingPostRow | null> { const result = await request<MadingPostRow>(`/mading/posts/${encodeURIComponent(id)}`); return result.data ?? null; }
 
 // ---------- MADING AI CONTENT ASSISTANT ----------
 export type MadingContentType = 'Puisi' | 'Cerpen' | 'Artikel' | 'Pantun' | 'Esai' | 'Opini' | 'Motivasi' | 'Edukasi' | 'Tips' | 'Pengumuman' | 'Konten Kreatif';
@@ -523,6 +526,7 @@ export interface MyProfilePayload {
   address: string;
   social: MyProfileSocial;
   guru?: { nip?: string; nuptk?: string; teacher_id?: string; subject?: string; position?: string; achievements?: string[]; certifications?: string[] } | null;
+  guru_sdm?: SdmGuruProfilePayload | null;
   osis?: { member_id?: string; nisn?: string; division?: string; position?: string; achievements?: string[]; work_programs?: string[] } | null;
   student?: {
     nisn?: string; nis?: string; class?: string; major?: string; gender?: string;
@@ -956,6 +960,107 @@ export const studentChangeRequestAdminApi = {
   },
 };
 
+// ---------- GURU SDM DATA SAYA & CHANGE REQUESTS ----------
+export interface SdmGuruProfilePayload {
+  id: string;
+  name: string;
+  nip: string;
+  nipppk: string;
+  nuptk: string;
+  nik: string;
+  npwp: string;
+  akta_lahir: string;
+  bpjs: string;
+  gender: string;
+  religion: string;
+  birth_place: string;
+  birth_date: string;
+  status_kepegawaian: string;
+  pangkat_golongan: string;
+  jabatan: string;
+  tmt_golongan: string;
+  tmt_cpns: string;
+  tmt_pns_pppk: string;
+  tmt_sk_sekolah: string;
+  address: string;
+  phone: string;
+  email: string;
+  photo: string;
+  bio: string;
+  instagram: string;
+  facebook: string;
+  twitter: string;
+  tiktok: string;
+  youtube: string;
+  linkedin: string;
+  website: string;
+  github: string;
+  is_active: boolean;
+}
+
+export type GuruChangeRequestStatus = 'menunggu' | 'disetujui' | 'ditolak' | 'dibatalkan';
+
+export const GURU_CHANGE_REQUEST_STATUS_LABELS: Record<GuruChangeRequestStatus, string> = {
+  menunggu: 'Menunggu Verifikasi',
+  disetujui: 'Disetujui',
+  ditolak: 'Ditolak',
+  dibatalkan: 'Dibatalkan',
+};
+
+export interface GuruChangeRequestRow {
+  id: string;
+  guru_id: string;
+  old_data: Record<string, unknown>;
+  proposed_data: Record<string, unknown>;
+  status: GuruChangeRequestStatus;
+  rejection_reason: string | null;
+  verified_by: string | null;
+  verified_at: string | null;
+  guru?: { id: string; name: string; nip: string; nuptk: string; jabatan: string };
+  verifier?: { id: string; name: string } | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export const guruDataApi = {
+  myData(): ApiResult<SdmGuruProfilePayload> {
+    return request<SdmGuruProfilePayload>('/guru/data-saya');
+  },
+  myChangeRequests(): ApiResult<GuruChangeRequestRow[]> {
+    return request<GuruChangeRequestRow[]>('/guru/data-saya/change-requests');
+  },
+  submitChangeRequest(proposedData: Record<string, unknown>): ApiResult<GuruChangeRequestRow> {
+    return request<GuruChangeRequestRow>('/guru/data-saya/change-requests', {
+      method: 'POST',
+      body: JSON.stringify({ proposed_data: proposedData }),
+    });
+  },
+  cancelChangeRequest(id: string): ApiResult<GuruChangeRequestRow> {
+    return request<GuruChangeRequestRow>(`/guru/data-saya/change-requests/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+export const guruChangeRequestAdminApi = {
+  list(params?: { status?: string; search?: string }): ApiResult<GuruChangeRequestRow[]> {
+    const q = new URLSearchParams();
+    if (params?.status) q.set('status', params.status);
+    if (params?.search) q.set('search', params.search);
+    const suffix = q.size ? `?${q}` : '';
+    return request<GuruChangeRequestRow[]>(`/admin/guru-change-requests${suffix}`);
+  },
+  get(id: string): ApiResult<GuruChangeRequestRow> {
+    return request<GuruChangeRequestRow>(`/admin/guru-change-requests/${encodeURIComponent(id)}`);
+  },
+  verify(id: string, payload: { status: 'disetujui' | 'ditolak'; rejection_reason?: string }): ApiResult<GuruChangeRequestRow> {
+    return request<GuruChangeRequestRow>(`/admin/guru-change-requests/${encodeURIComponent(id)}/verify`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  },
+};
+
 // ---------- SDM (DATA GURU & TENAGA KEPENDIDIKAN) ----------
 export type SdmType = 'guru' | 'tendik';
 
@@ -1112,6 +1217,50 @@ export const sdmApi = {
   },
 };
 
+// ---------- GURU LOGIN ACCOUNT MANAGEMENT (SDM) ----------
+export interface GuruAccountSummaryUser {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  status: string;
+  must_change_password: boolean;
+  created_at?: string;
+  guru?: { nip?: string; nuptk?: string; teacher_id?: string } | null;
+}
+
+export interface GuruAccountSummary {
+  linked: boolean;
+  user: GuruAccountSummaryUser | null;
+  identifier: string;
+}
+
+export interface GuruAccountResult {
+  account: GuruAccountSummary;
+  generated_password?: string;
+}
+
+export const sdmAccountApi = {
+  get(guruId: string): ApiResult<GuruAccountSummary> {
+    return request<GuruAccountSummary>(`/admin/sdm/guru/${encodeURIComponent(guruId)}/account`);
+  },
+  create(guruId: string, payload: { email?: string; password?: string }): ApiResult<GuruAccountResult> {
+    return request<GuruAccountResult>(`/admin/sdm/guru/${encodeURIComponent(guruId)}/account`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+  update(guruId: string, payload: { email?: string; password?: string; status?: 'active' | 'inactive' }): ApiResult<GuruAccountSummary> {
+    return request<GuruAccountSummary>(`/admin/sdm/guru/${encodeURIComponent(guruId)}/account`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  },
+  remove(guruId: string): ApiResult<null> {
+    return request<null>(`/admin/sdm/guru/${encodeURIComponent(guruId)}/account`, { method: 'DELETE' });
+  },
+};
+
 export interface PublicSdmProfile {
   role: 'guru' | 'tendik';
   slug: string;
@@ -1129,3 +1278,41 @@ export interface PublicSdmProfile {
 }
 
 export type PublicProfileType = 'guru' | 'siswa' | 'osis' | 'tendik';
+
+// ---------- DATABASE BACKUP (admin) ----------
+export interface BackupFileRow {
+  name: string;
+  size: number;
+  created_at: string;
+}
+
+export const backupApi = {
+  list(): ApiResult<BackupFileRow[]> {
+    return request<BackupFileRow[]>('/admin/backups');
+  },
+  create(): ApiResult<BackupFileRow> {
+    return request<BackupFileRow>('/admin/backups', { method: 'POST' });
+  },
+  remove(filename: string): ApiResult<null> {
+    return request<null>(`/admin/backups/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+  },
+};
+
+export async function downloadBackup(filename: string): Promise<void> {
+  const response = await fetch(`${apiBaseUrl}/admin/backups/${encodeURIComponent(filename)}`, {
+    credentials: 'include',
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new Error((body as { error?: { message?: string } })?.error?.message ?? 'Gagal mengunduh backup.');
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}

@@ -16,9 +16,14 @@ class KesemaptaanSchedule extends Model
 
     public $timestamps = false;
     protected $fillable = [
-        'day',
-        'time',
-        'place',
+        'name',
+        'date',
+        'location',
+        'description',
         'created_at',
+    ];
+
+    protected $casts = [
+        'date' => 'date',
     ];
 }

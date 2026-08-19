@@ -34,6 +34,7 @@ const OsisExtracurriculars = lazy(() => import('./pages/osis/Extracurriculars'))
 const OsisExtracurricularDetail = lazy(() => import('./pages/osis/ExtracurricularDetail'))
 const Kesemaptaan = lazy(() => import('./pages/osis/Kesemaptaan'))
 const Mading = lazy(() => import('./pages/mading/Mading'))
+const MadingDetail = lazy(() => import('./pages/mading/MadingDetail'))
 const StudentLogin = lazy(() => import('./pages/mading/StudentLogin'))
 const StudentArea = lazy(() => import('./pages/mading/StudentArea'))
 const DataSiswa = lazy(() => import('./pages/student/DataSiswa'))
@@ -118,6 +119,7 @@ function App() {
             <Route path="mading/area" element={suspend(<StudentArea />)} />
             <Route path="siswa/data-diri" element={suspend(<DataSiswa />)} />
           </Route>
+          <Route path="mading/:id" element={suspend(<MadingDetail />)} />
 
           {/* BKK (Bursa Kerja Khusus) */}
           <Route path="bkk" element={suspend(<BkkHome />)} />

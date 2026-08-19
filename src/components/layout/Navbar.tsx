@@ -59,13 +59,13 @@ const Navbar: React.FC<NavbarProps> = ({ onSearchOpen }) => {
         <Link to="/" className="flex items-center gap-2">
           <img src={logoSekolah} alt="Logo SMKN 11" className="h-10 w-auto" style={{ height: '40px', width: 'auto', objectFit: 'contain' }} />
           <div className="flex flex-col">
-            <span className="text-white font-bold text-xl leading-tight">SMKN 11</span>
-            <span className="text-[#F3E8D0] text-xs">Kab. Tangerang</span>
+            <span className="text-white font-bold text-base sm:text-xl leading-tight">SMKN 11</span>
+            <span className="text-[#F3E8D0] text-[10px] sm:text-xs hidden sm:block">Kab. Tangerang</span>
           </div>
         </Link>
 
         {/* Desktop Navigation */}
-        <div className="hidden xl:flex items-center space-x-1 xl:space-x-2">
+        <div className="hidden lg:flex items-center space-x-1 lg:space-x-2">
           {visibleNavItems.map((item) => (
             <div key={item.label} className="relative group">
               {item.children ? (
@@ -141,7 +141,7 @@ const Navbar: React.FC<NavbarProps> = ({ onSearchOpen }) => {
         </div>
 
         {/* Mobile menu button */}
-        <div className="flex xl:hidden items-center gap-4">
+        <div className="flex lg:hidden items-center gap-4">
           <button 
             onClick={onSearchOpen}
             className="text-white hover:text-[#C8A951] transition-colors duration-300 ease-in-out"
@@ -161,7 +161,7 @@ const Navbar: React.FC<NavbarProps> = ({ onSearchOpen }) => {
 
       {/* Mobile Navigation Drawer */}
       {isMobileMenuOpen && (
-        <div className="xl:hidden absolute top-[64px] left-0 w-full bg-[#1B2A4A] border-t border-[#2a3f6e] shadow-xl max-h-[calc(100vh-64px)] overflow-y-auto">
+        <div className="lg:hidden absolute top-[64px] left-0 w-full bg-[#1B2A4A] border-t border-[#2a3f6e] shadow-xl max-h-[calc(100vh-64px)] overflow-y-auto">
           <div className="flex flex-col py-4 px-4 space-y-2">
             {visibleNavItems.map((item) => (
               <div key={item.label} className="border-b border-[#2a3f6e] last:border-0 pb-2">

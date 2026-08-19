@@ -72,7 +72,7 @@ export default function StudentLogin() {
         breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Mading', href: '/mading' }, { label: 'Login Siswa' }]}
       />
       <div className="mx-auto max-w-md px-4 py-16 sm:px-6">
-        <form onSubmit={submit} className="rounded-2xl bg-white p-8 shadow-xl">
+        <form onSubmit={submit} className="rounded-2xl bg-white p-6 shadow-xl sm:p-8">
           <div className="mb-8 text-center">
             <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-[#FAF6F0]"><BookOpen className="h-7 w-7 text-[#866D2C]" /></div>
             <h1 className="text-2xl font-bold text-[#1B2A4A]">Area Siswa</h1>

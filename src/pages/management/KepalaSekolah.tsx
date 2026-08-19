@@ -79,7 +79,7 @@ const KepalaSekolah: React.FC = () => {
       </section>
 
       <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
-        <div className="rounded-2xl bg-[#1B2A4A] p-8 text-center text-[#FAF6F0] md:p-12">
+        <div className="rounded-2xl bg-[#1B2A4A] p-6 text-center text-[#FAF6F0] sm:p-8 md:p-12">
           <h3 className="text-xl font-bold md:text-2xl">Kenali lebih dekat jajaran manajemen sekolah</h3>
           <p className="mx-auto mt-2 max-w-2xl text-[#F3E8D0]">Lihat siapa saja yang membantu kepala sekolah dalam memimpin SMKN 11 Kabupaten Tangerang.</p>
           <div className="mt-6 flex flex-wrap justify-center gap-4">

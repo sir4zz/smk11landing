@@ -3,6 +3,7 @@ import type { ChangeEvent, FormEvent } from 'react';
 import { Loader2, Save, KeyRound, IdCard, BadgeCheck, Globe } from 'lucide-react';
 import { myProfileApi, type MyProfilePayload } from '../../lib/api';
 import ImageField from './ImageField';
+import GuruSdmProfile from './GuruSdmProfile';
 import { useStaffAuth } from '../../lib/staffAuth';
 
 interface FormState {
@@ -118,10 +119,15 @@ export default function MyProfile() {
 
     const splitLines = (value: string) => value.split('\n').map((s) => s.trim()).filter(Boolean);
 
+    const isSdmGuru = role === 'guru' && !!profile?.guru_sdm;
+
     const payload: Record<string, unknown> = {
-      name,
       email: form.email.trim(),
     };
+
+    if (!isSdmGuru) {
+      payload.name = name;
+    }
 
     if (role !== 'admin') {
       payload.photo = form.photo;
@@ -138,7 +144,7 @@ export default function MyProfile() {
       payload.github = form.github.trim();
     }
 
-    if (role === 'guru') {
+    if (role === 'guru' && !isSdmGuru) {
       payload.subject = form.subject.trim();
       payload.position = form.position.trim();
       payload.achievements = splitLines(form.achievements);
@@ -183,6 +189,7 @@ export default function MyProfile() {
         : null;
 
   const isAdmin = role === 'admin';
+  const isSdmGuru = role === 'guru' && !!profile?.guru_sdm;
 
   return (
     <form onSubmit={save} className="space-y-6">
@@ -228,7 +235,15 @@ export default function MyProfile() {
             <h2 className="mb-5 text-lg font-bold text-[#1B2A4A]">Profil</h2>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2"><ImageField label="Foto Profil" value={form.photo} onChange={(url) => setForm((v) => ({ ...v, photo: url }))} hint="Direkomendasikan foto persegi (1:1)." /></div>
-              <Field label="Nama Lengkap" value={form.name} onChange={setField('name')} />
+              {isSdmGuru ? (
+                <div className="block text-sm font-semibold">
+                  Nama Lengkap
+                  <div className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 bg-[#FAF6F0] px-3 py-2 font-normal text-[#1B2A4A]">{form.name}</div>
+                  <span className="mt-1 block text-xs font-normal text-[#5B7088]">Nama resmi dari data SDM. Perubahan nama diajukan melalui formulir perubahan data di bawah.</span>
+                </div>
+              ) : (
+                <Field label="Nama Lengkap" value={form.name} onChange={setField('name')} />
+              )}
               <Field label="Email" type="email" value={form.email} onChange={setField('email')} />
               <Field label="Nomor Telepon" value={form.phone} onChange={setField('phone')} />
               <div className="sm:col-span-2"><Field label="Bio / Tentang Saya" multiline value={form.bio} onChange={setField('bio')} /></div>
@@ -236,7 +251,9 @@ export default function MyProfile() {
             </div>
           </div>
 
-          {role === 'guru' && (
+          {role === 'guru' && (isSdmGuru ? (
+            <GuruSdmProfile data={profile.guru_sdm!} />
+          ) : (
             <div className="rounded-xl bg-white p-6 shadow-sm">
               <h2 className="mb-5 text-lg font-bold text-[#1B2A4A]">Data Guru</h2>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -246,7 +263,7 @@ export default function MyProfile() {
                 <div className="sm:col-span-2"><Field label="Sertifikasi" multiline value={form.certifications} onChange={setField('certifications')} hint="Satu sertifikasi per baris." /></div>
               </div>
             </div>
-          )}
+          ))}
 
           {role === 'osis' && (
             <div className="rounded-xl bg-white p-6 shadow-sm">

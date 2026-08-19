@@ -3,7 +3,7 @@ import { backendApi } from './api';
 import { STAFF_ROLES } from './permissions';
 
 export interface StaffAuthState {
-  user: { id: string; email?: string } | null;
+  user: { id: string; email?: string; name?: string } | null;
   role: string | null;
   permissions: string[];
   mustChangePassword: boolean;
@@ -54,7 +54,7 @@ export function StaffAuthProvider({ children }: { children: ReactNode }) {
 
     if (!mounted.current) return;
     setState({
-      user: { id: data.user.id, email: profile?.email ?? data.user.email },
+      user: { id: data.user.id, email: profile?.email ?? data.user.email, name: profile?.name ?? undefined },
       role,
       permissions,
       mustChangePassword: Boolean(data.mustChangePassword),

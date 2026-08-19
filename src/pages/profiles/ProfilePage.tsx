@@ -102,14 +102,14 @@ function ProfilePage() {
       />
 
       <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
-        <div className="grid gap-6 md:grid-cols-[320px_1fr]">
+        <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-[320px_1fr]">
           <div>
             <div className="rounded-2xl bg-white p-6 text-center shadow-sm">
-              <div className="mx-auto mb-4 grid h-40 w-40 place-items-center overflow-hidden rounded-full border-4 border-[#C8A951]/50 bg-[#FAF6F0]">
+              <div className="mx-auto mb-4 grid h-28 w-28 sm:h-40 sm:w-40 place-items-center overflow-hidden rounded-full border-4 border-[#C8A951]/50 bg-[#FAF6F0]">
                 {resolveImageUrl(profile.photo) ? (
                   <img src={resolveImageUrl(profile.photo)} alt={profile.name} className="h-full w-full object-cover" />
                 ) : (
-                  <Users className="h-16 w-16 text-[#C8A951]/60" />
+                  <Users className="h-10 w-10 sm:h-16 sm:w-16 text-[#C8A951]/60" />
                 )}
               </div>
               <h1 className="text-xl font-bold text-[#1B2A4A]">{profile.name}</h1>
@@ -235,14 +235,14 @@ function SdmProfileView({ profile, meta }: { profile: PublicSdmProfile; meta: { 
       />
 
       <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
-        <div className="grid gap-6 md:grid-cols-[320px_1fr]">
+        <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-[320px_1fr]">
           <div>
             <div className="rounded-2xl bg-white p-6 text-center shadow-sm">
-              <div className="mx-auto mb-4 grid h-40 w-40 place-items-center overflow-hidden rounded-full border-4 border-[#C8A951]/50 bg-[#FAF6F0]">
+              <div className="mx-auto mb-4 grid h-28 w-28 sm:h-40 sm:w-40 place-items-center overflow-hidden rounded-full border-4 border-[#C8A951]/50 bg-[#FAF6F0]">
                 {resolveImageUrl(profile.photo) ? (
                   <img src={resolveImageUrl(profile.photo)} alt={profile.name} className="h-full w-full object-cover" />
                 ) : (
-                  <Users className="h-16 w-16 text-[#C8A951]/60" />
+                  <Users className="h-10 w-10 sm:h-16 sm:w-16 text-[#C8A951]/60" />
                 )}
               </div>
               <h1 className="text-xl font-bold text-[#1B2A4A]">{profile.name}</h1>

@@ -68,7 +68,7 @@ const Contact: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           
           {/* Contact Form */}
-          <div className="bg-white rounded-xl shadow-sm p-8">
+          <div className="bg-white rounded-xl shadow-sm p-6 sm:p-8">
             <SectionHeading title="Kirim Pesan" />
             <form onSubmit={submitContact} className="mt-8 space-y-6">
               <div>
@@ -141,7 +141,7 @@ const Contact: React.FC = () => {
 
           {/* Contact Info */}
           <div className="space-y-8">
-            <div className="bg-[#1B2A4A] rounded-xl shadow-sm p-8 text-[#FAF6F0]">
+            <div className="bg-[#1B2A4A] rounded-xl shadow-sm p-6 sm:p-8 text-[#FAF6F0]">
               <h3 className="text-2xl font-bold mb-6 text-[#C8A951]">Informasi Kontak</h3>
               
               <div className="space-y-6">
@@ -184,7 +184,7 @@ const Contact: React.FC = () => {
             </div>
 
             {/* Google Maps Embed */}
-            <div className="rounded-xl overflow-hidden h-64 w-full">
+            <div className="rounded-xl overflow-hidden h-48 sm:h-64 w-full">
               <iframe
                 src={`https://www.google.com/maps?q=${encodeURIComponent(contact.map_query.replace(/\s*\n+\s*/g, ' '))}&output=embed`}
                 width="100%"

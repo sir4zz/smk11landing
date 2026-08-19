@@ -29,7 +29,7 @@ export const Card: React.FC<CardProps> = ({
       {children ? children : (
         <>
           {image && (
-            <div className="relative h-48 w-full overflow-hidden">
+            <div className="relative h-40 w-full overflow-hidden sm:h-48">
               <img src={image} alt={title} loading="lazy" className="h-full w-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-[#1B2A4A]/70 to-transparent" />
               {tag && (
@@ -44,13 +44,13 @@ export const Card: React.FC<CardProps> = ({
               )}
             </div>
           )}
-          <div className={`p-6 ${!image && badge ? 'relative' : ''}`}>
+          <div className={`p-4 sm:p-6 ${!image && badge ? 'relative' : ''}`}>
             {!image && badge && (
               <span className="absolute right-4 top-4 rounded-full bg-[#C8A951] px-3 py-1 text-xs font-semibold text-[#1B2A4A]">
                 {badge}
               </span>
             )}
-            <h3 className="mb-2 text-xl font-semibold text-[#1B2A4A]">{title}</h3>
+            <h3 className="mb-2 text-lg sm:text-xl font-semibold text-[#1B2A4A]">{title}</h3>
             <p className="text-sm leading-6 font-medium text-[#23314D] line-clamp-3">{description}</p>
           </div>
         </>

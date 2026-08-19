@@ -26,7 +26,7 @@ class MyProfileController extends Controller
             return response()->json(null, 401);
         }
 
-        $user->load(['profileRecord', 'guru', 'osisAccount', 'student']);
+        $user->load(['profileRecord', 'guru', 'osisAccount', 'student', 'sdmGuru']);
 
         return response()->json(['data' => $this->accounts->profilePayload($user), 'error' => null]);
     }
@@ -84,6 +84,10 @@ class MyProfileController extends Controller
             $profileUpdates['phone'] = trim((string) $request->input('phone'));
         }
 
+        if ($request->has('address') && $profile->role === 'guru') {
+            $profileUpdates['address'] = trim((string) $request->input('address'));
+        }
+
         if ($request->has('email')) {
             $email = strtolower(trim((string) $request->input('email')));
             if ($profile->role === 'student') {
@@ -118,6 +122,24 @@ class MyProfileController extends Controller
                 if ($guruUpdates) $user->guru->update($guruUpdates);
             }
 
+            // Guru accounts linked to an imported SDM record keep the personal
+            // contact fields in sync with sdm_gurus (official fields stay
+            // read-only and are changed through data change requests).
+            if ($role === 'guru' && $user->sdmGuru) {
+                $sdmUpdates = [];
+                foreach (['photo', 'phone', 'address', 'bio', 'instagram', 'facebook', 'twitter', 'tiktok', 'youtube', 'linkedin', 'website', 'github'] as $field) {
+                    if ($request->has($field)) {
+                        $sdmUpdates[$field] = trim((string) $request->input($field));
+                    }
+                }
+                if (isset($profileUpdates['email'])) {
+                    $sdmUpdates['email'] = $profileUpdates['email'];
+                }
+                if ($sdmUpdates) {
+                    $user->sdmGuru->update($sdmUpdates);
+                }
+            }
+
             if ($role === 'osis' && $user->osisAccount) {
                 $osisUpdates = [];
                 foreach (['division', 'position'] as $field) {
@@ -146,7 +168,7 @@ class MyProfileController extends Controller
         }
         });
 
-        $user->load(['profileRecord', 'guru', 'osisAccount', 'student']);
+        $user->load(['profileRecord', 'guru', 'osisAccount', 'student', 'sdmGuru']);
 
         return response()->json(['data' => $this->accounts->profilePayload($user), 'error' => null]);
     }

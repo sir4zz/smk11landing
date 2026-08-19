@@ -99,7 +99,7 @@ const Home: React.FC = () => {
 
   return (
     <div className="flex min-h-screen flex-col bg-[#FAF6F0] font-sans">
-      <section className="relative isolate min-h-[95vh] overflow-hidden bg-[#1B2A4A] flex items-center">
+      <section className="relative isolate min-h-[80vh] sm:min-h-[90vh] lg:min-h-[95vh] overflow-hidden bg-[#1B2A4A] flex items-center">
         {/* Background Images & Overlay */}
         <div className="absolute inset-0">
           {heroImages.map((image, index) => (
@@ -117,13 +117,13 @@ const Home: React.FC = () => {
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPgo8cmVjdCB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSIjZmZmIiBmaWxsLW9wYWNpdHk9IjAuMDUiLz4KPC9zdmc+')] opacity-20" />
         </div>
 
-        <div className="relative z-10 mx-auto w-full max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
+        <div className="relative z-10 mx-auto w-full max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
           <div className="grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]">
             {/* Left Content */}
             <div className="flex flex-col items-start justify-center">
               
               {/* Formal Logos Row */}
-              <div className="mb-10 flex flex-wrap items-center gap-4 rounded-xl border border-white/10 bg-white/5 p-3 shadow-sm backdrop-blur-md">
+              <div className="mb-6 sm:mb-10 flex flex-wrap items-center gap-3 sm:gap-4 rounded-xl border border-white/10 bg-white/5 p-2 sm:p-3 shadow-sm backdrop-blur-md">
                 <div className="flex items-center gap-2">
                   <img src="https://upload.wikimedia.org/wikipedia/commons/9/9c/Logo_of_Ministry_of_Education_and_Culture_of_Republic_of_Indonesia.svg" alt="Kemdikbud" className="h-8 w-auto" style={{ height: '32px', width: 'auto', objectFit: 'contain' }} />
                   <div className="hidden sm:block text-left text-[8px] font-bold tracking-widest text-white/90 uppercase leading-tight">
@@ -156,15 +156,15 @@ const Home: React.FC = () => {
 
               {/* Massive Hero Titles */}
               <div className="flex flex-col">
-                <h1 className="text-6xl font-black italic tracking-tighter sm:text-7xl lg:text-[6.5rem] text-white [-webkit-text-stroke:1px_#C8A951] sm:[-webkit-text-stroke:2px_#C8A951]">
+                <h1 className="text-5xl font-black italic tracking-tighter sm:text-7xl lg:text-[6.5rem] text-white [-webkit-text-stroke:1px_#C8A951] sm:[-webkit-text-stroke:2px_#C8A951]">
                   SMKN <span className="text-[#C8A951] text-[1.15em] leading-none [-webkit-text-stroke:1px_white] sm:[-webkit-text-stroke:2px_white]">11</span>
                 </h1>
-                <h2 className="mt-1 text-2xl font-bold tracking-[0.3em] text-[#1B2A4A] sm:text-4xl uppercase [-webkit-text-stroke:1px_white] sm:[-webkit-text-stroke:2px_white] [text-shadow:0_0_12px_rgba(200,169,81,0.5)]">
+                <h2 className="mt-1 text-xl font-bold tracking-[0.3em] text-[#1B2A4A] sm:text-4xl uppercase [-webkit-text-stroke:1px_white] sm:[-webkit-text-stroke:2px_white] [text-shadow:0_0_12px_rgba(200,169,81,0.5)]">
                   Kab. Tangerang
                 </h2>
               </div>
               
-              <p className="mt-8 max-w-xl text-lg font-medium leading-relaxed text-[#FBEFCC] sm:text-xl">
+              <p className="mt-6 sm:mt-8 max-w-xl text-base font-medium leading-relaxed text-[#FBEFCC] sm:text-lg md:text-xl">
                 {home?.hero.description}
               </p>
 
@@ -251,7 +251,7 @@ const Home: React.FC = () => {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Image/Photo */}
             <div className="relative mx-auto w-full max-w-md lg:max-w-none">
-              <div className="relative overflow-hidden rounded-3xl rounded-tr-[80px] rounded-bl-[80px] bg-[#FAF6F0] p-4 shadow-sm">
+              <div className="relative overflow-hidden rounded-3xl rounded-tr-[40px] sm:rounded-tr-[80px] rounded-bl-[40px] sm:rounded-bl-[80px] bg-[#FAF6F0] p-3 sm:p-4 shadow-sm">
                 <img src={principalPhoto || ''} alt="Kepala Sekolah SMKN 11" loading="lazy" className="h-[250px] sm:h-[350px] md:h-[450px] w-full object-cover rounded-2xl rounded-tr-[70px] rounded-bl-[70px]" />
                 <div className="absolute bottom-10 left-0 bg-[#1B2A4A] text-white p-4 pr-8 rounded-r-2xl shadow-xl border-l-4 border-[#C8A951]">
                   <h4 className="font-bold text-lg">{principalName}</h4>
@@ -267,10 +267,10 @@ const Home: React.FC = () => {
                 <span className="h-px w-8 bg-[#C8A951]"></span>
                 <span className="text-sm font-bold uppercase tracking-widest text-[#C8A951]">Sambutan Kepala Sekolah</span>
               </div>
-                <h2 className="mb-6 text-3xl font-bold leading-tight text-[#1B2A4A] md:text-4xl">
+                <h2 className="mb-4 sm:mb-6 text-2xl font-bold leading-tight text-[#1B2A4A] sm:text-3xl md:text-4xl">
                  {home?.welcome.title}
               </h2>
-              <div className="space-y-4 text-lg text-[#23314D] leading-relaxed mb-8">
+              <div className="space-y-4 text-base sm:text-lg text-[#23314D] leading-relaxed mb-6 sm:mb-8">
                 {(home?.welcome.paragraphs ?? []).map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
                 <p className="font-semibold text-[#1B2A4A] italic border-l-4 border-[#C8A951] pl-4 mt-6">
                   {home?.welcome.quote}
@@ -324,8 +324,12 @@ const Home: React.FC = () => {
             {publicPrograms.map((program) => (
               <Card key={program.id} image={program.image} title={program.name} description={program.shortDescription} badge={program.shortName} className="h-full">
                 <div className="flex flex-col flex-1 p-6">
-                  <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#FAF6F0]">
-                    {getProgramIcon(program.slug)}
+                  <div className="mb-6 flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-[#FAF6F0]">
+                    {program.logo && resolveImageUrl(program.logo) ? (
+                      <img src={resolveImageUrl(program.logo)!} alt={`Logo ${program.name}`} loading="lazy" className="h-full w-full object-contain p-1" />
+                    ) : (
+                      getProgramIcon(program.slug)
+                    )}
                   </div>
                   <h3 className="mb-3 text-xl font-semibold text-[#1B2A4A]">{program.name}</h3>
                   <p className="mb-6 text-sm font-medium leading-7 text-[#23314D]">{program.shortDescription}</p>
@@ -450,10 +454,10 @@ const Home: React.FC = () => {
 
       <section className="bg-[#FAF6F0] py-16 md:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="overflow-hidden rounded-[2rem] bg-[#1B2A4A] p-8 text-center text-white shadow-2xl md:p-16">
+          <div className="overflow-hidden rounded-2xl sm:rounded-[2rem] bg-[#1B2A4A] p-6 text-center text-white shadow-2xl sm:p-8 md:p-16">
             <div className="mx-auto max-w-3xl">
               <p className="text-sm uppercase tracking-[0.3em] text-[#C8A951]">Informasi SPMB</p>
-              <h2 className="mt-4 text-3xl font-bold sm:text-4xl">{spmb?.banner_title || spmb?.title || 'Informasi SPMB SMKN 11 Kabupaten Tangerang'}</h2>
+              <h2 className="mt-4 text-2xl font-bold sm:text-3xl md:text-4xl">{spmb?.banner_title || spmb?.title || 'Informasi SPMB SMKN 11 Kabupaten Tangerang'}</h2>
               <p className="mt-6 text-lg font-medium text-white/95">{spmb?.banner_description || spmb?.description || 'Lihat persyaratan, jadwal, alur, dan tautan menuju portal resmi SPMB Provinsi Banten.'}</p>
               <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
                 <Button as="link" href="/spmb" variant="primary" size="lg" className="px-8">
