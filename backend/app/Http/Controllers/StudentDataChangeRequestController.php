@@ -9,6 +9,7 @@ use App\Services\PermissionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 
 class StudentDataChangeRequestController extends Controller
@@ -88,6 +89,18 @@ class StudentDataChangeRequestController extends Controller
             return response()->json(['error' => ['message' => 'Data perubahan tidak boleh kosong.']], 422);
         }
 
+        // PIN baru hanya boleh masuk pengajuan jika PIN saat ini terverifikasi.
+        if (array_key_exists('pin', $proposedData)) {
+            $currentPin = (string) ($proposedData['current_pin'] ?? '');
+            if (! Hash::check($currentPin, $user->password)) {
+                return response()->json(['error' => ['message' => 'PIN saat ini salah.']], 422);
+            }
+            $newPin = (string) ($proposedData['pin'] ?? '');
+            if (! preg_match('/^\d{4}$/', $newPin)) {
+                return response()->json(['error' => ['message' => 'PIN baru harus 4 digit angka.']], 422);
+            }
+        }
+
         // Fields that students are allowed to request changes for. Full Admin
         // biodata set, kecuali identifier login (nisn/nis) yang tetap Admin-only.
         $allowedFields = $this->editableFields();
@@ -115,7 +128,8 @@ class StudentDataChangeRequestController extends Controller
         // Build old_data snapshot
         $oldData = [];
         foreach (array_keys($filtered) as $key) {
-            $oldData[$key] = $this->normalizeValue($key, $student->{$key});
+            // Jangan mencatat PIN lama apa pun ke snapshot pengajuan.
+            $oldData[$key] = $key === 'pin' ? '' : $this->normalizeValue($key, $student->{$key});
         }
 
         $changeRequest = DB::transaction(function () use ($student, $oldData, $filtered) {
@@ -267,11 +281,15 @@ class StudentDataChangeRequestController extends Controller
                     $student->update($proposed);
 
                     // Keep login/display name mirrors in sync when the name changed.
-                    if (isset($proposed['name']) && $proposed['name'] !== '') {
-                        $user = User::find($student->id);
-                        if ($user) {
-                            $user->update(['name' => $proposed['name']]);
-                            $user->profileRecord?->update(['name' => $proposed['name']]);
+                    $accountUser = User::find($student->id);
+                    if ($accountUser) {
+                        if (isset($proposed['name']) && $proposed['name'] !== '') {
+                            $accountUser->update(['name' => $proposed['name']]);
+                            $accountUser->profileRecord?->update(['name' => $proposed['name']]);
+                        }
+                        // PIN baru juga harus disinkronkan ke hash login (users.password).
+                        if (isset($proposed['pin']) && $proposed['pin'] !== '') {
+                            $accountUser->update(['password' => Hash::make($proposed['pin'])]);
                         }
                     }
 
@@ -321,6 +339,8 @@ class StudentDataChangeRequestController extends Controller
             // Dokumen siswa (opsional, bucket student/documents sama seperti Admin)
             'doc_kk', 'doc_akta', 'doc_ijazah', 'doc_lainnya',
             'foto',
+            // PIN login (tetap diverifikasi PIN saat ini saat pengajuan)
+            'pin',
         ];
 
         foreach (['ayah', 'ibu', 'wali'] as $p) {

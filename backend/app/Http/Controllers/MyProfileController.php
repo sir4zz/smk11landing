@@ -166,7 +166,12 @@ class MyProfileController extends Controller
             'new_password' => ['required', 'string'],
         ]);
 
-        $minLength = $user->profileRecord?->role === 'student' ? 4 : 6;
+        // Siswa mengganti PIN lewat pengajuan perubahan data (verifikasi admin).
+        if ($user->profileRecord?->role === 'student') {
+            return $this->fail('Siswa mengganti PIN melalui "Ajukan Perubahan Data" di Profil Saya, menunggu verifikasi admin.');
+        }
+
+        $minLength = 6;
 
         if (mb_strlen($data['new_password']) < $minLength) {
             return $this->fail('Password baru minimal '.$minLength.' karakter.');

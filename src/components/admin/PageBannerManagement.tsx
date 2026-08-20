@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { FormEvent } from 'react';
 import { Image, Loader2, Pencil, Plus, Save, Trash2, X } from 'lucide-react';
 import type { PageBanner } from '../../lib/content-types';
 import { pageBannerApi, resolveImageUrl } from '../../lib/api';

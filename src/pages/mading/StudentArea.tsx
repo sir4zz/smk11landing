@@ -809,7 +809,7 @@ function ProfileTab({ profile }: { profile: StudentProfile | null }) {
           </button>
         </div>
 
-        <ChangePinCard />
+        <ChangePinCard pending={pending} />
       </div>
 
       {/* Change request wizard */}
@@ -945,7 +945,14 @@ function profileFieldLabel(key: string): string {
   if (key === 'foto') return 'Foto Siswa';
   const doc = STUDENT_DOCS.find((d) => d.key === key);
   if (doc) return doc.label;
+  if (key === 'pin') return 'PIN Login';
   return key;
+}
+
+function formatChangeValue(key: string, val: unknown): string {
+  if (val === null || val === undefined || val === '') return '-';
+  if (key === 'pin') return '••••';
+  return String(val);
 }
 
 function PendingBanner({ request, cancelling, onCancel, onDetail }: { request: StudentChangeRequestRow; cancelling: boolean; onCancel: () => void; onDetail: () => void }) {
@@ -966,7 +973,7 @@ function PendingBanner({ request, cancelling, onCancel, onDetail }: { request: S
       <ul className="mt-3 space-y-1 text-sm">
         {keys.slice(0, 5).map((key) => (
           <li key={key} className="text-[#5B7088]">
-            <span className="font-semibold text-[#1B2A4A]">{profileFieldLabel(key)}</span>: {String(request.old_data[key] ?? '-')} → <span className="font-semibold text-[#866D2C]">{String(request.proposed_data[key] ?? '-')}</span>
+            <span className="font-semibold text-[#1B2A4A]">{profileFieldLabel(key)}</span>: {formatChangeValue(key, request.old_data[key])} → <span className="font-semibold text-[#866D2C]">{formatChangeValue(key, request.proposed_data[key])}</span>
           </li>
         ))}
         {keys.length > 5 && <li className="text-xs text-[#5B7088]">… dan {keys.length - 5} perubahan lainnya</li>}
@@ -1042,8 +1049,8 @@ function RequestDetailModal({ request, onClose }: { request: StudentChangeReques
               {keys.map((key) => (
                 <tr key={key} className="border-t border-[#1B2A4A]/10">
                   <td className="p-3 font-medium text-[#5B7088]">{profileFieldLabel(key)}</td>
-                  <td className="p-3 text-[#1B2A4A]">{request.old_data[key] === null || request.old_data[key] === undefined || request.old_data[key] === '' ? '-' : String(request.old_data[key])}</td>
-                  <td className="p-3 font-semibold text-green-700">{request.proposed_data[key] === null || request.proposed_data[key] === undefined || request.proposed_data[key] === '' ? '-' : String(request.proposed_data[key])}</td>
+                  <td className="p-3 text-[#1B2A4A]">{formatChangeValue(key, request.old_data[key])}</td>
+                  <td className="p-3 font-semibold text-green-700">{formatChangeValue(key, request.proposed_data[key])}</td>
                 </tr>
               ))}
             </tbody>
@@ -1058,7 +1065,7 @@ function RequestDetailModal({ request, onClose }: { request: StudentChangeReques
   );
 }
 
-function ChangePinCard() {
+function ChangePinCard({ pending }: { pending: StudentChangeRequestRow | null }) {
   const [current, setCurrent] = useState('');
   const [next, setNext] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -1066,42 +1073,49 @@ function ChangePinCard() {
   const [msg, setMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
 
   const submit = async () => {
+    let err: string | null = null;
+    if (!/^\d{4}$/.test(next)) err = 'PIN baru harus 4 digit angka.';
+    else if (next !== confirm) err = 'Konfirmasi PIN baru tidak cocok.';
+    else if (!/^\d{4}$/.test(current)) err = 'PIN saat ini harus 4 digit angka.';
+    if (err) {
+      setMsg({ type: 'err', text: err });
+      return;
+    }
     setSaving(true);
     setMsg(null);
-    if (next.length < 4) {
-      setMsg({ type: 'err', text: 'PIN baru minimal 4 karakter.' });
-      setSaving(false);
-      return;
-    }
-    if (next !== confirm) {
-      setMsg({ type: 'err', text: 'Konfirmasi PIN baru tidak cocok.' });
-      setSaving(false);
-      return;
-    }
-    const { error } = await myProfileApi.updatePassword({ current_password: current, new_password: next });
+    const { error } = await studentDataApi.submitChangeRequest({ current_pin: current, pin: next });
     setSaving(false);
     if (error) {
-      setMsg({ type: 'err', text: error.message ?? 'Gagal mengubah PIN.' });
+      setMsg({ type: 'err', text: error.message ?? 'Gagal mengirim pengajuan.' });
       return;
     }
     setCurrent('');
     setNext('');
     setConfirm('');
-    setMsg({ type: 'ok', text: 'PIN berhasil diubah.' });
+    setMsg({ type: 'ok', text: 'Pengajuan ganti PIN berhasil dikirim dan menunggu verifikasi admin.' });
   };
 
   return (
     <div className="rounded-2xl bg-white p-6 shadow-sm">
       <h3 className="mb-4 font-bold text-[#1B2A4A]">Ubah PIN Login</h3>
+      <p className="mb-4 rounded-lg bg-[#FAF6F0] p-3 text-xs text-[#5B7088]">
+        PIN baru hanya aktif setelah pengajuan disetujui admin. Selama menunggu verifikasi, PIN lama tetap berlaku.
+      </p>
       {msg && <p className={`mb-4 rounded-lg p-3 text-sm ${msg.type === 'ok' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>{msg.text}</p>}
       <div className="grid gap-4 sm:grid-cols-3">
         <Field label="PIN Saat Ini" type="password" value={current} onChange={(e) => setCurrent(e.target.value)} />
         <Field label="PIN Baru" type="password" value={next} onChange={(e) => setNext(e.target.value)} />
         <Field label="Ulangi PIN Baru" type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
       </div>
-      <button onClick={submit} disabled={saving} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#1B2A4A] px-5 py-2.5 font-bold text-white disabled:opacity-60">
-        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />} Ganti PIN
+      <button
+        onClick={submit}
+        disabled={saving || !!pending}
+        className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#1B2A4A] px-5 py-2.5 font-bold text-white disabled:opacity-50"
+        title={pending ? 'Tunggu pengajuan yang sedang menunggu verifikasi' : undefined}
+      >
+        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />} Ajukan Ganti PIN
       </button>
+      {pending && <p className="mt-3 text-xs font-medium text-[#866D2C]">Ada pengajuan yang sedang menunggu verifikasi admin.</p>}
     </div>
   );
 }
