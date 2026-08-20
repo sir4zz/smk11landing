@@ -49,7 +49,7 @@ class UploadController extends Controller
                 'bucket' => $bucket,
                 'key' => $key,
                 'size' => Storage::disk('public')->size($key),
-                'mimeType' => $imagePath ? 'image/jpeg' : $file->getMimeType(),
+                'mimeType' => $imagePath ? $imagePath->getMimeType() : $file->getMimeType(),
                 'uploadedAt' => now()->toIso8601String(),
                 'url' => $url,
             ],
@@ -61,8 +61,9 @@ class UploadController extends Controller
     {
         $maxDim = 1600;
         $quality = 82;
+        $ext = strtolower($file->getClientOriginalExtension());
 
-        $src = match (strtolower($file->getClientOriginalExtension())) {
+        $src = match ($ext) {
             'png' => @imagecreatefrompng($file->getPathname()),
             'gif' => @imagecreatefromgif($file->getPathname()),
             'webp' => @imagecreatefromwebp($file->getPathname()),
@@ -78,13 +79,32 @@ class UploadController extends Controller
         $nw = (int) round($w * $ratio);
         $nh = (int) round($h * $ratio);
         $dst = imagecreatetruecolor(max(1, $nw), max(1, $nh));
+
+        // Preserve transparency for PNG and GIF
+        if (in_array($ext, ['png', 'gif'], true)) {
+            imagealphablending($dst, false);
+            imagesavealpha($dst, true);
+            $transparent = imagecolorallocatealpha($dst, 0, 0, 0, 127);
+            imagefilledrectangle($dst, 0, 0, $nw, $nh, $transparent);
+        }
+
         imagecopyresampled($dst, $src, 0, 0, 0, 0, $nw, $nh, $w, $h);
 
         $tmp = tempnam(sys_get_temp_dir(), 'img');
         $savedSize = null;
-        if (imagejpeg($dst, $tmp, $quality)) {
+
+        // Save in original format to preserve transparency
+        $saved = match ($ext) {
+            'png' => imagepng($dst, $tmp, 6), // compression level 6
+            'gif' => imagegif($dst, $tmp),
+            'webp' => imagewebp($dst, $tmp, $quality),
+            default => imagejpeg($dst, $tmp, $quality),
+        };
+
+        if ($saved) {
             $savedSize = filesize($tmp);
         }
+
         imagedestroy($src);
         imagedestroy($dst);
 
@@ -97,10 +117,17 @@ class UploadController extends Controller
             return null;
         }
 
+        $outputMime = match ($ext) {
+            'png' => 'image/png',
+            'gif' => 'image/gif',
+            'webp' => 'image/webp',
+            default => 'image/jpeg',
+        };
+
         $optimized = new \Symfony\Component\HttpFoundation\File\UploadedFile(
             $tmp,
-            preg_replace('/\.(png|gif|webp)$/i', '.jpg', $file->getClientOriginalName()),
-            'image/jpeg',
+            $file->getClientOriginalName(), // keep original filename + extension
+            $outputMime,
             null,
             true
         );
