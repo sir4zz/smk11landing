@@ -291,6 +291,10 @@ export function toDateString(value: unknown): string {
     const [d, m, y] = raw.split('/');
     return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
   }
+  if (/^\d{1,2}-\d{1,2}-\d{4}$/.test(raw)) {
+    const [d, m, y] = raw.split('-');
+    return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+  }
   if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10);
   // Excel / Google Sheets serial number: days since 1899-12-30
   if (/^\d+(\.\d+)?$/.test(raw)) {
@@ -315,4 +319,115 @@ export function formatRupiah(raw: unknown): string {
   const num = Number(str.replace(/[^\d.-]/g, ''));
   if (Number.isNaN(num)) return str;
   return `Rp${num.toLocaleString('id-ID')}`;
+}
+
+// ==== DATA MASTER DAPODIK ====
+// Nama kolom header DATA MASTER DAPODIK (huruf kecil) -> key baris hasil import.
+const DAPODIK_COLUMN_MAP: Record<string, string> = {
+  nisn: 'nisn',
+  nis: 'nis',
+  'nama siswa': 'name',
+  'tempat lahir': 'place_of_birth',
+  'tanggal lahir': 'date_of_birth',
+  'jenis kelamin': 'gender',
+  agama: 'religion',
+  'anak ke': 'anak_ke',
+  'jumlah saudara': 'jml_saudara_kandung',
+  'no hp': 'phone',
+  'jarak sekolah (km)': 'jarak_sekolah',
+  'jarak sekolah': 'jarak_sekolah',
+  'pilihan jurusan 1': 'major',
+  'status ayah': 'ayah_status_hidup',
+  'nama ayah': 'ayah_nama',
+  'tanggal lahir ayah': 'ayah_tanggal_lahir',
+  'pendidikan ayah': 'ayah_pendidikan',
+  'pekerjaan ayah': 'ayah_pekerjaan',
+  'penghasilan ayah': 'ayah_penghasilan',
+  'no hp ayah': 'ayah_no_telp',
+  'status ibu': 'ibu_status_hidup',
+  'nama ibu': 'ibu_nama',
+  'tanggal lahir ibu': 'ibu_tanggal_lahir',
+  'pendidikan ibu': 'ibu_pendidikan',
+  'pekerjaan ibu': 'ibu_pekerjaan',
+  'penghasilan ibu': 'ibu_penghasilan',
+  'no hp ibu': 'ibu_no_telp',
+};
+
+const DAPODIK_DATE_COLUMNS = new Set(['tanggal lahir', 'tanggal lahir ayah', 'tanggal lahir ibu']);
+const DAPODIK_ADDRESS_COLUMNS = ['alamat', 'kecamatan', 'kota', 'provinsi'];
+
+export function isDapodikHeader(row: unknown[] | undefined): boolean {
+  const cols = new Set((row ?? []).map((c) => String(c ?? '').trim().toLowerCase()));
+  return cols.has('nisn') && cols.has('nama siswa');
+}
+
+interface DapodikSheetGrid {
+  name: string;
+  grid: unknown[][];
+}
+
+/**
+ * Parse sheet DATA MASTER DAPODIK (baris pertama header, baris berikutnya data
+ * per siswa) menjadi record dengan key yang sama seperti template BIODATA.
+ * Kelas dibiarkan kosong, kewarganegaraan default "Indonesia".
+ */
+export function parseDapodikSheets(sheets: DapodikSheetGrid[]): { rows: Record<string, string>[]; errors: string[] } {
+  const rows: Record<string, string>[] = [];
+  const errors: string[] = [];
+
+  for (const { name, grid } of sheets) {
+    const header = grid[0] ?? [];
+    if (!isDapodikHeader(header)) continue;
+
+    const idx: Record<string, number> = {};
+    header.forEach((cell, i) => {
+      const col = String(cell ?? '').trim().toLowerCase();
+      if (col !== '') idx[col] = i;
+    });
+
+    const cell = (cells: unknown[], col: string): string => {
+      const i = idx[col];
+      const v = i === undefined ? undefined : (cells ?? [])[i];
+      return v === null || v === undefined ? '' : String(v).trim();
+    };
+
+    grid.slice(1).forEach((cells, i) => {
+      const record: Record<string, string> = { class: '' };
+      let hasData = false;
+
+      for (const [col, key] of Object.entries(DAPODIK_COLUMN_MAP)) {
+        const raw = cell(cells, col);
+        if (raw === '') continue;
+        hasData = true;
+        if (col === 'jenis kelamin') {
+          record[key] = normalizeGender(raw);
+        } else if (DAPODIK_DATE_COLUMNS.has(col)) {
+          record[key] = toDateString(raw);
+        } else if (col.startsWith('jarak sekolah')) {
+          const match = raw.match(/^\d+(\.\d+)?/);
+          if (!match) continue;
+          const meters = parseFloat(match[0]);
+          const km = meters >= 1000 ? meters / 1000 : meters;
+          record[key] = String(Math.round(km * 100) / 100);
+        } else {
+          record[key] = raw;
+        }
+      }
+
+      if (!hasData) return;
+      const nisn = record.nisn ?? '';
+      if (nisn === '') {
+        errors.push(`Sheet "${name}" baris ${i + 2}: NISN kosong.`);
+        return;
+      }
+
+      record.kewarganegaraan = 'Indonesia';
+      const address = DAPODIK_ADDRESS_COLUMNS.map((c) => cell(cells, c)).filter(Boolean).join(', ');
+      if (address !== '') record.address = address;
+
+      rows.push(record);
+    });
+  }
+
+  return { rows, errors };
 }

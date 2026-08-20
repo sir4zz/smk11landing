@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { AlertTriangle, CheckCircle2, Download, FileSpreadsheet, Loader2, Upload, X } from 'lucide-react';
 import { accountsApi } from '../../lib/api';
-import { TEMPLATE_SHEETS, TEMPLATE_HEADER_ROWS, DATE_KEYS, normalizeClass, normalizeGender, toDateString } from '../../lib/studentBiodata';
+import { TEMPLATE_SHEETS, TEMPLATE_HEADER_ROWS, DATE_KEYS, isDapodikHeader, parseDapodikSheets, normalizeClass, normalizeGender, toDateString } from '../../lib/studentBiodata';
 
 interface ImportResult {
   imported: number;
@@ -22,7 +22,7 @@ const PREVIEW_KEYS: { key: string; label: string }[] = [
   { key: 'religion', label: 'Agama' },
 ];
 
-const TEMPLATE_URL = `${(import.meta.env.BASE_URL ?? '/').replace(/\/$/, '')}/templates/template_biodata_siswa.xlsx`;
+const TEMPLATE_URL = `${(import.meta.env.BASE_URL ?? '/').replace(/\/$/, '')}/templates/template_biodata_dapodik.xls`;
 
 export default function StudentImportModal({ onClose, onImported }: { onClose: () => void; onImported: () => void }) {
   const [spreadsheet, setSpreadsheet] = useState<File | null>(null);
@@ -41,8 +41,24 @@ export default function StudentImportModal({ onClose, onImported }: { onClose: (
       const XLSX = await import('xlsx');
       const wb = XLSX.read(await file.arrayBuffer(), { type: 'array', cellDates: true });
 
-      // Baca semua sheet data (skip "Petunjuk Penggunaan"), gabungkan per NISN
-      // menjadi satu record per siswa. NISN di tiap sheet harus konsisten.
+      const sheetGrids = wb.SheetNames.map((name) => ({
+        name,
+        grid: XLSX.utils.sheet_to_json<unknown[]>(wb.Sheets[name], { header: 1, defval: '' }),
+      }));
+
+      // Format DATA MASTER DAPODIK: beberapa sheet per jurusan, baris pertama header.
+      if (sheetGrids.some((s) => isDapodikHeader(s.grid[0]))) {
+        const { rows: dapodikRows, errors: dapodikErrors } = parseDapodikSheets(sheetGrids);
+        if (dapodikErrors.length > 0) {
+          setError(dapodikErrors.slice(0, 8).join('\n') + (dapodikErrors.length > 8 ? `\n...dan ${dapodikErrors.length - 8} lainnya` : ''));
+        } else if (dapodikRows.length === 0) {
+          setError('File tidak berisi data pada kolom template. Isi data dimulai dari baris ke-2 di setiap sheet jurusan.');
+        }
+        setRows(dapodikRows);
+        return;
+      }
+
+      // Format template BIODATA lama (8 sheet, 3 baris header), gabungkan per NISN.
       const mergedByNisn = new Map<string, Record<string, string>>();
       const mergeErrors: string[] = [];
 
@@ -98,7 +114,7 @@ export default function StudentImportModal({ onClose, onImported }: { onClose: (
   const downloadTemplate = () => {
     const a = document.createElement('a');
     a.href = TEMPLATE_URL;
-    a.download = 'BIODATA PESERTA DIDIK BARU.xlsx';
+    a.download = 'DATA MASTER DAPODIK_2026.xls';
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -130,7 +146,7 @@ export default function StudentImportModal({ onClose, onImported }: { onClose: (
         <div className="flex items-start justify-between border-b border-[#1B2A4A]/10 p-6">
           <div>
             <h2 className="text-xl font-bold text-[#1B2A4A]">Import Siswa</h2>
-            <p className="mt-1 text-sm text-[#5B7088]">Import data BIODATA siswa sekaligus akun login (NISN + PIN) dari file Excel (.xlsx).</p>
+            <p className="mt-1 text-sm text-[#5B7088]">Import data BIODATA siswa sekaligus akun login (NISN + PIN) dari file Excel DATA MASTER DAPODIK (.xls / .xlsx).</p>
           </div>
           <button onClick={onClose} aria-label="Tutup"><X /></button>
         </div>
@@ -139,12 +155,11 @@ export default function StudentImportModal({ onClose, onImported }: { onClose: (
           <div className="rounded-xl bg-[#FAF6F0] p-4 text-sm text-[#5B7088]">
             <p className="font-semibold text-[#1B2A4A]">Ketentuan</p>
             <ul className="mt-1 list-disc space-y-0.5 pl-5">
-              <li>Gunakan <strong>template asli BIODATA PESERTA DIDIK BARU</strong> yang berisi 8 sheet data (Peserta Didik, Tempat Tinggal, Kesehatan, Pendidikan, Ayah, Ibu, Wali, Data Tambahan) + sheet <strong>Petunjuk Penggunaan</strong>.</li>
-              <li>Isi data dimulai pada <strong>baris ke-4</strong> di setiap sheet (3 baris awal adalah judul, nama kolom, dan baris contoh — otomatis dilewati).</li>
-              <li>Kolom <strong>NISN</strong> wajib diisi di <strong>setiap sheet</strong> sebagai kunci penggabungan dan harus sama di semua sheet. <strong>Nama Lengkap</strong> diisi di sheet <strong>01 - Peserta Didik</strong>.</li>
-              <li>Pastikan kolom NISN &amp; NIS berformat teks agar angka nol di depan tidak hilang.</li>
-              <li><strong>Kelas</strong> hanya boleh <code>X</code>, <code>XI</code>, atau <code>XII</code> (tingkat kelas saja, bukan gabungan jurusan). <strong>Jurusan</strong> diisi terpisah pada kolom JURUSAN.</li>
-              <li><strong>Jenis Kelamin</strong> diisi <code>L</code> atau <code>P</code> (Laki-laki/Perempuan diterima juga). <strong>Tanggal</strong> menerima format <code>DD/MM/YYYY</code>, <code>YYYY-MM-DD</code>, atau serial Excel.</li>
+              <li>Gunakan <strong>template DATA MASTER DAPODIK</strong> yang berisi sheet per jurusan (DKV, DPB, TITL, TKJ, TSM, MP) + sheet <strong>KELAS</strong> &amp; <strong>NIS</strong>.</li>
+              <li>Baris ke-1 tiap sheet jurusan adalah judul kolom (otomatis dilewati); isi data siswa mulai <strong>baris ke-2</strong>.</li>
+              <li>Kolom <strong>NISN</strong> wajib diisi dan dianggap sebagai kunci penggabungan akun (NISN + PIN). <strong>Kelas dibiarkan kosong</strong> dan diisi kemudian melalui halaman Data Siswa.</li>
+              <li>Pastikan NISN &amp; NIS berformat teks agar angka nol di depan tidak hilang.</li>
+              <li><strong>Jenis Kelamin</strong> menerima <code>L</code>/<code>P</code> maupun <code>Laki-laki</code>/<code>Perempuan</code>. <strong>Tanggal</strong> menerima format <code>DD/MM/YYYY</code>, <code>DD-MM-YYYY</code>, atau serial Excel.</li>
               <li>PIN login siswa dibuat otomatis (4 digit terakhir NISN). Baris dengan NISN/NIS duplikat atau tidak valid akan dilewati dan dicatat dalam laporan.</li>
             </ul>
           </div>
@@ -152,7 +167,7 @@ export default function StudentImportModal({ onClose, onImported }: { onClose: (
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-[#FAF6F0] p-4">
             <div>
               <p className="font-semibold text-[#1B2A4A]">1. Unduh template</p>
-              <p className="text-sm text-[#5B7088]">Template dipecah per seksi menjadi 8 sheet. Isi NISN yang sama di tiap sheet.</p>
+              <p className="text-sm text-[#5B7088]">Template format DATA MASTER DAPODIK: sheet per jurusan, isi NISN di tiap baris.</p>
             </div>
             <button onClick={downloadTemplate} className="inline-flex items-center gap-2 rounded-lg bg-[#1B2A4A] px-4 py-2 text-sm font-bold text-white">
               <Download size={16} /> Unduh Template
@@ -164,10 +179,10 @@ export default function StudentImportModal({ onClose, onImported }: { onClose: (
             <label className="mt-2 flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#1B2A4A]/20 bg-[#FAF6F0] p-6 text-center transition-colors hover:border-[#C8A951]">
               <FileSpreadsheet className="h-8 w-8 text-[#866D2C]" />
               <span className="mt-2 text-sm font-semibold text-[#1B2A4A]">{spreadsheet ? spreadsheet.name : 'Klik untuk memilih file'}</span>
-              <span className="text-xs text-[#5B7088]">Format .xlsx</span>
+              <span className="text-xs text-[#5B7088]">Format .xls / .xlsx</span>
               <input
                 type="file"
-                accept=".xlsx"
+                accept=".xls,.xlsx"
                 className="hidden"
                 onChange={(event) => {
                   const file = event.target.files?.[0];

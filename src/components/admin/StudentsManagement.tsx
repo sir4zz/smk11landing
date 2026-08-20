@@ -1,7 +1,7 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import type { ChangeEvent, FormEvent, KeyboardEvent } from 'react';
 import { ChevronRight, Plus, Trash2, X, Loader2, KeyRound, Search, UserRound, Upload, Pencil, Eye, ArrowLeft, Download } from 'lucide-react';
-import { accountsApi, resolveImageUrl } from '../../lib/api';
+import { accountsApi, downloadApiFile, resolveImageUrl } from '../../lib/api';
 import StudentImportModal from './StudentImportModal';
 import ImageField from './ImageField';
 import { BIODATA_FIELDS, BIODATA_SECTIONS, emptyBiodata, formatRupiah, isRupiahField, isValidClass, normalizeClass, normalizeGender } from '../../lib/studentBiodata';
@@ -332,6 +332,7 @@ export default function StudentsManagement() {
             student={detailStudent}
             onBack={() => setDetailId(null)}
             onEdit={() => openEdit(detailStudent)}
+            flash={flash}
           />
         ) : (
           <div className="rounded-xl bg-white p-8 text-center text-[#5B7088] shadow-sm">
@@ -570,7 +571,7 @@ function stepShortLabel(title: string): string {
   return title.replace(/^[A-J]\.\s*/, '');
 }
 
-function StudentDetailView({ student, onBack, onEdit }: { student: StudentRow; onBack: () => void; onEdit: () => void }) {
+function StudentDetailView({ student, onBack, onEdit, flash }: { student: StudentRow; onBack: () => void; onEdit: () => void; flash: (type: 'ok' | 'err', text: string) => void }) {
   const achievements = Array.isArray(student.achievements) ? (student.achievements as unknown[]).filter(Boolean) : [];
   const achievementsText = achievements.map(String).join(', ');
   const fotoSrc = resolveImageUrl(student.foto);
@@ -613,7 +614,10 @@ function StudentDetailView({ student, onBack, onEdit }: { student: StudentRow; o
                       )}
                     </div>
                     {fotoSrc && (
-                      <button onClick={() => downloadFile(fotoSrc, studentPhotoFileName(student))} className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#1B2A4A] px-3 py-2 text-sm font-bold text-white hover:opacity-90">
+                      <button
+                        onClick={() => void downloadApiFile(String(student.foto ?? ''), studentPhotoFileName(student)).then((res) => { if (!res.ok) flash('err', res.message); })}
+                        className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#1B2A4A] px-3 py-2 text-sm font-bold text-white hover:opacity-90"
+                      >
                         <Download size={15} /> Download Foto
                       </button>
                     )}
@@ -645,9 +649,12 @@ function StudentDetailView({ student, onBack, onEdit }: { student: StudentRow; o
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#1B2A4A]/10 bg-[#FAF6F0]/70 px-4 py-3">
                     <p className="font-bold text-[#1B2A4A]">{doc.label}</p>
                     {docSrc && (
-                      <button onClick={() => downloadFile(docSrc, docFileName(doc, student))} className="inline-flex items-center gap-1.5 rounded-lg bg-[#1B2A4A] px-3 py-1.5 text-xs font-bold text-white hover:opacity-90">
-                        <Download size={14} /> Download
-                      </button>
+                      <button
+                          onClick={() => void downloadApiFile(String(student[doc.key] ?? ''), docFileName(doc, student)).then((res) => { if (!res.ok) flash('err', res.message); })}
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-[#1B2A4A] px-3 py-1.5 text-xs font-bold text-white hover:opacity-90"
+                        >
+                          <Download size={14} /> Download
+                        </button>
                     )}
                   </div>
                   {docSrc ? (
@@ -754,22 +761,4 @@ function docFileName(doc: { key: string }, student: StudentRow): string {
 
 function studentPhotoFileName(student: StudentRow): string {
   return fileBase('Foto', student.name, String(student.nisn ?? ''), extFromUrl(String(student.foto ?? '')));
-}
-
-async function downloadFile(href: string, filename: string): Promise<void> {
-  try {
-    const res = await fetch(href, { credentials: 'include' });
-    if (!res.ok) throw new Error('Gagal mengunduh file.');
-    const blob = await res.blob();
-    const objectUrl = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = objectUrl;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(objectUrl);
-  } catch {
-    window.open(href, '_blank', 'noopener,noreferrer');
-  }
 }
