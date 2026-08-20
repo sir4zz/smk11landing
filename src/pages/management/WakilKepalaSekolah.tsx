@@ -3,9 +3,11 @@ import { Link } from 'react-router-dom';
 import PageHero from '../../components/ui/PageHero';
 import SectionHeading from '../../components/ui/SectionHeading';
 import { publicProfileApi, type LeadershipEntry } from '../../lib/api';
+import { usePageBanner } from '../../lib/usePageBanner';
 import { PersonAvatar, EmptyState, formatLeadershipTitle } from './ManagementShared';
 
 const WakilKepalaSekolah: React.FC = () => {
+  const { backgroundImage } = usePageBanner('manajemen_wakasek');
   const [vicePrincipals, setVicePrincipals] = useState<LeadershipEntry[]>([]);
   useEffect(() => {
     publicProfileApi.leadership().then(({ data }) => { if (data) setVicePrincipals(data.vice_principals); });
@@ -17,6 +19,7 @@ const WakilKepalaSekolah: React.FC = () => {
         title="Wakil Kepala Sekolah"
         subtitle="Jajaran wakil kepala sekolah beserta bidang tugasnya di SMKN 11 Kabupaten Tangerang"
         breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Manajemen', href: '/manajemen' }, { label: 'Wakil Kepala Sekolah' }]}
+        backgroundImage={backgroundImage}
       />
 
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">

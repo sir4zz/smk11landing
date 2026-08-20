@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
-import { Plus, Pencil, Trash2, X, Save, Loader2, Search, ChevronLeft, ChevronRight, Building2, Briefcase, Home, Contact, Phone, Mail, MapPin, Clock } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Save, Loader2, Search, ChevronLeft, ChevronRight, Building2, Briefcase, Home, Contact, Phone, Mail, MapPin, Clock, Image } from 'lucide-react';
 import { fetchPublicContent, type BkkHomeContent, type BkkContactContent } from '../../lib/api';
 import {
   jobAdminApi,
@@ -17,6 +17,7 @@ import {
 import { backendApi } from '../../lib/api';
 import { can } from '../../lib/permissions';
 import ImageField from './ImageField';
+import BannerTab from './BannerTab';
 
 interface Props {
   permissions: string[];
@@ -34,13 +35,14 @@ const statusStyles: Record<string, string> = {
 const inputClass = 'mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal';
 
 export default function BkkManagement({ permissions, isAdmin }: Props) {
-  const [tab, setTab] = useState<'jobs' | 'partners' | 'home' | 'contact'>('jobs');
+  const [tab, setTab] = useState<'jobs' | 'partners' | 'home' | 'contact' | 'banner'>('jobs');
 
   const tabs = [
     { key: 'jobs' as const, label: 'Lowongan Kerja', icon: Briefcase },
     { key: 'partners' as const, label: 'Perusahaan Partner', icon: Building2 },
     { key: 'home' as const, label: 'Beranda BKK', icon: Home, adminOnly: true },
     { key: 'contact' as const, label: 'Kontak BKK', icon: Contact, adminOnly: true },
+    { key: 'banner' as const, label: 'Banner BKK', icon: Image },
   ].filter((t) => !t.adminOnly || isAdmin);
 
   return (
@@ -66,6 +68,7 @@ export default function BkkManagement({ permissions, isAdmin }: Props) {
       {tab === 'partners' && <PartnersTab permissions={permissions} />}
       {tab === 'home' && isAdmin && <HomeTab />}
       {tab === 'contact' && isAdmin && <ContactTab />}
+      {tab === 'banner' && <BannerTab pageKey="bkk_kelulusan" label="Banner BKK Kelulusan" />}
     </div>
   );
 }

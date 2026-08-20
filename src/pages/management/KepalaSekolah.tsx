@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import PageHero from '../../components/ui/PageHero';
 import SectionHeading from '../../components/ui/SectionHeading';
 import { publicProfileApi, type LeadershipEntry } from '../../lib/api';
+import { usePageBanner } from '../../lib/usePageBanner';
 import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { PersonAvatar, EmptyState, formatLeadershipTitle } from './ManagementShared';
 
@@ -15,6 +16,7 @@ const responsibilities = [
 ];
 
 const KepalaSekolah: React.FC = () => {
+  const { backgroundImage } = usePageBanner('manajemen_kepsek');
   const [principal, setPrincipal] = useState<LeadershipEntry | null>(null);
   useEffect(() => {
     publicProfileApi.leadership().then(({ data }) => { if (data) setPrincipal(data.principal); });
@@ -23,7 +25,7 @@ const KepalaSekolah: React.FC = () => {
   if (!principal) {
     return (
       <div className="min-h-screen bg-[#FAF6F0]">
-        <PageHero title="Kepala Sekolah" subtitle="Profil pimpinan SMKN 11 Kabupaten Tangerang" breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Manajemen', href: '/manajemen' }, { label: 'Kepala Sekolah' }]} />
+        <PageHero title="Kepala Sekolah" subtitle="Profil pimpinan SMKN 11 Kabupaten Tangerang" breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Manajemen', href: '/manajemen' }, { label: 'Kepala Sekolah' }]} backgroundImage={backgroundImage} />
         <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <EmptyState message="Data kepala sekolah belum tersedia." />
         </section>
@@ -37,6 +39,7 @@ const KepalaSekolah: React.FC = () => {
         title="Kepala Sekolah"
         subtitle="Profil pimpinan SMKN 11 Kabupaten Tangerang"
         breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Manajemen', href: '/manajemen' }, { label: 'Kepala Sekolah' }]}
+        backgroundImage={backgroundImage}
       />
 
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">

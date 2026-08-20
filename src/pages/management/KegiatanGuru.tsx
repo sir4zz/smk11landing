@@ -2,11 +2,13 @@ import React, { useEffect, useState } from 'react';
 import PageHero from '../../components/ui/PageHero';
 import SectionHeading from '../../components/ui/SectionHeading';
 import type { TeacherActivity } from '../../lib/content-types';
+import { usePageBanner } from '../../lib/usePageBanner';
 import { fetchPublicContent, resolveImageUrl } from '../../lib/api';
 import { Calendar, CalendarDays } from 'lucide-react';
 import { EmptyState, formatDate } from './ManagementShared';
 
 const KegiatanGuru: React.FC = () => {
+  const { backgroundImage } = usePageBanner('manajemen_kegiatan_guru');
   const [items, setItems] = useState<TeacherActivity[]>([]);
   const [filterCategory, setFilterCategory] = useState<string>('Semua');
   useEffect(() => {
@@ -23,6 +25,7 @@ const KegiatanGuru: React.FC = () => {
         title="Kegiatan Guru"
         subtitle="Agenda dan kegiatan para pendidik SMKN 11 Kabupaten Tangerang"
         breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Manajemen', href: '/manajemen' }, { label: 'Kegiatan Guru' }]}
+        backgroundImage={backgroundImage}
       />
 
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">

@@ -80,3 +80,15 @@ export interface SpmbPoster {
   published_at?: string | null; is_featured?: boolean; created_by?: string | null; creator_name?: string | null;
   created_at?: string; updated_at?: string;
 }
+
+export interface PageBanner {
+  id?: string;
+  page_key: string;
+  title: string;
+  subtitle: string;
+  image: string;
+  is_active: boolean;
+  sort_order: number;
+  created_at?: string;
+  updated_at?: string;
+}
