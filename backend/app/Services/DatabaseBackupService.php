@@ -10,8 +10,9 @@ use RuntimeException;
 use ZipArchive;
 
 /**
- * Full system backup service: SQL dump + media files packed as .zip.
+ * Content backup service: SQL dump (content only) + media files packed as .zip.
  * Backups are stored under storage/app/private/backups as .zip files.
+ * System tables (users, roles, permissions, sessions, etc.) are excluded.
  */
 class DatabaseBackupService
 {
@@ -30,6 +31,26 @@ class DatabaseBackupService
         'photos',
         'gallery',
         'spmb',
+    ];
+
+    /**
+     * System tables to EXCLUDE from backup.
+     * Only content data is backed up — not user accounts, roles, permissions, etc.
+     */
+    private const EXCLUDED_TABLES = [
+        'users',
+        'password_reset_tokens',
+        'sessions',
+        'cache',
+        'cache_locks',
+        'jobs',
+        'job_batches',
+        'failed_jobs',
+        'personal_access_tokens',
+        'roles',
+        'permissions',
+        'role_permissions',
+        'profiles',
     ];
 
     public function list(): array
@@ -81,10 +102,12 @@ class DatabaseBackupService
 
             // 3. Write manifest
             $manifest = [
-                'version' => '2.0',
+                'version' => '3.0',
+                'type' => 'content_only',
                 'created_at' => now()->toDateTimeString(),
                 'database' => DB::connection()->getDatabaseName(),
                 'media_directories' => self::MEDIA_DIRECTORIES,
+                'excluded_tables' => self::EXCLUDED_TABLES,
                 'php_version' => PHP_VERSION,
                 'laravel_version' => app()->version(),
                 'tables' => $this->tables(),
@@ -205,10 +228,11 @@ class DatabaseBackupService
 
         $lines = [];
         $lines[] = '-- ============================================'.PHP_EOL;
-        $lines[] = '-- SMKN 11 Website - Full System Backup'.PHP_EOL;
+        $lines[] = '-- SMKN 11 Website - Content Backup'.PHP_EOL;
         $lines[] = '-- Dibuat: '.now()->toDateTimeString().PHP_EOL;
         $lines[] = '-- Database: '.DB::connection()->getDatabaseName().PHP_EOL;
-        $lines[] = '-- Tipe: Full Backup (Database + Media + Konfigurasi)'.PHP_EOL;
+        $lines[] = '-- Tipe: Content Backup (Konten + Media)'.PHP_EOL;
+        $lines[] = '-- Catatan: Tidak termasuk user, role, permission, sesi'.PHP_EOL;
         $lines[] = '-- ============================================'.PHP_EOL;
         $lines[] = PHP_EOL;
         $lines[] = 'SET FOREIGN_KEY_CHECKS = 0;'.PHP_EOL;
@@ -314,7 +338,9 @@ class DatabaseBackupService
             $tables[] = (string) ($values[0] ?? '');
         }
 
-        return array_values(array_filter($tables));
+        return array_values(array_filter($tables, function (string $table) {
+            return ! in_array($table, self::EXCLUDED_TABLES, true);
+        }));
     }
 
     private function quoteIdentifier(string $identifier): string

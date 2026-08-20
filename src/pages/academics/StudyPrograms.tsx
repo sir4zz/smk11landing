@@ -6,8 +6,10 @@ import { SectionHeading } from '../../components/ui/SectionHeading';
 import { Card } from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import { fetchPublicContent, resolveImageUrl } from '../../lib/api';
+import { usePageBanner } from '../../lib/usePageBanner';
 
 const StudyPrograms: React.FC = () => {
+  const { backgroundImage } = usePageBanner('akademik_program_keahlian');
   const [items, setItems] = React.useState<any[]>([]);
   React.useEffect(() => { fetchPublicContent<any[]>('programs').then(setItems); }, []);
   return (
@@ -15,7 +17,7 @@ const StudyPrograms: React.FC = () => {
       <PageHero 
         title="Program Keahlian" 
         subtitle="Pilihan program keahlian unggulan untuk masa depan cemerlang" 
-        backgroundImage="https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=1600&q=80"
+        backgroundImage={backgroundImage}
       />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-20">

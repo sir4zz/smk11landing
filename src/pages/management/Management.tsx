@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import PageHero from '../../components/ui/PageHero';
 import SectionHeading from '../../components/ui/SectionHeading';
 import type { TeacherActivity } from '../../lib/content-types';
+import { usePageBanner } from '../../lib/usePageBanner';
 import { fetchPublicContent, publicProfileApi, resolveImageUrl, type LeadershipEntry, type PublicDirectoryEntry } from '../../lib/api';
 import { ArrowRight, Briefcase, CalendarDays, User, Users } from 'lucide-react';
 import { PersonAvatar, formatDate } from './ManagementShared';
@@ -15,6 +16,7 @@ const sections = [
 ];
 
 const Management: React.FC = () => {
+  const { backgroundImage } = usePageBanner('manajemen');
   const [principal, setPrincipal] = useState<LeadershipEntry | null>(null);
   const [activities, setActivities] = useState<TeacherActivity[]>([]);
   const [tendiks, setTendiks] = useState<PublicDirectoryEntry[]>([]);
@@ -32,6 +34,7 @@ const Management: React.FC = () => {
         title="Manajemen Sekolah"
         subtitle="Informasi tentang jajaran pimpinan, pendidik, dan tenaga kependidikan SMKN 11 Kabupaten Tangerang"
         breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Manajemen' }]}
+        backgroundImage={backgroundImage}
       />
 
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">

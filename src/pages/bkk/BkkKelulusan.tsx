@@ -3,6 +3,7 @@ import type { ChangeEvent, FormEvent } from 'react'
 import { GraduationCap, Send, CheckCircle, Loader2 } from 'lucide-react'
 import PageHero from '../../components/ui/PageHero'
 import BkkSubNav from '../../components/bkk/BkkSubNav'
+import { usePageBanner } from '../../lib/usePageBanner'
 import { fetchPublicContent, kelulusanAdminApi, type AlumniStatus } from '../../lib/api'
 
 const ALUMNI_STATUS_LABELS: Record<AlumniStatus, string> = {
@@ -15,6 +16,7 @@ const ALUMNI_STATUS_LABELS: Record<AlumniStatus, string> = {
 const inputClass = 'w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2.5 font-normal text-sm'
 
 export default function BkkKelulusan() {
+  const { backgroundImage } = usePageBanner('bkk_kelulusan')
   const [programs, setPrograms] = useState<{ name: string; shortName: string }[]>([])
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -135,6 +137,7 @@ export default function BkkKelulusan() {
             { label: 'BKK', href: '/bkk' },
             { label: 'Kelulusan Siswa', href: '/bkk/kelulusan' },
           ]}
+          backgroundImage={backgroundImage}
         />
         <BkkSubNav />
         <section className="mx-auto max-w-3xl px-4 py-16 text-center sm:px-6 lg:px-8">
@@ -168,6 +171,7 @@ export default function BkkKelulusan() {
           { label: 'BKK', href: '/bkk' },
           { label: 'Kelulusan Siswa', href: '/bkk/kelulusan' },
         ]}
+        backgroundImage={backgroundImage}
       />
       <BkkSubNav />
       <section className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">

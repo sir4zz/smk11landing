@@ -117,7 +117,7 @@ export default function DatabaseBackup() {
             <div>
               <h2 className="text-lg font-bold text-[#1B2A4A]">Backup &amp; Restore</h2>
               <p className="mt-1 max-w-xl text-sm text-[#5B7088]">
-                Buat salinan lengkap seluruh data website (database + media) atau pulihkan dari file backup.
+                Buat salinan seluruh konten website (data + media) atau pulihkan dari file backup.
               </p>
             </div>
           </div>
@@ -163,7 +163,7 @@ export default function DatabaseBackup() {
               <div>
                 <h3 className="font-bold text-[#1B2A4A]">Buat Backup Baru</h3>
                 <p className="mt-1 max-w-xl text-sm text-[#5B7088]">
-                  Backup mencakup seluruh database (termasuk role, permission, akun, konfigurasi) dan file media (foto, gambar galeri, poster SPMB). Format: <code className="rounded bg-[#FAF6F0] px-1.5 py-0.5 text-xs">.zip</code>
+                  Backup mencakup seluruh konten website: berita, program, fasilitas, staf, galeri, OSIS, ekstrakurikuler, kesemaptaan, mading, SPMB, BKK, kelulusan, SDM, dan file media (foto, gambar galeri, poster SPMB). <span className="font-semibold">Tidak termasuk</span> akun user, role, dan permission. Format: <code className="rounded bg-[#FAF6F0] px-1.5 py-0.5 text-xs">.zip</code>
                 </p>
               </div>
               <button
@@ -250,7 +250,7 @@ export default function DatabaseBackup() {
             <div className="flex-1">
               <h3 className="font-bold text-[#1B2A4A]">Restore dari Backup</h3>
               <p className="mt-1 max-w-xl text-sm text-[#5B7088]">
-                Unggah file backup <code className="rounded bg-[#FAF6F0] px-1.5 py-0.5 text-xs">.zip</code> untuk memulihkan seluruh data website (database + media).
+                Unggah file backup <code className="rounded bg-[#FAF6F0] px-1.5 py-0.5 text-xs">.zip</code> untuk memulihkan konten website (data + media). Tidak mempengaruhi akun user, role, dan permission.
               </p>
             </div>
           </div>
@@ -259,8 +259,8 @@ export default function DatabaseBackup() {
           <div className="mt-4 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
             <AlertTriangle className="mt-0.5 shrink-0 text-amber-600" size={18} />
             <div className="text-sm text-amber-800">
-              <p className="font-semibold">Peringatan: Proses ini akan menimpa data yang ada.</p>
-              <p className="mt-1">Seluruh tabel database akan di-drop dan dibuat ulang dari file backup. File media (foto, gambar galeri) juga akan ditimpa. Pastikan Anda menggunakan file backup yang valid.</p>
+              <p className="font-semibold">Peringatan: Proses ini akan menimpa data konten yang ada.</p>
+              <p className="mt-1">Seluruh tabel konten akan di-drop dan dibuat ulang dari file backup. File media (foto, gambar galeri) juga akan ditimpa. Akun user, role, dan permission tidak terpengaruh.</p>
             </div>
           </div>
 
@@ -307,8 +307,9 @@ export default function DatabaseBackup() {
               <h3 className="text-lg font-bold text-[#1B2A4A]">Konfirmasi Restore</h3>
             </div>
             <p className="mt-4 text-sm text-[#5B7088]">
-              Anda akan memulihkan data dari file <span className="font-semibold text-[#1B2A4A]">{restoreFile?.name}</span>.
-              Semua data yang ada di database dan file media saat ini <span className="font-bold text-red-600">akan ditimpa</span>.
+              Anda akan memulihkan konten dari file <span className="font-semibold text-[#1B2A4A]">{restoreFile?.name}</span>.
+              Semua data konten dan file media saat ini <span className="font-bold text-red-600">akan ditimpa</span>.
+              Akun user, role, dan permission tidak terpengaruh.
             </p>
             <p className="mt-2 text-sm font-semibold text-red-600">Tindakan ini tidak dapat dibatalkan.</p>
             <div className="mt-6 flex justify-end gap-3">

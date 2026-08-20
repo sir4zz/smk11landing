@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import PageHero from '../../components/ui/PageHero'
 import SectionHeading from '../../components/ui/SectionHeading'
+import { usePageBanner } from '../../lib/usePageBanner'
 import type { Achievement } from '../../lib/content-types'
 import { fetchPublicContent, resolveImageUrl } from '../../lib/api'
 import { Trophy, Users, Calendar, X, ZoomIn } from 'lucide-react'
@@ -13,6 +14,7 @@ const levelColors: Record<string, string> = {
 }
 
 const Achievements: React.FC = () => {
+  const { backgroundImage } = usePageBanner('kesiswaan_prestasi')
   const [items, setItems] = useState<Achievement[]>([])
   const [filterYear, setFilterYear] = useState<string>('Semua')
   const [filterLevel, setFilterLevel] = useState<string>('Semua')
@@ -57,6 +59,7 @@ const Achievements: React.FC = () => {
         title="Prestasi Siswa"
         subtitle="Raihan prestasi membanggakan siswa SMKN 11 Kabupaten Tangerang"
         breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Prestasi Siswa' }]}
+        backgroundImage={backgroundImage}
       />
 
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 md:py-20">

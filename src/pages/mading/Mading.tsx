@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import PageHero from '../../components/ui/PageHero';
 import SectionHeading from '../../components/ui/SectionHeading';
 import { LoadingInline } from '../../components/ui/LoadingScreen';
+import { usePageBanner } from '../../lib/usePageBanner';
 import { fetchMadingPublished, fetchMadingCategories, resolveImageUrl, type MadingPostRow } from '../../lib/api';
 import type { MadingCategory, MadingPost } from '../../lib/content-types';
 import { PenLine, Calendar, User, ChevronRight } from 'lucide-react';
@@ -18,6 +19,7 @@ function normalizeCategory(row: MadingPostRow, categories: MadingCategory[]): st
 }
 
 const Mading: React.FC = () => {
+  const { backgroundImage } = usePageBanner('mading');
   const [posts, setPosts] = useState<MadingPost[]>([]);
   const [categories, setCategories] = useState<MadingCategory[]>([]);
   const [filter, setFilter] = useState('Semua');
@@ -41,7 +43,7 @@ const Mading: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#FAF6F0]">
-        <PageHero title="Mading" subtitle="Media Aspirasi Digital SMKN 11 Kabupaten Tangerang" breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Mading' }]} />
+        <PageHero title="Mading" subtitle="Media Aspirasi Digital SMKN 11 Kabupaten Tangerang" breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Mading' }]} backgroundImage={backgroundImage} />
         <div className="py-24"><LoadingInline /></div>
       </div>
     );
@@ -53,6 +55,7 @@ const Mading: React.FC = () => {
         title="Mading SMKN 11 Kabupaten Tangerang"
         subtitle="Tempat publikasi karya, aspirasi, dan informasi siswa & guru"
         breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Mading' }]}
+        backgroundImage={backgroundImage}
       />
 
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 md:py-20">

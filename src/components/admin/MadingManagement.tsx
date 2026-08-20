@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ChangeEvent } from 'react';
-import { Plus, Pencil, Trash2, X, Save, Loader2, Search, CheckCircle2, XCircle, Send, Eye, Sparkles, Clapperboard } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Save, Loader2, Search, CheckCircle2, XCircle, Send, Eye, Sparkles, Clapperboard, Image } from 'lucide-react';
 import { backendApi } from '../../lib/api';
 import type { MadingPostRow } from '../../lib/api';
 import { can } from '../../lib/permissions';
 import { MADING_STATUSES } from '../../lib/ui-constants';
 import ImageField from './ImageField';
+import BannerTab from './BannerTab';
 import AIContentAssistant from '../mading/AIContentAssistant';
 import { GalleryUpload, VideoUrlsField } from '../mading/MediaEditor';
 import { resolveImageUrl, youtubeThumbnailUrl } from '../../lib/api';
@@ -294,6 +295,11 @@ export default function MadingManagement({ permissions }: Props) {
           </div>
         </div>
       )}
+
+      <section className="rounded-xl bg-white p-6 shadow-sm">
+        <h3 className="mb-4 text-lg font-bold text-[#1B2A4A]">Banner Mading</h3>
+        <BannerTab pageKey="mading" label="Banner Mading" />
+      </section>
     </div>
   );
 }
