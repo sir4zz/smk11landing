@@ -83,8 +83,8 @@ const seed = {
 };
 
 const configs: Record<EditableSection, { title: string; icon: typeof FileText; fields: { key: string; label: string; type?: string; multiline?: boolean; bucket?: string }[] }> = {
-  news: { title: 'Berita', icon: FileText, fields: [{ key: 'title', label: 'Judul' }, { key: 'slug', label: 'Slug' }, { key: 'category', label: 'Kategori', type: 'select' }, { key: 'author', label: 'Penulis', type: 'select' }, { key: 'date', label: 'Tanggal', type: 'date' }, { key: 'excerpt', label: 'Ringkasan', multiline: true }, { key: 'content', label: 'Isi Berita', multiline: true }, { key: 'thumbnail', label: 'Gambar Sampul', type: 'image' }, { key: 'source_label', label: 'Jenis / Sumber', type: 'select' }, { key: 'source_note', label: 'Deskripsi Sumber', multiline: true }] },
-  programs: { title: 'Program Keahlian', icon: BookOpen, fields: [{ key: 'name', label: 'Nama Program' }, { key: 'slug', label: 'Slug' }, { key: 'short_name', label: 'Singkatan' }, { key: 'logo', label: 'Logo', type: 'image', bucket: 'program-keahlian' }, { key: 'short_description', label: 'Deskripsi Singkat', multiline: true }, { key: 'description', label: 'Deskripsi Lengkap', multiline: true }, { key: 'competencies', label: 'Kompetensi', type: 'list' }, { key: 'career_prospects', label: 'Prospek Karir', type: 'list' }, { key: 'facilities', label: 'Fasilitas Pendukung', type: 'list' }, { key: 'image', label: 'Gambar', type: 'image' }] },
+  news: { title: 'Berita', icon: FileText, fields: [{ key: 'title', label: 'Judul' }, { key: 'category', label: 'Kategori', type: 'select' }, { key: 'author', label: 'Penulis', type: 'select' }, { key: 'date', label: 'Tanggal', type: 'date' }, { key: 'excerpt', label: 'Ringkasan', multiline: true }, { key: 'content', label: 'Isi Berita', multiline: true }, { key: 'thumbnail', label: 'Gambar Sampul', type: 'image' }, { key: 'source_label', label: 'Jenis / Sumber', type: 'select' }, { key: 'source_note', label: 'Deskripsi Sumber', multiline: true }] },
+  programs: { title: 'Program Keahlian', icon: BookOpen, fields: [{ key: 'name', label: 'Nama Program' }, { key: 'short_name', label: 'Singkatan' }, { key: 'logo', label: 'Logo', type: 'image', bucket: 'program-keahlian' }, { key: 'short_description', label: 'Deskripsi Singkat', multiline: true }, { key: 'description', label: 'Deskripsi Lengkap', multiline: true }, { key: 'competencies', label: 'Kompetensi', type: 'list' }, { key: 'career_prospects', label: 'Prospek Karir', type: 'list' }, { key: 'facilities', label: 'Fasilitas Pendukung', type: 'list' }, { key: 'image', label: 'Gambar', type: 'image' }] },
   facilities: { title: 'Fasilitas', icon: Building2, fields: [{ key: 'name', label: 'Nama Fasilitas' }, { key: 'category', label: 'Kategori', type: 'select' }, { key: 'description', label: 'Deskripsi', multiline: true }, { key: 'photo', label: 'Foto', type: 'image' }] },
   staff: { title: 'Staf & Guru', icon: Users, fields: [{ key: 'name', label: 'Nama' }, { key: 'position', label: 'Jabatan', type: 'select' }, { key: 'department', label: 'Unit / Departemen', type: 'select' }, { key: 'photo', label: 'Foto', type: 'image' }, { key: 'description', label: 'Deskripsi Singkat', multiline: true }] },
   gurus: { title: 'Guru', icon: Users, fields: [{ key: 'name', label: 'Nama' }, { key: 'subject', label: 'Mata Pelajaran' }, { key: 'position', label: 'Jabatan', type: 'select' }, { key: 'photo', label: 'Foto', type: 'image' }] },
@@ -507,7 +507,7 @@ function AdminPanel() {
               </div>
               <Table
                 items={data[section]}
-                config={section === 'news' || section === 'programs' ? { ...active!, fields: active!.fields.filter(field => field.key !== 'slug') } : active!}
+                config={active!}
                 onEdit={item => { setEditing(item); setOpen(true); }}
                 onDelete={id => remove(id)}
               />
@@ -1498,7 +1498,6 @@ function Editor({ config, item, onClose, onSave, section, options }: { config: {
       const data = extractNewsData(raw, normalized);
 
       applyFieldValue('title', data.title);
-      applyFieldValue('slug', data.slug);
       applyFieldValue('excerpt', data.excerpt);
       applyFieldValue('content', data.content);
       applyFieldValue('thumbnail', data.thumbnail);
@@ -1574,9 +1573,10 @@ function Editor({ config, item, onClose, onSave, section, options }: { config: {
       const sourceNoteValue = formValues.source_note || sourceMeta.sourceNote || '';
 
       onSave({
-        ...(item ?? {}),
-        ...formValues,
-        ...imageValues,
+         ...(item ?? {}),
+         ...formValues,
+         slug: slugify(formValues.title),
+         ...imageValues,
         source_type: sourceTypeValue,
         source_label: sourceLabelValue,
         source_note: sourceNoteValue,
@@ -1589,7 +1589,7 @@ function Editor({ config, item, onClose, onSave, section, options }: { config: {
     onSave({
       ...(item ?? {}),
       ...formValues,
-      slug: slugify(section === 'programs' ? formValues.short_name || formValues.name : formValues.title),
+       slug: slugify(section === 'programs' ? formValues.short_name || formValues.name : formValues.title),
       ...imageValues,
       ...Object.fromEntries(listFields.map((key) => [key, String(formValues[key] ?? '').split('\n').map((value) => value.trim()).filter(Boolean)])),
     });
@@ -1650,7 +1650,7 @@ function Editor({ config, item, onClose, onSave, section, options }: { config: {
                         </select>
                       );
                     })()
-                  : <input ref={(element) => { fieldRefs.current[field.key] = element; }} name={field.key} type={field.type || 'text'} defaultValue={field.type === 'date' ? dateInputValue(item?.[field.key]) : (field.key === 'slug' ? slugify(section === 'programs' ? String(item?.short_name || item?.name || '') : String(item?.title || '')) : String(item?.[field.key] ?? ''))} onChange={event => { if ((section === 'news' && field.key === 'title') || (section === 'programs' && ['name', 'short_name'].includes(field.key))) { const slugField = fieldRefs.current.slug; if (slugField) slugField.value = slugify(section === 'programs' ? (field.key === 'short_name' ? event.target.value : String(fieldRefs.current.short_name?.value || event.target.value)) : event.target.value); } }} readOnly={field.key === 'slug'} required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 bg-gray-50 px-3 py-2 font-normal" />}
+                   : <input ref={(element) => { fieldRefs.current[field.key] = element; }} name={field.key} type={field.type || 'text'} defaultValue={field.type === 'date' ? dateInputValue(item?.[field.key]) : String(item?.[field.key] ?? '')} required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />}
             </label>
           ))}
         </div>}

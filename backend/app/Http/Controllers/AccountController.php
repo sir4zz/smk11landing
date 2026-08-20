@@ -139,8 +139,10 @@ class AccountController extends Controller
             return response()->json(['error' => ['message' => 'Tidak dapat menghapus admin terakhir.']], 403);
         }
 
-        if ($user->student?->foto) {
-            $this->deleteStoredFile($user->student->foto);
+        foreach (['foto', 'doc_kk', 'doc_akta', 'doc_ijazah', 'doc_lainnya'] as $fileKey) {
+            if ($user->student?->{$fileKey}) {
+                $this->deleteStoredFile($user->student->{$fileKey});
+            }
         }
 
         $user->delete();
@@ -282,6 +284,12 @@ class AccountController extends Controller
             throw $this->httpFail('Password minimal 6 karakter.');
         }
 
+        foreach (['foto', 'doc_kk', 'doc_akta', 'doc_ijazah', 'doc_lainnya'] as $fileKey) {
+            if ($user->student?->{$fileKey}) {
+                $this->deleteStoredFile($user->student->{$fileKey});
+            }
+        }
+
         StudentAccount::query()->where('student_id', $user->id)->delete();
         Student::query()->where('id', $user->id)->delete();
 
@@ -327,9 +335,13 @@ class AccountController extends Controller
         $nis = trim((string) $request->input('nis', $student?->nis ?? ''));
         $pin = (string) $request->input('pin', '');
         $name = trim((string) $request->input('name', $user->name));
+        $class = Student::normalizeClass($request->input('class', $student?->class ?? ''));
 
         if (mb_strlen($nisn) < 4) {
             throw $this->httpFail('NISN tidak valid (minimal 4 karakter).');
+        }
+        if ($class !== '' && ! Student::isValidClass($class)) {
+            throw $this->httpFail('Kelas "'.$class.'" tidak valid. Kelas harus berupa X, XI, atau XII.');
         }
         if (Student::query()->where('nisn', $nisn)->where('id', '!=', $user->id)->exists()) {
             throw $this->httpFail('NISN sudah terdaftar.');
@@ -351,12 +363,21 @@ class AccountController extends Controller
 
         if ($student) {
             $newFoto = (string) $request->input('foto', '');
+
+            $docUpdates = [];
+            foreach (['doc_kk', 'doc_akta', 'doc_ijazah', 'doc_lainnya'] as $docKey) {
+                if ($request->has($docKey)) {
+                    $value = (string) $request->input($docKey, '');
+                    $docUpdates[$docKey] = $value !== '' ? $value : null;
+                }
+            }
+
             $student->update(array_merge([
                 'nisn' => $nisn,
                 'nis' => $nis !== '' ? $nis : null,
                 'pin' => $pin !== '' ? $pin : $student->pin,
                 'name' => $name,
-                'class' => (string) $request->input('class', $student->class),
+                'class' => $class,
                 'major' => (string) $request->input('major', $student->major),
                 'gender' => $request->has('gender')
                     ? $this->accounts->normalizeGender($request->input('gender'))
@@ -371,10 +392,15 @@ class AccountController extends Controller
                     ? $this->jsonList($request->input('achievements'))
                     : $student->achievements,
                 'foto' => $newFoto !== '' ? $newFoto : null,
-            ], $this->accounts->biodataFromRequest($request)));
+            ], $docUpdates, $this->accounts->biodataFromRequest($request)));
 
             if ($student->wasChanged('foto') && $student->getOriginal('foto')) {
                 $this->deleteStoredFile($student->getOriginal('foto'));
+            }
+            foreach (['doc_kk', 'doc_akta', 'doc_ijazah', 'doc_lainnya'] as $docKey) {
+                if ($student->wasChanged($docKey) && $student->getOriginal($docKey)) {
+                    $this->deleteStoredFile($student->getOriginal($docKey));
+                }
             }
         }
 
@@ -530,6 +556,11 @@ class AccountController extends Controller
     private function createStudentRecords(string $id, string $nisn, string $name, string $email, Request $request): void
     {
         $nis = trim((string) $request->input('nis', ''));
+        $class = Student::normalizeClass($request->input('class', ''));
+
+        if ($class !== '' && ! Student::isValidClass($class)) {
+            throw $this->httpFail('Kelas "'.$class.'" tidak valid. Kelas harus berupa X, XI, atau XII.');
+        }
 
         Student::create(array_merge([
             'id' => $id,
@@ -537,7 +568,7 @@ class AccountController extends Controller
             'nis' => $nis !== '' ? $nis : null,
             'pin' => (string) $request->input('pin', ''),
             'name' => $name,
-            'class' => (string) $request->input('class', ''),
+            'class' => $class,
             'major' => (string) $request->input('major', ''),
             'gender' => $this->accounts->normalizeGender($request->input('gender', '')),
             'date_of_birth' => $this->accounts->normalizeDate($request->input('date_of_birth')),
@@ -546,6 +577,10 @@ class AccountController extends Controller
             'address' => (string) $request->input('address', ''),
             'achievements' => $this->jsonList($request->input('achievements')),
             'foto' => (string) $request->input('foto', ''),
+            'doc_kk' => $this->nullableString($request->input('doc_kk')),
+            'doc_akta' => $this->nullableString($request->input('doc_akta')),
+            'doc_ijazah' => $this->nullableString($request->input('doc_ijazah')),
+            'doc_lainnya' => $this->nullableString($request->input('doc_lainnya')),
         ], $this->accounts->biodata($request->all())));
 
         StudentAccount::create([
@@ -583,6 +618,13 @@ class AccountController extends Controller
         }
 
         return [];
+    }
+
+    private function nullableString(mixed $value): ?string
+    {
+        $value = trim((string) $value);
+
+        return $value !== '' ? $value : null;
     }
 
     private function studentEmail(string $nisn): string

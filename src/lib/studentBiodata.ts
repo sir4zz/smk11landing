@@ -5,7 +5,7 @@ export interface BiodataFieldDef {
   key: string;
   label: string;
   section: string;
-  type?: 'text' | 'number' | 'date' | 'select' | 'textarea';
+  type?: 'text' | 'number' | 'decimal' | 'date' | 'select' | 'textarea';
   options?: string[];
   placeholder?: string;
   full?: boolean;
@@ -33,6 +33,17 @@ const RELIGION_OPTIONS = ['', 'Islam', 'Kristen Protestan', 'Kristen Katolik', '
 const BLOOD_OPTIONS = ['', 'A', 'B', 'AB', 'O'];
 const YATIM_OPTIONS = ['', 'Yatim', 'Piatu', 'Yatim-Piatu'];
 
+export const VALID_CLASSES = ['X', 'XI', 'XII'];
+export const CLASS_OPTIONS = ['', ...VALID_CLASSES];
+
+export function normalizeClass(value: unknown): string {
+  return String(value ?? '').trim().toUpperCase();
+}
+
+export function isValidClass(value: unknown): boolean {
+  return VALID_CLASSES.includes(normalizeClass(value));
+}
+
 function parentFields(prefix: string, section: string): BiodataFieldDef[] {
   return [
     { key: `${prefix}_nama`, label: 'Nama', section },
@@ -54,7 +65,7 @@ export const BIODATA_FIELDS: BiodataFieldDef[] = [
   { key: 'nis', label: 'NIS', section: 'identity', placeholder: 'cth. 12345', type: 'number' },
   { key: 'name', label: 'Nama Lengkap', section: 'identity', full: true },
   { key: 'nickname', label: 'Nama Panggilan', section: 'identity' },
-  { key: 'class', label: 'Kelas', section: 'identity', placeholder: 'cth. X TJKT 1' },
+  { key: 'class', label: 'Kelas', section: 'identity', type: 'select', options: CLASS_OPTIONS },
   { key: 'major', label: 'Jurusan', section: 'identity', placeholder: 'cth. Teknik Komputer dan Jaringan' },
   { key: 'gender', label: 'Jenis Kelamin', section: 'identity', type: 'select', options: GENDER_OPTIONS },
   { key: 'place_of_birth', label: 'Tempat Lahir', section: 'identity', placeholder: 'cth. Bandung' },
@@ -71,7 +82,7 @@ export const BIODATA_FIELDS: BiodataFieldDef[] = [
   { key: 'address', label: 'Alamat Tempat Tinggal', section: 'residence', type: 'textarea', full: true },
   { key: 'phone', label: 'No. Telp / HP', section: 'residence', type: 'number' },
   { key: 'tinggal_dengan', label: 'Tinggal Dengan (Orang Tua/Saudara/Asrama/Kost)', section: 'residence' },
-  { key: 'jarak_sekolah', label: 'Jarak Tempat Tinggal ke Sekolah (KM)', section: 'residence', type: 'number' },
+  { key: 'jarak_sekolah', label: 'Jarak Tempat Tinggal ke Sekolah (KM)', section: 'residence', type: 'decimal' },
 
   // C. Keterangan Kesehatan
   { key: 'golongan_darah', label: 'Golongan Darah', section: 'health', type: 'select', options: BLOOD_OPTIONS },
@@ -230,4 +241,18 @@ export function toDateString(value: unknown): string {
     }
   }
   return raw;
+}
+
+const RUPIAH_KEYS = new Set(['ayah_penghasilan', 'ibu_penghasilan', 'wali_penghasilan']);
+
+export function isRupiahField(key: string): boolean {
+  return RUPIAH_KEYS.has(key);
+}
+
+export function formatRupiah(raw: unknown): string {
+  if (raw === null || raw === undefined || String(raw).trim() === '') return '-';
+  const str = String(raw).trim();
+  const num = Number(str.replace(/[^\d.-]/g, ''));
+  if (Number.isNaN(num)) return str;
+  return `Rp${num.toLocaleString('id-ID')}`;
 }
