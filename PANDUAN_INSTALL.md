@@ -185,7 +185,6 @@ Pastikan MySQL sudah aktif sebelum menjalankan restore.
 Dari folder `backend`, buka Laravel Tinker:
 
 ```bash
-cd backend
 php artisan tinker
 ```
 

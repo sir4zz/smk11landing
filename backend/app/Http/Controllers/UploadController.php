@@ -38,6 +38,8 @@ class UploadController extends Controller
             basename($key),
         );
 
+        $mimeType = $imagePath ? $imagePath->getMimeType() : $file->getMimeType();
+
         if ($imagePath) {
             @unlink($imagePath->getPathname());
         }
@@ -49,7 +51,7 @@ class UploadController extends Controller
                 'bucket' => $bucket,
                 'key' => $key,
                 'size' => Storage::disk('public')->size($key),
-                'mimeType' => $imagePath ? $imagePath->getMimeType() : $file->getMimeType(),
+                'mimeType' => $mimeType,
                 'uploadedAt' => now()->toIso8601String(),
                 'url' => $url,
             ],

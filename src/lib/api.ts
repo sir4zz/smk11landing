@@ -13,7 +13,7 @@ export function resolveImageUrl(url: string | null | undefined): string | undefi
 
 export interface HomeContent {
   hero: { images: string[]; frame_image?: string; description: string; accreditation: string; facility_title: string; facility_description: string };
-  welcome: { image: string; principal_name: string; principal_title: string; title: string; paragraphs: string[]; quote: string };
+  welcome: { principal_name: string; principal_title: string; title: string; paragraphs: string[]; quote: string };
   about: { title: string; subtitle: string; paragraphs: string[]; card_label: string; card_title: string; quote: string; location: string };
   stats: { value: string; label: string }[];
   social?: { instagram: string; tiktok: string; email: string };
