@@ -3,12 +3,14 @@ import { Link } from 'react-router-dom';
 import PageHero from '../../components/ui/PageHero';
 import SectionHeading from '../../components/ui/SectionHeading';
 import { LoadingInline } from '../../components/ui/LoadingScreen';
+import { usePageBanner } from '../../lib/usePageBanner';
 import { fetchOsisProfile, resolveImageUrl } from '../../lib/api';
 import type { OsisProfile } from '../../lib/content-types';
 import { ArrowRight, CalendarDays, Users } from 'lucide-react';
 import logoSekolah from '../../assets/logo.png';
 
 const Osis: React.FC = () => {
+  const { backgroundImage } = usePageBanner('osis');
   const [profile, setProfile] = useState<OsisProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -25,7 +27,7 @@ const Osis: React.FC = () => {
   if (loading || !profile) {
     return (
       <div className="min-h-screen bg-[#FAF6F0]">
-        <PageHero title="OSIS" subtitle="Organisasi Siswa Intra Sekolah SMKN 11 Kabupaten Tangerang" breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'OSIS' }]} />
+        <PageHero title="OSIS" subtitle="Organisasi Siswa Intra Sekolah SMKN 11 Kabupaten Tangerang" breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'OSIS' }]} backgroundImage={backgroundImage} />
         <div className="py-24"><LoadingInline /></div>
       </div>
     );
@@ -37,6 +39,7 @@ const Osis: React.FC = () => {
         title="OSIS SMKN 11 Kabupaten Tangerang"
         subtitle="Organisasi Siswa Intra Sekolah — wadah pengembangan kepemimpinan, kreativitas, dan kepedulian siswa"
         breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'OSIS' }]}
+        backgroundImage={backgroundImage}
       />
 
       {/* Profil OSIS */}

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import PageHero from '../../components/ui/PageHero';
 import SectionHeading from '../../components/ui/SectionHeading';
 import { LoadingInline } from '../../components/ui/LoadingScreen';
+import { usePageBanner } from '../../lib/usePageBanner';
 import { fetchOsisMembers, resolveImageUrl } from '../../lib/api';
 import type { OsisMember } from '../../lib/content-types';
 import { Users, Target } from 'lucide-react';
@@ -9,6 +10,7 @@ import { Users, Target } from 'lucide-react';
 const positionOrder = ['Ketua', 'Wakil Ketua', 'Sekretaris', 'Bendahara', 'Ketua Bidang'];
 
 const OsisStruktur: React.FC = () => {
+  const { backgroundImage } = usePageBanner('osis_struktur');
   const [members, setMembers] = useState<OsisMember[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -33,7 +35,7 @@ const OsisStruktur: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#FAF6F0]">
-        <PageHero title="Struktur OSIS" subtitle="Pengurus inti dan bidang OSIS SMKN 11 Kabupaten Tangerang" breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'OSIS', href: '/osis' }, { label: 'Struktur OSIS' }]} />
+        <PageHero title="Struktur OSIS" subtitle="Pengurus inti dan bidang OSIS SMKN 11 Kabupaten Tangerang" breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'OSIS', href: '/osis' }, { label: 'Struktur OSIS' }]} backgroundImage={backgroundImage} />
         <div className="py-24"><LoadingInline /></div>
       </div>
     );
@@ -45,6 +47,7 @@ const OsisStruktur: React.FC = () => {
         title="Struktur OSIS"
         subtitle="Pengurus inti dan bidang OSIS SMKN 11 Kabupaten Tangerang"
         breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'OSIS', href: '/osis' }, { label: 'Struktur OSIS' }]}
+        backgroundImage={backgroundImage}
       />
 
       <section className="bg-[#1B2A4A] py-16 md:py-20">

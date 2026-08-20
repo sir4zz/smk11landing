@@ -291,6 +291,39 @@ export interface FaqRow {
   sort_order?: number;
 }
 export const fetchFaqs = <T>() => fetchFromApi<T>('/faqs');
+
+// ---------- PAGE BANNERS ----------
+import type { PageBanner } from './content-types';
+
+export async function fetchPageBanner(pageKey: string): Promise<PageBanner | null> {
+  const result = await request<PageBanner | null>(`/page-banners/${encodeURIComponent(pageKey)}`);
+  return result.data ?? null;
+}
+
+export async function fetchPageBanners(): Promise<PageBanner[]> {
+  const result = await request<PageBanner[]>('/page-banners');
+  return result.data ?? [];
+}
+
+export const pageBannerApi = {
+  listAll(): ApiResult<PageBanner[]> {
+    return request<PageBanner[]>('/admin/page-banners');
+  },
+  create(payload: Record<string, unknown>): ApiResult<PageBanner> {
+    return request<PageBanner>('/admin/page-banners', { method: 'POST', body: JSON.stringify(payload) });
+  },
+  update(id: string, payload: Record<string, unknown>): ApiResult<PageBanner> {
+    return request<PageBanner>(`/admin/page-banners/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(payload) });
+  },
+  remove(id: string): ApiResult<null> {
+    return request<null>(`/admin/page-banners/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  },
+  upload(id: string, file: File): ApiResult<{ url: string }> {
+    const form = new FormData();
+    form.append('image', file);
+    return request<{ url: string }>(`/admin/page-banners/${encodeURIComponent(id)}`, { method: 'POST', body: form });
+  },
+};
 export interface MadingPostRow extends Record<string, unknown> { id?: string; title?: string; content?: string; category_id?: string | null; author_id?: string | null; author_name?: string; author_role?: string; cover_image?: string; images?: string[]; videos?: MadingVideo[]; status?: string; feedback?: string; ai_assisted?: boolean; published_at?: string | null; created_at?: string; updated_at?: string; }
 export async function fetchMadingPosts(filter?: { status?: string; authorId?: string; categoryId?: string }): Promise<MadingPostRow[]> { const params = new URLSearchParams(); if (filter?.status) params.set('status', filter.status); if (filter?.authorId) params.set('author_id', filter.authorId); if (filter?.categoryId) params.set('category_id', filter.categoryId); const result = await request<MadingPostRow[]>(`/mading/posts${params.size ? `?${params}` : ''}`); return result.data ?? []; }
 export async function fetchMadingPublished(): Promise<MadingPostRow[]> { return fetchMadingPosts({ status: 'published' }); }

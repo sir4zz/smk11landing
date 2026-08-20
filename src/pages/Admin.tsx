@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { BarChart3, BookOpen, Briefcase, Building2, CalendarDays, ChevronDown, ChevronRight, DatabaseBackup as DatabaseBackupIcon, FileText, GraduationCap, LogOut, Mail, MapPin, Menu, Pencil, Plus, Trophy, Trash2, Upload, Users, X, Save, ShieldCheck, UsersRound, Dumbbell, Newspaper, UserCog, Camera, UserRound, Loader2, ArrowLeft } from 'lucide-react';
+import { BarChart3, Image, BookOpen, Briefcase, Building2, CalendarDays, ChevronDown, ChevronRight, DatabaseBackup as DatabaseBackupIcon, FileText, GraduationCap, LogOut, Mail, MapPin, Menu, Pencil, Plus, Trophy, Trash2, Upload, Users, X, Save, ShieldCheck, UsersRound, Dumbbell, Newspaper, UserCog, Camera, UserRound, Loader2, ArrowLeft } from 'lucide-react';
 import logoSekolah from '../assets/logo.png';
 import { backendApi, apiBaseUrl, resolveImageUrl, fetchStats } from '../lib/api';
 import { LoadingInline } from '../components/ui/LoadingScreen';
@@ -22,6 +22,7 @@ import GuruChangeRequestsManagement from '../components/admin/GuruChangeRequests
 import AccountsManagement from '../components/admin/AccountsManagement';
 import DatabaseBackup from '../components/admin/DatabaseBackup';
 import SpmbManagement from '../components/admin/SpmbManagement';
+import BannerTab from '../components/admin/BannerTab';
 import MyProfile from '../components/admin/MyProfile';
 import Dashboard from '../components/admin/Dashboard';
 import { StaffAuthProvider, useStaffAuth } from '../lib/staffAuth';
@@ -511,6 +512,13 @@ function AdminPanel() {
                 onEdit={item => { setEditing(item); setOpen(true); }}
                 onDelete={id => remove(id)}
               />
+              {section === 'achievements' && <div className="mt-8"><BannerTab pageKey="kesiswaan_prestasi" label="Banner Prestasi Siswa" /></div>}
+              {section === 'facilities' && <div className="mt-8"><BannerTab pageKey="akademik_fasilitas" label="Banner Fasilitas" /></div>}
+              {section === 'teacherActivities' && <div className="mt-8"><BannerTab pageKey="manajemen_kegiatan_guru" label="Banner Kegiatan Guru" /></div>}
+              {section === 'staff' && <div className="mt-8"><BannerTab pageKey="manajemen" label="Banner Manajemen Sekolah" /></div>}
+              {section === 'programs' && <div className="mt-8"><BannerTab pageKey="akademik_program_keahlian" label="Banner Program Keahlian" /></div>}
+              {section === 'gurus' && <div className="mt-8"><BannerTab pageKey="profil_guru" label="Banner Profil Guru" /><div className="mt-4"><BannerTab pageKey="profil_direktori" label="Banner Direktori Profil" /></div></div>}
+              {section === 'educationStaff' && <div className="mt-8"><BannerTab pageKey="manajemen_tendik" label="Banner Tenaga Kependidikan" /></div>}
             </>
           )}
 

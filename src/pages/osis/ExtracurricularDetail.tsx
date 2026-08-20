@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import PageHero from '../../components/ui/PageHero';
 import { LoadingInline } from '../../components/ui/LoadingScreen';
+import { usePageBanner } from '../../lib/usePageBanner';
 import { fetchExtracurricularBySlug, resolveImageUrl } from '../../lib/api';
 import type { ExtracurricularRecord } from './Extracurriculars';
 import { User, Clock, MapPin, Trophy, ChevronLeft, ImageIcon, Calendar, Star, X } from 'lucide-react';
 
 const ExtracurricularDetail: React.FC = () => {
+  const { backgroundImage } = usePageBanner('osis_ekskul');
   const { slug } = useParams<{ slug: string }>();
   const [item, setItem] = useState<ExtracurricularRecord | null>(null);
   const [loading, setLoading] = useState(true);
@@ -25,7 +27,7 @@ const ExtracurricularDetail: React.FC = () => {
   if (loading || !item) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#FAF6F0] to-white">
-        <PageHero title="Ekstrakurikuler" subtitle="Detail kegiatan ekstrakurikuler" breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'OSIS', href: '/osis' }, { label: 'Ekstrakurikuler', href: '/osis/ekstrakurikuler' }]} />
+        <PageHero title="Ekstrakurikuler" subtitle="Detail kegiatan ekstrakurikuler" breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'OSIS', href: '/osis' }, { label: 'Ekstrakurikuler', href: '/osis/ekstrakurikuler' }]} backgroundImage={backgroundImage} />
         <div className="py-24"><LoadingInline /></div>
       </div>
     );
@@ -43,6 +45,7 @@ const ExtracurricularDetail: React.FC = () => {
         title={item.name}
         subtitle={item.category}
         breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'OSIS', href: '/osis' }, { label: 'Ekstrakurikuler', href: '/osis/ekstrakurikuler' }, { label: item.name }]}
+        backgroundImage={backgroundImage}
       />
 
       <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8 md:py-16">

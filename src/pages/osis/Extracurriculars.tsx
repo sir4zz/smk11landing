@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import PageHero from '../../components/ui/PageHero';
 import SectionHeading from '../../components/ui/SectionHeading';
 import { LoadingInline } from '../../components/ui/LoadingScreen';
+import { usePageBanner } from '../../lib/usePageBanner';
 import { fetchExtracurriculars, resolveImageUrl } from '../../lib/api';
 import { User, Clock, ChevronRight, ImageIcon } from 'lucide-react';
 
@@ -25,6 +26,7 @@ export interface ExtracurricularRecord {
 }
 
 const Extracurriculars: React.FC = () => {
+  const { backgroundImage } = usePageBanner('osis_ekskul');
   const [items, setItems] = useState<ExtracurricularRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('Semua');
@@ -45,7 +47,7 @@ const Extracurriculars: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#FAF6F0] to-white">
-        <PageHero title="Ekstrakurikuler" subtitle="Wadah pengembangan bakat, minat, dan karakter siswa" breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'OSIS', href: '/osis' }, { label: 'Ekstrakurikuler' }]} />
+        <PageHero title="Ekstrakurikuler" subtitle="Wadah pengembangan bakat, minat, dan karakter siswa" breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'OSIS', href: '/osis' }, { label: 'Ekstrakurikuler' }]} backgroundImage={backgroundImage} />
         <div className="py-24"><LoadingInline /></div>
       </div>
     );
@@ -57,6 +59,7 @@ const Extracurriculars: React.FC = () => {
         title="Ekstrakurikuler"
         subtitle="Wadah pengembangan bakat, minat, dan karakter siswa di luar jam pelajaran"
         breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'OSIS', href: '/osis' }, { label: 'Ekstrakurikuler' }]}
+        backgroundImage={backgroundImage}
       />
 
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 md:py-20">

@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
-import { Plus, Pencil, Trash2, X, Save, Loader2, Images, Upload, GripVertical } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Save, Loader2, Images, Upload, GripVertical, Image } from 'lucide-react';
 import { backendApi, resolveImageUrl } from '../../lib/api';
 import type { ExtracurricularRecord } from '../../pages/osis/Extracurriculars';
 import { can } from '../../lib/permissions';
 import ImageField from './ImageField';
+import BannerTab from './BannerTab';
 
 interface Props {
   permissions: string[];
@@ -136,6 +137,11 @@ export default function ExtracurricularManagement({ permissions }: Props) {
           onSave={async (record) => { const ok = await save(record); if (ok) { setOpen(false); await load(); flash('ok', 'Data ekstrakurikuler disimpan.'); } }}
         />
       )}
+
+      <section className="rounded-xl bg-white p-6 shadow-sm">
+        <h3 className="mb-4 text-lg font-bold text-[#1B2A4A]">Banner Ekstrakurikuler</h3>
+        <BannerTab pageKey="ekstrakurikuler" label="Banner Ekstrakurikuler" />
+      </section>
     </div>
   );
 }
