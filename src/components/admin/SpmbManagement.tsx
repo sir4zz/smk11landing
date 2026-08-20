@@ -10,6 +10,7 @@ import {
   Pencil,
   Plus,
   Save,
+  Star,
   Trash2,
   X,
 } from 'lucide-react';
@@ -39,7 +40,7 @@ export default function SpmbManagement({ isAdmin }: Props) {
   const [tab, setTab] = useState<'posters' | 'settings'>('posters');
 
   const tabs = [
-    { key: 'posters' as const, label: 'Poster Informasi', icon: Images },
+    { key: 'posters' as const, label: 'Pengumuman', icon: Images },
     { key: 'settings' as const, label: 'Pengaturan Portal', icon: GraduationCap, adminOnly: true },
   ].filter((t) => !t.adminOnly || isAdmin);
 
@@ -103,6 +104,8 @@ function PostersTab() {
       image: record.image ?? '',
       is_active: Boolean(record.is_active),
       sort_order: Number(record.sort_order ?? 0),
+      published_at: record.published_at ?? null,
+      is_featured: Boolean(record.is_featured),
     };
     let r;
     if (editing?.id) {
@@ -122,7 +125,15 @@ function PostersTab() {
     const { error } = await spmbPosterApi.update(poster.id, { is_active: !poster.is_active });
     if (error) { flash('err', errorMessage(error)); return; }
     await load();
-    flash('ok', poster.is_active ? 'Poster dinonaktifkan.' : 'Poster diaktifkan.');
+    flash('ok', poster.is_active ? 'Pengumuman dinonaktifkan.' : 'Pengumuman diaktifkan.');
+  };
+
+  const toggleFeatured = async (poster: SpmbPoster) => {
+    if (!poster.id) return;
+    const { error } = await spmbPosterApi.update(poster.id, { is_featured: !poster.is_featured });
+    if (error) { flash('err', errorMessage(error)); return; }
+    await load();
+    flash('ok', poster.is_featured ? 'Pengumuman utama dibatalkan.' : 'Pengumuman ini ditetapkan sebagai Pengumuman Utama.');
   };
 
   const remove = async (id: string) => {
@@ -156,13 +167,14 @@ function PostersTab() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-[#23314D]">
-          Kelola poster/gambar informasi SPMB. Poster yang aktif akan tampil di halaman publik.
+          Kelola pengumuman SPMB dalam bentuk poster. Pengumuman aktif akan tampil di halaman publik SPMB, dan satu
+          pengumuman dapat ditetapkan sebagai Pengumuman Utama.
         </p>
         <button
           onClick={() => { setEditing(null); setOpen(true); }}
           className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-4 py-2 font-bold text-[#1B2A4A]"
         >
-          <Plus size={18} /> Tambah Poster
+          <Plus size={18} /> Tambah Pengumuman
         </button>
       </div>
 
@@ -171,8 +183,8 @@ function PostersTab() {
       {sorted.length === 0 ? (
         <div className="rounded-xl bg-white p-12 text-center shadow-sm">
           <ImageIcon className="mx-auto h-12 w-12 text-[#C8A951]/50" />
-          <p className="mt-4 font-semibold text-[#1B2A4A]">Belum ada poster SPMB</p>
-          <p className="mt-1 text-sm text-[#5B7088]">Unggah poster informasi SPMB untuk ditampilkan pada halaman publik.</p>
+          <p className="mt-4 font-semibold text-[#1B2A4A]">Belum ada pengumuman SPMB</p>
+          <p className="mt-1 text-sm text-[#5B7088]">Unggah poster pengumuman SPMB untuk ditampilkan pada halaman publik.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -188,6 +200,11 @@ function PostersTab() {
               <div className="p-4">
                 <h3 className="truncate font-bold text-[#1B2A4A]">{poster.title || 'Tanpa judul'}</h3>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
+                  {poster.is_featured && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[#C8A951]/20 px-3 py-1 text-xs font-bold text-[#866D2C]">
+                      <Star className="h-3 w-3 fill-[#866D2C]" /> Pengumuman Utama
+                    </span>
+                  )}
                   <span className={`rounded-full px-3 py-1 text-xs font-semibold ${poster.is_active ? 'bg-green-50 text-green-700' : 'bg-[#FAF6F0] text-[#5B7088]'}`}>
                     {poster.is_active ? 'Aktif' : 'Nonaktif'}
                   </span>
@@ -195,6 +212,10 @@ function PostersTab() {
                     Urutan: {poster.sort_order ?? 0}
                   </span>
                 </div>
+                <p className="mt-2 text-xs text-[#5B7088]">
+                  {formatDateLabel(poster.published_at ?? poster.created_at)}
+                  {poster.creator_name && ` • Oleh ${poster.creator_name}`}
+                </p>
                 <div className="mt-4 flex items-center justify-between">
                   <div className="flex items-center gap-1">
                     <button
@@ -218,6 +239,9 @@ function PostersTab() {
                   </div>
                   <div className="flex items-center gap-1">
                     <button type="button" onClick={() => { setEditing(poster); setOpen(true); }} title="Edit" className="rounded-lg p-1.5 text-[#866D2C] hover:bg-[#FAF6F0]"><Pencil size={16} /></button>
+                    <button type="button" onClick={() => toggleFeatured(poster)} title={poster.is_featured ? 'Batal sebagai Pengumuman Utama' : 'Tetapkan sebagai Pengumuman Utama'} className={`rounded-lg p-1.5 hover:bg-[#FAF6F0] ${poster.is_featured ? 'text-[#866D2C]' : 'text-[#1B2A4A]'}`}>
+                      <Star size={16} className={poster.is_featured ? 'fill-[#866D2C]' : ''} />
+                    </button>
                     <button type="button" onClick={() => toggleActive(poster)} title={poster.is_active ? 'Nonaktifkan' : 'Aktifkan'} className="rounded-lg p-1.5 text-[#1B2A4A] hover:bg-[#FAF6F0]">
                       {poster.is_active ? <X size={16} /> : <GraduationCap size={16} />}
                     </button>
@@ -249,37 +273,55 @@ function PosterForm({ item, onClose, onSave }: { item: SpmbPoster | null; onClos
   const [image, setImage] = useState(item?.image ?? '');
   const [isActive, setIsActive] = useState<boolean>(item ? Boolean(item.is_active) : true);
   const [sortOrder, setSortOrder] = useState<number>(item?.sort_order ?? 0);
+  const [publishedAt, setPublishedAt] = useState<string>(item?.published_at ? item.published_at.slice(0, 10) : '');
+  const [isFeatured, setIsFeatured] = useState<boolean>(item ? Boolean(item.is_featured) : false);
   const [error, setError] = useState('');
 
   const submit = () => {
     if (!image.trim()) { setError('Poster/gambar wajib diisi.'); return; }
     setError('');
-    onSave({ title: title.trim(), image: image.trim(), is_active: isActive, sort_order: sortOrder });
+    onSave({
+      title: title.trim(),
+      image: image.trim(),
+      is_active: isActive,
+      sort_order: sortOrder,
+      published_at: publishedAt || null,
+      is_featured: isFeatured,
+    });
   };
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 p-4 py-10">
       <div className="mx-auto w-full max-w-2xl rounded-xl bg-white p-6 shadow-xl">
         <div className="mb-5 flex justify-between">
-          <h2 className="text-xl font-bold text-[#1B2A4A]">{item ? 'Edit' : 'Tambah'} Poster SPMB</h2>
+          <h2 className="text-xl font-bold text-[#1B2A4A]">{item ? 'Edit' : 'Tambah'} Pengumuman SPMB</h2>
           <button onClick={onClose}><X /></button>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <PosterImageField label="Poster / Gambar" value={image} onChange={setImage} hint="JPG, PNG, atau WebP (maks. 10 MB). Gambar otomatis dikompres ke WebP." />
+            <PosterImageField label="Poster / Gambar" value={image} onChange={setImage} hint="JPG, JPEG, atau PNG (maks. 10 MB). Gambar otomatis dikompres ke WebP." />
           </div>
           <label className="block text-sm font-semibold">Judul
-            <input value={title} onChange={(e) => setTitle(e.target.value)} className={inputClass} placeholder="cth: Jadwal SPMB 2026" />
+            <input value={title} onChange={(e) => setTitle(e.target.value)} className={inputClass} placeholder="cth: Pengumuman Hasil Seleksi SPMB 2026" />
           </label>
           <label className="block text-sm font-semibold">Urutan
             <input type="number" min={0} value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value) || 0)} className={inputClass} />
           </label>
-          <div className="sm:col-span-2">
+          <label className="block text-sm font-semibold">Tanggal Publikasi (opsional)
+            <input type="date" value={publishedAt} onChange={(e) => setPublishedAt(e.target.value)} className={inputClass} />
+            <span className="mt-1 block text-xs font-normal text-[#5B7088]">Kosongkan agar tampil segera. Diisi untuk menjadwalkan.</span>
+          </label>
+          <div className="flex flex-col justify-end gap-2 pb-1">
             <label className="flex items-center gap-2 text-sm font-semibold">
               <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="h-4 w-4 accent-[#1B2A4A]" />
               Aktif (tampil di halaman publik)
             </label>
+            <label className="flex items-center gap-2 text-sm font-semibold">
+              <input type="checkbox" checked={isFeatured} onChange={(e) => setIsFeatured(e.target.checked)} className="h-4 w-4 accent-[#866D2C]" />
+              Jadikan Pengumuman Utama
+            </label>
+            <span className="text-xs font-normal text-[#5B7088]">Hanya satu pengumuman utama pada satu waktu.</span>
           </div>
         </div>
 
@@ -494,5 +536,13 @@ function Field({ label, value, onChange, multiline = false, type = 'text' }: { l
       )}
     </label>
   );
+}
+
+function formatDateLabel(value?: string | null): string {
+  if (!value) return 'Belum dipublikasikan';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  const months = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+  return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
 }
 

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { KeyRound, Loader2, ShieldAlert } from 'lucide-react';
-import { myProfileApi } from '../../lib/api';
+import { ArrowLeft, KeyRound, Loader2, ShieldAlert } from 'lucide-react';
+import { backendApi, myProfileApi } from '../../lib/api';
 import { StaffAuthProvider, useStaffAuth } from '../../lib/staffAuth';
 import { LoadingInline } from '../../components/ui/LoadingScreen';
 
@@ -65,6 +65,11 @@ function ChangePasswordScreen() {
     }
   };
 
+  const goBackToLogin = async () => {
+    await backendApi.auth.signOut();
+    navigate('/admin/login');
+  };
+
   return (
     <main className="min-h-screen bg-[#FAF6F0] grid place-items-center p-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl">
@@ -89,6 +94,12 @@ function ChangePasswordScreen() {
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />} {saving ? 'Menyimpan...' : 'Simpan Password Baru'}
           </button>
         </form>
+
+        <div className="mt-6 border-t border-[#1B2A4A]/10 pt-4 text-center">
+          <button onClick={() => void goBackToLogin()} className="inline-flex items-center gap-2 text-sm font-semibold text-[#5B7088] transition-colors hover:text-[#866D2C]">
+            <ArrowLeft className="h-4 w-4" /> Kembali ke Halaman Login
+          </button>
+        </div>
       </div>
     </main>
   );

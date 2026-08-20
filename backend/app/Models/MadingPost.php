@@ -22,6 +22,8 @@ class MadingPost extends Model
         'author_name',
         'author_role',
         'cover_image',
+        'images',
+        'videos',
         'status',
         'feedback',
         'published_at',
@@ -31,6 +33,8 @@ class MadingPost extends Model
     protected $casts = [
         'published_at' => 'datetime',
         'ai_assisted' => 'boolean',
+        'images' => 'array',
+        'videos' => 'array',
     ];
 
     public function category(): BelongsTo

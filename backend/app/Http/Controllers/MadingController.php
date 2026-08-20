@@ -91,7 +91,7 @@ class MadingController extends Controller
         }
 
         if ($status === 'published') {
-            $query->orderBy('published_at', 'desc');
+            $query->orderBy('published_at', 'desc')->orderBy('created_at', 'desc');
         } else {
             $query->orderBy('created_at', 'desc');
         }
@@ -99,9 +99,26 @@ class MadingController extends Controller
         return response()->json($query->get());
     }
 
-    public function show(string $id)
+    public function show(Request $request, string $id)
     {
-        $post = MadingPost::with('category:id,name')->findOrFail($id);
+        $user = $request->user();
+
+        $post = MadingPost::with('category:id,name')->find($id);
+
+        if (! $post) {
+            return response()->json(['error' => ['message' => 'Not Found']], 404);
+        }
+
+        // Visibility mirrors index(): published for everyone; own or staff
+        // (mading.view) only when authenticated. Non-visible posts 404 so the
+        // public cannot access unpublished content.
+        $visible = $post->status === 'published'
+            || ($user && $post->author_id === $user->id)
+            || ($user && $this->permissions->hasPermission($user, 'mading.view'));
+
+        if (! $visible) {
+            return response()->json(['error' => ['message' => 'Not Found']], 404);
+        }
 
         return response()->json($post);
     }

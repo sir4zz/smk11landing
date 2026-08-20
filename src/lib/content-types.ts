@@ -4,6 +4,7 @@ export interface Program {
   slug: string;
   shortName?: string;
   icon?: string;
+  logo?: string;
   image?: string;
   description?: string;
   shortDescription?: string;
@@ -41,14 +42,29 @@ export interface OsisProfile { id?: string; name: string; description: string; p
 export interface OsisMember { id?: string; osis_id?: string; name: string; position: string; division: string; photo: string; sort_order: number }
 export interface OsisActivity { id?: string; title: string; description: string; photo: string; activity_date?: string | null; status: string }
 
-export interface KesemaptaanProfile { id?: string; title: string; description: string; photo: string }
-export interface KesemaptaanActivity { id?: string; title: string; description: string; activity_date?: string | null; documentation: string[]; status: string }
-export interface KesemaptaanSchedule { id?: string; day: string; time: string; place: string }
+export interface KesemaptaanGoal { title: string; description: string }
+export interface KesemaptaanProfile {
+  id?: string;
+  title: string;
+  description: string;
+  photo: string;
+  hero_title?: string;
+  hero_description?: string;
+  hero_image?: string;
+  about_title?: string;
+  about_description?: string;
+  goals?: KesemaptaanGoal[];
+}
+export interface KesemaptaanActivity { id?: string; title: string; description: string; activity_date?: string | null; documentation: string[]; photo?: string; status: string }
+export interface KesemaptaanSchedule { id?: string; name: string; date?: string | null; location: string; description: string }
 export interface KesemaptaanInstructor { id?: string; name: string; role: string; photo: string; sort_order: number }
 export interface KesemaptaanAchievement { id?: string; name: string; year: string; description: string; photo: string; documentation?: string[] }
+export interface KesemaptaanGalleryPhoto { id?: string; image: string; caption?: string; is_primary?: boolean; sort_order?: number }
+export interface KesemaptaanVideo { id?: string; youtube_url: string; title?: string; sort_order?: number }
 export interface MadingCategory { id?: string; slug: string; name: string; sort_order: number }
 export type MadingPostStatus = 'draft' | 'pending_review' | 'approved' | 'rejected' | 'published';
-export interface MadingPost { id?: string; title: string; content: string; category_id?: string | null; category?: string; author_id?: string | null; author_name: string; author_role: string; cover_image: string; status: MadingPostStatus; feedback: string; ai_assisted?: boolean; published_at?: string | null; created_at?: string; updated_at?: string }
+export interface MadingVideo { url: string; title?: string }
+export interface MadingPost { id?: string; title: string; content: string; category_id?: string | null; category?: string; author_id?: string | null; author_name: string; author_role: string; cover_image: string; images?: string[]; videos?: MadingVideo[]; status: MadingPostStatus; feedback: string; ai_assisted?: boolean; published_at?: string | null; created_at?: string; updated_at?: string }
 
 export type SpmbStatus = 'dibuka' | 'ditutup';
 export interface SpmbScheduleItem { category: 'pendaftaran' | 'seleksi' | 'pengumuman' | 'daftar_ulang'; date: string; title: string }
@@ -61,5 +77,6 @@ export interface SpmbContent {
 }
 export interface SpmbPoster {
   id?: string; title: string; image: string; is_active: boolean; sort_order: number;
+  published_at?: string | null; is_featured?: boolean; created_by?: string | null; creator_name?: string | null;
   created_at?: string; updated_at?: string;
 }

@@ -1,8 +1,8 @@
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
-import { ArrowLeft, ChevronRight, Download, Eye, Loader2, Pencil, Plus, Search, Trash2, Upload, UserRound, X } from 'lucide-react';
-import { resolveImageUrl, sdmApi } from '../../lib/api';
-import type { SdmPersonRow, SdmType } from '../../lib/api';
+import { ArrowLeft, ChevronRight, Download, Eye, KeyRound, Loader2, Pencil, Plus, Search, Trash2, Upload, UserRound, X } from 'lucide-react';
+import { resolveImageUrl, sdmAccountApi, sdmApi } from '../../lib/api';
+import type { GuruAccountSummary, SdmPersonRow, SdmType } from '../../lib/api';
 import { can } from '../../lib/permissions';
 import ImageField from './ImageField';
 import SdmImport from './SdmImport';
@@ -280,11 +280,14 @@ export default function SdmManagement({ type, permissions }: SdmManagementProps)
   const [tab, setTab] = useState('pribadi');
   const [saving, setSaving] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [accountGuruId, setAccountGuruId] = useState<string | null>(null);
 
   const canEdit = can(permissions, 'sdm.edit') || can(permissions, 'sdm.create');
   const canDelete = can(permissions, 'sdm.delete');
   const canImport = can(permissions, 'sdm.import');
   const canExport = can(permissions, 'sdm.export');
+  const canViewAccount = can(permissions, 'sdm.view');
+  const canEditAccount = can(permissions, 'sdm.edit');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -403,6 +406,7 @@ export default function SdmManagement({ type, permissions }: SdmManagementProps)
   };
 
   const detailPerson = detailId ? items.find((i) => i.id === detailId) ?? null : null;
+  const detailPersonId = detailPerson?.id ?? null;
   const totalPages = Math.max(1, Math.ceil(total / perPage));
 
   return (
@@ -428,7 +432,7 @@ export default function SdmManagement({ type, permissions }: SdmManagementProps)
 
       {detailId ? (
         detailPerson ? (
-          <SdmDetail person={detailPerson} onBack={() => setDetailId(null)} onEdit={canEdit ? () => openEdit(detailPerson) : undefined} onDelete={canDelete ? () => remove(detailPerson) : undefined} />
+          <SdmDetail person={detailPerson} onBack={() => setDetailId(null)} onEdit={canEdit ? () => openEdit(detailPerson) : undefined} onDelete={canDelete ? () => remove(detailPerson) : undefined} onManageAccount={type === 'guru' && canViewAccount && detailPersonId ? () => setAccountGuruId(detailPersonId!) : undefined} />
         ) : (
           <div className="rounded-xl bg-white p-8 text-center text-[#5B7088] shadow-sm">
             Data tidak ditemukan.{' '}
@@ -453,11 +457,12 @@ export default function SdmManagement({ type, permissions }: SdmManagementProps)
                   <th className="p-4">Pangkat / Gol</th>
                   <th className="p-4">Jabatan</th>
                   <th className="p-4">Aktif</th>
+                  {type === 'guru' && canViewAccount && <th className="p-4">Akun Login</th>}
                   <th className="p-4">Aksi</th>
                 </tr>
               </thead>
               <tbody>
-                {!loading && items.length === 0 && <tr><td colSpan={8} className="p-8 text-center text-[#5B7088]">Belum ada data {SDM_TYPE_LABELS[type].toLowerCase()}.</td></tr>}
+                {!loading && items.length === 0 && <tr><td colSpan={type === 'guru' && canViewAccount ? 9 : 8} className="p-8 text-center text-[#5B7088]">Belum ada data {SDM_TYPE_LABELS[type].toLowerCase()}.</td></tr>}
                 {items.map((person) => (
                   <tr key={person.id} className="border-t border-[#1B2A4A]/10">
                     <td className="p-4">
@@ -483,8 +488,20 @@ export default function SdmManagement({ type, permissions }: SdmManagementProps)
                         {person.is_active !== false ? 'Aktif' : 'Nonaktif'}
                       </span>
                     </td>
+                    {type === 'guru' && canViewAccount && (
+                      <td className="p-4">
+                        {person.linked_account ? (
+                          <span className="inline-flex rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700">Terhubung</span>
+                        ) : (
+                          <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-600">Belum ada</span>
+                        )}
+                      </td>
+                    )}
                     <td className="p-4 whitespace-nowrap">
                       <button onClick={() => { if (person.id) setDetailId(person.id); }} className="mr-3 inline-flex items-center gap-1 text-sm font-semibold text-[#866D2C]"><Eye size={15} /> Detail</button>
+                      {type === 'guru' && canViewAccount && (
+                        <button onClick={() => { if (person.id) setAccountGuruId(person.id); }} className="mr-3 inline-flex items-center gap-1 text-sm font-semibold text-[#866D2C]"><KeyRound size={15} /> Akun</button>
+                      )}
                       {canEdit && (
                         <button onClick={() => openEdit(person)} className="mr-3 inline-flex items-center gap-1 text-sm font-semibold text-[#866D2C]"><Pencil size={15} /> Edit</button>
                       )}
@@ -531,11 +548,242 @@ export default function SdmManagement({ type, permissions }: SdmManagementProps)
       )}
 
       {importOpen && <SdmImport type={type} onClose={() => setImportOpen(false)} onImported={() => { void load(); }} />}
+
+      {accountGuruId && (
+        <GuruAccountModal
+          person={items.find((i) => i.id === accountGuruId) ?? null}
+          canEdit={canEditAccount}
+          onClose={() => setAccountGuruId(null)}
+          onChanged={() => { void load(); }}
+        />
+      )}
     </div>
   );
 }
 
-function SdmDetail({ person, onBack, onEdit, onDelete }: { person: SdmPersonRow; onBack: () => void; onEdit?: () => void; onDelete?: () => void }) {
+function GuruAccountModal({ person, canEdit, onClose, onChanged }: { person: SdmPersonRow | null; canEdit: boolean; onClose: () => void; onChanged: () => void }) {
+  const [account, setAccount] = useState<GuruAccountSummary | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+
+  const load = useCallback(async () => {
+    if (!person?.id) return;
+    setLoading(true);
+    const { data, error } = await sdmAccountApi.get(person.id);
+    if (!error && data) {
+      setAccount(data);
+      setEmail(data.user?.email ?? '');
+    }
+    setLoading(false);
+  }, [person?.id]);
+
+  useEffect(() => { void load(); }, [load]);
+
+  if (!person) {
+    return (
+      <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4">
+        <div className="w-full max-w-lg rounded-xl bg-white p-6 text-center text-[#5B7088] shadow-xl">Data guru tidak ditemukan.</div>
+      </div>
+    );
+  }
+
+  const flash = (type: 'ok' | 'err', text: string) => {
+    setMsg({ type, text });
+    setTimeout(() => setMsg(null), 5000);
+  };
+
+  const createAccount = async () => {
+    if (!canEdit) return;
+    setBusy(true);
+    setMsg(null);
+    setGeneratedPassword(null);
+    const { data, error } = await sdmAccountApi.create(person.id!, {
+      email: email.trim() || undefined,
+      password: password || undefined,
+    });
+    setBusy(false);
+    if (error) {
+      flash('err', error.message ?? 'Gagal membuat akun.');
+      return;
+    }
+    if (data?.generated_password) setGeneratedPassword(data.generated_password);
+    setPassword('');
+    await load();
+    onChanged();
+  };
+
+  const resetPassword = async () => {
+    if (!canEdit) return;
+    if (!password.trim()) {
+      flash('err', 'Password baru wajib diisi.');
+      return;
+    }
+    setBusy(true);
+    setMsg(null);
+    const { error } = await sdmAccountApi.update(person.id!, { password });
+    setBusy(false);
+    if (error) {
+      flash('err', error.message ?? 'Gagal mereset password.');
+      return;
+    }
+    setPassword('');
+    await load();
+    onChanged();
+    flash('ok', 'Password akun berhasil direset.');
+  };
+
+  const toggleStatus = async () => {
+    if (!canEdit) return;
+    const next = account?.user?.status === 'active' ? 'inactive' : 'active';
+    setBusy(true);
+    setMsg(null);
+    const { error } = await sdmAccountApi.update(person.id!, { status: next });
+    setBusy(false);
+    if (error) {
+      flash('err', error.message ?? 'Gagal mengubah status akun.');
+      return;
+    }
+    await load();
+    onChanged();
+    flash('ok', next === 'active' ? 'Akun diaktifkan.' : 'Akun dinonaktifkan.');
+  };
+
+  const unlink = async () => {
+    if (!canEdit) return;
+    if (!confirm(`Lepaskan akun login dari ${person.name}? Akun login beserta profil publiknya akan dihapus permanen. Data SDM tetap tersimpan dan dapat dibuatkan akun baru.`)) return;
+    setBusy(true);
+    setMsg(null);
+    const { error } = await sdmAccountApi.remove(person.id!);
+    setBusy(false);
+    if (error) {
+      flash('err', error.message ?? 'Gagal melepas akun.');
+      return;
+    }
+    await load();
+    onChanged();
+    flash('ok', 'Akun berhasil dilepas.');
+  };
+
+  const identifiers = [person.nip, person.nipppk, person.nuptk].filter(Boolean).join(' • ');
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4">
+      <div className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
+        <div className="mb-5 flex justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-[#1B2A4A]">Kelola Akun Login</h2>
+            <p className="mt-1 text-sm text-[#5B7088]">{person.name}{identifiers ? ` — ${identifiers}` : ''}</p>
+          </div>
+          <button onClick={onClose}><X /></button>
+        </div>
+
+        {msg && <p className={`mb-4 rounded-lg p-3 text-sm ${msg.type === 'ok' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>{msg.text}</p>}
+
+        {generatedPassword && (
+          <div className="mb-4 rounded-lg border border-[#C8A951]/50 bg-[#FFF9E8] p-4">
+            <p className="text-sm font-bold text-[#866D2C]">Akun berhasil dibuat! Berikan password ini kepada guru secara aman:</p>
+            <p className="mt-2 rounded-lg bg-white p-3 text-center font-mono text-lg font-bold tracking-widest text-[#1B2A4A]">{generatedPassword}</p>
+            <p className="mt-2 text-xs text-[#5B7088]">Password hanya ditampilkan sekali dan tidak dapat dilihat lagi.</p>
+          </div>
+        )}
+
+        {loading ? (
+          <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin text-[#C8A951]" /></div>
+        ) : account?.linked ? (
+          <div className="space-y-4">
+            <div className="rounded-xl bg-[#FAF6F0] p-4 text-sm">
+              <RowValue label="Email Login" value={account.user?.email ?? '-'} mono />
+              <RowValue label="Status" value={account.user?.status === 'active' ? 'Aktif' : 'Nonaktif'} />
+              <RowValue label="Wajib Ganti Password" value={account.user?.must_change_password ? 'Ya' : 'Tidak'} />
+              <RowValue label="Dibuat" value={account.user?.created_at ? new Date(account.user.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-'} />
+            </div>
+
+            {canEdit && (
+              <>
+                <div>
+                  <label className="block text-sm font-semibold">
+                    Reset Password
+                    <input
+                      type="text"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Password baru (min. 6 karakter)"
+                      className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal"
+                    />
+                  </label>
+                  <button onClick={resetPassword} disabled={busy} className="mt-2 inline-flex items-center gap-2 rounded-lg border-2 border-[#1B2A4A] px-4 py-2 font-bold text-[#1B2A4A] hover:bg-[#1B2A4A]/5 disabled:opacity-50">
+                    {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound size={16} />} Reset Password
+                  </button>
+                </div>
+
+                <div className="flex flex-wrap justify-end gap-2 border-t border-[#1B2A4A]/10 pt-4">
+                  <button onClick={toggleStatus} disabled={busy} className="inline-flex items-center gap-2 rounded-lg border-2 border-[#866D2C]/40 px-4 py-2 font-bold text-[#866D2C] hover:bg-[#C8A951]/10 disabled:opacity-50">
+                    {account.user?.status === 'active' ? 'Nonaktifkan' : 'Aktifkan'} Akun
+                  </button>
+                  <button onClick={unlink} disabled={busy} className="inline-flex items-center gap-2 rounded-lg border-2 border-red-200 px-4 py-2 font-bold text-red-600 hover:bg-red-50 disabled:opacity-50">
+                    <Trash2 size={16} /> Lepas Akun
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="rounded-lg bg-[#FAF6F0] p-3 text-sm text-[#5B7088]">
+              Guru ini belum memiliki akun login. Setelah dibuat, guru dapat login menggunakan NIP / NUPTK / ID Guru dan email di bawah.
+            </div>
+            {canEdit ? (
+              <>
+                <label className="block text-sm font-semibold">
+                  Email Login (opsional)
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder={account?.identifier ? `Otomatis dibuat jika kosong` : 'cth. nama@sekolah.sch.id'}
+                    className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal"
+                  />
+                </label>
+                <label className="block text-sm font-semibold">
+                  Password (opsional)
+                  <input
+                    type="text"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Min. 6 karakter — kosongkan untuk otomatis dibuat"
+                    className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal"
+                  />
+                </label>
+                <div className="flex justify-end">
+                  <button onClick={createAccount} disabled={busy} className="inline-flex items-center gap-2 rounded-lg bg-[#1B2A4A] px-5 py-2.5 font-bold text-white disabled:opacity-50">
+                    {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Buat Akun
+                  </button>
+                </div>
+              </>
+            ) : (
+              <p className="text-sm text-[#5B7088]">Anda tidak memiliki izin untuk mengelola akun login.</p>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function RowValue({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div className="flex items-center justify-between gap-4 border-b border-[#1B2A4A]/5 py-1.5 last:border-0">
+      <span className="text-[#5B7088]">{label}</span>
+      <span className={`font-semibold text-[#1B2A4A] ${mono ? 'font-mono' : ''}`}>{value}</span>
+    </div>
+  );
+}
+
+function SdmDetail({ person, onBack, onEdit, onDelete, onManageAccount }: { person: SdmPersonRow; onBack: () => void; onEdit?: () => void; onDelete?: () => void; onManageAccount?: () => void }) {
   const [tab, setTab] = useState('pribadi');
 
   return (
@@ -553,6 +801,7 @@ function SdmDetail({ person, onBack, onEdit, onDelete }: { person: SdmPersonRow;
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
+          {onManageAccount && <button onClick={onManageAccount} className="inline-flex items-center gap-2 rounded-lg border-2 border-[#C8A951]/60 px-4 py-2 font-bold text-[#866D2C] hover:bg-[#C8A951]/10"><KeyRound size={16} /> Kelola Akun</button>}
           {onEdit && <button onClick={onEdit} className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-4 py-2 font-bold text-[#1B2A4A]"><Pencil size={16} /> Edit</button>}
           {onDelete && <button onClick={onDelete} className="inline-flex items-center gap-2 rounded-lg border-2 border-red-200 px-4 py-2 font-bold text-red-600 hover:bg-red-50"><Trash2 size={16} /> Hapus</button>}
           <button onClick={onBack} className="inline-flex items-center gap-2 rounded-lg border-2 border-[#1B2A4A] px-4 py-2 font-bold text-[#1B2A4A] hover:bg-[#1B2A4A]/5"><ArrowLeft size={16} /> Kembali</button>

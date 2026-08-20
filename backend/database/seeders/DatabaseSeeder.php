@@ -16,6 +16,7 @@ use App\Models\Guru;
 use App\Models\Kesemaptaan;
 use App\Models\KesemaptaanAchievement;
 use App\Models\KesemaptaanActivity;
+use App\Models\KesemaptaanGallery;
 use App\Models\KesemaptaanInstructor;
 use App\Models\KesemaptaanSchedule;
 use App\Models\MadingCategory;
@@ -1223,19 +1224,34 @@ class DatabaseSeeder extends Seeder
     {
         $profile = Kesemaptaan::query()->first();
 
-        if (! $profile) {
-            Kesemaptaan::create([
-                'title' => 'Kesemaptaan SMKN 11 Kabupaten Tangerang',
-                'description' => 'Kesemaptaan adalah program pembinaan kedisiplinan, fisik, dan ketahanan mental serta keterampilan baris-berbaris (PBB) bagi siswa. Kegiatan ini membentuk karakter disiplin, tangguh, dan bertanggung jawab yang sejalan dengan nilai-nilai sekolah.',
-                'photo' => '',
-            ]);
+        $profileData = [
+            'title' => 'Kesemaptaan SMKN 11 Kabupaten Tangerang',
+            'description' => 'Kesemaptaan adalah program pembinaan kedisiplinan, fisik, dan ketahanan mental serta keterampilan baris-berbaris (PBB) bagi siswa. Kegiatan ini membentuk karakter disiplin, tangguh, dan bertanggung jawab yang sejalan dengan nilai-nilai sekolah.',
+            'photo' => '',
+            'hero_title' => 'Kesemaptaan SMKN 11 Kabupaten Tangerang',
+            'hero_description' => 'Pembinaan kedisiplinan, kesamaptaan fisik, dan keterampilan baris-berbaris untuk membentuk generasi yang disiplin, tangguh, dan berkarakter.',
+            'hero_image' => 'https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?auto=format&fit=crop&w=1600&q=80',
+            'about_title' => 'Tentang Kesemaptaan',
+            'about_description' => 'Kesemaptaan merupakan program pembinaan siswa yang menekankan pada penguatan kedisiplinan, kebugaran fisik, ketahanan mental, serta keterampilan baris-berbaris (PBB). Melalui kegiatan yang rutin dan terstruktur, siswa dilatih untuk disiplin, kompak, dan bertanggung jawab — nilai-nilai yang menjadi bekal penting dalam kehidupan dan dunia kerja.',
+            'goals' => [
+                ['title' => 'Membentuk Kedisiplinan', 'description' => 'Menanamkan sikap disiplin, tertib, dan patuh pada aturan melalui latihan rutin dan kegiatan yang terstruktur.'],
+                ['title' => 'Meningkatkan Kebugaran Fisik', 'description' => 'Melatih ketahanan dan kesamaptaan fisik agar siswa selalu sehat, bugar, dan siap menjalankan aktivitas belajar.'],
+                ['title' => 'Menumbuhkan Jiwa Korsa', 'description' => 'Membangun kekompakan, solidaritas, dan jiwa kebersamaan antaranggota dalam setiap kegiatan.'],
+                ['title' => 'Melatih Kepemimpinan', 'description' => 'Memberikan ruang bagi siswa untuk melatih kemampuan memimpin, mengkoordinasikan, dan mengambil keputusan.'],
+            ],
+        ];
+
+        if ($profile) {
+            $profile->update($profileData);
+        } else {
+            Kesemaptaan::create($profileData);
         }
 
         $activities = [
-            ['title' => 'Latihan Dasar Kedisiplinan (LDK)', 'description' => 'Pelatihan dasar kedisiplinan dan pembinaan fisik untuk membentuk karakter siswa yang tertib, bertanggung jawab, dan siap menghadapi tantangan.', 'activity_date' => '2026-02-10', 'documentation' => [], 'status' => 'published'],
-            ['title' => 'Pembinaan Fisik & Keterampilan Baris-Berbaris', 'description' => 'Latihan fisik dan keterampilan PBB yang rutin dilaksanakan untuk menjaga kebugaran dan membangun kekompakan antarsiswa.', 'activity_date' => '2026-03-20', 'documentation' => [], 'status' => 'published'],
-            ['title' => 'Latihan Khusus Tim PBB Satria 11', 'description' => 'Latihan intensif bagi tim PBB Satria 11 dalam persiapan mengikuti lomba baris-berbaris tingkat kabupaten dan provinsi.', 'activity_date' => '2026-05-15', 'documentation' => [], 'status' => 'published'],
-            ['title' => 'Upacara Apel Besar & Pelantikan Anggota Baru', 'description' => 'Apel besar sekolah sekaligus pelantikan anggota baru tim Kesemaptaan SMKN 11 Kabupaten Tangerang periode 2025/2026.', 'activity_date' => '2026-08-30', 'documentation' => [], 'status' => 'published'],
+            ['title' => 'Latihan Dasar Kedisiplinan (LDK)', 'description' => 'Pelatihan dasar kedisiplinan dan pembinaan fisik untuk membentuk karakter siswa yang tertib, bertanggung jawab, dan siap menghadapi tantangan.', 'activity_date' => '2026-02-10', 'documentation' => [], 'photo' => 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=900&q=80', 'status' => 'published'],
+            ['title' => 'Pembinaan Fisik & Keterampilan Baris-Berbaris', 'description' => 'Latihan fisik dan keterampilan PBB yang rutin dilaksanakan untuk menjaga kebugaran dan membangun kekompakan antarsiswa.', 'activity_date' => '2026-03-20', 'documentation' => [], 'photo' => 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=900&q=80', 'status' => 'published'],
+            ['title' => 'Latihan Khusus Tim PBB Satria 11', 'description' => 'Latihan intensif bagi tim PBB Satria 11 dalam persiapan mengikuti lomba baris-berbaris tingkat kabupaten dan provinsi.', 'activity_date' => '2026-05-15', 'documentation' => [], 'photo' => 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=900&q=80', 'status' => 'published'],
+            ['title' => 'Upacara Apel Besar & Pelantikan Anggota Baru', 'description' => 'Apel besar sekolah sekaligus pelantikan anggota baru tim Kesemaptaan SMKN 11 Kabupaten Tangerang periode 2025/2026.', 'activity_date' => '2026-08-30', 'documentation' => [], 'photo' => 'https://images.unsplash.com/photo-1531058020387-3be344556be6?auto=format&fit=crop&w=900&q=80', 'status' => 'published'],
         ];
 
         foreach ($activities as $activity) {
@@ -1243,14 +1259,14 @@ class DatabaseSeeder extends Seeder
         }
 
         $schedules = [
-            ['day' => 'Senin', 'time' => '15.30 - 17.00', 'place' => 'Lapangan Sekolah'],
-            ['day' => 'Rabu', 'time' => '15.30 - 17.00', 'place' => 'Lapangan Sekolah'],
-            ['day' => 'Sabtu', 'time' => '08.00 - 10.00', 'place' => 'Lapangan Sekolah'],
+            ['name' => 'Latihan Rutin Senam & PBB', 'date' => '2026-08-24', 'location' => 'Lapangan Sekolah', 'description' => 'Latihan fisik dan baris-berbaris untuk seluruh anggota kesemaptaan.'],
+            ['name' => 'Latihan Tim PBB Satria 11', 'date' => '2026-08-26', 'location' => 'Lapangan Sekolah', 'description' => 'Latihan intensif persiapan lomba baris-berbaris tingkat kabupaten.'],
+            ['name' => 'Apel Akbar & Pembinaan Karakter', 'date' => '2026-08-29', 'location' => 'Lapangan Sekolah', 'description' => 'Kegiatan apel besar sekaligus pembinaan kedisiplinan dan mental bagi anggota.'],
         ];
 
         foreach ($schedules as $schedule) {
             KesemaptaanSchedule::updateOrCreate(
-                ['day' => $schedule['day'], 'time' => $schedule['time']],
+                ['name' => $schedule['name']],
                 $schedule
             );
         }
@@ -1273,6 +1289,21 @@ class DatabaseSeeder extends Seeder
 
         foreach ($achievements as $achievement) {
             KesemaptaanAchievement::updateOrCreate(['name' => $achievement['name']], $achievement);
+        }
+
+        $gallery = [
+            ['image' => 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=900&q=80', 'caption' => 'Latihan fisik bersama di lapangan', 'is_primary' => true, 'sort_order' => 1],
+            ['image' => 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=900&q=80', 'caption' => 'Kegiatan apel dan pembinaan kedisiplinan', 'is_primary' => false, 'sort_order' => 2],
+            ['image' => 'https://images.unsplash.com/photo-1531058020387-3be344556be6?auto=format&fit=crop&w=900&q=80', 'caption' => 'Latihan baris-berbaris tim PBB', 'is_primary' => false, 'sort_order' => 3],
+            ['image' => 'https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?auto=format&fit=crop&w=900&q=80', 'caption' => 'Suasana lapangan saat kegiatan kesamaptaan', 'is_primary' => false, 'sort_order' => 4],
+            ['image' => 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=900&q=80', 'caption' => 'Koordinasi dan kekompakan antaranggota', 'is_primary' => false, 'sort_order' => 5],
+        ];
+
+        foreach ($gallery as $index => $item) {
+            KesemaptaanGallery::updateOrCreate(
+                ['image' => $item['image']],
+                $item
+            );
         }
     }
 

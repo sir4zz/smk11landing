@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Check, Briefcase, Building, ArrowLeft } from 'lucide-react';
+import { Check, Briefcase, Building, ArrowLeft, BookOpen } from 'lucide-react';
 import PageHero from '../../components/ui/PageHero';
 import type { Program } from '../../lib/content-types';
 import { fetchPublicContentByIdResult, resolveImageUrl } from '../../lib/api';
@@ -158,6 +158,13 @@ const StudyProgramDetail: React.FC = () => {
           <div className="lg:w-1/3">
             <Card className="sticky top-8 !bg-[#1B2A4A] text-[#FAF6F0]">
               <div className="p-8">
+                <div className="mb-6 flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl bg-[#FAF6F0]">
+                  {program.logo && resolveImageUrl(program.logo) ? (
+                    <img src={resolveImageUrl(program.logo)!} alt={`Logo ${program.name}`} className="h-full w-full object-contain p-1.5" />
+                  ) : (
+                    <BookOpen className="h-9 w-9 text-[#1B2A4A]" />
+                  )}
+                </div>
                 <h3 className="text-2xl font-bold text-[#C8A951] mb-4">{program.name}</h3>
                 <p className="text-[#F3E8D0] mb-8">{program.shortDescription}</p>
                 

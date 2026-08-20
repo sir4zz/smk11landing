@@ -17,6 +17,7 @@ class Program extends Model
         'slug',
         'short_name',
         'icon',
+        'logo',
         'image',
         'description',
         'short_description',

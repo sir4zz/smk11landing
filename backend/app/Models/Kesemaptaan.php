@@ -19,10 +19,19 @@ class Kesemaptaan extends Model
         'title',
         'description',
         'photo',
+        'hero_title',
+        'hero_description',
+        'hero_image',
+        'about_title',
+        'about_description',
+        'goals',
         'updated_at',
+        'created_at',
     ];
 
     protected $casts = [
         'updated_at' => 'datetime',
+        'created_at' => 'datetime',
+        'goals' => 'array',
     ];
 }

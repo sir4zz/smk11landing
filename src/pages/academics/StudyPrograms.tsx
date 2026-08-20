@@ -32,11 +32,15 @@ const StudyPrograms: React.FC = () => {
                 </div>
               )}
               <div className="flex flex-col flex-1 p-6">
-                <div className="w-16 h-16 bg-[#1B2A4A] rounded-full flex items-center justify-center mb-6">
-                  <BookOpen className="w-8 h-8 text-[#C8A951]" />
+                <div className="mb-6 flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border border-[#1B2A4A]/10 bg-[#FAF6F0]">
+                  {program.logo && resolveImageUrl(program.logo) ? (
+                    <img src={resolveImageUrl(program.logo)!} alt={`Logo ${program.name}`} loading="lazy" className="h-full w-full object-contain p-1.5" />
+                  ) : (
+                    <BookOpen className="h-8 w-8 text-[#1B2A4A]" />
+                  )}
                 </div>
                 <h3 className="text-xl font-bold text-[#1B2A4A] mb-3">{program.name}</h3>
-                <p className="text-[#23314D] mb-6">{program.shortDescription || program.description}</p>
+                <p className="text-[#23314D] mb-6 line-clamp-3">{program.shortDescription || program.description}</p>
                 <Link to={`/akademik/program/${program.slug}`} className="mt-auto">
                   <Button variant="outline" className="w-full text-[#1B2A4A] border-[#1B2A4A] hover:bg-[#1B2A4A] hover:text-[#FAF6F0]">
                     Pelajari Lebih Lanjut

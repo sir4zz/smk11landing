@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ChangeEvent } from 'react';
-import { Plus, Pencil, Trash2, X, Save, Loader2, Search, CheckCircle2, XCircle, Send, Eye, Sparkles } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Save, Loader2, Search, CheckCircle2, XCircle, Send, Eye, Sparkles, Clapperboard } from 'lucide-react';
 import { backendApi } from '../../lib/api';
 import type { MadingPostRow } from '../../lib/api';
 import { can } from '../../lib/permissions';
 import { MADING_STATUSES } from '../../lib/ui-constants';
 import ImageField from './ImageField';
 import AIContentAssistant from '../mading/AIContentAssistant';
+import { GalleryUpload, VideoUrlsField } from '../mading/MediaEditor';
+import { resolveImageUrl, youtubeThumbnailUrl } from '../../lib/api';
 
 interface Props {
   permissions: string[];
@@ -308,7 +310,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 function MadingForm({ item, categories, permissions, onClose, onSave }: { item: PostItem | null; categories: { id: string; name: string }[]; permissions: string[]; onClose: () => void; onSave: (r: PostItem) => void }) {
-  const [values, setValues] = useState<PostItem>(item ?? { title: '', content: '', category_id: '', author_name: '', author_role: 'guru', cover_image: '', status: 'draft', feedback: '', ai_assisted: false });
+  const [values, setValues] = useState<PostItem>(item ?? { title: '', content: '', category_id: '', author_name: '', author_role: 'guru', cover_image: '', images: [], videos: [], status: 'draft', feedback: '', ai_assisted: false });
   const [aiOpen, setAiOpen] = useState(false);
   const canUseAi = can(permissions, 'mading.ai_generate');
   const [aiAssisted, setAiAssisted] = useState<boolean>(Boolean(values.ai_assisted));
@@ -338,6 +340,8 @@ function MadingForm({ item, categories, permissions, onClose, onSave }: { item: 
           <Field label="Nama Penulis" {...f('author_name')} />
           <div className="sm:col-span-2"><Field label="Isi Karya" multiline {...f('content')} /></div>
           <div className="sm:col-span-2"><ImageField label="Cover (opsional)" value={String(values.cover_image ?? '')} onChange={(url) => setValues((v) => ({ ...v, cover_image: url }))} /></div>
+          <div className="sm:col-span-2"><GalleryUpload value={Array.isArray(values.images) ? values.images : []} onChange={(urls) => setValues((v) => ({ ...v, images: urls }))} /></div>
+          <div className="sm:col-span-2"><VideoUrlsField value={Array.isArray(values.videos) ? values.videos : []} onChange={(videos) => setValues((v) => ({ ...v, videos }))} /></div>
         </div>
         {canUseAi && (
           <div className="mt-4">
@@ -378,6 +382,26 @@ function ReviewModal({ post, onClose, onApprove, onReject }: { post: PostItem; o
           <p className="text-xs font-semibold text-[#5B7088]">{post.category} · {post.author_role} · {post.author_name}</p>
           <h3 className="mt-1 text-lg font-bold text-[#1B2A4A]">{post.title}</h3>
           <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[#23314D]">{post.content}</p>
+          {Array.isArray(post.images) && post.images.length > 0 && (
+            <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {post.images.map((img, i) => (
+                resolveImageUrl(img) ? <img key={`${img}-${i}`} src={resolveImageUrl(img)!} alt={`Foto ${i + 1}`} loading="lazy" className="h-20 w-full rounded-lg object-cover" /> : null
+              ))}
+            </div>
+          )}
+          {Array.isArray(post.videos) && post.videos.length > 0 && (
+            <div className="mt-3 space-y-1.5">
+              {post.videos.map((vid, i) => {
+                const thumb = youtubeThumbnailUrl(vid.url ?? '');
+                return (
+                  <a key={`${vid.url}-${i}`} href={vid.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-lg bg-white p-2 text-xs font-semibold text-[#1B2A4A] hover:bg-[#FAF6F0]">
+                    {thumb ? <img src={thumb} alt="" loading="lazy" className="h-10 w-16 rounded object-cover" /> : <Clapperboard className="h-5 w-5 shrink-0 text-red-600" />}
+                    <span className="truncate">{vid.title || vid.url}</span>
+                  </a>
+                );
+              })}
+            </div>
+          )}
         </div>
         <label className="mt-5 block text-sm font-semibold">Feedback / Alasan penolakan
           <textarea value={feedback} onChange={(e) => setFeedback(e.target.value)} rows={3} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" placeholder="cth. Silakan perbaiki bagian pembuka dan sesuaikan dengan tema Mading." />

@@ -26,7 +26,7 @@ const VisionMission: React.FC = () => {
       />
       <section className="py-16 md:py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="mb-20">
-          <div className="bg-[#1B2A4A] text-[#FAF6F0] rounded-2xl p-10 md:p-16 text-center shadow-lg">
+          <div className="bg-[#1B2A4A] text-[#FAF6F0] rounded-2xl p-6 sm:p-10 md:p-16 text-center shadow-lg">
             <h2 className="text-3xl md:text-4xl font-bold text-[#C8A951] mb-8 uppercase tracking-wider">Visi</h2>
             <p className="text-xl md:text-2xl text-white leading-relaxed font-medium">
               "Terselenggaranya layanan prima pendidikan Menengah Kejuruan dalam membentuk kelulusan SMK Negeri 11 Kab. Tangerang yang berakhlaqul karimah, disiplin, mandiri, dan terampil, berjiwa kewirausahaan, siap kerja, memiliki kepribadian bangsa yang mampu mengembangkan keunggulan lokal."
@@ -54,7 +54,7 @@ const VisionMission: React.FC = () => {
           <h2 className="text-3xl font-bold text-[#1B2A4A] text-center mb-12">Nilai Inti</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {values.map((value, index) => (
-              <div key={index} className="bg-white p-8 rounded-lg shadow-sm text-center flex flex-col items-center hover:shadow-md transition-shadow">
+              <div key={index} className="bg-white p-6 sm:p-8 rounded-lg shadow-sm text-center flex flex-col items-center hover:shadow-md transition-shadow">
                 <div className="w-16 h-16 rounded-full bg-[#FAF6F0] text-[#C8A951] flex items-center justify-center mb-6">
                   <value.icon size={32} />
                 </div>
