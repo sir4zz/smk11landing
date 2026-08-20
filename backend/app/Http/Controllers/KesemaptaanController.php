@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Kesemaptaan;
 use App\Models\KesemaptaanAchievement;
 use App\Models\KesemaptaanActivity;
+use App\Models\KesemaptaanGallery;
 use App\Models\KesemaptaanInstructor;
 use App\Models\KesemaptaanSchedule;
+use App\Models\KesemaptaanVideo;
 use Illuminate\Http\Request;
 
 class KesemaptaanController extends Controller
@@ -140,6 +142,18 @@ class KesemaptaanController extends Controller
     public function achievements()
     {
         return response()->json(KesemaptaanAchievement::query()->get());
+    }
+
+    // ---------- GALLERY (dokumentasi foto) ----------
+    public function gallery()
+    {
+        return response()->json(KesemaptaanGallery::query()->orderBy('sort_order', 'asc')->orderBy('created_at', 'asc')->get());
+    }
+
+    // ---------- VIDEOS (YouTube) ----------
+    public function videos()
+    {
+        return response()->json(KesemaptaanVideo::query()->orderBy('sort_order', 'asc')->orderBy('created_at', 'asc')->get());
     }
 
     public function storeAchievement(Request $request)

@@ -64,7 +64,7 @@ const Management: React.FC = () => {
                 className="h-64 w-full object-cover md:h-full"
                 iconClassName="h-16 w-16"
               />
-              <div className="p-8 text-[#FAF6F0] md:col-span-2 md:p-12">
+              <div className="p-6 text-[#FAF6F0] md:col-span-2 md:p-12">
                 <p className="text-sm font-semibold uppercase tracking-widest text-[#C8A951]">Kepala Sekolah</p>
                 <h2 className="mt-2 text-2xl font-bold md:text-3xl">{principal.name}</h2>
                 {principal.position && (

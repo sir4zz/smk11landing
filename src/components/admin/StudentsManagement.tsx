@@ -280,6 +280,35 @@ export default function StudentsManagement() {
     flash('ok', 'Akun siswa dihapus.');
   };
 
+  const exportExcel = async () => {
+    if (filtered.length === 0) {
+      flash('err', 'Tidak ada data siswa untuk diexport.');
+      return;
+    }
+    try {
+      const XLSX = await import('xlsx');
+      const headers = ['PIN Login', ...BIODATA_FIELDS.map((f) => f.label)];
+      const rows = filtered.map((s) => [
+        s.pin ?? '',
+        ...BIODATA_FIELDS.map((f) => {
+          const raw = s[f.key];
+          if (raw === null || raw === undefined || raw === '') return '';
+          if (f.key === 'gender') return genderLabel(String(raw));
+          if (f.type === 'date') return dateForInput(raw);
+          return String(raw);
+        }),
+      ]);
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+      ws['!cols'] = headers.map((h) => ({ wch: Math.max(h.length + 2, 12) }));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Data Siswa');
+      XLSX.writeFile(wb, `data-siswa-${new Date().toISOString().slice(0, 10)}.xlsx`);
+      flash('ok', `Export ${filtered.length} siswa berhasil.`);
+    } catch {
+      flash('err', 'Gagal membuat file Excel.');
+    }
+  };
+
   if (loading) return <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-[#C8A951]" /></div>;
 
   return (
@@ -288,6 +317,7 @@ export default function StudentsManagement() {
         <p className="text-[#23314D]">Buat dan kelola akun siswa untuk Mading (login NISN + PIN) beserta data BIODATA lengkap.</p>
         {!detailId && (
           <div className="flex flex-wrap gap-2">
+            <button onClick={() => void exportExcel()} className="inline-flex items-center gap-2 rounded-lg border-2 border-[#1B2A4A] px-4 py-2 font-bold text-[#1B2A4A] hover:bg-[#1B2A4A]/5"><Download size={18} /> Export Excel</button>
             <button onClick={() => setImportOpen(true)} className="inline-flex items-center gap-2 rounded-lg border-2 border-[#1B2A4A] px-4 py-2 font-bold text-[#1B2A4A] hover:bg-[#1B2A4A]/5"><Upload size={18} /> Import Excel</button>
             <button onClick={openCreate} className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-4 py-2 font-bold text-[#1B2A4A]"><Plus size={18} /> Tambah Siswa</button>
           </div>

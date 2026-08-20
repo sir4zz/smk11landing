@@ -369,9 +369,9 @@ const BkkHome: React.FC = () => {
 
       {/* Informasi & Kontak singkat BKK */}
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 md:py-20">
-        <div className="overflow-hidden rounded-[2rem] bg-[#1B2A4A] text-white shadow-2xl">
+        <div className="overflow-hidden rounded-2xl sm:rounded-[2rem] bg-[#1B2A4A] text-white shadow-2xl">
           <div className="grid lg:grid-cols-2">
-            <div className="p-8 md:p-12">
+            <div className="p-6 sm:p-8 md:p-12">
               <p className="text-sm uppercase tracking-[0.3em] text-[#C8A951]">Kontak Singkat BKK</p>
               <h2 className="mt-3 text-2xl font-bold sm:text-3xl">Butuh bantuan atau informasi lowongan?</h2>
               <p className="mt-4 text-base font-medium text-white/85">
@@ -383,7 +383,7 @@ const BkkHome: React.FC = () => {
                 </Button>
               </div>
             </div>
-            <div className="flex flex-col justify-center gap-4 border-t border-white/10 bg-[#121F38]/60 p-8 md:p-12 lg:border-l lg:border-t-0">
+            <div className="flex flex-col justify-center gap-4 border-t border-white/10 bg-[#121F38]/60 p-6 sm:p-8 md:p-12 lg:border-l lg:border-t-0">
               {contactContent.whatsapp && (
                 <a
                   href={contactContent.whatsapp_link || `https://wa.me/${contactContent.whatsapp.replace(/\D/g, '')}`}

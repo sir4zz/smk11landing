@@ -322,7 +322,7 @@ export default function DataSiswa() {
         <div className="mt-8">
           <h2 className="mb-4 text-xl font-bold text-[#1B2A4A]">Riwayat Pengajuan Perubahan</h2>
           {requests.length === 0 ? (
-            <div className="rounded-2xl bg-white p-10 text-center shadow-sm">
+          <div className="rounded-2xl bg-white p-6 sm:p-10 text-center shadow-sm">
               <Clock className="mx-auto mb-3 h-10 w-10 text-[#C8A951]/40" />
               <p className="text-[#5B7088]">Belum ada pengajuan perubahan data.</p>
             </div>
@@ -505,7 +505,7 @@ function DetailRow({ label, value }: { label: string; value: unknown }) {
   const display = value === null || value === undefined || value === '' ? '-' : String(value);
   return (
     <div className="flex gap-2">
-      <dt className="w-44 shrink-0 font-medium text-[#5B7088]">{label}</dt>
+      <dt className="w-28 sm:w-44 shrink-0 font-medium text-[#5B7088]">{label}</dt>
       <dd className="font-semibold text-[#1B2A4A]">{display}</dd>
     </div>
   );

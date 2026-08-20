@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Guru;
 use App\Models\OsisAccount;
+use App\Models\SdmGuru;
 use App\Models\Student;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -32,11 +33,12 @@ class AccountService
             return User::query()->where('email', strtolower($term))->first();
         }
 
-        $guru = Guru::query()
-            ->where('nip', $term)
-            ->orWhere('nuptk', $term)
-            ->orWhere('teacher_id', $term)
-            ->first();
+$guru = Guru::query()
+              ->where('nip', $term)
+              ->orWhere('nipppk', $term)
+              ->orWhere('nuptk', $term)
+              ->orWhere('teacher_id', $term)
+              ->first();
 
         if ($guru) {
             return User::query()->find($guru->id);
@@ -293,6 +295,7 @@ class AccountService
                 'achievements' => $user->guru->achievements ?? [],
                 'certifications' => $user->guru->certifications ?? [],
             ] : null,
+            'guru_sdm' => $user->sdmGuru ? $this->sdmGuruPayload($user->sdmGuru) : null,
             'osis' => $user->osisAccount ? [
                 'member_id' => $user->osisAccount->member_id ?? '',
                 'nisn' => $user->osisAccount->nisn ?? '',
@@ -302,6 +305,51 @@ class AccountService
                 'work_programs' => $user->osisAccount->work_programs ?? [],
             ] : null,
             'student' => $student ? $this->studentPayload($student) : null,
+        ];
+    }
+
+    /**
+     * Payload of the imported SDM guru record (sdm_gurus) for "Profil Saya".
+     * Official identity/employment fields are read-only for the guru; the
+     * personal contact fields are editable and synced by MyProfileController.
+     */
+    public function sdmGuruPayload(SdmGuru $guru): array
+    {
+        return [
+            'id' => $guru->id,
+            'name' => $guru->name,
+            'nip' => $guru->nip ?? '',
+            'nipppk' => $guru->nipppk ?? '',
+            'nuptk' => $guru->nuptk ?? '',
+            'nik' => $guru->nik ?? '',
+            'npwp' => $guru->npwp ?? '',
+            'akta_lahir' => $guru->akta_lahir ?? '',
+            'bpjs' => $guru->bpjs ?? '',
+            'gender' => $guru->gender ?? '',
+            'religion' => $guru->religion ?? '',
+            'birth_place' => $guru->birth_place ?? '',
+            'birth_date' => $guru->birth_date?->format('Y-m-d') ?? '',
+            'status_kepegawaian' => $guru->status_kepegawaian ?? '',
+            'pangkat_golongan' => $guru->pangkat_golongan ?? '',
+            'jabatan' => $guru->jabatan ?? '',
+            'tmt_golongan' => $guru->tmt_golongan?->format('Y-m-d') ?? '',
+            'tmt_cpns' => $guru->tmt_cpns?->format('Y-m-d') ?? '',
+            'tmt_pns_pppk' => $guru->tmt_pns_pppk?->format('Y-m-d') ?? '',
+            'tmt_sk_sekolah' => $guru->tmt_sk_sekolah?->format('Y-m-d') ?? '',
+            'address' => $guru->address ?? '',
+            'phone' => $guru->phone ?? '',
+            'email' => $guru->email ?? '',
+            'photo' => $guru->photo ?? '',
+            'bio' => $guru->bio ?? '',
+            'instagram' => $guru->instagram ?? '',
+            'facebook' => $guru->facebook ?? '',
+            'twitter' => $guru->twitter ?? '',
+            'tiktok' => $guru->tiktok ?? '',
+            'youtube' => $guru->youtube ?? '',
+            'linkedin' => $guru->linkedin ?? '',
+            'website' => $guru->website ?? '',
+            'github' => $guru->github ?? '',
+            'is_active' => (bool) $guru->is_active,
         ];
     }
 

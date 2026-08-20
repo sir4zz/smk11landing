@@ -19,14 +19,15 @@ class UploadController extends Controller
         $bucket = $request->input('bucket', 'photos');
         $bucket = trim($bucket, '/');
         // Sanitasi / cegah path traversal, hanya izinkan folder yang dikenal.
-        $allowed = ['photos', 'bkk/logos', 'spmb/posters', 'gallery/covers', 'gallery/images', 'mading', 'osis', 'extracurriculars', 'kesemaptaan', 'student/documents'];
+        $allowed = ['photos', 'bkk/logos', 'spmb/posters', 'gallery/covers', 'gallery/images', 'mading', 'osis', 'extracurriculars', 'kesemaptaan', 'program-keahlian', 'student/documents'];
         if (!in_array($bucket, $allowed, true)) {
             $bucket = 'photos';
         }
 
         $key = $bucket.'/'.now()->format('Y/m').'/'.uniqid().'-'.preg_replace('/[^a-zA-Z0-9._-]/', '-', $file->getClientOriginalName());
 
-        $imagePath = $this->optimizeImage($file);
+        // Logo program keahlian diunggah apa adanya agar transparansi PNG tetap terjaga.
+        $imagePath = $bucket === 'program-keahlian' ? null : $this->optimizeImage($file);
         if ($imagePath) {
             $key = $bucket.'/'.now()->format('Y/m').'/'.uniqid().'-'.preg_replace('/[^a-zA-Z0-9._-]/', '-', $imagePath->getClientOriginalName());
         }
@@ -48,7 +49,7 @@ class UploadController extends Controller
                 'bucket' => $bucket,
                 'key' => $key,
                 'size' => Storage::disk('public')->size($key),
-                'mimeType' => 'image/jpeg',
+                'mimeType' => $imagePath ? 'image/jpeg' : $file->getMimeType(),
                 'uploadedAt' => now()->toIso8601String(),
                 'url' => $url,
             ],

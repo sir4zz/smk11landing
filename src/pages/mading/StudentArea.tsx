@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { ChangeEvent, ReactNode } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { Compass, BookMarked, PenLine, UserRound, LogOut, Loader2, Send, Save, CheckCircle2, XCircle, Clock, Eye, X, Sparkles, KeyRound } from 'lucide-react';
+import { Compass, BookMarked, PenLine, UserRound, LogOut, Loader2, Send, Save, CheckCircle2, XCircle, Clock, Eye, X, Sparkles, KeyRound, Trash2 } from 'lucide-react';
 import { backendApi } from '../../lib/api';
 import { myProfileApi, type MyProfilePayload } from '../../lib/api';
 import type { MadingPostRow } from '../../lib/api';
+import { resolveImageUrl } from '../../lib/api';
+import type { MadingVideo } from '../../lib/content-types';
 import PageHero from '../../components/ui/PageHero';
 import AIContentAssistant, { AiNote } from '../../components/mading/AIContentAssistant';
 import ImageField from '../../components/admin/ImageField';
+import { GalleryUpload, VideoUrlsField } from '../../components/mading/MediaEditor';
 import { MADING_STATUSES } from '../../lib/ui-constants';
 
 const studentSessionKey = 'smkn11-student-session';
@@ -164,13 +167,21 @@ function ExploreTab() {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {rows.map((post) => {
             const rel = post['mading_categories'] as { name?: string } | null | undefined;
+            const thumb = resolveImageUrl(post.cover_image) ?? resolveImageUrl((Array.isArray(post.images) ? post.images : [])[0]);
             return (
-              <article key={String(post.id)} className="rounded-2xl border border-[#1B2A4A]/10 bg-white p-5 shadow-sm">
-                <span className="inline-block rounded-full bg-[#FAF6F0] px-3 py-1 text-xs font-semibold text-[#866D2C]">{rel?.name ?? catName(categories, post.category_id)}</span>
-                <h3 className="mt-2 font-bold text-[#1B2A4A]">{post.title}</h3>
-                {post.ai_assisted && <div className="mt-1.5"><AiNote /></div>}
-                <p className="mt-2 line-clamp-4 text-sm leading-6 text-[#23314D]">{post.content}</p>
-                <p className="mt-3 text-xs font-medium text-[#5B7088]">{post.author_name} · {post.published_at ? new Date(post.published_at).toLocaleDateString('id-ID') : '-'}</p>
+              <article key={String(post.id)} className="overflow-hidden rounded-2xl border border-[#1B2A4A]/10 bg-white shadow-sm">
+                {thumb && (
+                  <div className="h-36 overflow-hidden">
+                    <img src={thumb} alt={post.title} loading="lazy" className="h-full w-full object-cover" />
+                  </div>
+                )}
+                <div className="p-5">
+                  <span className="inline-block rounded-full bg-[#FAF6F0] px-3 py-1 text-xs font-semibold text-[#866D2C]">{rel?.name ?? catName(categories, post.category_id)}</span>
+                  <h3 className="mt-2 font-bold text-[#1B2A4A]">{post.title}</h3>
+                  {post.ai_assisted && <div className="mt-1.5"><AiNote /></div>}
+                  <p className="mt-2 line-clamp-4 text-sm leading-6 text-[#23314D]">{post.content}</p>
+                  <p className="mt-3 text-xs font-medium text-[#5B7088]">{post.author_name} · {post.published_at ? new Date(post.published_at).toLocaleDateString('id-ID') : '-'}</p>
+                </div>
               </article>
             );
           })}
@@ -184,7 +195,7 @@ function MyWorksTab({ userId }: { userId: string }) {
   const [rows, setRows] = useState<MadingPostRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingPost, setEditingPost] = useState<MadingPostRow | null>(null);
-  const [editingValues, setEditingValues] = useState({ title: '', content: '', category_id: '', cover_image: '' });
+  const [editingValues, setEditingValues] = useState({ title: '', content: '', category_id: '', cover_image: '', images: [] as string[], videos: [] as MadingVideo[] });
   const [savingEdit, setSavingEdit] = useState(false);
   const [editMsg, setEditMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
   const [aiOpen, setAiOpen] = useState(false);
@@ -217,6 +228,8 @@ function MyWorksTab({ userId }: { userId: string }) {
       content: String(post.content ?? ''),
       category_id: String(post.category_id ?? ''),
       cover_image: String(post.cover_image ?? ''),
+      images: Array.isArray(post.images) ? post.images : [],
+      videos: Array.isArray(post.videos) ? post.videos : [],
     });
     setAiAssisted(Boolean(post.ai_assisted));
   };
@@ -233,6 +246,8 @@ function MyWorksTab({ userId }: { userId: string }) {
       content: editingValues.content.trim(),
       category_id: editingValues.category_id || null,
       cover_image: editingValues.cover_image.trim(),
+      images: editingValues.images,
+      videos: editingValues.videos,
       status,
       feedback: status === 'pending_review' ? '' : (editingPost.feedback ?? ''),
       ai_assisted: aiAssisted || undefined,
@@ -277,6 +292,15 @@ function MyWorksTab({ userId }: { userId: string }) {
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button onClick={() => openEdit(post)} className="inline-flex items-center gap-2 rounded-lg border border-[#1B2A4A]/20 px-4 py-2 text-sm font-bold text-[#1B2A4A]">Edit</button>
                   <button onClick={() => resubmit(String(post.id))} className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-4 py-2 text-sm font-bold text-[#1B2A4A]"><Send size={15} /> Kirim untuk Review</button>
+                  <button
+                    onClick={async () => {
+                      if (!confirm('Hapus karya ini?')) return;
+                      const { error } = await backendApi.database.from('mading_posts').delete().eq('id', String(post.id));
+                      if (error) { alert(error.message); return; }
+                      await load();
+                    }}
+                    className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm font-bold text-red-600 hover:bg-red-50"
+                  ><Trash2 size={15} /> Hapus</button>
                 </div>
               )}
             </div>
@@ -304,6 +328,8 @@ function MyWorksTab({ userId }: { userId: string }) {
               </label>
               <div className="sm:col-span-2"><Field label="Isi Karya" multiline value={editingValues.content} onChange={(e) => setEditingValues((v) => ({ ...v, content: e.target.value }))} /></div>
               <div className="sm:col-span-2"><Field label="URL Cover (opsional)" value={editingValues.cover_image} onChange={(e) => setEditingValues((v) => ({ ...v, cover_image: e.target.value }))} /></div>
+              <div className="sm:col-span-2"><GalleryUpload value={editingValues.images} onChange={(urls) => setEditingValues((v) => ({ ...v, images: urls }))} /></div>
+              <div className="sm:col-span-2"><VideoUrlsField value={editingValues.videos} onChange={(videos) => setEditingValues((v) => ({ ...v, videos }))} /></div>
             </div>
             <div className="mt-4">
               <button onClick={() => setAiOpen(true)} className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951]/15 px-4 py-2 text-sm font-bold text-[#866D2C] hover:bg-[#C8A951]/25"><Sparkles className="h-4 w-4" /> Bantu dengan AI</button>
@@ -336,7 +362,7 @@ function CreateTab({ userId, name }: { userId: string; name: string }) {
   const [saving, setSaving] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
   const [aiAssisted, setAiAssisted] = useState(false);
-  const [values, setValues] = useState({ title: '', content: '', category_id: '', cover_image: '' });
+  const [values, setValues] = useState({ title: '', content: '', category_id: '', cover_image: '', images: [] as string[], videos: [] as MadingVideo[] });
 
   const flash = (type: 'ok' | 'err', text: string) => {
     setMsg({ type, text });
@@ -354,6 +380,8 @@ function CreateTab({ userId, name }: { userId: string; name: string }) {
       content: values.content.trim(),
       category_id: values.category_id || null,
       cover_image: values.cover_image.trim(),
+      images: values.images,
+      videos: values.videos,
       author_id: userId,
       author_name: name,
       author_role: 'siswa',
@@ -362,13 +390,13 @@ function CreateTab({ userId, name }: { userId: string; name: string }) {
     };
     const r = await backendApi.database.from('mading_posts').insert([payload]);
     if (r.error) { flash('err', r.error.message); setSaving(false); return; }
-    setValues({ title: '', content: '', category_id: '', cover_image: '' });
+    setValues({ title: '', content: '', category_id: '', cover_image: '', images: [], videos: [] });
     setAiAssisted(false);
     setSaving(false);
     flash('ok', status === 'draft' ? 'Draft tersimpan.' : 'Karya dikirim untuk review. Tunggu persetujuan Guru/Admin.');
   };
 
-  const f = (key: keyof typeof values, type = 'text') => ({
+  const f = (key: 'title' | 'content' | 'category_id' | 'cover_image', type = 'text') => ({
     type,
     value: values[key],
     onChange: (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setValues((v) => ({ ...v, [key]: e.target.value })),
@@ -391,6 +419,8 @@ function CreateTab({ userId, name }: { userId: string; name: string }) {
           </label>
           <div className="sm:col-span-2"><Field label="Isi Karya" multiline value={values.content} onChange={(e) => setValues((v) => ({ ...v, content: e.target.value }))} /></div>
           <div className="sm:col-span-2"><Field label="URL Cover (opsional)" value={values.cover_image} onChange={(e) => setValues((v) => ({ ...v, cover_image: e.target.value }))} /></div>
+          <div className="sm:col-span-2"><GalleryUpload value={values.images} onChange={(urls) => setValues((v) => ({ ...v, images: urls }))} /></div>
+          <div className="sm:col-span-2"><VideoUrlsField value={values.videos} onChange={(videos) => setValues((v) => ({ ...v, videos }))} /></div>
         </div>
         <div className="mt-4">
           <button onClick={() => setAiOpen(true)} className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951]/15 px-4 py-2 text-sm font-bold text-[#866D2C] hover:bg-[#C8A951]/25"><Sparkles className="h-4 w-4" /> Bantu dengan AI</button>

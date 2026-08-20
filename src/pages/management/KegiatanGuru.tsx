@@ -74,7 +74,7 @@ const KegiatanGuru: React.FC = () => {
           </div>
         )}
 
-        <div className="mt-12 rounded-2xl bg-[#1B2A4A] p-8 text-center text-[#FAF6F0]">
+        <div className="mt-12 rounded-2xl bg-[#1B2A4A] p-6 text-center text-[#FAF6F0] sm:p-8">
           <CalendarDays className="mx-auto h-8 w-8 text-[#C8A951]" />
           <h3 className="mt-3 text-xl font-bold">Ikuti perkembangan kegiatan guru</h3>
           <p className="mx-auto mt-2 max-w-2xl text-[#F3E8D0]">Kegiatan pengembangan profesional guru terus diadakan untuk meningkatkan mutu pembelajaran di SMKN 11 Kabupaten Tangerang.</p>
