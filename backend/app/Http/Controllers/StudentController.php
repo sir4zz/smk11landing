@@ -147,8 +147,9 @@ class StudentController extends Controller
 
         foreach ($data['rows'] as $index => $row) {
             $row = is_array($row) ? $row : [];
-            // Template BIODATA: 8 baris header, data dimulai dari baris ke-9.
-            $line = (int) $index + 9;
+            // Template BIODATA: tiap sheet 3 baris header (judul, nama kolom, contoh),
+            // data dimulai dari baris ke-4. Frontend sudah menggabungkan antar-sheet per NISN.
+            $line = (int) $index + 4;
             $nisn = '';
 
             try {
