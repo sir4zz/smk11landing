@@ -332,9 +332,10 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::patch('/accounts/{id}', [AccountController::class, 'update']);
     Route::delete('/accounts/{id}', [AccountController::class, 'destroy']);
 
-    // Database backup (download .sql snapshot)
+    // Backup / Restore (full system: database + media)
     Route::get('/backups', [DatabaseBackupController::class, 'index']);
     Route::post('/backups', [DatabaseBackupController::class, 'store']);
+    Route::post('/backups/restore', [DatabaseBackupController::class, 'restore']);
     Route::get('/backups/{filename}', [DatabaseBackupController::class, 'download']);
     Route::delete('/backups/{filename}', [DatabaseBackupController::class, 'destroy']);
 });

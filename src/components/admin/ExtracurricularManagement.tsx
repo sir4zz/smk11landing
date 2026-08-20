@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
-import { Plus, Pencil, Trash2, X, Save, Loader2, Images } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Save, Loader2, Images, Upload, GripVertical } from 'lucide-react';
 import { backendApi, resolveImageUrl } from '../../lib/api';
 import type { ExtracurricularRecord } from '../../pages/osis/Extracurriculars';
 import { can } from '../../lib/permissions';
@@ -95,8 +95,19 @@ export default function ExtracurricularManagement({ permissions }: Props) {
               <tr key={String(ekskul.id)} className="border-t border-[#1B2A4A]/10">
                 <td className="p-4">
                   <div className="flex items-center gap-3">
-                    {ekskul.photo && resolveImageUrl(ekskul.photo) ? <img src={resolveImageUrl(ekskul.photo)!} alt="" className="h-10 w-10 rounded-full object-cover" /> : <div className="grid h-10 w-10 place-items-center rounded-full bg-[#FAF6F0]"><Images className="h-4 w-4 text-[#866D2C]" /></div>}
-                    <span className="font-semibold">{ekskul.name || '-'}</span>
+                    {ekskul.logo && resolveImageUrl(ekskul.logo) ? (
+                      <img src={resolveImageUrl(ekskul.logo)!} alt="" className="h-10 w-10 rounded-lg object-contain" />
+                    ) : ekskul.photo && resolveImageUrl(ekskul.photo) ? (
+                      <img src={resolveImageUrl(ekskul.photo)!} alt="" className="h-10 w-10 rounded-full object-cover" />
+                    ) : (
+                      <div className="grid h-10 w-10 place-items-center rounded-full bg-[#FAF6F0]"><Images className="h-4 w-4 text-[#866D2C]" /></div>
+                    )}
+                    <div>
+                      <span className="font-semibold">{ekskul.name || '-'}</span>
+                      {ekskul.short_description && (
+                        <p className="mt-0.5 line-clamp-1 text-xs text-[#5B7088]">{ekskul.short_description}</p>
+                      )}
+                    </div>
                   </div>
                 </td>
                 <td className="p-4">{ekskul.category || '-'}</td>
@@ -131,8 +142,8 @@ export default function ExtracurricularManagement({ permissions }: Props) {
 
 function ExtracurricularForm({ item, onClose, onSave, categories = [] }: { item: ExtracurricularRecord | null; onClose: () => void; onSave: (r: ExtracurricularRecord) => void; categories?: string[] }) {
   const [values, setValues] = useState<ExtracurricularRecord>(item ?? {
-    name: '', category: '', description: '', photo: '', advisor: '', schedule: '', place: '',
-    achievements: [], documentation: [], status: 'published',
+    name: '', category: '', description: '', short_description: '', full_description: '', photo: '', logo: '', advisor: '', schedule: '', place: '',
+    achievements: [], documentation: [], gallery: [], status: 'published',
   });
 
   const f = (key: keyof ExtracurricularRecord, type: string = 'text') => ({
@@ -153,6 +164,10 @@ function ExtracurricularForm({ item, onClose, onSave, categories = [] }: { item:
   const [docError, setDocError] = useState('');
   const docInputRef = useRef<HTMLInputElement | null>(null);
 
+  const [galleryUploading, setGalleryUploading] = useState(false);
+  const [galleryError, setGalleryError] = useState('');
+  const galleryInputRef = useRef<HTMLInputElement | null>(null);
+
   const uploadDocumentation = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     const arr = Array.from(files);
@@ -161,7 +176,7 @@ function ExtracurricularForm({ item, onClose, onSave, categories = [] }: { item:
     try {
       const urls: string[] = [];
       for (const file of arr) {
-        const { data, error } = await backendApi.storage.from('photos').uploadAuto(file);
+        const { data, error } = await backendApi.storage.from('extracurriculars').uploadAuto(file);
         if (error) throw error;
         if (!data?.url) throw new Error('Gagal mengunggah foto.');
         urls.push(data.url);
@@ -175,56 +190,170 @@ function ExtracurricularForm({ item, onClose, onSave, categories = [] }: { item:
     }
   };
 
+  const uploadGallery = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const arr = Array.from(files);
+    setGalleryUploading(true);
+    setGalleryError('');
+    try {
+      const urls: string[] = [];
+      for (const file of arr) {
+        const { data, error } = await backendApi.storage.from('extracurriculars/gallery').uploadAuto(file);
+        if (error) throw error;
+        if (!data?.url) throw new Error('Gagal mengunggah foto.');
+        urls.push(data.url);
+      }
+      setValues((v) => ({ ...v, gallery: [...(Array.isArray(v.gallery) ? v.gallery : []), ...urls] }));
+    } catch (err) {
+      setGalleryError(err instanceof Error ? err.message : 'Gagal mengunggah foto.');
+    } finally {
+      setGalleryUploading(false);
+      if (galleryInputRef.current) galleryInputRef.current.value = '';
+    }
+  };
+
+  const removeGalleryImage = (index: number) => {
+    setValues((v) => ({
+      ...v,
+      gallery: (Array.isArray(v.gallery) ? v.gallery : []).filter((_, i) => i !== index),
+    }));
+  };
+
+  const removeDocumentationImage = (index: number) => {
+    setValues((v) => ({
+      ...v,
+      documentation: (Array.isArray(v.documentation) ? v.documentation : []).filter((_, i) => i !== index),
+    }));
+  };
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 p-4 py-10">
-      <div className="mx-auto w-full max-w-2xl rounded-xl bg-white p-6 shadow-xl">
+      <div className="mx-auto w-full max-w-3xl rounded-xl bg-white p-6 shadow-xl">
         <div className="mb-5 flex justify-between">
           <h2 className="text-xl font-bold text-[#1B2A4A]">{item ? 'Ubah' : 'Tambah'} Ekstrakurikuler</h2>
           <button onClick={onClose}><X /></button>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Nama Ekstrakurikuler" {...f('name')} />
-          <label className="block text-sm font-semibold">Kategori
-            <select value={String(values.category ?? '')} onChange={(e) => setValues((v) => ({ ...v, category: e.target.value }))} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal">
-              <option value="">— Pilih —</option>
-              {categories.map((category) => <option key={category} value={category}>{category}</option>)}
-            </select>
-          </label>
-          <Field label="Pembina" {...f('advisor')} />
-          <Field label="Jadwal Latihan" placeholder="cth. Jumat & Sabtu" {...f('schedule')} />
-          <Field label="Tempat" placeholder="cth. Lapangan Basket" {...f('place')} />
-          <label className="block text-sm font-semibold">Status
-            <select value={String(values.status)} onChange={(e) => setValues((v) => ({ ...v, status: e.target.value }))} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal">
-              <option value="published">Terbit</option>
-              <option value="draft">Draf</option>
-            </select>
-          </label>
-          <div className="sm:col-span-2"><Field label="Deskripsi" multiline {...f('description')} /></div>
-          <div className="sm:col-span-2"><ImageField label="Logo / Foto" value={String(values.photo ?? '')} onChange={(url) => setValues((v) => ({ ...v, photo: url }))} /></div>
-          <Field label="Prestasi" hint="Satu prestasi per baris." multiline {...listField('achievements')} />
-          <div className="sm:col-span-2">
-            <label className="block text-sm font-semibold">Dokumentasi
-              <span className="block font-normal text-xs text-[#5B7088]">Upload file gambar atau satu URL per baris.</span>
-              <textarea {...listField('documentation')} rows={4} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" />
-            </label>
-            <div className="mt-2 flex items-center gap-2">
-              <input
-                ref={docInputRef}
-                type="file"
-                accept="image/*"
-                multiple
-                disabled={docUploading}
-                onChange={(e) => uploadDocumentation(e.target.files)}
-                className="block w-full text-sm text-[#1B2A4A] file:mr-3 file:rounded-lg file:border-0 file:bg-[#1B2A4A] file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-[#15203a] disabled:opacity-60"
-              />
-              {docUploading && <Loader2 size={18} className="shrink-0 animate-spin text-[#866D2C]" />}
+        <div className="max-h-[70vh] overflow-y-auto pr-2">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <Field label="Nama Ekstrakurikuler" {...f('name')} placeholder="cth. Karate" />
             </div>
-            {docError && <p className="mt-1 text-xs font-normal text-red-600">{docError}</p>}
+
+            <label className="block text-sm font-semibold">Kategori
+              <select value={String(values.category ?? '')} onChange={(e) => setValues((v) => ({ ...v, category: e.target.value }))} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal">
+                <option value="">— Pilih —</option>
+                {categories.map((category) => <option key={category} value={category}>{category}</option>)}
+                <option value="Olahraga">Olahraga</option>
+                <option value="Seni">Seni</option>
+                <option value="Keagamaan">Keagamaan</option>
+                <option value="Kepemudaan">Kepemudaan</option>
+                <option value="Kepramukaan">Kepramukaan</option>
+                <option value="Teknologi">Teknologi</option>
+                <option value="Lainnya">Lainnya</option>
+              </select>
+            </label>
+
+            <Field label="Pembina" {...f('advisor')} placeholder="cth. Pak Budi" />
+            <Field label="Jadwal Latihan" placeholder="cth. Jumat & Sabtu, 15:00-17:00" {...f('schedule')} />
+            <Field label="Tempat" placeholder="cth. Lapangan Basket, Ruang 101" {...f('place')} />
+
+            <label className="block text-sm font-semibold">Status
+              <select value={String(values.status)} onChange={(e) => setValues((v) => ({ ...v, status: e.target.value }))} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal">
+                <option value="published">Terbit</option>
+                <option value="draft">Draf</option>
+              </select>
+            </label>
+
+            <div className="sm:col-span-2">
+              <ImageField label="Logo Ekstrakurikuler" value={String(values.logo ?? '')} onChange={(url) => setValues((v) => ({ ...v, logo: url }))} />
+              <p className="mt-1 text-xs text-[#5B7088]">Logo akan ditampilkan di card dan detail. Gunakan gambar dengan transparansi PNG untuk hasil terbaik.</p>
+            </div>
+
+            <div className="sm:col-span-2">
+              <Field label="Deskripsi Singkat" hint="Deskripsi pendek yang ditampilkan di card (maks. 150 karakter)." {...f('short_description')} placeholder="cth. Wadah pengembangan bela diri karate" />
+            </div>
+
+            <div className="sm:col-span-2">
+              <Field label="Deskripsi Lengkap" hint="Deskripsi lengkap yang ditampilkan di halaman detail." multiline {...f('full_description')} placeholder="Ceritakan tentang ekstrakurikuler ini secara lengkap..." />
+            </div>
+
+            <div className="sm:col-span-2">
+              <ImageField label="Foto Utama" value={String(values.photo ?? '')} onChange={(url) => setValues((v) => ({ ...v, photo: url }))} />
+            </div>
+
+            <div className="sm:col-span-2">
+              <Field label="Prestasi" hint="Satu prestasi per baris." multiline {...listField('achievements')} placeholder="Juara 1 Lomba Karate Tingkat Provinsi 2024" />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-semibold">
+                Dokumentasi
+                <span className="block font-normal text-xs text-[#5B7088]">Foto dokumentasi kegiatan lama (legacy). Upload atau masukkan URL, satu per baris.</span>
+              </label>
+              <textarea {...listField('documentation')} rows={3} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" placeholder="https://example.com/foto1.jpg" />
+              <div className="mt-2 flex items-center gap-2">
+                <input
+                  ref={docInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  disabled={docUploading}
+                  onChange={(e) => uploadDocumentation(e.target.files)}
+                  className="block w-full text-sm text-[#1B2A4A] file:mr-3 file:rounded-lg file:border-0 file:bg-[#1B2A4A] file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-[#15203a] disabled:opacity-60"
+                />
+                {docUploading && <Loader2 size={18} className="shrink-0 animate-spin text-[#866D2C]" />}
+              </div>
+              {docError && <p className="mt-1 text-xs font-normal text-red-600">{docError}</p>}
+              {Array.isArray(values.documentation) && values.documentation.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {values.documentation.map((url, i) => (
+                    <div key={i} className="group relative h-16 w-16 overflow-hidden rounded-lg">
+                      <img src={resolveImageUrl(url) || url} alt="" className="h-full w-full object-cover" />
+                      <button onClick={() => removeDocumentationImage(i)} className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+                        <Trash2 size={14} className="text-white" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="block text-sm font-semibold">
+                Galeri Kegiatan
+                <span className="block font-normal text-xs text-[#5B7088]">Foto-foto kegiatan terbaru. Upload beberapa foto sekaligus.</span>
+              </label>
+              <div className="mt-2 flex items-center gap-2">
+                <input
+                  ref={galleryInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  disabled={galleryUploading}
+                  onChange={(e) => uploadGallery(e.target.files)}
+                  className="block w-full text-sm text-[#1B2A4A] file:mr-3 file:rounded-lg file:border-0 file:bg-[#1B2A4A] file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-[#15203a] disabled:opacity-60"
+                />
+                {galleryUploading && <Loader2 size={18} className="shrink-0 animate-spin text-[#866D2C]" />}
+              </div>
+              {galleryError && <p className="mt-1 text-xs font-normal text-red-600">{galleryError}</p>}
+              {Array.isArray(values.gallery) && values.gallery.length > 0 && (
+                <div className="mt-3 grid grid-cols-4 gap-2 sm:grid-cols-6">
+                  {values.gallery.map((url, i) => (
+                    <div key={i} className="group relative aspect-square overflow-hidden rounded-lg">
+                      <img src={resolveImageUrl(url) || url} alt="" className="h-full w-full object-cover" />
+                      <button onClick={() => removeGalleryImage(i)} className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+                        <Trash2 size={14} className="text-white" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="mt-6 flex justify-end gap-3">
+        <div className="mt-6 flex justify-end gap-3 border-t pt-4">
           <button onClick={onClose} className="px-4 py-2 text-[#5B7088]">Batal</button>
           <button onClick={() => onSave(values)} className="inline-flex items-center gap-2 rounded-lg bg-[#1B2A4A] px-4 py-2 font-bold text-white"><Save className="h-4 w-4" /> Simpan</button>
         </div>

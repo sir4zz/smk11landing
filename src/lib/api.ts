@@ -1279,11 +1279,19 @@ export interface PublicSdmProfile {
 
 export type PublicProfileType = 'guru' | 'siswa' | 'osis' | 'tendik';
 
-// ---------- DATABASE BACKUP (admin) ----------
+// ---------- BACKUP / RESTORE (admin) ----------
 export interface BackupFileRow {
   name: string;
   size: number;
   created_at: string;
+}
+
+export interface RestoreResult {
+  status: string;
+  message: string;
+  tables_restored: number;
+  media_restored: boolean;
+  manifest: Record<string, unknown> | null;
 }
 
 export const backupApi = {
@@ -1295,6 +1303,11 @@ export const backupApi = {
   },
   remove(filename: string): ApiResult<null> {
     return request<null>(`/admin/backups/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+  },
+  restore(file: File): ApiResult<RestoreResult> {
+    const formData = new FormData();
+    formData.append('backup_file', file);
+    return request<RestoreResult>('/admin/backups/restore', { method: 'POST', body: formData });
   },
 };
 

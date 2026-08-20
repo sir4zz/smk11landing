@@ -388,7 +388,7 @@ function AdminPanel() {
       { key: 'contactSettings', label: 'Pengaturan Kontak', icon: MapPin, visible: isAdmin },
       { key: 'permissions', label: 'Role & Permission', icon: ShieldCheck, visible: isAdmin },
       { key: 'accounts', label: 'Kelola Akun', icon: Users, visible: isAdmin },
-      { key: 'backup', label: 'Backup Database', icon: DatabaseBackupIcon, visible: isAdmin },
+      { key: 'backup', label: 'Backup / Restore', icon: DatabaseBackupIcon, visible: isAdmin },
     ]},
   ];
 

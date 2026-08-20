@@ -147,9 +147,9 @@ const Footer: React.FC = () => {
 
         {/* Bottom Bar */}
         <div className="pt-6 border-t border-[#2a3f6e] text-center">
-          <p className="text-[#E8DCC7] text-sm">
-            &copy; 2026 SMKN 11 Kabupaten Tangerang. Hak Cipta Dilindungi.
-          </p>
+          <a href='a' className="text-[#E8DCC7] text-sm">
+            &copy; Tim IT TKJ 2025-2026.
+          </a>
         </div>
       </div>
     </footer>

@@ -19,7 +19,7 @@ class UploadController extends Controller
         $bucket = $request->input('bucket', 'photos');
         $bucket = trim($bucket, '/');
         // Sanitasi / cegah path traversal, hanya izinkan folder yang dikenal.
-        $allowed = ['photos', 'bkk/logos', 'spmb/posters', 'gallery/covers', 'gallery/images', 'mading', 'osis', 'extracurriculars', 'kesemaptaan', 'program-keahlian'];
+        $allowed = ['photos', 'bkk/logos', 'spmb/posters', 'gallery/covers', 'gallery/images', 'mading', 'osis', 'extracurriculars', 'extracurriculars/logos', 'extracurriculars/gallery', 'kesemaptaan', 'program-keahlian'];
         if (!in_array($bucket, $allowed, true)) {
             $bucket = 'photos';
         }
