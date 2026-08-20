@@ -155,12 +155,16 @@ class StudentController extends Controller
                 $nisn = trim((string) ($row['nisn'] ?? ''));
                 $name = trim((string) ($row['name'] ?? ''));
                 $nis = trim((string) ($row['nis'] ?? ''));
+                $class = Student::normalizeClass($row['class'] ?? '');
 
                 if ($nisn === '' || mb_strlen($nisn) < 4) {
                     throw new \RuntimeException('NISN tidak valid (minimal 4 karakter).');
                 }
                 if (mb_strlen($name) < 2) {
                     throw new \RuntimeException('Nama wajib diisi (minimal 2 karakter).');
+                }
+                if ($class !== '' && ! Student::isValidClass($class)) {
+                    throw new \RuntimeException('Kelas "'.$class.'" tidak valid. Kelas harus berupa X, XI, atau XII.');
                 }
 
                 $email = $this->accounts->studentEmail($nisn);
@@ -201,7 +205,7 @@ class StudentController extends Controller
                         'nis' => $nis !== '' ? $nis : null,
                         'pin' => $pin,
                         'name' => $name,
-                        'class' => trim((string) ($row['class'] ?? '')),
+                        'class' => $class,
                         'major' => trim((string) ($row['major'] ?? '')),
                         'gender' => $this->accounts->normalizeGender($row['gender'] ?? ''),
                         'date_of_birth' => $this->accounts->normalizeDate($row['date_of_birth'] ?? null),
@@ -279,8 +283,10 @@ class StudentController extends Controller
     {
         $student = Student::findOrFail($studentId);
 
-        if ($student->foto) {
-            $this->deleteStoredFile($student->foto);
+        foreach (['foto', 'doc_kk', 'doc_akta', 'doc_ijazah', 'doc_lainnya'] as $fileKey) {
+            if ($student->{$fileKey}) {
+                $this->deleteStoredFile($student->{$fileKey});
+            }
         }
 
         StudentAccount::query()->where('student_id', $student->id)->delete();

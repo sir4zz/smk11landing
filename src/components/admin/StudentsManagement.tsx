@@ -4,7 +4,7 @@ import { ChevronRight, Plus, Trash2, X, Loader2, KeyRound, Search, UserRound, Up
 import { accountsApi, resolveImageUrl } from '../../lib/api';
 import StudentImportModal from './StudentImportModal';
 import ImageField from './ImageField';
-import { BIODATA_FIELDS, BIODATA_SECTIONS, emptyBiodata, normalizeGender } from '../../lib/studentBiodata';
+import { BIODATA_FIELDS, BIODATA_SECTIONS, emptyBiodata, formatRupiah, isRupiahField, isValidClass, normalizeClass, normalizeGender } from '../../lib/studentBiodata';
 import type { BiodataFieldDef } from '../../lib/studentBiodata';
 
 interface StudentRow {
@@ -21,6 +21,10 @@ interface StudentRow {
   religion?: string;
   address?: string;
   foto?: string;
+  doc_kk?: string;
+  doc_akta?: string;
+  doc_ijazah?: string;
+  doc_lainnya?: string;
   [key: string]: unknown;
 }
 
@@ -33,12 +37,14 @@ function initFormFrom(student: StudentRow | null): Record<string, string> {
     const raw = student[field.key];
     if (raw === null || raw === undefined) continue;
     if (field.type === 'date') form[field.key] = dateForInput(raw);
+    else if (field.type === 'decimal') form[field.key] = trimDecimal(String(raw));
     else form[field.key] = String(raw);
   }
   form.nisn = String(student.nisn ?? '');
   form.nis = String(student.nis ?? '');
   form.name = String(student.name ?? '');
-  form.class = String(student.class ?? '');
+  const normalizedClass = normalizeClass(student.class);
+  form.class = isValidClass(normalizedClass) ? normalizedClass : '';
   form.major = String(student.major ?? '');
   form.gender = String(student.gender ?? '');
   form.date_of_birth = dateForInput(student.date_of_birth);
@@ -47,6 +53,10 @@ function initFormFrom(student: StudentRow | null): Record<string, string> {
   form.address = String(student.address ?? '');
   form.pin = '';
   form.foto = String(student.foto ?? '');
+  form.doc_kk = String(student.doc_kk ?? '');
+  form.doc_akta = String(student.doc_akta ?? '');
+  form.doc_ijazah = String(student.doc_ijazah ?? '');
+  form.doc_lainnya = String(student.doc_lainnya ?? '');
   return form;
 }
 
@@ -90,6 +100,10 @@ export default function StudentsManagement() {
     setEditing(null);
     const fresh = emptyBiodata();
     fresh.foto = '';
+    fresh.doc_kk = '';
+    fresh.doc_akta = '';
+    fresh.doc_ijazah = '';
+    fresh.doc_lainnya = '';
     setForm(fresh);
     setStep(1);
     setErrors({});
@@ -133,7 +147,7 @@ export default function StudentsManagement() {
     for (const f of fields) {
       const value = (current[f.key] ?? '').trim();
       if (!value) continue;
-      if (f.type === 'number' && !/^\d+(\.\d+)?$/.test(value)) fieldErrors[f.key] = 'Harus berupa angka.';
+      if ((f.type === 'number' || f.type === 'decimal') && !/^\d+(\.\d+)?$/.test(value)) fieldErrors[f.key] = 'Harus berupa angka.';
       if (f.type === 'date' && !/^\d{4}-\d{2}-\d{2}$/.test(value)) fieldErrors[f.key] = 'Tanggal tidak valid.';
     }
 
@@ -208,6 +222,10 @@ export default function StudentsManagement() {
     }
     payload.achievements = [];
     payload.foto = form.foto ?? '';
+    payload.doc_kk = form.doc_kk ?? '';
+    payload.doc_akta = form.doc_akta ?? '';
+    payload.doc_ijazah = form.doc_ijazah ?? '';
+    payload.doc_lainnya = form.doc_lainnya ?? '';
 
     if (editing) {
       if (pin) payload.pin = pin;
@@ -450,6 +468,15 @@ export default function StudentsManagement() {
                     {section.id === 'identity' && (
                       <div className="sm:col-span-2">
                         <ImageField label="Foto Siswa (opsional)" value={form.foto ?? ''} onChange={(url) => { setForm((v) => ({ ...v, foto: url })); if (url) setErrors((p) => { if (!p.foto) return p; const n = { ...p }; delete n.foto; return n; }); }} accept="image/jpeg,image/png" maxSizeMb={2} hint="JPG/JPEG atau PNG, maks. 2 MB, direkomendasikan persegi (1:1)." />
+                        <div className="mt-4 rounded-xl border border-[#1B2A4A]/10 p-4">
+                          <p className="mb-3 font-bold text-[#1B2A4A]">DOKUMEN SISWA</p>
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <ImageField label="KK (Kartu Keluarga) — opsional" value={form.doc_kk ?? ''} onChange={(url) => setForm((v) => ({ ...v, doc_kk: url }))} bucket="student/documents" accept="image/jpeg,image/png,image/webp" maxSizeMb={5} hint="JPG/PNG/WEBP, maks. 5 MB." />
+                            <ImageField label="Akta Kelahiran — opsional" value={form.doc_akta ?? ''} onChange={(url) => setForm((v) => ({ ...v, doc_akta: url }))} bucket="student/documents" accept="image/jpeg,image/png,image/webp" maxSizeMb={5} hint="JPG/PNG/WEBP, maks. 5 MB." />
+                            <ImageField label="Ijazah — opsional" value={form.doc_ijazah ?? ''} onChange={(url) => setForm((v) => ({ ...v, doc_ijazah: url }))} bucket="student/documents" accept="image/jpeg,image/png,image/webp" maxSizeMb={5} hint="JPG/PNG/WEBP, maks. 5 MB." />
+                            <ImageField label="Dokumen Lainnya — opsional" value={form.doc_lainnya ?? ''} onChange={(url) => setForm((v) => ({ ...v, doc_lainnya: url }))} bucket="student/documents" accept="image/jpeg,image/png,image/webp" maxSizeMb={5} hint="JPG/PNG/WEBP, maks. 5 MB." />
+                          </div>
+                        </div>
                       </div>
                     )}
                     {fields.map((field) => (
@@ -489,10 +516,12 @@ function BiodataField({ field, value, onChange, placeholder, error }: { field: B
   const inputCls = `mt-1 w-full rounded-lg border bg-white px-3 py-2 font-normal ${error ? 'border-red-400' : 'border-[#1B2A4A]/20'}`;
 
   const isNumeric = field.type === 'number';
-  const blockNonDigits = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (!isNumeric) return;
+  const isDecimal = field.type === 'decimal';
+  const blockLetters = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (!isNumeric && !isDecimal) return;
     if (e.ctrlKey || e.metaKey || e.altKey) return;
-    if (e.key.length === 1 && !/[0-9]/.test(e.key)) e.preventDefault();
+    const allowDot = isDecimal && e.key === '.';
+    if (e.key.length === 1 && !/[0-9]/.test(e.key) && !allowDot) e.preventDefault();
   };
 
   return (
@@ -512,11 +541,20 @@ function BiodataField({ field, value, onChange, placeholder, error }: { field: B
         <input
           value={value}
           type={field.type === 'date' ? 'date' : 'text'}
-          inputMode={isNumeric ? 'decimal' : undefined}
-          pattern={isNumeric ? '[0-9]*' : undefined}
-          onKeyDown={blockNonDigits}
+          inputMode={isNumeric || isDecimal ? 'decimal' : undefined}
+          pattern={isNumeric ? '[0-9]*' : isDecimal ? '[0-9]*[.]?[0-9]*' : undefined}
+          onKeyDown={blockLetters}
           onChange={(e) => {
-            if (isNumeric) e.target.value = e.target.value.replace(/[^0-9]/g, '');
+            if (isNumeric) {
+              e.target.value = e.target.value.replace(/[^0-9]/g, '');
+            } else if (isDecimal) {
+              let clean = e.target.value.replace(/[^0-9.]/g, '');
+              const firstDot = clean.indexOf('.');
+              if (firstDot !== -1) {
+                clean = clean.slice(0, firstDot + 1) + clean.slice(firstDot + 1).replace(/\./g, '');
+              }
+              e.target.value = clean;
+            }
             onChange(e);
           }}
           className={inputCls}
@@ -535,6 +573,7 @@ function stepShortLabel(title: string): string {
 function StudentDetailView({ student, onBack, onEdit }: { student: StudentRow; onBack: () => void; onEdit: () => void }) {
   const achievements = Array.isArray(student.achievements) ? (student.achievements as unknown[]).filter(Boolean) : [];
   const achievementsText = achievements.map(String).join(', ');
+  const fotoSrc = resolveImageUrl(student.foto);
 
   return (
     <div className="overflow-hidden rounded-xl bg-white shadow-sm">
@@ -558,11 +597,25 @@ function StudentDetailView({ student, onBack, onEdit }: { student: StudentRow; o
               <p className="mb-3 font-bold text-[#1B2A4A]">{section.title}</p>
               <div className={`flex flex-col gap-4 sm:flex-row ${isIdentity ? '' : 'sm:flex-col'}`}>
                 {isIdentity && (
-                  <div className="shrink-0">
-                    {student.foto ? (
-                      <img src={resolveImageUrl(student.foto)} alt={student.name} className="h-32 w-32 rounded-lg border border-[#1B2A4A]/10 object-cover" />
-                    ) : (
-                      <span className="grid h-32 w-32 place-items-center rounded-lg border border-dashed border-[#1B2A4A]/20 bg-[#FAF6F0]"><UserRound className="h-12 w-12 text-[#866D2C]/50" /></span>
+                  <div className="w-full shrink-0 sm:w-80">
+                    <div className="overflow-hidden rounded-xl border border-[#1B2A4A]/10 bg-white">
+                      {fotoSrc ? (
+                        <div className="flex max-h-[420px] items-start justify-center bg-[#FAF6F0] p-2">
+                          <img src={fotoSrc} alt={`Foto ${student.name}`} className="max-h-[400px] w-auto max-w-full object-contain" />
+                        </div>
+                      ) : (
+                        <div className="grid h-64 place-items-center bg-[#FAF6F0]">
+                          <div className="text-center text-[#866D2C]/60">
+                            <UserRound className="mx-auto mb-2 h-12 w-12" />
+                            <p className="text-xs font-semibold">Belum ada foto</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    {fotoSrc && (
+                      <button onClick={() => downloadFile(fotoSrc, studentPhotoFileName(student))} className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#1B2A4A] px-3 py-2 text-sm font-bold text-white hover:opacity-90">
+                        <Download size={15} /> Download Foto
+                      </button>
                     )}
                   </div>
                 )}
@@ -581,6 +634,34 @@ function StudentDetailView({ student, onBack, onEdit }: { student: StudentRow; o
             </div>
           );
         })}
+
+        <div className="rounded-xl border border-[#1B2A4A]/10 p-4">
+          <p className="mb-4 font-bold text-[#1B2A4A]">DOKUMEN SISWA</p>
+          <div className="space-y-4">
+            {STUDENT_DOCS.map((doc) => {
+              const docSrc = resolveImageUrl(String(student[doc.key] ?? ''));
+              return (
+                <div key={doc.key} className="overflow-hidden rounded-xl border border-[#1B2A4A]/10">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#1B2A4A]/10 bg-[#FAF6F0]/70 px-4 py-3">
+                    <p className="font-bold text-[#1B2A4A]">{doc.label}</p>
+                    {docSrc && (
+                      <button onClick={() => downloadFile(docSrc, docFileName(doc, student))} className="inline-flex items-center gap-1.5 rounded-lg bg-[#1B2A4A] px-3 py-1.5 text-xs font-bold text-white hover:opacity-90">
+                        <Download size={14} /> Download
+                      </button>
+                    )}
+                  </div>
+                  {docSrc ? (
+                    <div className="flex max-h-[560px] items-start justify-center bg-white p-3">
+                      <img src={docSrc} alt={doc.label} className="max-h-[540px] w-auto max-w-full object-contain" />
+                    </div>
+                  ) : (
+                    <p className="px-4 py-3 text-sm text-[#5B7088]">Belum diunggah</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -598,9 +679,20 @@ function DetailRow({ label, value }: { label: string; value: unknown }) {
 
 function detailValue(field: BiodataFieldDef, raw: unknown): string {
   if (raw === null || raw === undefined || raw === '') return '-';
+  if (isRupiahField(field.key)) return formatRupiah(raw);
   if (field.type === 'date') return formatDate(String(raw));
   if (field.key === 'gender') return genderLabel(String(raw));
+  if (field.type === 'decimal') return trimDecimal(String(raw));
   return String(raw);
+}
+
+function trimDecimal(value: string): string {
+  const clean = value.trim();
+  if (!clean) return '';
+  if (!/^[+-]?\d*\.?\d+$/.test(clean)) return clean;
+  const num = Number(clean);
+  if (Number.isNaN(num)) return clean;
+  return String(num);
 }
 
 function selectLabel(key: string, value: string): string {
@@ -620,4 +712,64 @@ function formatDate(value?: string): string {
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
   if (m) return `${m[3]}/${m[2]}/${m[1]}`;
   return value;
+}
+
+const STUDENT_DOCS = [
+  { key: 'doc_kk', label: 'KK (Kartu Keluarga)' },
+  { key: 'doc_akta', label: 'Akta Kelahiran' },
+  { key: 'doc_ijazah', label: 'Ijazah' },
+  { key: 'doc_lainnya', label: 'Dokumen Lainnya' },
+];
+
+const DOC_SLUGS: Record<string, string> = {
+  doc_kk: 'KK',
+  doc_akta: 'Akta-Kelahiran',
+  doc_ijazah: 'Ijazah',
+  doc_lainnya: 'Dokumen-Lainnya',
+};
+
+function safeName(value: string): string {
+  const clean = value
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\p{L}\p{N}]+/gu, '-')
+    .replace(/^-+|-+$/g, '');
+  return clean.slice(0, 50) || 'file';
+}
+
+function extFromUrl(url: string): string {
+  const last = url.split('/').pop() ?? '';
+  const dot = last.lastIndexOf('.');
+  return dot > 0 && dot < last.length - 1 ? last.slice(dot + 1).toLowerCase().replace(/[^a-z0-9]/g, '') : '';
+}
+
+function fileBase(prefix: string, name: string, nisn: string, ext: string): string {
+  const core = [prefix, safeName(name), nisn ? `NISN-${nisn}` : ''].filter(Boolean).join('_');
+  return `${core}.${ext || 'jpg'}`;
+}
+
+function docFileName(doc: { key: string }, student: StudentRow): string {
+  return fileBase(DOC_SLUGS[doc.key] ?? 'Dokumen', student.name, String(student.nisn ?? ''), extFromUrl(String(student[doc.key] ?? '')));
+}
+
+function studentPhotoFileName(student: StudentRow): string {
+  return fileBase('Foto', student.name, String(student.nisn ?? ''), extFromUrl(String(student.foto ?? '')));
+}
+
+async function downloadFile(href: string, filename: string): Promise<void> {
+  try {
+    const res = await fetch(href, { credentials: 'include' });
+    if (!res.ok) throw new Error('Gagal mengunduh file.');
+    const blob = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = objectUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(objectUrl);
+  } catch {
+    window.open(href, '_blank', 'noopener,noreferrer');
+  }
 }

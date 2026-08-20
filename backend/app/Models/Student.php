@@ -11,6 +11,18 @@ class Student extends Model
 {
     use HasUuids;
 
+    public const CLASSES = ['X', 'XI', 'XII'];
+
+    public static function isValidClass(mixed $value): bool
+    {
+        return in_array(self::normalizeClass($value), self::CLASSES, true);
+    }
+
+    public static function normalizeClass(mixed $value): string
+    {
+        return strtoupper(trim((string) $value));
+    }
+
     public const BIODATA_KEYS = [
         // Section 1
         'nickname', 'kewarganegaraan', 'anak_ke', 'jml_saudara_kandung', 'jml_saudara_tiri',
@@ -52,6 +64,10 @@ class Student extends Model
         'address',
         'achievements',
         'foto',
+        'doc_kk',
+        'doc_akta',
+        'doc_ijazah',
+        'doc_lainnya',
         ...self::BIODATA_KEYS,
     ];
 
@@ -64,7 +80,7 @@ class Student extends Model
         'ayah_tanggal_lahir' => 'date',
         'ibu_tanggal_lahir' => 'date',
         'wali_tanggal_lahir' => 'date',
-        'jarak_sekolah' => 'decimal:2',
+        'jarak_sekolah' => 'float',
     ];
 
     public function account(): HasOne
