@@ -180,6 +180,7 @@ DB_PASSWORD=
 
 Pastikan MySQL sudah aktif sebelum menjalankan restore.
 
+Sudah bisa dilakukan di web langsung
 ### 8.3 Jalankan restore
 
 Dari folder `backend`, buka Laravel Tinker:
