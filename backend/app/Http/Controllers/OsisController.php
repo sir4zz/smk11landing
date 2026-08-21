@@ -6,6 +6,7 @@ use App\Models\Osis;
 use App\Models\OsisActivity;
 use App\Models\OsisMember;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class OsisController extends Controller
 {
@@ -32,6 +33,7 @@ class OsisController extends Controller
         $payload = $request->all();
         unset($payload['id'], $payload['updated_at']);
 
+        $this->cleanupReplacedFiles($osis, $payload, ['logo']);
         $osis->update($payload);
 
         return response()->json($osis);
@@ -58,6 +60,7 @@ class OsisController extends Controller
         $payload = $request->all();
         unset($payload['id'], $payload['created_at'], $payload['updated_at']);
 
+        $this->cleanupReplacedFiles($member, $payload, ['photo']);
         $member->update($payload);
 
         return response()->json($member);
@@ -65,7 +68,9 @@ class OsisController extends Controller
 
     public function destroyMember(string $id)
     {
-        OsisMember::findOrFail($id)->delete();
+        $member = OsisMember::findOrFail($id);
+        $this->deleteStoredFile($member->photo ?? null);
+        $member->delete();
 
         return response()->json(['data' => null, 'error' => null]);
     }
@@ -91,6 +96,7 @@ class OsisController extends Controller
         $payload = $request->all();
         unset($payload['id'], $payload['created_at'], $payload['updated_at']);
 
+        $this->cleanupReplacedFiles($activity, $payload, ['photo']);
         $activity->update($payload);
 
         return response()->json($activity);
@@ -98,8 +104,44 @@ class OsisController extends Controller
 
     public function destroyActivity(string $id)
     {
-        OsisActivity::findOrFail($id)->delete();
+        $activity = OsisActivity::findOrFail($id);
+        $this->deleteStoredFile($activity->photo ?? null);
+        $activity->delete();
 
         return response()->json(['data' => null, 'error' => null]);
+    }
+
+    private function cleanupReplacedFiles($row, array $payload, array $fields): void
+    {
+        foreach ($fields as $field) {
+            if (! array_key_exists($field, $payload)) {
+                continue;
+            }
+            $old = (string) ($row->{$field} ?? '');
+            $new = (string) ($payload[$field] ?? '');
+            if ($old !== '' && $old !== $new) {
+                $this->deleteStoredFile($old);
+            }
+        }
+    }
+
+    private function deleteStoredFile(?string $url): void
+    {
+        if (empty($url)) {
+            return;
+        }
+        $path = parse_url($url, PHP_URL_PATH) ?? $url;
+        $prefix = '/storage/';
+        if (str_starts_with($path, $prefix)) {
+            $path = substr($path, strlen($prefix));
+        } else {
+            if (! str_starts_with($url, '/storage/')) {
+                return;
+            }
+            $path = ltrim($path, '/');
+        }
+        if ($path !== '') {
+            Storage::disk('public')->delete($path);
+        }
     }
 }

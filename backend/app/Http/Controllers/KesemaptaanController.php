@@ -10,6 +10,7 @@ use App\Models\KesemaptaanInstructor;
 use App\Models\KesemaptaanSchedule;
 use App\Models\KesemaptaanVideo;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class KesemaptaanController extends Controller
 {
@@ -34,6 +35,7 @@ class KesemaptaanController extends Controller
         $payload = $request->all();
         unset($payload['id'], $payload['updated_at']);
 
+        $this->cleanupReplacedFiles($row, $payload, ['photo', 'hero_image']);
         $row->update($payload);
 
         return response()->json($row);
@@ -60,6 +62,8 @@ class KesemaptaanController extends Controller
         $payload = $request->all();
         unset($payload['id'], $payload['created_at'], $payload['updated_at']);
 
+        $this->cleanupReplacedFiles($row, $payload, ['photo']);
+        $this->cleanupReplacedArrayFiles($row, $payload, 'documentation');
         $row->update($payload);
 
         return response()->json($row);
@@ -67,7 +71,12 @@ class KesemaptaanController extends Controller
 
     public function destroyActivity(string $id)
     {
-        KesemaptaanActivity::findOrFail($id)->delete();
+        $row = KesemaptaanActivity::findOrFail($id);
+        $this->deleteStoredFile($row->photo ?? null);
+        foreach (($row->documentation ?? []) as $u) {
+            $this->deleteStoredFile(is_string($u) ? $u : null);
+        }
+        $row->delete();
 
         return response()->json(['data' => null, 'error' => null]);
     }
@@ -126,6 +135,7 @@ class KesemaptaanController extends Controller
         $payload = $request->all();
         unset($payload['id'], $payload['created_at']);
 
+        $this->cleanupReplacedFiles($row, $payload, ['photo']);
         $row->update($payload);
 
         return response()->json($row);
@@ -133,7 +143,9 @@ class KesemaptaanController extends Controller
 
     public function destroyInstructor(string $id)
     {
-        KesemaptaanInstructor::findOrFail($id)->delete();
+        $row = KesemaptaanInstructor::findOrFail($id);
+        $this->deleteStoredFile($row->photo ?? null);
+        $row->delete();
 
         return response()->json(['data' => null, 'error' => null]);
     }
@@ -171,6 +183,7 @@ class KesemaptaanController extends Controller
         $payload = $request->all();
         unset($payload['id'], $payload['created_at']);
 
+        $this->cleanupReplacedArrayFiles($row, $payload, 'documentation');
         $row->update($payload);
 
         return response()->json($row);
@@ -178,8 +191,61 @@ class KesemaptaanController extends Controller
 
     public function destroyAchievement(string $id)
     {
-        KesemaptaanAchievement::findOrFail($id)->delete();
+        $row = KesemaptaanAchievement::findOrFail($id);
+        foreach (($row->documentation ?? []) as $u) {
+            $this->deleteStoredFile(is_string($u) ? $u : null);
+        }
+        $row->delete();
 
         return response()->json(['data' => null, 'error' => null]);
+    }
+
+    private function cleanupReplacedFiles($row, array $payload, array $fields): void
+    {
+        foreach ($fields as $field) {
+            if (! array_key_exists($field, $payload)) {
+                continue;
+            }
+            $old = (string) ($row->{$field} ?? '');
+            $new = (string) ($payload[$field] ?? '');
+            if ($old !== '' && $old !== $new) {
+                $this->deleteStoredFile($old);
+            }
+        }
+    }
+
+    private function cleanupReplacedArrayFiles($row, array $payload, string $field): void
+    {
+        if (! array_key_exists($field, $payload)) {
+            return;
+        }
+        $old = $row->{$field} ?? [];
+        $new = $payload[$field] ?? [];
+        if (! is_array($old)) {
+            $old = [];
+        }
+        if (! is_array($new)) {
+            $new = [];
+        }
+        foreach (array_diff($old, $new) as $u) {
+            $this->deleteStoredFile(is_string($u) ? $u : null);
+        }
+    }
+
+    private function deleteStoredFile(?string $url): void
+    {
+        if (empty($url) || ! str_starts_with($url, '/storage/')) {
+            return;
+        }
+        $path = parse_url($url, PHP_URL_PATH) ?? $url;
+        $prefix = '/storage/';
+        if (str_starts_with($path, $prefix)) {
+            $path = substr($path, strlen($prefix));
+        } else {
+            $path = ltrim($path, '/');
+        }
+        if ($path !== '') {
+            Storage::disk('public')->delete($path);
+        }
     }
 }

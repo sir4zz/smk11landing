@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Extracurricular;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class ExtracurricularController extends Controller
@@ -91,6 +92,7 @@ class ExtracurricularController extends Controller
             $validated['slug'] = $this->uniqueSlug($validated['name'], $row->id);
         }
 
+        $this->cleanupReplacedFiles($row, $validated);
         $row->update($validated);
 
         return response()->json($row);
@@ -98,7 +100,16 @@ class ExtracurricularController extends Controller
 
     public function destroy(string $id)
     {
-        Extracurricular::findOrFail($id)->delete();
+        $row = Extracurricular::findOrFail($id);
+        $this->deleteStoredFile($row->logo ?? null);
+        $this->deleteStoredFile($row->photo ?? null);
+        foreach (($row->documentation ?? []) as $u) {
+            $this->deleteStoredFile(is_string($u) ? $u : null);
+        }
+        foreach (($row->gallery ?? []) as $u) {
+            $this->deleteStoredFile(is_string($u) ? $u : null);
+        }
+        $row->delete();
 
         return response()->json(['data' => null, 'error' => null]);
     }
@@ -118,5 +129,52 @@ class ExtracurricularController extends Controller
         }
 
         return $slug;
+    }
+
+    private function cleanupReplacedFiles($row, array $payload): void
+    {
+        foreach (['logo', 'photo'] as $field) {
+            if (! array_key_exists($field, $payload)) {
+                continue;
+            }
+            $old = (string) ($row->{$field} ?? '');
+            $new = (string) ($payload[$field] ?? '');
+            if ($old !== '' && $old !== $new) {
+                $this->deleteStoredFile($old);
+            }
+        }
+        foreach (['documentation', 'gallery'] as $field) {
+            if (! array_key_exists($field, $payload)) {
+                continue;
+            }
+            $old = $row->{$field} ?? [];
+            $new = $payload[$field] ?? [];
+            if (! is_array($old)) {
+                $old = [];
+            }
+            if (! is_array($new)) {
+                $new = [];
+            }
+            foreach (array_diff($old, $new) as $u) {
+                $this->deleteStoredFile(is_string($u) ? $u : null);
+            }
+        }
+    }
+
+    private function deleteStoredFile(?string $url): void
+    {
+        if (empty($url) || ! str_starts_with($url, '/storage/')) {
+            return;
+        }
+        $path = parse_url($url, PHP_URL_PATH) ?? $url;
+        $prefix = '/storage/';
+        if (str_starts_with($path, $prefix)) {
+            $path = substr($path, strlen($prefix));
+        } else {
+            $path = ltrim($path, '/');
+        }
+        if ($path !== '') {
+            Storage::disk('public')->delete($path);
+        }
     }
 }
