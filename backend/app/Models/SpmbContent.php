@@ -27,6 +27,7 @@ class SpmbContent extends Model
         'banner_image',
         'banner_title',
         'banner_description',
+        'pdf_attachment',
     ];
 
     protected $casts = [

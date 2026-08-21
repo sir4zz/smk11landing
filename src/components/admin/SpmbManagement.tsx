@@ -18,6 +18,7 @@ import type { SpmbContent, SpmbFaqItem, SpmbFlowStep, SpmbPoster, SpmbScheduleIt
 import { backendApi, resolveImageUrl, spmbPosterApi } from '../../lib/api';
 import { LoadingInline } from '../ui/LoadingScreen';
 import ImageField from './ImageField';
+import PdfField from './PdfField';
 
 interface Props {
   permissions: string[];
@@ -427,6 +428,7 @@ function normalizeSpmbRow(row: Record<string, unknown>): SpmbContent {
     banner_image: String(row.banner_image ?? ''),
     banner_title: String(row.banner_title ?? ''),
     banner_description: String(row.banner_description ?? ''),
+    pdf_attachment: (row.pdf_attachment as string) || '',
     updated_at: row.updated_at as string | undefined,
   };
 }
@@ -517,6 +519,12 @@ function PortalSettingsTab() {
           <Field label="Judul banner" value={content.banner_title} onChange={(value) => update('banner_title', value)} />
           <div className="md:col-span-2"><Field label="Deskripsi banner" multiline value={content.banner_description} onChange={(value) => update('banner_description', value)} /></div>
         </div>
+      </div>
+
+      <div className="rounded-xl bg-white p-6 shadow-sm">
+        <h3 className="mb-4 text-lg font-bold">Lampiran PDF</h3>
+        <p className="mb-4 text-sm text-[#5B7088]">Unggah file PDF yang akan ditampilkan di bawah pengumuman pada halaman SPMB.</p>
+        <PdfField label="File PDF" value={content.pdf_attachment ?? ''} onChange={(url) => update('pdf_attachment', url)} hint="Format PDF, maks. 20 MB." />
       </div>
 
       {message && <p className={`rounded-lg p-3 text-sm ${message.startsWith('Informasi') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>{message}</p>}
