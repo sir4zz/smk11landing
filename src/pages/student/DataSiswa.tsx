@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { UserRound, Loader2, Send, X, Clock, CheckCircle2, XCircle, ChevronRight, FileText, Eye, Download } from 'lucide-react';
+import { UserRound, Loader2, Send, X, Clock, CheckCircle2, XCircle, ChevronRight, FileText, Eye, Download, KeyRound } from 'lucide-react';
 import { backendApi, studentDataApi, resolveImageUrl, STUDENT_CHANGE_REQUEST_STATUS_LABELS, type StudentDataPayload, type StudentChangeRequestRow, type StudentChangeRequestStatus } from '../../lib/api';
 import PageHero from '../../components/ui/PageHero';
 import { BIODATA_FIELDS, BIODATA_SECTIONS, emptyBiodata } from '../../lib/studentBiodata';
@@ -409,6 +409,11 @@ export default function DataSiswa() {
           </div>
         )}
 
+        {/* Ubah PIN Login (via pengajuan, sama dengan Profil Mading) */}
+        <div className="mt-6">
+          <ChangePinCard pending={pendingRequest} />
+        </div>
+
         {/* Change Request History */}
         <div className="mt-8">
           <h2 className="mb-4 text-xl font-bold text-[#1B2A4A]">Riwayat Pengajuan Perubahan</h2>
@@ -451,6 +456,69 @@ function changeValue(key: string, val: unknown): string {
   if (val === null || val === undefined || val === '') return '-';
   if (key === 'pin') return '••••';
   return String(val);
+}
+
+function ChangePinCard({ pending }: { pending: StudentChangeRequestRow | null }) {
+  const [current, setCurrent] = useState('');
+  const [next, setNext] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+
+  const submit = async () => {
+    let err: string | null = null;
+    if (!/^\d{4}$/.test(next)) err = 'PIN baru harus 4 digit angka.';
+    else if (next !== confirm) err = 'Konfirmasi PIN baru tidak cocok.';
+    else if (!/^\d{4}$/.test(current)) err = 'PIN saat ini harus 4 digit angka.';
+    if (err) {
+      setMsg({ type: 'err', text: err });
+      return;
+    }
+    setSaving(true);
+    setMsg(null);
+    const { error } = await studentDataApi.submitChangeRequest({ current_pin: current, pin: next });
+    setSaving(false);
+    if (error) {
+      setMsg({ type: 'err', text: error.message ?? 'Gagal mengirim pengajuan.' });
+      return;
+    }
+    setCurrent('');
+    setNext('');
+    setConfirm('');
+    setMsg({ type: 'ok', text: 'Pengajuan ganti PIN berhasil dikirim dan menunggu verifikasi admin.' });
+  };
+
+  const inputCls = 'mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal';
+
+  return (
+    <div className="rounded-2xl bg-white p-6 shadow-sm">
+      <h2 className="mb-4 text-xl font-bold text-[#1B2A4A]">Ubah PIN Login</h2>
+      <p className="mb-4 rounded-lg bg-[#FAF6F0] p-3 text-xs text-[#5B7088]">
+        PIN baru hanya aktif setelah pengajuan disetujui admin. Selama menunggu verifikasi, PIN lama tetap berlaku.
+      </p>
+      {msg && <p className={`mb-4 rounded-lg p-3 text-sm ${msg.type === 'ok' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>{msg.text}</p>}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <label className="block text-sm font-semibold">PIN Saat Ini
+          <input value={current} type="password" onChange={(e) => setCurrent(e.target.value)} className={inputCls} />
+        </label>
+        <label className="block text-sm font-semibold">PIN Baru
+          <input value={next} type="password" onChange={(e) => setNext(e.target.value)} className={inputCls} />
+        </label>
+        <label className="block text-sm font-semibold">Ulangi PIN Baru
+          <input value={confirm} type="password" onChange={(e) => setConfirm(e.target.value)} className={inputCls} />
+        </label>
+      </div>
+      <button
+        onClick={submit}
+        disabled={saving || !!pending}
+        className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#1B2A4A] px-5 py-2.5 font-bold text-white disabled:opacity-50"
+        title={pending ? 'Tunggu pengajuan yang sedang menunggu verifikasi' : undefined}
+      >
+        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />} Ajukan Ganti PIN
+      </button>
+      {pending && <p className="mt-3 text-xs font-medium text-[#866D2C]">Ada pengajuan yang sedang menunggu verifikasi admin.</p>}
+    </div>
+  );
 }
 
 function StudentDataView({ student }: { student: StudentDataPayload }) {
