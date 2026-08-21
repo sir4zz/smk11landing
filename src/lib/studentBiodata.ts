@@ -82,7 +82,7 @@ export const BIODATA_FIELDS: BiodataFieldDef[] = [
   { key: 'address', label: 'Alamat Tempat Tinggal', section: 'residence', type: 'textarea', full: true },
   { key: 'phone', label: 'No. Telp / HP', section: 'residence', type: 'number' },
   { key: 'tinggal_dengan', label: 'Tinggal Dengan (Orang Tua/Saudara/Asrama/Kost)', section: 'residence' },
-  { key: 'jarak_sekolah', label: 'Jarak Tempat Tinggal ke Sekolah (KM)', section: 'residence', type: 'decimal' },
+  { key: 'jarak_sekolah', label: 'Jarak Tempat Tinggal ke Sekolah (Meter)', section: 'residence', type: 'decimal' },
 
   // C. Keterangan Kesehatan
   { key: 'golongan_darah', label: 'Golongan Darah', section: 'health', type: 'select', options: BLOOD_OPTIONS },
@@ -335,6 +335,8 @@ const DAPODIK_COLUMN_MAP: Record<string, string> = {
   'jumlah saudara': 'jml_saudara_kandung',
   'no hp': 'phone',
   'jarak sekolah (km)': 'jarak_sekolah',
+  'jarak sekolah (m)': 'jarak_sekolah',
+  'jarak sekolah (meter)': 'jarak_sekolah',
   'jarak sekolah': 'jarak_sekolah',
   'pilihan jurusan 1': 'major',
   'status ayah': 'ayah_status_hidup',
@@ -404,11 +406,10 @@ export function parseDapodikSheets(sheets: DapodikSheetGrid[]): { rows: Record<s
         } else if (DAPODIK_DATE_COLUMNS.has(col)) {
           record[key] = toDateString(raw);
         } else if (col.startsWith('jarak sekolah')) {
+          // Satuan meter — angka dipakai apa adanya.
           const match = raw.match(/^\d+(\.\d+)?/);
           if (!match) continue;
-          const meters = parseFloat(match[0]);
-          const km = meters >= 1000 ? meters / 1000 : meters;
-          record[key] = String(Math.round(km * 100) / 100);
+          record[key] = String(Math.round(parseFloat(match[0]) * 100) / 100);
         } else {
           record[key] = raw;
         }
