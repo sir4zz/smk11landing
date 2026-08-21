@@ -89,7 +89,7 @@ const configs: Record<EditableSection, { title: string; icon: typeof FileText; f
   facilities: { title: 'Fasilitas', icon: Building2, fields: [{ key: 'name', label: 'Nama Fasilitas' }, { key: 'category', label: 'Kategori', type: 'select' }, { key: 'description', label: 'Deskripsi', multiline: true }, { key: 'photo', label: 'Foto', type: 'image' }] },
   staff: { title: 'Staf & Guru', icon: Users, fields: [{ key: 'name', label: 'Nama' }, { key: 'position', label: 'Jabatan', type: 'select' }, { key: 'department', label: 'Unit / Departemen', type: 'select' }, { key: 'photo', label: 'Foto', type: 'image' }, { key: 'description', label: 'Deskripsi Singkat', multiline: true }] },
   gurus: { title: 'Guru', icon: Users, fields: [{ key: 'name', label: 'Nama' }, { key: 'subject', label: 'Mata Pelajaran' }, { key: 'position', label: 'Jabatan', type: 'select' }, { key: 'photo', label: 'Foto', type: 'image' }] },
-  achievements: { title: 'Prestasi Siswa', icon: Trophy, fields: [{ key: 'title', label: 'Judul Prestasi' }, { key: 'event', label: 'Acara' }, { key: 'level', label: 'Tingkat', type: 'select' }, { key: 'rank', label: 'Peringkat', type: 'select' }, { key: 'year', label: 'Tahun', type: 'number' }, { key: 'photo', label: 'Foto', type: 'image' }] },
+  achievements: { title: 'Prestasi Siswa', icon: Trophy, fields: [{ key: 'title', label: 'Judul Prestasi' }, { key: 'event', label: 'Acara' }, { key: 'level', label: 'Tingkat', type: 'select' }, { key: 'rank', label: 'Peringkat', type: 'select' }, { key: 'year', label: 'Tahun', type: 'number' }, { key: 'students', label: 'Siswa Peraih Prestasi (satu per baris)', type: 'list' }, { key: 'photo', label: 'Foto', type: 'image' }] },
   teacherActivities: { title: 'Kegiatan Guru', icon: CalendarDays, fields: [{ key: 'title', label: 'Judul Kegiatan' }, { key: 'category', label: 'Kategori', type: 'select' }, { key: 'date', label: 'Tanggal', type: 'date' }, { key: 'photo', label: 'Foto', type: 'image' }, { key: 'description', label: 'Deskripsi', multiline: true }] },
   educationStaff: { title: 'Tenaga Kependidikan', icon: Briefcase, fields: [{ key: 'name', label: 'Nama' }, { key: 'position', label: 'Jabatan', type: 'select' }, { key: 'department', label: 'Unit / Departemen', type: 'select' }, { key: 'photo', label: 'Foto', type: 'image' }] },
   contentRecords: { title: 'Konten Beranda', icon: FileText, fields: [{ key: 'content_type', label: 'Tipe Konten' }] },
@@ -1592,7 +1592,7 @@ function Editor({ config, item, onClose, onSave, section, options }: { config: {
       return;
     }
 
-    const listFields = section === 'programs' ? ['competencies', 'career_prospects', 'facilities'] : [];
+    const listFields = section === 'programs' ? ['competencies', 'career_prospects', 'facilities'] : section === 'achievements' ? ['students'] : [];
     const slugFields: Record<string, string | undefined> = {
       news: formValues.title,
       programs: formValues.short_name || formValues.name,
