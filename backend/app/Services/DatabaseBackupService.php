@@ -38,6 +38,7 @@ class DatabaseBackupService
      * Only content data is backed up — not user accounts, roles, permissions, etc.
      */
     private const EXCLUDED_TABLES = [
+        // Auth & session
         'users',
         'password_reset_tokens',
         'sessions',
@@ -47,10 +48,17 @@ class DatabaseBackupService
         'job_batches',
         'failed_jobs',
         'personal_access_tokens',
+        // Role & permission
         'roles',
         'permissions',
         'role_permissions',
         'profiles',
+        // Account siswa
+        'student_accounts',
+        // Audit & workflow
+        'ppdb_activity_log',
+        'student_data_change_requests',
+        'guru_data_change_requests',
     ];
 
     public function list(): array
