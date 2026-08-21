@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
-import { Plus, Pencil, Trash2, X, Save, Loader2, Images, Upload, GripVertical, Image } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Save, Loader2, Images } from 'lucide-react';
 import { backendApi, resolveImageUrl } from '../../lib/api';
 import type { ExtracurricularRecord } from '../../pages/osis/Extracurriculars';
 import { can } from '../../lib/permissions';

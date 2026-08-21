@@ -362,6 +362,7 @@ $guru = Guru::query()
 
         $payload = [
             'foto' => $student->foto ?? '',
+            'name' => $student->name ?? '',
             'nisn' => $student->nisn ?? '',
             'nis' => $student->nis ?? '',
             'class' => $student->class ?? '',

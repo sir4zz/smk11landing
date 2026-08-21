@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ChangeEvent } from 'react';
-import { Plus, Pencil, Trash2, X, Save, Loader2, Search, CheckCircle2, XCircle, Send, Eye, Sparkles, Clapperboard, Image } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Save, Loader2, Search, CheckCircle2, XCircle, Send, Eye, Sparkles, Clapperboard } from 'lucide-react';
 import { backendApi } from '../../lib/api';
 import type { MadingPostRow } from '../../lib/api';
 import { can } from '../../lib/permissions';

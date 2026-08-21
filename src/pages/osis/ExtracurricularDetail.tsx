@@ -5,7 +5,7 @@ import { LoadingInline } from '../../components/ui/LoadingScreen';
 import { usePageBanner } from '../../lib/usePageBanner';
 import { fetchExtracurricularBySlug, resolveImageUrl } from '../../lib/api';
 import type { ExtracurricularRecord } from './Extracurriculars';
-import { User, Clock, MapPin, Trophy, ChevronLeft, ImageIcon, Calendar, Star, X } from 'lucide-react';
+import { User, Clock, MapPin, Trophy, ChevronLeft, ImageIcon, Star, X } from 'lucide-react';
 
 const ExtracurricularDetail: React.FC = () => {
   const { backgroundImage } = usePageBanner('osis_ekskul');
