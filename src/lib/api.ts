@@ -63,6 +63,35 @@ export function youtubeThumbnailUrl(url: string): string {
 
 export { apiBaseUrl };
 
+/**
+ * Unduh file melalui endpoint API (bukan URL statis /storage), karena file
+ * statis dilewati web server sehingga tidak membawa header CORS dan fetch()
+ * dari SPA frontend akan diblokir browser. Kembalikan pesan error bila gagal.
+ */
+export async function downloadApiFile(path: string, filename: string): Promise<{ ok: true } | { ok: false; message: string }> {
+  const relative = path.startsWith('/storage/') ? path.slice('/storage/'.length) : path;
+  const url = `${apiBaseUrl}/admin/students/files/download?path=${encodeURIComponent(relative)}`;
+  try {
+    const res = await fetch(url, { credentials: 'include' });
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      return { ok: false, message: body?.error?.message ?? 'File tidak ditemukan.' };
+    }
+    const blob = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = objectUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(objectUrl);
+    return { ok: true };
+  } catch {
+    return { ok: false, message: 'Tidak dapat mengunduh file.' };
+  }
+}
+
 type ApiError = { message?: string; [key: string]: unknown } | null;
 type ApiResponse<T> = { data: T | null; error: ApiError; status?: number; count?: number | null; meta?: unknown };
 type ApiResult<T> = Promise<ApiResponse<T>>;

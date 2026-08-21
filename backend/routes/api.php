@@ -193,6 +193,7 @@ Route::middleware(['auth:sanctum', 'staff'])->group(function () {
     Route::post('/admin/students/import', [StudentController::class, 'import'])->middleware('permission:mading.edit_all');
     Route::post('/admin/students/{studentId}/reset-pin', [StudentController::class, 'resetPin'])->middleware('permission:mading.edit_all');
     Route::delete('/admin/students/{studentId}', [StudentController::class, 'destroy'])->middleware('permission:mading.edit_all');
+    Route::get('/admin/students/files/download', [StudentController::class, 'downloadFile'])->middleware('permission:mading.edit_all');
 
     // Gallery management
     Route::get('/admin/galleries', [GalleryController::class, 'adminIndex'])->middleware('permission:gallery.view');

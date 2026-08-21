@@ -46,7 +46,6 @@ class MyProfileController extends Controller
         }
 
         $profileUpdates = [];
-        $studentUpdates = [];
         $isStudent = $profile->role === 'student' && $user->student;
         $userUpdates = [];
 
@@ -56,28 +55,20 @@ class MyProfileController extends Controller
             }
         }
 
-        if ($isStudent) {
-            foreach (['photo' => 'foto', 'address' => 'address', 'phone' => 'phone'] as $input => $column) {
-                if ($request->has($input)) {
-                    $studentUpdates[$column] = trim((string) $request->input($input)) ?: null;
-                }
-            }
-        } elseif ($request->has('photo')) {
+        // Biodata siswa (Data Siswa) dikelola melalui Data Change Request yang
+        // diverifikasi oleh staf/admin. Endpoint ini TIDAK boleh mengubah data
+        // utama siswa secara langsung; siswa hanya memperbarui field profil.
+        if (! $isStudent && $request->has('photo')) {
             $profileUpdates['photo'] = trim((string) $request->input('photo'));
         }
 
-        if ($request->has('name')) {
+        if ($request->has('name') && ! $isStudent) {
             $name = trim((string) $request->input('name'));
             if (mb_strlen($name) < 2) {
                 return $this->fail('Nama wajib diisi.');
             }
-            if (! $isStudent) {
-                $profileUpdates['name'] = $name;
-            }
+            $profileUpdates['name'] = $name;
             $userUpdates['name'] = $name;
-            if ($isStudent) {
-                $studentUpdates['name'] = $name;
-            }
         }
 
         if ($request->has('phone') && ! $isStudent) {
@@ -90,8 +81,8 @@ class MyProfileController extends Controller
 
         if ($request->has('email')) {
             $email = strtolower(trim((string) $request->input('email')));
-            if ($profile->role === 'student') {
-                $email = $this->accounts->studentEmail((string) $user->student?->nisn);
+            if ($isStudent) {
+                $email = $this->accounts->studentEmail((string) $user->student->nisn);
             }
             if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 return $this->fail('Email wajib diisi dengan benar.');
@@ -104,7 +95,7 @@ class MyProfileController extends Controller
         }
 
         $role = $profile->role;
-        DB::transaction(function () use ($profile, $profileUpdates, $studentUpdates, $user, $userUpdates, $role, $request) {
+        DB::transaction(function () use ($profile, $profileUpdates, $user, $userUpdates, $role, $request) {
             if ($userUpdates) {
                 $user->update($userUpdates);
             }
@@ -150,22 +141,11 @@ class MyProfileController extends Controller
                 if ($osisUpdates) $user->osisAccount->update($osisUpdates);
             }
 
-            if ($role === 'student' && $user->student) {
-            foreach (['class', 'major'] as $field) {
-                if ($request->has($field)) {
-                    $studentUpdates[$field] = trim((string) $request->input($field));
-                }
+            // Student biodata (Data Siswa) diubah lewat Data Change Request,
+            // sehingga blok student di sini hanya menjaga mirror email tetap sama.
+            if ($role === 'student' && $user->student && isset($userUpdates['email'])) {
+                $this->accounts->syncStudentEmails($user, $userUpdates['email']);
             }
-            if ($request->has('achievements')) {
-                $studentUpdates['achievements'] = $this->jsonList($request->input('achievements'));
-            }
-            if ($studentUpdates) {
-                $user->student->update($studentUpdates);
-            }
-
-            // Student login emails remain derived from NISN.
-            $this->accounts->syncStudentEmails($user, $this->accounts->studentEmail($user->student->nisn));
-        }
         });
 
         $user->load(['profileRecord', 'guru', 'osisAccount', 'student', 'sdmGuru']);
@@ -186,7 +166,12 @@ class MyProfileController extends Controller
             'new_password' => ['required', 'string'],
         ]);
 
-        $minLength = $user->profileRecord?->role === 'student' ? 4 : 6;
+        // Siswa mengganti PIN lewat pengajuan perubahan data (verifikasi admin).
+        if ($user->profileRecord?->role === 'student') {
+            return $this->fail('Siswa mengganti PIN melalui "Ajukan Perubahan Data" di Profil Saya, menunggu verifikasi admin.');
+        }
+
+        $minLength = 6;
 
         if (mb_strlen($data['new_password']) < $minLength) {
             return $this->fail('Password baru minimal '.$minLength.' karakter.');
