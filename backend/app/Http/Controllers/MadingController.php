@@ -7,6 +7,7 @@ use App\Models\MadingPost;
 use App\Services\MadingService;
 use App\Services\PermissionService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class MadingController extends Controller
@@ -174,6 +175,7 @@ class MadingController extends Controller
             return response()->json(['error' => $e->errors()], 422);
         }
 
+        $this->cleanupReplacedMadingFiles($post, $data);
         $post->update($data);
 
         return response()->json(MadingPost::with('category:id,name')->find($post->id));
@@ -191,6 +193,10 @@ class MadingController extends Controller
             return response()->json(['error' => ['message' => 'Forbidden']], 403);
         }
 
+        $this->deleteStoredFile($post->cover_image ?? null);
+        foreach ($this->extractImageUrls($post->images) as $url) {
+            $this->deleteStoredFile($url);
+        }
         $post->delete();
 
         return response()->json(['data' => null, 'error' => null]);
@@ -251,5 +257,63 @@ class MadingController extends Controller
         }
 
         return response()->json(['data' => null, 'error' => null]);
+    }
+
+    private function cleanupReplacedMadingFiles(MadingPost $post, array $data): void
+    {
+        if (array_key_exists('cover_image', $data)) {
+            $old = (string) ($post->cover_image ?? '');
+            $new = (string) ($data['cover_image'] ?? '');
+            if ($old !== '' && $old !== $new) {
+                $this->deleteStoredFile($old);
+            }
+        }
+        if (array_key_exists('images', $data)) {
+            $oldUrls = $this->extractImageUrls($post->images);
+            $newUrls = $this->extractImageUrls($data['images'] ?? null);
+            foreach (array_diff($oldUrls, $newUrls) as $url) {
+                $this->deleteStoredFile($url);
+            }
+        }
+    }
+
+    private function extractImageUrls(mixed $images): array
+    {
+        if (empty($images)) {
+            return [];
+        }
+        $arr = is_string($images) ? json_decode($images, true) : $images;
+        if (! is_array($arr)) {
+            return is_string($images) && str_starts_with($images, '/storage/') ? [$images] : [];
+        }
+        $out = [];
+        foreach ($arr as $item) {
+            if (is_string($item) && str_starts_with($item, '/storage/')) {
+                $out[] = $item;
+            } elseif (is_array($item)) {
+                $u = $item['image'] ?? $item['url'] ?? $item['src'] ?? null;
+                if (is_string($u) && str_starts_with($u, '/storage/')) {
+                    $out[] = $u;
+                }
+            }
+        }
+        return $out;
+    }
+
+    private function deleteStoredFile(?string $url): void
+    {
+        if (empty($url) || ! str_starts_with($url, '/storage/')) {
+            return;
+        }
+        $path = parse_url($url, PHP_URL_PATH) ?? $url;
+        $prefix = '/storage/';
+        if (str_starts_with($path, $prefix)) {
+            $path = substr($path, strlen($prefix));
+        } else {
+            $path = ltrim($path, '/');
+        }
+        if ($path !== '') {
+            Storage::disk('public')->delete($path);
+        }
     }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\PermissionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class ContentCrudController extends Controller
@@ -20,6 +21,20 @@ class ContentCrudController extends Controller
         'achievements' => \App\Models\Achievement::class,
         'teacher-activities' => \App\Models\TeacherActivity::class,
         'education-staff' => \App\Models\EducationStaff::class,
+    ];
+
+    /**
+     * Kolom yang menyimpan URL file /storage/... per tipe konten.
+     * Dipakai untuk hapus file fisik saat destroy/update agar tidak jadi orphan.
+     */
+    protected array $mediaFields = [
+        'news' => ['thumbnail'],
+        'programs' => ['logo', 'image'],
+        'facilities' => ['photo'],
+        'staff' => ['photo'],
+        'achievements' => ['photo'],
+        'teacher-activities' => ['photo'],
+        'education-staff' => ['photo'],
     ];
 
     public function __construct(protected PermissionService $permissions)
@@ -135,6 +150,8 @@ class ContentCrudController extends Controller
             $payload['slug'] = $this->uniqueSlug($model, $name, $row->id);
         }
 
+        $this->cleanupReplacedFiles($type, $row, $payload);
+
         $row->update($payload);
         $this->invalidatePublicCache($type);
 
@@ -146,6 +163,7 @@ class ContentCrudController extends Controller
         $model = $this->resolveModel($type);
 
         $row = $model::findOrFail($id);
+        $this->deleteRowFiles($type, $row);
         $row->delete();
         $this->invalidatePublicCache($type);
 
@@ -192,5 +210,47 @@ class ContentCrudController extends Controller
         }
 
         return $slug;
+    }
+
+    protected function cleanupReplacedFiles(string $type, $row, array $payload): void
+    {
+        foreach ($this->mediaFields[$type] ?? [] as $field) {
+            if (! array_key_exists($field, $payload)) {
+                continue;
+            }
+            $old = (string) ($row->{$field} ?? '');
+            $new = (string) ($payload[$field] ?? '');
+            if ($old !== '' && $old !== $new) {
+                $this->deleteStoredFile($old);
+            }
+        }
+    }
+
+    protected function deleteRowFiles(string $type, $row): void
+    {
+        foreach ($this->mediaFields[$type] ?? [] as $field) {
+            $this->deleteStoredFile($row->{$field} ?? null);
+        }
+    }
+
+    protected function deleteStoredFile(?string $url): void
+    {
+        if (empty($url)) {
+            return;
+        }
+        $path = parse_url($url, PHP_URL_PATH) ?? $url;
+        $prefix = '/storage/';
+        if (str_starts_with($path, $prefix)) {
+            $path = substr($path, strlen($prefix));
+        } else {
+            $path = ltrim($path, '/');
+            // Hanya hapus yang memang di disk public (cegah hapus path absolut/random)
+            if (! str_starts_with($url, '/storage/') && ! str_starts_with($url, 'http')) {
+                return;
+            }
+        }
+        if ($path !== '') {
+            Storage::disk('public')->delete($path);
+        }
     }
 }
