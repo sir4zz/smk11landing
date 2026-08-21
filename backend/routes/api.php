@@ -355,6 +355,8 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::get('/backups', [DatabaseBackupController::class, 'index']);
     Route::post('/backups', [DatabaseBackupController::class, 'store']);
     Route::post('/backups/restore', [DatabaseBackupController::class, 'restore']);
+    Route::post('/backups/restore-chunk', [DatabaseBackupController::class, 'uploadChunk']);
+    Route::post('/backups/restore-commit', [DatabaseBackupController::class, 'restoreCommit']);
     Route::get('/backups/{filename}', [DatabaseBackupController::class, 'download']);
     Route::delete('/backups/{filename}', [DatabaseBackupController::class, 'destroy']);
 });
