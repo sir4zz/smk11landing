@@ -133,6 +133,10 @@ class StudentController extends Controller
      */
     public function import(Request $request)
     {
+        // Impor ratusan siswa (Hash::make + beberapa insert per baris) bisa
+        // melebihi max_execution_time default server; pastikan cukup waktu.
+        @ini_set('max_execution_time', 600);
+
         $data = $request->validate([
             'rows' => ['required', 'array', 'min:1'],
             'default_pin' => ['nullable', 'string'],
@@ -144,11 +148,14 @@ class StudentController extends Controller
         $errors = [];
         $seen = [];
         $seenNis = [];
+        // Hash sekali per PIN unik (bcrypt rounds 10) agar impor cepat.
+        $pinHashes = [];
 
         foreach ($data['rows'] as $index => $row) {
             $row = is_array($row) ? $row : [];
-            // Template BIODATA: 8 baris header, data dimulai dari baris ke-9.
-            $line = (int) $index + 9;
+            // Template BIODATA: tiap sheet 3 baris header (judul, nama kolom, contoh),
+            // data dimulai dari baris ke-4. Frontend sudah menggabungkan antar-sheet per NISN.
+            $line = (int) $index + 4;
             $nisn = '';
 
             try {
@@ -179,13 +186,14 @@ class StudentController extends Controller
                 $seenNis[$nis] = true;
 
                 $pin = $this->defaultPin($nisn, $defaultPin);
+                $password = $pinHashes[$pin] ??= Hash::make($pin, ['rounds' => 10]);
                 $id = (string) \Illuminate\Support\Str::uuid();
 
-                DB::transaction(function () use ($id, $email, $nisn, $nis, $name, $row, $pin) {
+                DB::transaction(function () use ($id, $email, $nisn, $nis, $name, $row, $pin, $password, $class) {
                     User::create([
                         'id' => $id,
                         'email' => $email,
-                        'password' => Hash::make($pin),
+                        'password' => $password,
                         'name' => $name,
                         'profile' => ['name' => $name],
                         'email_verified_at' => now(),
@@ -294,6 +302,46 @@ class StudentController extends Controller
         User::query()->where('id', $student->id)->delete();
 
         return response()->json(['data' => null, 'error' => null]);
+    }
+
+    /**
+     * Unduh foto / dokumen siswa melalui API (Laravel) sehingga header CORS
+     * selalu diterapkan. File statis /storage biasa dilewati web server sehingga
+     * tidak membawa header Access-Control-Allow-Origin dan fetch() dari SPA
+     * frontend akan diblokir browser.
+     */
+    public function downloadFile(Request $request)
+    {
+        $path = trim((string) $request->query('path', ''));
+
+        $prefix = '/storage/';
+        if (str_starts_with($path, $prefix)) {
+            $path = substr($path, strlen($prefix));
+        }
+
+        // Whitelist: hanya foto profil / dokumen siswa yang boleh diakses.
+        $allowedPrefixes = ['photos/', 'student/documents/'];
+        $allowed = false;
+        foreach ($allowedPrefixes as $p) {
+            if (str_starts_with($path, $p)) {
+                $allowed = true;
+                break;
+            }
+        }
+        if (! $allowed || $path === '' || str_contains($path, '..')) {
+            return response()->json(['data' => null, 'error' => ['message' => 'File tidak ditemukan.']], 404);
+        }
+
+        $disk = \Illuminate\Support\Facades\Storage::disk('public');
+        if ($disk->directoryExists($path) || ! $disk->exists($path)) {
+            return response()->json(['data' => null, 'error' => ['message' => 'File tidak ditemukan.']], 404);
+        }
+
+        $filename = basename($path);
+
+        return response()->download($disk->path($path), $filename, [
+            'Content-Type' => $disk->mimeType($path) ?: 'application/octet-stream',
+        ]);
     }
 
     private function deleteStoredFile(?string $url): void
