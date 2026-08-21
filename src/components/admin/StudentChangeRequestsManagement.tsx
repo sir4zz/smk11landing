@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Loader2, Search, Eye, X, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { Loader2, Search, Eye, X, CheckCircle2, XCircle, Clock, RefreshCw } from 'lucide-react';
 import {
   studentChangeRequestAdminApi,
   STUDENT_CHANGE_REQUEST_STATUS_LABELS,
@@ -31,6 +31,7 @@ export default function StudentChangeRequestsManagement() {
   const [detailId, setDetailId] = useState<string | null>(null);
   const [detailRequest, setDetailRequest] = useState<StudentChangeRequestRow | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -43,6 +44,17 @@ export default function StudentChangeRequestsManagement() {
   }, [statusFilter, search]);
 
   useEffect(() => { void load(); }, [load]);
+
+  // Muat ulang tanpa mengosongkan tabel (untuk cek request masuk).
+  const reload = async () => {
+    setRefreshing(true);
+    const { data } = await studentChangeRequestAdminApi.list({
+      status: statusFilter || undefined,
+      search: search || undefined,
+    });
+    if (data) setRequests(data as StudentChangeRequestRow[]);
+    setRefreshing(false);
+  };
 
   const openDetail = async (id: string) => {
     setDetailId(id);
@@ -82,6 +94,14 @@ export default function StudentChangeRequestsManagement() {
           <option value="disetujui">Disetujui</option>
           <option value="ditolak">Ditolak</option>
         </select>
+        <button
+          onClick={reload}
+          disabled={refreshing}
+          title="Muat ulang daftar pengajuan"
+          className="ml-auto inline-flex items-center gap-2 rounded-lg bg-[#1B2A4A] px-4 py-2 text-sm font-bold text-white disabled:opacity-60"
+        >
+          <RefreshCw size={15} className={refreshing ? 'animate-spin' : ''} /> Reload
+        </button>
       </div>
 
       {/* List */}
