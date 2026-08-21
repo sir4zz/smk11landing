@@ -32,6 +32,7 @@ use App\Http\Controllers\StudentDataChangeRequestController;
 use App\Http\Controllers\PageBannerController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\DataController;
+use App\Http\Controllers\MediaController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -271,6 +272,9 @@ Route::middleware(['auth:sanctum', 'staff'])->group(function () {
     Route::post('/admin/page-banners', [PageBannerController::class, 'store']);
     Route::put('/admin/page-banners/{id}', [PageBannerController::class, 'update']);
     Route::delete('/admin/page-banners/{id}', [PageBannerController::class, 'destroy']);
+
+    // Media inventory
+    Route::get('/admin/media', [MediaController::class, 'index']);
 });
 
 // ============================================================
