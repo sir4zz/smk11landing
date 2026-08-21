@@ -1399,7 +1399,6 @@ function HomeContentFields({ data, onChange }: { data: Record<string, any>; onCh
     </fieldset>
     <fieldset className="space-y-4 rounded-lg border border-[#1B2A4A]/10 p-4">
       <legend className="px-1 font-bold">Sambutan</legend>
-      <ImageField label="Foto sambutan" value={homeField(data, 'welcome', 'image')} onChange={(url) => onChange({ ...data, welcome: { ...(data.welcome ?? {}), image: url } })} />
        {input('Judul', 'welcome', 'title')}
       {input('Paragraf (maksimal 2, satu per baris)', 'welcome', 'paragraphs', true)}
       {input('Kutipan', 'welcome', 'quote', true)}
@@ -1549,7 +1548,6 @@ function Editor({ config, item, onClose, onSave, section, options }: { config: {
             frame_image: value('hero_frame_image'),
           },
           welcome: {
-            image: value('welcome_image'),
             title: value('welcome_title'),
             paragraphs: lines('welcome_paragraphs', 2),
             quote: value('welcome_quote'),
