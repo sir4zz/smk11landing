@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 import type { ChangeEvent, ReactNode } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { Compass, BookMarked, PenLine, UserRound, LogOut, Loader2, Send, Save, CheckCircle2, XCircle, Clock, Eye, X, Sparkles, KeyRound, Trash2, FileText, ChevronRight, Download } from 'lucide-react';
@@ -12,7 +12,7 @@ import AIContentAssistant, { AiNote } from '../../components/mading/AIContentAss
 import ImageField from '../../components/admin/ImageField';
 import { GalleryUpload, VideoUrlsField } from '../../components/mading/MediaEditor';
 import { MADING_STATUSES } from '../../lib/ui-constants';
-import { BIODATA_FIELDS, BIODATA_SECTIONS } from '../../lib/studentBiodata';
+import { BIODATA_FIELDS, BIODATA_SECTIONS, groupFieldsBySubsection } from '../../lib/studentBiodata';
 import type { BiodataFieldDef } from '../../lib/studentBiodata';
 
 const studentSessionKey = 'smkn11-student-session';
@@ -729,8 +729,13 @@ function ProfileTab({ profile }: { profile: StudentProfile | null }) {
                 </dl>
               )}
               <dl className="grid gap-x-8 gap-y-1.5 text-sm sm:grid-cols-2">
-                {fields.map((field) => (
-                  <ProfileDetailRow key={field.key} field={field} value={std?.[field.key]} />
+                {groupFieldsBySubsection(fields).map((g, gi) => (
+                  <Fragment key={gi}>
+                    {g.subsection && <dt className="sm:col-span-2 border-b border-[#1B2A4A]/10 pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-[#866D2C]">{g.subsection}</dt>}
+                    {g.fields.map((field) => (
+                      <ProfileDetailRow key={field.key} field={field} value={std?.[field.key]} />
+                    ))}
+                  </Fragment>
                 ))}
               </dl>
             </div>
@@ -887,12 +892,17 @@ function ProfileTab({ profile }: { profile: StudentProfile | null }) {
                             />
                           </div>
                         )}
-                        {fields.map((field) => (
-                          <div key={field.key} className={field.full === true ? 'sm:col-span-2' : ''}>
-                            <BioField field={field} value={changeForm[field.key] ?? ''} onChange={setChange(field.key)} />
-                            {changeErrors[field.key] && <span className="mt-1 block text-xs font-medium text-red-600">{changeErrors[field.key]}</span>}
-                          </div>
-                        ))}
+                        {groupFieldsBySubsection(fields).map((g, gi) => (
+                            <Fragment key={gi}>
+                              {g.subsection && <p className="sm:col-span-2 border-b border-[#1B2A4A]/10 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-[#866D2C]">{g.subsection}</p>}
+                              {g.fields.map((field) => (
+                                <div key={field.key} className={field.full === true ? 'sm:col-span-2' : ''}>
+                                  <BioField field={field} value={changeForm[field.key] ?? ''} onChange={setChange(field.key)} />
+                                  {changeErrors[field.key] && <span className="mt-1 block text-xs font-medium text-red-600">{changeErrors[field.key]}</span>}
+                                </div>
+                              ))}
+                            </Fragment>
+                          ))}
                       </>
                     )}
                   </div>

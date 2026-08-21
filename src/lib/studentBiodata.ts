@@ -5,6 +5,7 @@ export interface BiodataFieldDef {
   key: string;
   label: string;
   section: string;
+  subsection?: string;
   type?: 'text' | 'number' | 'decimal' | 'date' | 'select' | 'textarea';
   options?: string[];
   placeholder?: string;
@@ -92,15 +93,18 @@ export const BIODATA_FIELDS: BiodataFieldDef[] = [
   { key: 'berat_kg', label: 'Berat (kg)', section: 'health', type: 'number' },
 
   // D. Keterangan Pendidikan
-  { key: 'lulusan_dari', label: 'Pendidikan Sebelumnya (Lulusan Dari)', section: 'education' },
-  { key: 'tanggal_sttb', label: 'Tanggal STTB/Ijazah', section: 'education', type: 'date' },
-  { key: 'nomor_sttb', label: 'Nomor STTB/Ijazah', section: 'education', type: 'number' },
-  { key: 'lama_belajar', label: 'Lama Belajar (Tahun)', section: 'education', type: 'number' },
-  { key: 'pindahan_dari', label: 'Pindahan Dari Sekolah', section: 'education' },
-  { key: 'alasan_pindah', label: 'Alasan Pindah', section: 'education' },
-  { key: 'diangkat', label: 'Diangkat', section: 'education' },
-  { key: 'kompetensi_keahlian', label: 'Kompetensi/Keahlian', section: 'education' },
-  { key: 'tanggal_diterima', label: 'Tanggal Diterima di Sekolah Ini', section: 'education', type: 'date' },
+  // ── Pendidikan Sebelumnya ──
+  { key: 'lulusan_dari', label: 'Lulusan Dari', section: 'education', subsection: 'Pendidikan Sebelumnya' },
+  { key: 'tanggal_sttb', label: 'Tanggal STTB/Ijazah', section: 'education', subsection: 'Pendidikan Sebelumnya', type: 'date' },
+  { key: 'nomor_sttb', label: 'Nomor STTB/Ijazah', section: 'education', subsection: 'Pendidikan Sebelumnya', type: 'number' },
+  { key: 'lama_belajar', label: 'Lama Belajar (Tahun)', section: 'education', subsection: 'Pendidikan Sebelumnya', type: 'number' },
+  // ── Pindahan ──
+  { key: 'pindahan_dari', label: 'Dari Sekolah', section: 'education', subsection: 'Pindahan' },
+  { key: 'alasan_pindah', label: 'Alasan', section: 'education', subsection: 'Pindahan' },
+  // ── Diterima di Sekolah Ini ──
+  { key: 'diangkat', label: 'Diangkat', section: 'education', subsection: 'Diterima di Sekolah Ini' },
+  { key: 'kompetensi_keahlian', label: 'Kompetensi/Keahlian', section: 'education', subsection: 'Diterima di Sekolah Ini' },
+  { key: 'tanggal_diterima', label: 'Tanggal Diterima', section: 'education', subsection: 'Diterima di Sekolah Ini', type: 'date' },
 
   // E. Ayah
   ...parentFields('ayah', 'father'),
@@ -120,6 +124,25 @@ export const BIODATA_FIELDS: BiodataFieldDef[] = [
   { key: 'siswa_status', label: 'Status', section: 'student' },
   { key: 'siswa_tanggal', label: 'Tanggal', section: 'student', type: 'date' },
 ];
+
+export interface FieldGroup {
+  subsection: string;
+  fields: BiodataFieldDef[];
+}
+
+export function groupFieldsBySubsection(fields: BiodataFieldDef[]): FieldGroup[] {
+  const groups: FieldGroup[] = [];
+  let cur: string | null = null;
+  for (const f of fields) {
+    const sub = f.subsection ?? '';
+    if (sub !== cur) {
+      groups.push({ subsection: sub, fields: [] });
+      cur = sub;
+    }
+    groups[groups.length - 1].fields.push(f);
+  }
+  return groups;
+}
 
 // Field yang wajib dalam bentuk apa pun.
 export const REQUIRED_KEYS = ['nisn', 'name'];
@@ -353,7 +376,28 @@ const DAPODIK_COLUMN_MAP: Record<string, string> = {
   'pekerjaan ibu': 'ibu_pekerjaan',
   'penghasilan ibu': 'ibu_penghasilan',
   'no hp ibu': 'ibu_no_telp',
+  // NOTE: Education fields handled by anchor-based EDU_OFFSETS below
+  // (not here) because "Tanggal" header appears twice and cannot be
+  // reliably distinguished by name alone.
 };
+
+// Header "Tanggal" muncul 2 kali — tidak bisa dibedakan oleh nama.
+// Deteksi posisi dari anchor "lulusan dari", lalu hitung offset relatif.
+// Posisi: lulusan_dari +0, tanggal_sttb +1, nomor_sttb +2, lama_belajar +3,
+//         pindahan_dari +4, alasan_pindah +5, diangkat +6, kompetensi_keahlian +7,
+//         tanggal_diterima +8.
+const EDU_SECTION_ANCHOR = 'lulusan dari';
+const EDU_OFFSETS: [number, string][] = [
+  [0, 'lulusan_dari'],
+  [1, 'tanggal_sttb'],
+  [2, 'nomor_sttb'],
+  [3, 'lama_belajar'],
+  [4, 'pindahan_dari'],
+  [5, 'alasan_pindah'],
+  [6, 'diangkat'],
+  [7, 'kompetensi_keahlian'],
+  [8, 'tanggal_diterima'],
+];
 
 const DAPODIK_DATE_COLUMNS = new Set(['tanggal lahir', 'tanggal lahir ayah', 'tanggal lahir ibu']);
 const DAPODIK_ADDRESS_COLUMNS = ['alamat', 'kecamatan', 'kota', 'provinsi'];
@@ -412,6 +456,21 @@ export function parseDapodikSheets(sheets: DapodikSheetGrid[]): { rows: Record<s
           record[key] = String(Math.round(parseFloat(match[0]) * 100) / 100);
         } else {
           record[key] = raw;
+        }
+      }
+
+      // Anchor-based mapping for education fields (handles "Tanggal" duplicates).
+      const eduAnchorIdx = idx[EDU_SECTION_ANCHOR];
+      if (eduAnchorIdx !== undefined) {
+        for (const [offset, key] of EDU_OFFSETS) {
+          const raw = String((cells ?? [])[eduAnchorIdx + offset] ?? '').trim();
+          if (raw === '') continue;
+          hasData = true;
+          if (['tanggal_sttb', 'tanggal_diterima'].includes(key)) {
+            record[key] = toDateString(raw);
+          } else {
+            record[key] = raw;
+          }
         }
       }
 

@@ -1,10 +1,10 @@
-import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
-import type { ChangeEvent, FormEvent, KeyboardEvent } from 'react';
+import { Component, Fragment, useCallback, useEffect, useRef, useState } from 'react';
+import type { ChangeEvent, FormEvent, KeyboardEvent, ErrorInfo, ReactNode } from 'react';
 import { ChevronRight, Plus, Trash2, X, Loader2, KeyRound, Search, UserRound, Upload, Pencil, Eye, ArrowLeft, Download } from 'lucide-react';
 import { accountsApi, downloadApiFile, resolveImageUrl } from '../../lib/api';
 import StudentImportModal from './StudentImportModal';
 import ImageField from './ImageField';
-import { BIODATA_FIELDS, BIODATA_SECTIONS, emptyBiodata, formatRupiah, isRupiahField, isValidClass, normalizeClass, normalizeGender } from '../../lib/studentBiodata';
+import { BIODATA_FIELDS, BIODATA_SECTIONS, emptyBiodata, formatRupiah, groupFieldsBySubsection, isRupiahField, isValidClass, normalizeClass, normalizeGender } from '../../lib/studentBiodata';
 import type { BiodataFieldDef } from '../../lib/studentBiodata';
 
 interface StudentRow {
@@ -328,12 +328,14 @@ export default function StudentsManagement() {
 
       {detailId ? (
         detailStudent ? (
-          <StudentDetailView
-            student={detailStudent}
-            onBack={() => setDetailId(null)}
-            onEdit={() => openEdit(detailStudent)}
-            flash={flash}
-          />
+          <DetailErrorBoundary onBack={() => setDetailId(null)}>
+            <StudentDetailView
+              student={detailStudent}
+              onBack={() => setDetailId(null)}
+              onEdit={() => openEdit(detailStudent)}
+              flash={flash}
+            />
+          </DetailErrorBoundary>
         ) : (
           <div className="rounded-xl bg-white p-8 text-center text-[#5B7088] shadow-sm">
             Data siswa tidak ditemukan.{' '}
@@ -480,9 +482,14 @@ export default function StudentsManagement() {
                         </div>
                       </div>
                     )}
-                    {fields.map((field) => (
-                      <BiodataField key={field.key} field={field} value={form[field.key] ?? ''} onChange={setValue(field.key)} error={errors[field.key]} />
-                    ))}
+                    {groupFieldsBySubsection(fields).map((g, gi) => (
+                        <Fragment key={gi}>
+                          {g.subsection && <p className="sm:col-span-2 border-b border-[#1B2A4A]/10 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-[#866D2C]">{g.subsection}</p>}
+                          {g.fields.map((field) => (
+                            <BiodataField key={field.key} field={field} value={form[field.key] ?? ''} onChange={setValue(field.key)} error={errors[field.key]} />
+                          ))}
+                        </Fragment>
+                      ))}
                   </div>
                 </div>
               );
@@ -571,6 +578,24 @@ function stepShortLabel(title: string): string {
   return title.replace(/^[A-J]\.\s*/, '');
 }
 
+class DetailErrorBoundary extends Component<{ children: ReactNode; onBack: () => void }, { error: string | null }> {
+  state: { error: string | null } = { error: null };
+  static getDerivedStateFromError(error: Error) { return { error: error.message }; }
+  componentDidCatch(error: Error, info: ErrorInfo) { console.error('[StudentDetailView error]', error, info); }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="rounded-xl bg-white p-8 text-center shadow-sm">
+          <p className="mb-2 font-bold text-red-600">Terjadi kesalahan saat menampilkan detail siswa.</p>
+          <p className="mb-4 text-sm text-[#5B7088]">{this.state.error}</p>
+          <button onClick={this.props.onBack} className="inline-flex items-center gap-2 rounded-lg border-2 border-[#1B2A4A] px-4 py-2 font-bold text-[#1B2A4A] hover:bg-[#1B2A4A]/5"><ArrowLeft size={16} /> Kembali</button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function StudentDetailView({ student, onBack, onEdit, flash }: { student: StudentRow; onBack: () => void; onEdit: () => void; flash: (type: 'ok' | 'err', text: string) => void }) {
   const achievements = Array.isArray(student.achievements) ? (student.achievements as unknown[]).filter(Boolean) : [];
   const achievementsText = achievements.map(String).join(', ');
@@ -627,8 +652,13 @@ function StudentDetailView({ student, onBack, onEdit, flash }: { student: Studen
                   {isIdentity && (
                     <DetailRow label="PIN Login" value={student.pin} />
                   )}
-                  {fields.map((field) => (
-                    <DetailRow key={field.key} label={field.label} value={detailValue(field, student[field.key])} />
+                  {groupFieldsBySubsection(fields).map((g, gi) => (
+                    <Fragment key={gi}>
+                      {g.subsection && <dt className="sm:col-span-2 border-b border-[#1B2A4A]/10 pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-[#866D2C]">{g.subsection}</dt>}
+                      {g.fields.map((field) => (
+                        <DetailRow key={field.key} label={field.label} value={detailValue(field, student[field.key])} />
+                      ))}
+                    </Fragment>
                   ))}
                   {isIdentity && achievementsText && (
                     <DetailRow label="Prestasi" value={achievementsText} />

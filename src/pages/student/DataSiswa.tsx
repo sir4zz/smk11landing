@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { UserRound, Loader2, Send, X, Clock, CheckCircle2, XCircle, ChevronRight, FileText, Eye, Download, KeyRound } from 'lucide-react';
 import { backendApi, studentDataApi, resolveImageUrl, STUDENT_CHANGE_REQUEST_STATUS_LABELS, type StudentDataPayload, type StudentChangeRequestRow, type StudentChangeRequestStatus } from '../../lib/api';
 import PageHero from '../../components/ui/PageHero';
-import { BIODATA_FIELDS, BIODATA_SECTIONS, emptyBiodata } from '../../lib/studentBiodata';
+import { BIODATA_FIELDS, BIODATA_SECTIONS, emptyBiodata, groupFieldsBySubsection } from '../../lib/studentBiodata';
 import type { BiodataFieldDef } from '../../lib/studentBiodata';
 import ImageField from '../../components/admin/ImageField';
 
@@ -380,8 +380,13 @@ export default function DataSiswa() {
                               <ImageField label="Foto Siswa (opsional)" value={form.foto ?? ''} onChange={(url) => setForm((v) => ({ ...v, foto: url }))} accept="image/jpeg,image/png" maxSizeMb={2} hint="JPG/JPEG atau PNG, maks. 2 MB." />
                             </div>
                           )}
-                          {fields.map((field) => (
-                            <BiodataField key={field.key} field={field} value={form[field.key] ?? ''} onChange={setValue(field.key)} error={errors[field.key]} />
+                          {groupFieldsBySubsection(fields).map((g, gi) => (
+                            <Fragment key={gi}>
+                              {g.subsection && <p className="sm:col-span-2 border-b border-[#1B2A4A]/10 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-[#866D2C]">{g.subsection}</p>}
+                              {g.fields.map((field) => (
+                                <BiodataField key={field.key} field={field} value={form[field.key] ?? ''} onChange={setValue(field.key)} error={errors[field.key]} />
+                              ))}
+                            </Fragment>
                           ))}
                         </>
                       )}
@@ -546,8 +551,13 @@ function StudentDataView({ student }: { student: StudentDataPayload }) {
               </div>
             )}
             <dl className="grid gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
-              {fields.map((field) => (
-                <DetailRow key={field.key} label={field.label} value={detailValue(field, (student as Record<string, unknown>)[field.key])} />
+              {groupFieldsBySubsection(fields).map((g, gi) => (
+                <Fragment key={gi}>
+                  {g.subsection && <dt className="sm:col-span-2 border-b border-[#1B2A4A]/10 pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-[#866D2C]">{g.subsection}</dt>}
+                  {g.fields.map((field) => (
+                    <DetailRow key={field.key} label={field.label} value={detailValue(field, (student as Record<string, unknown>)[field.key])} />
+                  ))}
+                </Fragment>
               ))}
             </dl>
           </div>
