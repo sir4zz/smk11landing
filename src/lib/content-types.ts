@@ -73,7 +73,7 @@ export interface SpmbFaqItem { question: string; answer: string }
 export interface SpmbContent {
   id?: string; status: SpmbStatus; title: string; description: string; latest_info: string;
   requirements: string[]; schedule: SpmbScheduleItem[]; flow_steps: SpmbFlowStep[]; faq: SpmbFaqItem[];
-  portal_url: string; banner_image: string; banner_title: string; banner_description: string; updated_at?: string;
+  portal_url: string; banner_image: string; banner_title: string; banner_description: string; pdf_attachment?: string | null; updated_at?: string;
 }
 export interface SpmbPoster {
   id?: string; title: string; image: string; is_active: boolean; sort_order: number;
