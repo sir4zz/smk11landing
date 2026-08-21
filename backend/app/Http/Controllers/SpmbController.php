@@ -34,6 +34,15 @@ class SpmbController extends Controller
         $payload = $request->all();
         unset($payload['id'], $payload['created_at'], $payload['updated_at']);
 
+        foreach (['banner_image', 'pdf_attachment'] as $field) {
+            if (array_key_exists($field, $payload) && (string) ($payload[$field] ?? '') !== (string) ($content->{$field} ?? '') && ! empty($content->{$field})) {
+                $oldKey = preg_replace('#^/storage/#', '', (string) $content->{$field});
+                if ($oldKey && str_starts_with((string) $content->{$field}, '/storage/')) {
+                    Storage::disk('public')->delete($oldKey);
+                }
+            }
+        }
+
         $content->update($payload);
 
         return response()->json($content);
@@ -140,6 +149,12 @@ class SpmbController extends Controller
         ]);
 
         if (array_key_exists('title', $data)) $data['title'] = trim($data['title']);
+        if (array_key_exists('image', $data) && (string) $data['image'] !== (string) ($poster->image ?? '') && ! empty($poster->image)) {
+            $oldKey = preg_replace('#^/storage/#', '', (string) $poster->image);
+            if ($oldKey && Storage::disk('public')->exists($oldKey)) {
+                Storage::disk('public')->delete($oldKey);
+            }
+        }
         $poster->update($data);
 
         $this->enforceSingleFeatured($poster);
@@ -229,6 +244,34 @@ class SpmbController extends Controller
             Storage::disk('public')->putFileAs($base, $file, $name.'.'.$ext);
             $url = '/storage/'.$key;
         }
+
+        return response()->json([
+            'data' => [
+                'url' => $url,
+                'size' => $file->getSize(),
+                'mimeType' => $file->getMimeType(),
+            ],
+            'error' => null,
+        ]);
+    }
+
+    /**
+     * PDF upload for SPMB page attachment. Only PDF files are accepted,
+     * size is capped at 20 MB.
+     */
+    public function uploadPdf(Request $request)
+    {
+        $request->validate([
+            'file' => ['required', 'file', 'mimes:pdf', 'max:20480'],
+        ]);
+
+        $file = $request->file('file');
+        $base = 'spmb/pdf/'.now()->format('Y/m');
+        $name = uniqid('spmb-pdf-').'-'.preg_replace('/[^a-zA-Z0-9._-]/', '-', pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)).'.pdf';
+
+        $key = $base.'/'.$name;
+        Storage::disk('public')->putFileAs($base, $file, $name);
+        $url = '/storage/'.$key;
 
         return response()->json([
             'data' => [

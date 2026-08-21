@@ -268,6 +268,7 @@ Route::middleware(['auth:sanctum', 'staff'])->group(function () {
     Route::get('/admin/spmb/posters', [SpmbController::class, 'adminPosters'])->middleware('permission:spmb.view');
     Route::post('/admin/spmb/posters', [SpmbController::class, 'storePoster'])->middleware('permission:spmb.create');
     Route::post('/admin/spmb/posters/upload', [SpmbController::class, 'uploadPoster'])->middleware('permission:spmb.edit');
+    Route::post('/admin/spmb/pdf/upload', [SpmbController::class, 'uploadPdf'])->middleware('permission:spmb.edit');
     Route::patch('/admin/spmb/posters/{id}', [SpmbController::class, 'updatePoster'])->middleware('permission:spmb.edit');
     Route::delete('/admin/spmb/posters/{id}', [SpmbController::class, 'destroyPoster'])->middleware('permission:spmb.delete');
 
