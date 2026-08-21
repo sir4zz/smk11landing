@@ -61,6 +61,9 @@ Route::get('/public/tendik/{identifier}', [PublicProfileController::class, 'tend
 Route::get('/profiles/{id}', [ProfileController::class, 'show']);
 Route::patch('/profiles/{id}', [ProfileController::class, 'update']);
 
+// ---------- MEDIA ----------
+Route::get('/media', [MediaController::class, 'index']);
+
 // ---------- PUBLIC CONTENT ----------
 Route::get('/news', [ContentCrudController::class, 'index'])->defaults('type', 'news');
 Route::get('/news/{slug}', [ContentCrudController::class, 'show'])->defaults('type', 'news');
