@@ -36,28 +36,62 @@ class ExtracurricularController extends Controller
 
     public function store(Request $request)
     {
-        $payload = $request->all();
-        unset($payload['id'], $payload['created_at'], $payload['updated_at']);
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'category' => 'nullable|string|max:255',
+            'description' => 'nullable|string',
+            'short_description' => 'nullable|string|max:500',
+            'full_description' => 'nullable|string',
+            'logo' => 'nullable|string|max:500',
+            'photo' => 'nullable|string|max:500',
+            'advisor' => 'nullable|string|max:255',
+            'schedule' => 'nullable|string|max:255',
+            'place' => 'nullable|string|max:255',
+            'achievements' => 'nullable|array',
+            'achievements.*' => 'string',
+            'documentation' => 'nullable|array',
+            'documentation.*' => 'string',
+            'gallery' => 'nullable|array',
+            'gallery.*' => 'string',
+            'status' => 'nullable|string|in:published,draft',
+        ]);
 
-        if (empty($payload['slug'])) {
-            $payload['slug'] = $this->uniqueSlug($payload['name'] ?? 'ekstrakurikuler');
+        if (empty($validated['slug'])) {
+            $validated['slug'] = $this->uniqueSlug($validated['name'] ?? 'ekstrakurikuler');
         }
 
-        return response()->json(Extracurricular::create($payload), 201);
+        return response()->json(Extracurricular::create($validated), 201);
     }
 
     public function update(Request $request, string $id)
     {
         $row = Extracurricular::findOrFail($id);
 
-        $payload = $request->all();
-        unset($payload['id'], $payload['created_at'], $payload['updated_at']);
+        $validated = $request->validate([
+            'name' => 'sometimes|string|max:255',
+            'category' => 'nullable|string|max:255',
+            'description' => 'nullable|string',
+            'short_description' => 'nullable|string|max:500',
+            'full_description' => 'nullable|string',
+            'logo' => 'nullable|string|max:500',
+            'photo' => 'nullable|string|max:500',
+            'advisor' => 'nullable|string|max:255',
+            'schedule' => 'nullable|string|max:255',
+            'place' => 'nullable|string|max:255',
+            'achievements' => 'nullable|array',
+            'achievements.*' => 'string',
+            'documentation' => 'nullable|array',
+            'documentation.*' => 'string',
+            'gallery' => 'nullable|array',
+            'gallery.*' => 'string',
+            'status' => 'nullable|string|in:published,draft',
+        ]);
 
-        if (empty($payload['slug']) && ! empty($payload['name'])) {
-            $payload['slug'] = $this->uniqueSlug($payload['name'], $row->id);
+        if (empty($validated['slug']) && ! empty($validated['name'])) {
+            $validated['slug'] = $this->uniqueSlug($validated['name'], $row->id);
         }
 
-        $row->update($payload);
+        $row->update($validated);
 
         return response()->json($row);
     }

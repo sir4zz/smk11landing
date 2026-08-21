@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import PageHero from '../../components/ui/PageHero';
 import type { Facility } from '../../lib/content-types';
+import { usePageBanner } from '../../lib/usePageBanner';
 import Card from '../../components/ui/Card';
 import { fetchPublicContent, resolveImageUrl } from '../../lib/api';
 
 const Facilities: React.FC = () => {
+  const { backgroundImage } = usePageBanner('akademik_fasilitas');
   const [filter, setFilter] = useState<string>('Semua');
   const [items, setItems] = useState<Facility[]>([]);
   useEffect(() => { fetchPublicContent<Facility[]>('facilities').then(setItems); }, []);
@@ -16,7 +18,7 @@ const Facilities: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#FAF6F0]">
-      <PageHero title="Fasilitas" subtitle="Sarana dan prasarana modern untuk mendukung pembelajaran yang optimal." />
+      <PageHero title="Fasilitas" subtitle="Sarana dan prasarana modern untuk mendukung pembelajaran yang optimal." backgroundImage={backgroundImage} />
 
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 md:py-20">
         <div className="mb-12 flex flex-wrap justify-center gap-4">

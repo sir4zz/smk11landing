@@ -2,11 +2,13 @@ import React, { useEffect, useState } from 'react';
 import PageHero from '../../components/ui/PageHero';
 import SectionHeading from '../../components/ui/SectionHeading';
 import { LoadingInline } from '../../components/ui/LoadingScreen';
+import { usePageBanner } from '../../lib/usePageBanner';
 import { fetchOsisActivities, resolveImageUrl } from '../../lib/api';
 import type { OsisActivity } from '../../lib/content-types';
 import { Award, CalendarDays, Sparkles } from 'lucide-react';
 
 const OsisKegiatan: React.FC = () => {
+  const { backgroundImage } = usePageBanner('osis_kegiatan');
   const [activities, setActivities] = useState<OsisActivity[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -23,7 +25,7 @@ const OsisKegiatan: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#FAF6F0]">
-        <PageHero title="Kegiatan OSIS" subtitle="Aktivitas dan program yang dijalankan oleh OSIS SMKN 11" breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'OSIS', href: '/osis' }, { label: 'Kegiatan OSIS' }]} />
+        <PageHero title="Kegiatan OSIS" subtitle="Aktivitas dan program yang dijalankan oleh OSIS SMKN 11" breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'OSIS', href: '/osis' }, { label: 'Kegiatan OSIS' }]} backgroundImage={backgroundImage} />
         <div className="py-24"><LoadingInline /></div>
       </div>
     );
@@ -35,6 +37,7 @@ const OsisKegiatan: React.FC = () => {
         title="Kegiatan OSIS"
         subtitle="Aktivitas dan program yang dijalankan oleh OSIS SMKN 11 Kabupaten Tangerang"
         breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'OSIS', href: '/osis' }, { label: 'Kegiatan OSIS' }]}
+        backgroundImage={backgroundImage}
       />
 
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 md:py-20">

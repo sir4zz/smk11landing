@@ -29,6 +29,7 @@ use App\Http\Controllers\SpmbController;
 use App\Http\Controllers\StatsController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\StudentDataChangeRequestController;
+use App\Http\Controllers\PageBannerController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\DataController;
 use Illuminate\Support\Facades\Route;
@@ -102,6 +103,10 @@ Route::get('/stats', [StatsController::class, 'index']);
 
 // ---------- FAQ ----------
 Route::get('/faqs', [FaqController::class, 'index']);
+
+// ---------- PAGE BANNERS ----------
+Route::get('/page-banners', [PageBannerController::class, 'index']);
+Route::get('/page-banners/{pageKey}', [PageBannerController::class, 'show']);
 
 // ---------- CONTACT ----------
 Route::post('/contact', [ContactController::class, 'store'])->middleware('throttle:contact');
@@ -260,6 +265,12 @@ Route::middleware(['auth:sanctum', 'staff'])->group(function () {
     Route::post('/admin/spmb/posters/upload', [SpmbController::class, 'uploadPoster'])->middleware('permission:spmb.edit');
     Route::patch('/admin/spmb/posters/{id}', [SpmbController::class, 'updatePoster'])->middleware('permission:spmb.edit');
     Route::delete('/admin/spmb/posters/{id}', [SpmbController::class, 'destroyPoster'])->middleware('permission:spmb.delete');
+
+    // Page Banners management
+    Route::get('/admin/page-banners', [PageBannerController::class, 'adminIndex']);
+    Route::post('/admin/page-banners', [PageBannerController::class, 'store']);
+    Route::put('/admin/page-banners/{id}', [PageBannerController::class, 'update']);
+    Route::delete('/admin/page-banners/{id}', [PageBannerController::class, 'destroy']);
 });
 
 // ============================================================
@@ -332,9 +343,10 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::patch('/accounts/{id}', [AccountController::class, 'update']);
     Route::delete('/accounts/{id}', [AccountController::class, 'destroy']);
 
-    // Database backup (download .sql snapshot)
+    // Backup / Restore (full system: database + media)
     Route::get('/backups', [DatabaseBackupController::class, 'index']);
     Route::post('/backups', [DatabaseBackupController::class, 'store']);
+    Route::post('/backups/restore', [DatabaseBackupController::class, 'restore']);
     Route::get('/backups/{filename}', [DatabaseBackupController::class, 'download']);
     Route::delete('/backups/{filename}', [DatabaseBackupController::class, 'destroy']);
 });

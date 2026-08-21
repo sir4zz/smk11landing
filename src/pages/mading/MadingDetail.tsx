@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import PageHero from '../../components/ui/PageHero';
 import { LoadingInline } from '../../components/ui/LoadingScreen';
+import { usePageBanner } from '../../lib/usePageBanner';
 import { fetchMadingPostById, resolveImageUrl, youtubeEmbedUrl, type MadingPostRow } from '../../lib/api';
 import { AiNote } from '../../components/mading/AIContentAssistant';
 import { ArrowLeft, Calendar, User, Share2, ChevronLeft, ChevronRight, X, Clapperboard, Play, ImageIcon } from 'lucide-react';
@@ -22,6 +23,7 @@ function formatDate(dateStr?: string | null): string {
 }
 
 const MadingDetail: React.FC = () => {
+  const { backgroundImage } = usePageBanner('mading_detail');
   const { id } = useParams<{ id: string }>();
   const [post, setPost] = useState<MadingPostRow | null>(null);
   const [loading, setLoading] = useState(true);
@@ -70,7 +72,7 @@ const MadingDetail: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#FAF6F0]">
-        <PageHero title="Mading" subtitle="Media Aspirasi Digital SMKN 11 Kabupaten Tangerang" breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Mading', href: '/mading' }]} />
+        <PageHero title="Mading" subtitle="Media Aspirasi Digital SMKN 11 Kabupaten Tangerang" breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Mading', href: '/mading' }]} backgroundImage={backgroundImage} />
         <div className="py-24"><LoadingInline /></div>
       </div>
     );
@@ -79,7 +81,7 @@ const MadingDetail: React.FC = () => {
   if (notFound || !post) {
     return (
       <div className="min-h-screen bg-[#FAF6F0]">
-        <PageHero title="Mading" breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Mading', href: '/mading' }]} />
+        <PageHero title="Mading" breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Mading', href: '/mading' }]} backgroundImage={backgroundImage} />
         <div className="mx-auto max-w-7xl px-4 py-24 text-center sm:px-6 lg:px-8">
           <h2 className="text-2xl font-bold text-[#1B2A4A]">Karya tidak ditemukan</h2>
           <p className="mt-2 text-[#5B7088]">Karya mungkin telah dihapus atau tidak dipublikasikan.</p>
@@ -101,6 +103,7 @@ const MadingDetail: React.FC = () => {
         title="Mading SMKN 11 Kabupaten Tangerang"
         subtitle="Tempat publikasi karya, aspirasi, dan informasi siswa & guru"
         breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Mading', href: '/mading' }, { label: post.title ?? 'Karya' }]}
+        backgroundImage={backgroundImage}
       />
 
       <article className="mx-auto max-w-3xl px-4 py-12 sm:px-6 md:py-16">

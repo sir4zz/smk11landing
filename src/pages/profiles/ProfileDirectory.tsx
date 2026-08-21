@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Users, BookOpen, Loader2, Search } from 'lucide-react';
 import PageHero from '../../components/ui/PageHero';
 import { publicProfileApi, resolveImageUrl, type PublicDirectory, type PublicDirectoryEntry } from '../../lib/api';
+import { usePageBanner } from '../../lib/usePageBanner';
 
 type Tab = 'guru' | 'tendik' | 'osis';
 
@@ -16,6 +17,7 @@ const TAB_KEY: Record<Tab, 'gurus' | 'tendiks' | 'osis'> = { guru: 'gurus', tend
 const SLUG_PREFIX: Record<Tab, string> = { guru: 'guru', tendik: 'tendik', osis: 'osis' };
 
 function ProfileDirectory() {
+  const { backgroundImage } = usePageBanner('profil_direktori');
   const [directory, setDirectory] = useState<PublicDirectory | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>('guru');
@@ -43,6 +45,7 @@ function ProfileDirectory() {
       <PageHero
         title="Direktori Profil"
         subtitle="Profil publik Guru dan Pengurus OSIS SMKN 11 Kabupaten Tangerang"
+        backgroundImage={backgroundImage}
         breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Profil', href: '/profil/direktori' }]}
       />
 

@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Globe, Link2, Mail, Phone, MapPin, Medal, Award, Briefcase, GraduationCap, Users, BookOpen, Compass, ArrowLeft, Loader2, Trophy, Camera, ThumbsUp, MessageCircle, Music2, Video, Contact, Code } from 'lucide-react';
 import PageHero from '../../components/ui/PageHero';
 import { publicProfileApi, resolveImageUrl, type PublicProfile, type PublicProfileType, type PublicSdmProfile } from '../../lib/api';
+import { usePageBanner } from '../../lib/usePageBanner';
 
 const ROLE_META: Record<string, { label: string; badge: string }> = {
   guru: { label: 'Guru', badge: 'bg-blue-50 text-blue-700' },
@@ -38,6 +39,7 @@ const SOCIAL_LABELS: Record<string, string> = {
 };
 
 function ProfilePage() {
+  const { backgroundImage } = usePageBanner('profil_guru');
   const { role, id } = useParams<{ role: string; id: string }>();
   const [profile, setProfile] = useState<PublicProfile | PublicSdmProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -67,7 +69,7 @@ function ProfilePage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#FAF6F0]">
-        <PageHero title="Profil" subtitle="Profil warga SMKN 11" breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Profil' }]} />
+        <PageHero title="Profil" subtitle="Profil warga SMKN 11" breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Profil' }]} backgroundImage={backgroundImage} />
         <div className="py-24"><Loader2 className="mx-auto h-10 w-10 animate-spin text-[#C8A951]" /></div>
       </div>
     );
@@ -76,7 +78,7 @@ function ProfilePage() {
   if (notFound || !profile) {
     return (
       <div className="min-h-screen bg-[#FAF6F0]">
-        <PageHero title="Profil" subtitle="Profil warga SMKN 11" breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Profil' }]} />
+        <PageHero title="Profil" subtitle="Profil warga SMKN 11" breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Profil' }]} backgroundImage={backgroundImage} />
         <div className="mx-auto max-w-xl px-4 py-20 text-center">
           <Compass className="mx-auto mb-4 h-12 w-12 text-[#C8A951]/50" />
           <h2 className="text-2xl font-bold text-[#1B2A4A]">Profil tidak ditemukan</h2>
@@ -99,6 +101,7 @@ function ProfilePage() {
         title={profile.name}
         subtitle={`${meta.label} SMKN 11 Kabupaten Tangerang`}
         breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Profil', href: '/profil/direktori' }, { label: meta.label }]}
+        backgroundImage={backgroundImage}
       />
 
       <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
@@ -222,6 +225,7 @@ function ProfilePage() {
 export default ProfilePage;
 
 function SdmProfileView({ profile, meta }: { profile: PublicSdmProfile; meta: { label: string; badge: string } }) {
+  const { backgroundImage } = usePageBanner('profil_guru');
   const educations = profile.education ?? [];
   const assignments = profile.assignments ?? [];
   const socials = Object.entries(profile.social ?? {}).filter(([, value]) => value && String(value).trim());
@@ -232,6 +236,7 @@ function SdmProfileView({ profile, meta }: { profile: PublicSdmProfile; meta: { 
         title={profile.name}
         subtitle={`${meta.label} SMKN 11 Kabupaten Tangerang`}
         breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Profil', href: '/profil/direktori' }, { label: meta.label }]}
+        backgroundImage={backgroundImage}
       />
 
       <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">

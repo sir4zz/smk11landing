@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { ChangeEvent, ReactNode } from 'react';
-import { Plus, Pencil, Trash2, X, Save, Loader2, UserRound, CalendarDays, LayoutGrid } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Save, Loader2, UserRound, CalendarDays, LayoutGrid, Image } from 'lucide-react';
 import { backendApi } from '../../lib/api';
 import type { OsisProfile, OsisMember, OsisActivity } from '../../lib/content-types';
 import { can } from '../../lib/permissions';
 import ImageField from './ImageField';
+import BannerTab from './BannerTab';
 
-type Tab = 'profile' | 'members' | 'activities';
+type Tab = 'profile' | 'members' | 'activities' | 'banner';
 
 interface Props {
   permissions: string[];
@@ -43,6 +44,7 @@ export default function OsisManagement({ permissions }: Props) {
     { key: 'profile', label: 'Profil OSIS', icon: LayoutGrid },
     { key: 'members', label: 'Struktur', icon: UserRound },
     { key: 'activities', label: 'Kegiatan', icon: CalendarDays },
+    { key: 'banner', label: 'Banner', icon: Image },
   ];
 
   if (loading) return <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-[#C8A951]" /></div>;
@@ -95,6 +97,10 @@ export default function OsisManagement({ permissions }: Props) {
           onChanged={async () => { await loadAll(); flash('ok', 'Data kegiatan diperbarui.'); }}
           onError={(text) => flash('err', text)}
         />
+      )}
+
+      {tab === 'banner' && (
+        <BannerTab pageKey="osis" label="Banner OSIS" />
       )}
     </div>
   );

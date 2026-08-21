@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\DatabaseBackupService;
+use Illuminate\Http\Request;
 
 class DatabaseBackupController extends Controller
 {
@@ -30,6 +31,30 @@ class DatabaseBackupController extends Controller
         }
     }
 
+    public function restore(Request $request)
+    {
+        $request->validate([
+            'backup_file' => 'required|file|mimes:zip|max:102400', // max 100MB
+        ]);
+
+        $uploadedFile = $request->file('backup_file');
+        $tempPath = $uploadedFile->getRealPath();
+
+        try {
+            $result = $this->backups->restore($tempPath);
+
+            return response()->json(['data' => $result]);
+        } catch (\Throwable $e) {
+            report($e);
+
+            $message = config('app.debug')
+                ? 'Gagal melakukan restore: '.$e->getMessage()
+                : 'Gagal melakukan restore. File backup mungkin corrupt.';
+
+            return response()->json(['error' => ['message' => $message]], 500);
+        }
+    }
+
     public function download(string $filename)
     {
         $path = $this->backups->path($filename);
@@ -37,7 +62,10 @@ class DatabaseBackupController extends Controller
             return response()->json(['error' => ['message' => 'File backup tidak ditemukan.']], 404);
         }
 
-        return response()->download($path, $filename, ['Content-Type' => 'application/sql']);
+        return response()->download($path, $filename, [
+            'Content-Type' => 'application/zip',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+        ]);
     }
 
     public function destroy(string $filename)

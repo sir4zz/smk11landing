@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import PageHero from '../../components/ui/PageHero';
 import SectionHeading from '../../components/ui/SectionHeading';
 import { publicProfileApi, type PublicDirectoryEntry } from '../../lib/api';
+import { usePageBanner } from '../../lib/usePageBanner';
 import { PersonAvatar, EmptyState } from './ManagementShared';
 
 interface DisplayMember {
@@ -16,6 +17,7 @@ interface DisplayMember {
 }
 
 const TenagaKependidikan: React.FC = () => {
+  const { backgroundImage } = usePageBanner('manajemen_tendik');
   const [gurus, setGurus] = useState<PublicDirectoryEntry[]>([]);
   const [tendiks, setTendiks] = useState<PublicDirectoryEntry[]>([]);
   useEffect(() => {
@@ -69,6 +71,7 @@ const TenagaKependidikan: React.FC = () => {
         title="Tenaga Kependidikan"
         subtitle="Staf yang mendukung kelancaran operasional dan layanan SMKN 11 Kabupaten Tangerang"
         breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Manajemen', href: '/manajemen' }, { label: 'Tenaga Kependidikan' }]}
+        backgroundImage={backgroundImage}
       />
 
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">

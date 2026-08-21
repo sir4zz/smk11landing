@@ -15,19 +15,24 @@ class Extracurricular extends Model
     protected $fillable = [
         'name',
         'slug',
+        'logo',
         'category',
         'description',
+        'short_description',
+        'full_description',
         'photo',
         'advisor',
         'schedule',
         'place',
         'achievements',
         'documentation',
+        'gallery',
         'status',
     ];
 
     protected $casts = [
         'achievements' => 'array',
         'documentation' => 'array',
+        'gallery' => 'array',
     ];
 }
