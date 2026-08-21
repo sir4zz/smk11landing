@@ -1327,6 +1327,56 @@ export interface RestoreResult {
   manifest: Record<string, unknown> | null;
 }
 
+const CHUNK_SIZE = 1024 * 1024; // 1MB per chunk
+
+export async function restoreChunked(
+  file: File,
+  onProgress?: (chunkIndex: number, total: number) => void,
+): Promise<ApiResponse<RestoreResult>> {
+  const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+  const uploadId = crypto.randomUUID();
+
+  for (let i = 0; i < totalChunks; i++) {
+    const start = i * CHUNK_SIZE;
+    const end = Math.min(start + CHUNK_SIZE, file.size);
+    const chunk = file.slice(start, end);
+
+    const formData = new FormData();
+    formData.append('chunk', chunk, file.name);
+    formData.append('upload_id', uploadId);
+    formData.append('chunk_index', String(i));
+    formData.append('total_chunks', String(totalChunks));
+    formData.append('filename', file.name);
+
+    const res = await fetch(`${apiBaseUrl}/admin/backups/restore-chunk`, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      return { data: null, status: res.status, error: body?.error ?? { message: 'Gagal mengunggah chunk.' } };
+    }
+
+    onProgress?.(i + 1, totalChunks);
+  }
+
+  const commitRes = await fetch(`${apiBaseUrl}/admin/backups/restore-commit`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ upload_id: uploadId, total_chunks: totalChunks, filename: file.name }),
+  });
+
+  const body = await commitRes.json().catch(() => null);
+  if (!commitRes.ok) {
+    return { data: null, status: commitRes.status, error: body?.error ?? { message: 'Gagal melakukan restore.' } };
+  }
+  const payload = body && Object.prototype.hasOwnProperty.call(body, 'data') ? body.data : body;
+  return { data: payload as RestoreResult, status: commitRes.status, error: null };
+}
+
 export const backupApi = {
   list(): ApiResult<BackupFileRow[]> {
     return request<BackupFileRow[]>('/admin/backups');

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { DatabaseBackup as DatabaseBackupIcon, Download, Loader2, RefreshCw, Trash2, Upload, RotateCcw, AlertTriangle } from 'lucide-react';
-import { backupApi, downloadBackup, type BackupFileRow } from '../../lib/api';
+import { backupApi, downloadBackup, restoreChunked, type BackupFileRow } from '../../lib/api';
 
 function formatBytes(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
@@ -25,6 +25,7 @@ export default function DatabaseBackup() {
   const [restoring, setRestoring] = useState(false);
   const [restoreFile, setRestoreFile] = useState<File | null>(null);
   const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
@@ -93,8 +94,12 @@ export default function DatabaseBackup() {
     setRestoring(true);
     setMsg(null);
     setShowRestoreConfirm(false);
+    setUploadProgress({ current: 0, total: 0 });
 
-    const { data, error } = await backupApi.restore(restoreFile);
+    const { data, error } = await restoreChunked(restoreFile, (current, total) => {
+      setUploadProgress({ current, total });
+    });
+
     if (!error && data) {
       setMsg({ type: 'ok', text: `Restore berhasil! ${data.tables_restored} tabel dipulihkan.${data.media_restored ? ' File media juga dipulihkan.' : ''}` });
       setRestoreFile(null);
@@ -103,6 +108,7 @@ export default function DatabaseBackup() {
       setMsg({ type: 'err', text: (error as { message?: string })?.message ?? 'Gagal melakukan restore.' });
     }
     setRestoring(false);
+    setUploadProgress(null);
   };
 
   return (
@@ -284,6 +290,20 @@ export default function DatabaseBackup() {
 
           {/* Restore Button */}
           <div className="mt-4 flex justify-end">
+            {restoring && uploadProgress && (
+              <div className="mr-auto flex items-center gap-3 text-sm text-[#5B7088]">
+                <Loader2 className="h-4 w-4 animate-spin text-[#866D2C]" />
+                <span>
+                  Mengunggah chunk {uploadProgress.current}/{uploadProgress.total}...
+                </span>
+                <div className="h-2 w-32 overflow-hidden rounded-full bg-[#1B2A4A]/10">
+                  <div
+                    className="h-full rounded-full bg-[#C8A951] transition-all duration-300"
+                    style={{ width: `${uploadProgress.total > 0 ? (uploadProgress.current / uploadProgress.total) * 100 : 0}%` }}
+                  />
+                </div>
+              </div>
+            )}
             <button
               onClick={() => setShowRestoreConfirm(true)}
               disabled={!restoreFile || restoring}
