@@ -1010,7 +1010,8 @@ function PPDBDetail({ data, onClose, onUpdateStatus, onVerifyDoc }: {
 */
 
 function slugify(value: string) {
-  return value.toLowerCase().trim().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  const str = String(value ?? '');
+  return str.toLowerCase().trim().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
 function escapeHtml(value: string) {
@@ -1592,10 +1593,16 @@ function Editor({ config, item, onClose, onSave, section, options }: { config: {
     }
 
     const listFields = section === 'programs' ? ['competencies', 'career_prospects', 'facilities'] : [];
+    const slugFields: Record<string, string | undefined> = {
+      news: formValues.title,
+      programs: formValues.short_name || formValues.name,
+    };
+    const rawSlug = slugFields[section ?? ''];
+    const slugValue = rawSlug !== undefined ? slugify(rawSlug) : undefined;
     onSave({
       ...(item ?? {}),
       ...formValues,
-       slug: slugify(section === 'programs' ? formValues.short_name || formValues.name : formValues.title),
+      ...(slugValue !== undefined ? { slug: slugValue } : {}),
       ...imageValues,
       ...Object.fromEntries(listFields.map((key) => [key, String(formValues[key] ?? '').split('\n').map((value) => value.trim()).filter(Boolean)])),
     });

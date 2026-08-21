@@ -10,6 +10,7 @@ use App\Models\PpdbRegistration;
 use App\Services\MadingService;
 use App\Services\PermissionService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -116,6 +117,7 @@ class DataController extends Controller
             }
             $created[] = $model::create($payload);
         }
+        $this->invalidateContentCache($table);
         return response()->json(['data' => count($created) === 1 ? $this->serialize($table, $created[0]) : $created, 'error' => null], 201);
     }
 
@@ -128,7 +130,7 @@ class DataController extends Controller
         if ($table === 'ppdb_registrations' && $row->user_id !== $request->user()?->id && !$this->permissions->isAdmin($request->user())) abort(403);
         if ($table === 'ppdb_documents' && $row->application->user_id !== $request->user()?->id && !$this->permissions->isAdmin($request->user())) abort(403);
         $this->cleanupReplacedFiles($table, $row, $payload);
-        $row->update($payload); return response()->json(['data' => $this->serialize($table, $row->fresh()), 'error' => null]);
+        $row->update($payload); $this->invalidateContentCache($table); return response()->json(['data' => $this->serialize($table, $row->fresh()), 'error' => null]);
     }
 
     public function destroy(Request $request, string $table)
@@ -146,6 +148,7 @@ class DataController extends Controller
             $this->deleteRowFiles($table, $row);
             $row->delete();
         }
+        $this->invalidateContentCache($table);
         return response()->json(['data' => null, 'error' => null]);
     }
 
@@ -290,5 +293,28 @@ class DataController extends Controller
         $data = $row->toArray();
         if ($table === 'mading_posts') $data['mading_categories'] = !empty($data['category']) ? ['name' => $data['category']['name']] : null;
         return $data;
+    }
+
+    private function invalidateContentCache(string $table): void
+    {
+        // Samakan dengan ContentCrudController::invalidatePublicCache — version bump
+        // agar GET /news, /teacher-activities dll yang di-Cache::remember langsung stale.
+        $typeMap = [
+            'news' => 'news',
+            'programs' => 'programs',
+            'facilities' => 'facilities',
+            'staff' => 'staff',
+            'achievements' => 'achievements',
+            'teacher_activities' => 'teacher-activities',
+            'education_staff' => 'education-staff',
+        ];
+        $type = $typeMap[$table] ?? null;
+        if ($type === null) return;
+        $key = 'public:content:version:' . $type;
+        Cache::add($key, 1);
+        Cache::increment($key);
+        if (in_array($type, ['programs', 'staff', 'education-staff'], true)) {
+            Cache::forget(\App\Http\Controllers\StatsController::CACHE_KEY);
+        }
     }
 }
