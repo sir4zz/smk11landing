@@ -156,10 +156,10 @@ const Home: React.FC = () => {
 
               {/* Massive Hero Titles */}
               <div className="flex flex-col">
-                <h1 className="text-5xl font-black italic tracking-tighter sm:text-7xl lg:text-[6.5rem] text-white [-webkit-text-stroke:1px_#C8A951] sm:[-webkit-text-stroke:2px_#C8A951]">
-                  SMKN <span className="text-[#C8A951] text-[1.15em] leading-none [-webkit-text-stroke:1px_white] sm:[-webkit-text-stroke:2px_white]">11</span>
+                <h1 className="text-5xl font-black italic tracking-tighter sm:text-7xl lg:text-[6.5rem] leading-none [paint-order:stroke_fill] [-webkit-text-fill-color:white] [-webkit-text-stroke:1px_#C8A951] sm:[-webkit-text-stroke:2px_#C8A951] [filter:drop-shadow(0_1px_0_rgba(200,169,81,0.8))]">
+                  SMKN <span className="text-[1.15em] leading-none [paint-order:stroke_fill] [-webkit-text-fill-color:#C8A951] [-webkit-text-stroke:1px_white] sm:[-webkit-text-stroke:2px_white]">11</span>
                 </h1>
-                <h2 className="mt-1 text-xl font-bold tracking-[0.3em] text-[#1B2A4A] sm:text-4xl uppercase [-webkit-text-stroke:1px_white] sm:[-webkit-text-stroke:2px_white] [text-shadow:0_0_12px_rgba(200,169,81,0.5)]">
+                <h2 className="mt-1 text-xl font-bold tracking-[0.3em] uppercase sm:text-4xl [paint-order:stroke_fill] [-webkit-text-fill-color:#1B2A4A] [-webkit-text-stroke:1px_white] sm:[-webkit-text-stroke:1.5px_white] [text-shadow:0_0_12px_rgba(200,169,81,0.5)]">
                   Kab. Tangerang
                 </h2>
               </div>
