@@ -179,7 +179,7 @@ const Kesemaptaan: React.FC = () => {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: '-40px' }}
                   transition={{ duration: 0.4, delay: (index % 4) * 0.08 }}
-                  className="group rounded-2xl border border-[#1B2A4A]/10 bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:border-[#C8A951]/40 hover:shadow-lg"
+                  className="group rounded-2xl border border-[#1B2A4A]/10 bg-white p-6 shadow-sm transition-colors hover:border-[#C8A951]/40"
                 >
                   <span className="grid h-12 w-12 place-items-center rounded-xl bg-[#C8A951]/15 text-[#866D2C] transition-colors group-hover:bg-[#C8A951] group-hover:text-[#1B2A4A]">
                     <Target className="h-6 w-6" />
@@ -216,7 +216,7 @@ const Kesemaptaan: React.FC = () => {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, margin: '-40px' }}
                     transition={{ duration: 0.4, delay: (index % 3) * 0.08 }}
-                    className="group overflow-hidden rounded-2xl border border-[#1B2A4A]/10 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg"
+                    className="overflow-hidden rounded-2xl border border-[#1B2A4A]/10 bg-white shadow-sm transition-colors"
                   >
                     <div className="relative aspect-[16/10] overflow-hidden bg-[#1B2A4A]/5">
                       {photo ? (
@@ -230,7 +230,7 @@ const Kesemaptaan: React.FC = () => {
                             src={photo}
                             alt={activity.title}
                             loading="lazy"
-                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            className="h-full w-full object-cover transition-transform duration-500 group-hover/photo:scale-105"
                           />
                           <span className="absolute inset-0 grid place-items-center bg-[#1B2A4A]/0 transition-colors duration-300 group-hover/photo:bg-[#1B2A4A]/35">
                             <span className="grid h-11 w-11 scale-75 place-items-center rounded-full bg-[#C8A951] text-[#1B2A4A] opacity-0 shadow-lg transition-all duration-300 group-hover/photo:scale-100 group-hover/photo:opacity-100">
@@ -376,7 +376,7 @@ const Kesemaptaan: React.FC = () => {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, margin: '-40px' }}
                     transition={{ duration: 0.4, delay: (index % 3) * 0.08 }}
-                    className="rounded-2xl bg-white/5 p-6 ring-1 ring-white/10 backdrop-blur-sm transition-all hover:-translate-y-1 hover:bg-white/10 hover:ring-[#C8A951]/40"
+                    className="rounded-2xl bg-white/5 p-6 ring-1 ring-white/10 backdrop-blur-sm transition-colors hover:bg-white/10 hover:ring-[#C8A951]/40"
                   >
                     <div className="flex items-start gap-4">
                       {date && (

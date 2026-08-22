@@ -402,7 +402,7 @@ const Admissions: React.FC = () => {
 function SpmbPosterCard({ poster, onView, onDownload }: { poster: SpmbPoster; onView: () => void; onDownload: () => void }) {
   const dateText = formatPosterDate(poster.published_at ?? poster.created_at);
   return (
-    <div className="group overflow-hidden rounded-2xl bg-white p-4 text-left shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl">
+    <div className="group overflow-hidden rounded-2xl bg-white p-4 text-left shadow-sm">
       <button type="button" onClick={onView} className="block w-full" aria-label={`Lihat poster ${poster.title || 'Pengumuman SPMB'}`}>
         <div className="aspect-[3/4] overflow-hidden rounded-xl bg-[#FAF6F0]">
           {resolveImageUrl(poster.image) && (

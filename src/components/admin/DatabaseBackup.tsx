@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { DatabaseBackup as DatabaseBackupIcon, Download, Loader2, RefreshCw, Trash2, Upload, RotateCcw, AlertTriangle } from 'lucide-react';
+import { DatabaseBackup as DatabaseBackupIcon, Download, Loader2, RefreshCw, Trash2, RotateCcw, AlertTriangle } from 'lucide-react';
 import { backupApi, downloadBackup, restoreChunked, type BackupFileRow } from '../../lib/api';
 
 function formatBytes(bytes: number): string {
