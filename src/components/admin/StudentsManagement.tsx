@@ -466,7 +466,38 @@ export default function StudentsManagement() {
                     }}
                   >
                     {section.id === 'identity' && (
-                      <BiodataField field={{ key: 'pin', label: editing ? 'PIN Baru (opsional, min. 4 karakter)' : 'PIN Siswa (min. 4 karakter)', section: 'identity', type: 'number' }} value={form.pin} onChange={setValue('pin')} placeholder={editing ? 'Kosongkan jika tidak diubah' : 'cth. 1234'} error={errors.pin} />
+                      <div className="sm:col-span-2">
+                        <label className="block text-sm font-semibold">
+                          {editing ? 'PIN Baru (opsional, min. 4 karakter)' : 'PIN Siswa (min. 4 karakter)'}
+                        </label>
+                        <div className="mt-1 flex gap-2">
+                          <input
+                            value={form.pin}
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            onKeyDown={(e) => { if (e.key.length === 1 && !/[0-9]/.test(e.key) && !e.ctrlKey && !e.metaKey) e.preventDefault(); }}
+                            onChange={setValue('pin')}
+                            placeholder={editing ? 'Kosongkan jika tidak diubah' : 'cth. 1234'}
+                            className={`flex-1 rounded-lg border bg-white px-3 py-2 font-normal ${errors.pin ? 'border-red-400' : 'border-[#1B2A4A]/20'}`}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const nisn = form.nisn.trim().replace(/\D/g, '');
+                              if (nisn.length >= 4) {
+                                setForm((v) => ({ ...v, pin: nisn.slice(-4) }));
+                                setErrors((prev) => { if (!prev.pin) return prev; const n = { ...prev }; delete n.pin; return n; });
+                              }
+                            }}
+                            className="inline-flex shrink-0 items-center gap-1 rounded-lg border-2 border-[#C8A951]/60 px-3 py-2 text-sm font-semibold text-[#866D2C] hover:bg-[#C8A951]/10"
+                            title="Generate PIN dari 4 digit terakhir NISN"
+                          >
+                            <KeyRound size={14} /> Generate
+                          </button>
+                        </div>
+                        {errors.pin && <p className="mt-1 text-xs text-red-500">{errors.pin}</p>}
+                      </div>
                     )}
                     {section.id === 'identity' && (
                       <div className="sm:col-span-2">

@@ -33,6 +33,7 @@ const GENDER_OPTIONS = ['', 'L', 'P'];
 const RELIGION_OPTIONS = ['', 'Islam', 'Kristen Protestan', 'Kristen Katolik', 'Hindu', 'Buddha', 'Khonghucu'];
 const BLOOD_OPTIONS = ['', 'A', 'B', 'AB', 'O'];
 const YATIM_OPTIONS = ['', 'Yatim', 'Piatu', 'Yatim-Piatu'];
+const ALIVE_OPTIONS = ['', 'Masih Hidup', 'Meninggal'];
 
 export const VALID_CLASSES = ['X', 'XI', 'XII'];
 export const CLASS_OPTIONS = ['', ...VALID_CLASSES];
@@ -57,6 +58,7 @@ function parentFields(prefix: string, section: string): BiodataFieldDef[] {
     { key: `${prefix}_penghasilan`, label: 'Penghasilan per Bulan', section, type: 'number' },
     { key: `${prefix}_alamat`, label: 'Alamat Rumah', section, type: 'textarea', full: true },
     { key: `${prefix}_no_telp`, label: 'No. HP/Telp', section, type: 'number' },
+    { key: `${prefix}_status_hidup`, label: 'Masih Hidup/Meninggal', section, type: 'select', options: ALIVE_OPTIONS },
   ];
 }
 
@@ -112,7 +114,6 @@ export const BIODATA_FIELDS: BiodataFieldDef[] = [
   ...parentFields('ibu', 'mother'),
   // G. Wali
   ...parentFields('wali', 'guardian'),
-  { key: 'wali_status_hidup', label: 'Masih Hidup/Meninggal', section: 'guardian' },
 
   // H. Kegemaran Siswa
   { key: 'gemar_kesenian', label: 'Kesenian', section: 'hobby' },
@@ -258,6 +259,7 @@ export const TEMPLATE_SHEETS: { name: string; columns: Record<number, string> }[
       8: 'wali_penghasilan',
       9: 'wali_alamat',
       10: 'wali_no_telp',
+      11: 'wali_status_hidup',
     },
   },
   {
