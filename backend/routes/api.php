@@ -25,6 +25,7 @@ use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\SdmAccountController;
 use App\Http\Controllers\SdmController;
 use App\Http\Controllers\SpmbController;
+use App\Http\Controllers\AIContentUploadController;
 use App\Http\Controllers\StatsController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\StudentDataChangeRequestController;
@@ -267,6 +268,10 @@ Route::middleware(['auth:sanctum', 'staff'])->group(function () {
     Route::post('/admin/page-banners', [PageBannerController::class, 'store']);
     Route::put('/admin/page-banners/{id}', [PageBannerController::class, 'update']);
     Route::delete('/admin/page-banners/{id}', [PageBannerController::class, 'destroy']);
+
+    // AI Content Upload
+    Route::post('/admin/ai-content-upload/analyze', [AIContentUploadController::class, 'analyze'])->middleware('throttle:mading-ai');
+    Route::post('/admin/ai-content-upload/save', [AIContentUploadController::class, 'save']);
 
     // Media inventory
     Route::get('/admin/media', [MediaController::class, 'index']);
