@@ -62,6 +62,7 @@ export default function DataSiswa() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
   const [detailRequest, setDetailRequest] = useState<StudentChangeRequestRow | null>(null);
+  const [rejectionPopup, setRejectionPopup] = useState<StudentChangeRequestRow | null>(null);
 
   const totalSteps = WIZARD_STEPS.length;
   const pendingRequest = requests.find((r) => r.status === 'menunggu') ?? null;
@@ -101,9 +102,29 @@ export default function DataSiswa() {
     void loadData();
   }, [loadData]);
 
+  useEffect(() => {
+    if (loading || requests.length === 0) return;
+    const rejected = requests.filter((r) => r.status === 'ditolak');
+    if (rejected.length === 0) return;
+    const shownKey = 'smkn11-student-shown-rejections';
+    const shown: string[] = JSON.parse(localStorage.getItem(shownKey) ?? '[]');
+    const latest = rejected.find((r) => !shown.includes(r.id));
+    if (latest) setRejectionPopup(latest);
+  }, [loading, requests]);
+
   const flash = (type: 'ok' | 'err', text: string) => {
     setMsg({ type, text });
     setTimeout(() => setMsg(null), 5000);
+  };
+
+  const dismissRejection = () => {
+    if (rejectionPopup) {
+      const shownKey = 'smkn11-student-shown-rejections';
+      const shown: string[] = JSON.parse(localStorage.getItem(shownKey) ?? '[]');
+      shown.push(rejectionPopup.id);
+      localStorage.setItem(shownKey, JSON.stringify(shown));
+    }
+    setRejectionPopup(null);
   };
 
   const openEditForm = () => {
@@ -440,6 +461,27 @@ export default function DataSiswa() {
         {/* Request Detail Modal */}
         {detailRequest && (
           <RequestDetailModal request={detailRequest} onClose={() => setDetailRequest(null)} />
+        )}
+
+        {rejectionPopup && (
+          <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4">
+            <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+              <div className="mb-4 flex items-center gap-2">
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-red-100 text-red-600"><XCircle size={22} /></span>
+                <h3 className="text-lg font-bold text-[#1B2A4A]">Pengajuan Data Ditolak</h3>
+              </div>
+              <p className="mb-2 text-sm text-[#5B7088]">
+                Pengajuan perubahan data Anda telah <strong className="text-red-600">ditolak</strong> oleh admin.
+              </p>
+              {rejectionPopup.rejection_reason && (
+                <div className="mb-4 rounded-lg bg-red-50 p-3">
+                  <p className="mb-1 text-xs font-semibold text-red-700">Alasan Penolakan:</p>
+                  <p className="text-sm text-red-800">{rejectionPopup.rejection_reason}</p>
+                </div>
+              )}
+              <button onClick={dismissRejection} className="w-full rounded-lg bg-[#1B2A4A] py-2.5 font-bold text-white hover:opacity-90">Mengerti</button>
+            </div>
+          </div>
         )}
       </div>
     </div>
