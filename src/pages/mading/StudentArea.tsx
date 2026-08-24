@@ -12,7 +12,7 @@ import AIContentAssistant, { AiNote } from '../../components/mading/AIContentAss
 import ImageField from '../../components/admin/ImageField';
 import { GalleryUpload, VideoUrlsField } from '../../components/mading/MediaEditor';
 import { MADING_STATUSES } from '../../lib/ui-constants';
-import { BIODATA_FIELDS, BIODATA_SECTIONS, groupFieldsBySubsection } from '../../lib/studentBiodata';
+import { BIODATA_FIELDS, BIODATA_SECTIONS, STUDENT_READONLY_KEYS, groupFieldsBySubsection } from '../../lib/studentBiodata';
 import type { BiodataFieldDef } from '../../lib/studentBiodata';
 
 const studentSessionKey = 'smkn11-student-session';
@@ -620,6 +620,7 @@ function ProfileTab({ profile }: { profile: StudentProfile | null }) {
 
     const proposed: Record<string, unknown> = {};
     for (const field of BIODATA_FIELDS) {
+      if (STUDENT_READONLY_KEYS.has(field.key)) continue;
       const newVal = String(changeForm[field.key] ?? '').trim();
       const oldVal = String(std?.[field.key] ?? '').trim();
       if (newVal !== oldVal) {
@@ -897,7 +898,7 @@ function ProfileTab({ profile }: { profile: StudentProfile | null }) {
                               {g.subsection && <p className="sm:col-span-2 border-b border-[#1B2A4A]/10 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-[#866D2C]">{g.subsection}</p>}
                               {g.fields.map((field) => (
                                 <div key={field.key} className={field.full === true ? 'sm:col-span-2' : ''}>
-                                  <BioField field={field} value={changeForm[field.key] ?? ''} onChange={setChange(field.key)} />
+                                  <BioField field={field} value={changeForm[field.key] ?? ''} onChange={setChange(field.key)} disabled={STUDENT_READONLY_KEYS.has(field.key)} />
                                   {changeErrors[field.key] && <span className="mt-1 block text-xs font-medium text-red-600">{changeErrors[field.key]}</span>}
                                 </div>
                               ))}
@@ -1177,12 +1178,13 @@ function selectLabel(key: string, value: string): string {
   return value;
 }
 
-function BioField({ field, value, onChange }: { field: BiodataFieldDef; value: string; onChange: (value: string) => void }) {
-  const inputCls = 'mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal text-[#1B2A4A] outline-none focus:border-[#C8A951]';
+function BioField({ field, value, onChange, disabled }: { field: BiodataFieldDef; value: string; onChange: (value: string) => void; disabled?: boolean }) {
+  const inputCls = `mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal text-[#1B2A4A] outline-none ${disabled ? 'cursor-not-allowed bg-gray-100 opacity-60' : 'focus:border-[#C8A951]'}`;
+  const lockLabel = disabled ? <span className="ml-1 text-xs font-normal text-[#5B7088]">🔒 Dikelola admin</span> : null;
   if (field.type === 'select') {
     return (
-      <label className="block text-sm font-semibold">{field.label}
-        <select value={value} onChange={(e) => onChange(e.target.value)} className={inputCls}>
+      <label className="block text-sm font-semibold">{field.label}{lockLabel}
+        <select value={value} onChange={(e) => onChange(e.target.value)} className={inputCls} disabled={disabled}>
           {field.options?.map((opt) => (
             <option key={opt} value={opt}>{opt === '' ? 'Pilih' : selectLabel(field.key, opt)}</option>
           ))}
@@ -1192,13 +1194,13 @@ function BioField({ field, value, onChange }: { field: BiodataFieldDef; value: s
   }
   if (field.type === 'textarea') {
     return (
-      <label className="block text-sm font-semibold">{field.label}
-        <textarea value={value} rows={2} onChange={(e) => onChange(e.target.value)} className={inputCls} />
+      <label className="block text-sm font-semibold">{field.label}{lockLabel}
+        <textarea value={value} rows={2} onChange={(e) => onChange(e.target.value)} className={inputCls} disabled={disabled} />
       </label>
     );
   }
   return (
-    <label className="block text-sm font-semibold">{field.label}
+    <label className="block text-sm font-semibold">{field.label}{lockLabel}
       <input
         value={value}
         type={field.type === 'date' ? 'date' : 'text'}
@@ -1206,6 +1208,7 @@ function BioField({ field, value, onChange }: { field: BiodataFieldDef; value: s
         onChange={(e) => onChange(e.target.value)}
         className={inputCls}
         placeholder={field.placeholder}
+        disabled={disabled}
       />
     </label>
   );

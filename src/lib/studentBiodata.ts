@@ -38,6 +38,15 @@ const ALIVE_OPTIONS = ['', 'Masih Hidup', 'Meninggal'];
 export const VALID_CLASSES = ['X', 'XI', 'XII'];
 export const CLASS_OPTIONS = ['', ...VALID_CLASSES];
 
+/** Field yang tidak bisa diubah siswa lewat pengajuan perubahan data. */
+export const STUDENT_READONLY_KEYS = new Set([
+  'name', 'nisn', 'nis', 'address',
+  'place_of_birth', 'date_of_birth', 'anak_ke',
+  'ayah_nama', 'ibu_nama',
+  'lulusan_dari', 'tanggal_sttb', 'nomor_sttb', 'lama_belajar',
+  'pindahan_dari', 'alasan_pindah', 'diangkat', 'kompetensi_keahlian', 'tanggal_diterima',
+]);
+
 export function normalizeClass(value: unknown): string {
   return String(value ?? '').trim().toUpperCase();
 }
