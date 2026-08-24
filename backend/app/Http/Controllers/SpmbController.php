@@ -43,6 +43,21 @@ class SpmbController extends Controller
             }
         }
 
+        // Clean up removed PDF attachments from storage.
+        if (array_key_exists('pdf_attachments', $payload)) {
+            $new = array_values(array_filter(array_map('strval', $payload['pdf_attachments'] ?? [])));
+            $old = (array) ($content->pdf_attachments ?? []);
+            foreach (array_diff($old, $new) as $removed) {
+                if (str_starts_with((string) $removed, '/storage/')) {
+                    $key = preg_replace('#^/storage/#', '', (string) $removed);
+                    if ($key && Storage::disk('public')->exists($key)) {
+                        Storage::disk('public')->delete($key);
+                    }
+                }
+            }
+            $payload['pdf_attachments'] = $new;
+        }
+
         $content->update($payload);
 
         return response()->json($content);
@@ -72,6 +87,7 @@ class SpmbController extends Controller
                 'id' => $poster->id,
                 'title' => $poster->title,
                 'image' => $poster->image,
+                'images' => (array) ($poster->images ?? []),
                 'sort_order' => (int) $poster->sort_order,
                 'is_featured' => (bool) $poster->is_featured,
                 'published_at' => $poster->published_at?->toIso8601String(),
@@ -96,6 +112,7 @@ class SpmbController extends Controller
                 'id' => $poster->id,
                 'title' => $poster->title,
                 'image' => $poster->image,
+                'images' => (array) ($poster->images ?? []),
                 'is_active' => (bool) $poster->is_active,
                 'sort_order' => (int) $poster->sort_order,
                 'is_featured' => (bool) $poster->is_featured,
@@ -114,6 +131,8 @@ class SpmbController extends Controller
         $data = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'image' => ['required', 'string', 'max:1000'],
+            'images' => ['sometimes', 'array', 'max:20'],
+            'images.*' => ['string', 'max:1000'],
             'is_active' => ['sometimes', 'boolean'],
             'sort_order' => ['sometimes', 'integer', 'min:0'],
             'published_at' => ['sometimes', 'nullable', 'date'],
@@ -123,6 +142,7 @@ class SpmbController extends Controller
         $poster = SpmbPoster::create([
             'title' => trim($data['title']),
             'image' => $data['image'],
+            'images' => isset($data['images']) ? array_values($data['images']) : null,
             'is_active' => (bool) ($data['is_active'] ?? true),
             'sort_order' => (int) ($data['sort_order'] ?? 0),
             'published_at' => $data['published_at'] ?? null,
@@ -142,6 +162,8 @@ class SpmbController extends Controller
         $data = $request->validate([
             'title' => ['sometimes', 'string', 'max:255'],
             'image' => ['sometimes', 'string', 'max:1000'],
+            'images' => ['sometimes', 'array', 'max:20'],
+            'images.*' => ['string', 'max:1000'],
             'is_active' => ['sometimes', 'boolean'],
             'sort_order' => ['sometimes', 'integer', 'min:0'],
             'published_at' => ['sometimes', 'nullable', 'date'],
@@ -149,6 +171,24 @@ class SpmbController extends Controller
         ]);
 
         if (array_key_exists('title', $data)) $data['title'] = trim($data['title']);
+        if (array_key_exists('images', $data)) {
+            $data['images'] = array_values(array_filter(array_map('strval', $data['images']), fn (string $url) => $url !== ''));
+
+            // Keep the cover image consistent with the first carousel photo.
+            if (! empty($data['images']) && ! array_key_exists('image', $data)) {
+                $data['image'] = $data['images'][0];
+            }
+
+            // Delete files that were removed from the carousel.
+            foreach (array_diff((array) ($poster->images ?? []), $data['images']) as $removed) {
+                if (str_starts_with((string) $removed, '/storage/')) {
+                    $key = preg_replace('#^/storage/#', '', (string) $removed);
+                    if ($key && Storage::disk('public')->exists($key)) {
+                        Storage::disk('public')->delete($key);
+                    }
+                }
+            }
+        }
         if (array_key_exists('image', $data) && (string) $data['image'] !== (string) ($poster->image ?? '') && ! empty($poster->image)) {
             $oldKey = preg_replace('#^/storage/#', '', (string) $poster->image);
             if ($oldKey && Storage::disk('public')->exists($oldKey)) {
@@ -166,10 +206,13 @@ class SpmbController extends Controller
     {
         $poster = SpmbPoster::findOrFail($id);
 
-        if ($poster->image) {
-            $key = preg_replace('#^/storage/#', '', $poster->image);
-            if ($key && Storage::disk('public')->exists($key)) {
-                Storage::disk('public')->delete($key);
+        $paths = array_merge([(string) $poster->image], (array) ($poster->images ?? []));
+        foreach (array_unique(array_filter($paths)) as $path) {
+            if (str_starts_with((string) $path, '/storage/')) {
+                $key = preg_replace('#^/storage/#', '', (string) $path);
+                if ($key && Storage::disk('public')->exists($key)) {
+                    Storage::disk('public')->delete($key);
+                }
             }
         }
 
@@ -213,11 +256,11 @@ class SpmbController extends Controller
 
         $image = null;
         if ($ext === 'png' && function_exists('imagecreatefrompng')) {
-            $image = imagecreatefrompng($file->getRealPath());
+            try { $image = imagecreatefrompng($file->getRealPath()); } catch (\Throwable) { $image = null; }
         } elseif (in_array($ext, ['jpg', 'jpeg'], true) && function_exists('imagecreatefromjpeg')) {
-            $image = imagecreatefromjpeg($file->getRealPath());
+            try { $image = imagecreatefromjpeg($file->getRealPath()); } catch (\Throwable) { $image = null; }
         } elseif ($ext === 'webp' && function_exists('imagecreatefromwebp')) {
-            $image = imagecreatefromwebp($file->getRealPath());
+            try { $image = imagecreatefromwebp($file->getRealPath()); } catch (\Throwable) { $image = null; }
         }
 
         if ($image && function_exists('imagewebp')) {

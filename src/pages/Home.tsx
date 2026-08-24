@@ -76,10 +76,10 @@ const Home: React.FC = () => {
     return () => { active = false; };
   }, []);
 
-  const heroImages = home?.hero.images ?? [];
-  const heroFrameImage = home?.hero.frame_image || heroImages[1] || '';
-  const principalName = principal?.name || home?.welcome.principal_name || '';
-  const principalPosition = formatLeadershipTitle(principal?.title) || principal?.position || home?.welcome.principal_title || '';
+  const heroImages = home?.hero?.images ?? [];
+  const heroFrameImage = home?.hero?.frame_image || heroImages[1] || '';
+  const principalName = principal?.name || home?.welcome?.principal_name || '';
+  const principalPosition = formatLeadershipTitle(principal?.title) || principal?.position || home?.welcome?.principal_title || '';
   const principalPhoto = resolveImageUrl(principal?.photo);
   const statIcons = [Users, GraduationCap, BookOpen];
   const statsWithIcons = (stats ?? []).map((stat, index) => ({ ...stat, icon: React.createElement(statIcons[index] ?? Users, { className: 'h-6 w-6' }) }));
@@ -122,9 +122,21 @@ const Home: React.FC = () => {
             {/* Left Content */}
             <div className="flex flex-col items-start justify-center">
               
+              {/* Slogan TOP */}
+              <div className="-mt-2 mb-5 flex flex-wrap items-center gap-x-3 gap-y-2 sm:-mt-3 sm:mb-7 lg:-mt-5">
+                <span className="-rotate-3 inline-flex items-center rounded-md bg-gradient-to-br from-[#E9CE7B] to-[#C8A951] px-2.5 py-1 text-xl font-black italic leading-none tracking-tight text-[#1B2A4A] shadow-[3px_3px_0_#0C1527] ring-1 ring-white/40 sm:px-3.5 sm:py-1.5 sm:text-2xl">
+                  TOP
+                </span>
+                <span className="text-lg font-black italic uppercase leading-tight tracking-wide text-white [text-shadow:0_2px_8px_rgba(0,0,0,0.5)] sm:text-2xl lg:text-3xl">
+                  <span className="text-[#F9E7A8]">T</span>erampil{' '}
+                  <span className="text-[#F9E7A8]">O</span>ptimis{' '}
+                  <span className="text-[#F9E7A8]">P</span>ercaya-Diri
+                </span>
+              </div>
+
               {/* Formal Logos Row */}
               <div className="mb-6 sm:mb-10 flex flex-wrap items-center gap-3 sm:gap-4 rounded-xl border border-white/10 bg-white/5 p-2 sm:p-3 shadow-sm backdrop-blur-md">
-                <div className="flex items-center gap-2">
+                <div className="mt-1 flex items-center gap-2 sm:mt-1.5">
                   <img src="https://upload.wikimedia.org/wikipedia/commons/9/9c/Logo_of_Ministry_of_Education_and_Culture_of_Republic_of_Indonesia.svg" alt="Kemdikbud" className="h-8 w-auto" style={{ height: '32px', width: 'auto', objectFit: 'contain' }} />
                   <div className="hidden sm:block text-left text-[8px] font-bold tracking-widest text-white/90 uppercase leading-tight">
                     Kementerian Pendidikan,<br/>Kebudayaan, Riset,<br/>dan Teknologi
@@ -137,9 +149,7 @@ const Home: React.FC = () => {
                   <div className="text-base font-black italic tracking-tighter text-white">
                     SMK<span className="text-[#C8A951]">BISA</span><span className="text-[#F9E7A8]">-HEBAT</span>
                   </div>
-                  <div className="text-[7px] font-bold tracking-widest text-white/80 uppercase">
-                    Siap Kerja • Santun • Mandiri • Kreatif
-                  </div>
+                 
                 </div>
 
                 <div className="hidden sm:block h-8 w-px bg-white/20"></div>
@@ -165,7 +175,7 @@ const Home: React.FC = () => {
               </div>
               
               <p className="mt-6 sm:mt-8 max-w-xl text-base font-medium leading-relaxed text-[#FBEFCC] sm:text-lg md:text-xl">
-                {home?.hero.description}
+                {home?.hero?.description}
               </p>
 
               {/* Action Buttons */}
@@ -204,8 +214,8 @@ const Home: React.FC = () => {
                         <Building2 className="h-7 w-7" />
                       </div>
                       <div>
-                        <h3 className="text-xl font-bold text-white uppercase tracking-wider drop-shadow-md">{home?.hero.facility_title}</h3>
-                        <p className="mt-1 text-sm font-medium text-[#FBEFCC]">{home?.hero.facility_description}</p>
+                        <h3 className="text-xl font-bold text-white uppercase tracking-wider drop-shadow-md">{home?.hero?.facility_title}</h3>
+                        <p className="mt-1 text-sm font-medium text-[#FBEFCC]">{home?.hero?.facility_description}</p>
                       </div>
                     </div>
                   </div>
@@ -222,7 +232,7 @@ const Home: React.FC = () => {
                   </div>
                   <div className="flex flex-col">
                     <span className="text-[10px] font-bold uppercase tracking-widest text-[#C8A951]">Akreditasi</span>
-                    <span className="text-base font-black text-white">{home?.hero.accreditation}</span>
+                    <span className="text-base font-black text-white">{home?.hero?.accreditation}</span>
                     <span className="text-[10px] font-semibold text-white/60">BAN-S/M</span>
                   </div>
                 </div>
@@ -252,7 +262,7 @@ const Home: React.FC = () => {
             {/* Image/Photo */}
             <div className="relative mx-auto w-full max-w-md lg:max-w-none">
               <div className="relative overflow-hidden rounded-3xl rounded-tr-[40px] sm:rounded-tr-[80px] rounded-bl-[40px] sm:rounded-bl-[80px] bg-[#FAF6F0] p-3 sm:p-4 shadow-sm">
-                <img src={principalPhoto || ''} alt="Kepala Sekolah SMKN 11" loading="lazy" className="h-[250px] sm:h-[350px] md:h-[450px] w-full object-cover rounded-2xl rounded-tr-[70px] rounded-bl-[70px]" />
+                {principalPhoto && <img src={principalPhoto} alt="Kepala Sekolah SMKN 11" loading="lazy" className="h-[250px] sm:h-[350px] md:h-[450px] w-full object-cover rounded-2xl rounded-tr-[70px] rounded-bl-[70px]" />}
                 <div className="absolute bottom-10 left-0 bg-[#1B2A4A] text-white p-4 pr-8 rounded-r-2xl shadow-xl border-l-4 border-[#C8A951]">
                   <h4 className="font-bold text-lg">{principalName}</h4>
                   <p className="text-[#F9E7A8] text-sm">{principalPosition}</p>
@@ -268,12 +278,12 @@ const Home: React.FC = () => {
                 <span className="text-sm font-bold uppercase tracking-widest text-[#C8A951]">Sambutan Kepala Sekolah</span>
               </div>
                 <h2 className="mb-4 sm:mb-6 text-2xl font-bold leading-tight text-[#1B2A4A] sm:text-3xl md:text-4xl">
-                 {home?.welcome.title}
+                 {home?.welcome?.title}
               </h2>
               <div className="space-y-4 text-base sm:text-lg text-[#23314D] leading-relaxed mb-6 sm:mb-8">
-                {(home?.welcome.paragraphs ?? []).map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+                {(home?.welcome?.paragraphs ?? []).map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
                 <p className="font-semibold text-[#1B2A4A] italic border-l-4 border-[#C8A951] pl-4 mt-6">
-                  {home?.welcome.quote}
+                  {home?.welcome?.quote}
                 </p>
               </div>
             </div>
@@ -283,11 +293,11 @@ const Home: React.FC = () => {
 
       <section className="bg-[#FAF6F0] py-16 md:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <SectionHeading title={home?.about.title ?? ''} subtitle={home?.about.subtitle ?? ''} />
+          <SectionHeading title={home?.about?.title ?? ''} subtitle={home?.about?.subtitle ?? ''} />
 
           <div className="mt-12 grid items-center gap-8 lg:grid-cols-[1.1fr_0.9fr]">
             <div className="space-y-5 text-lg leading-8 text-[#23314D]">
-              {(home?.about.paragraphs ?? []).map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+              {(home?.about?.paragraphs ?? []).map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
             </div>
 
             <div className="rounded-[1.5rem] border border-[#1B2A4A]/10 bg-white p-8 shadow-sm">
@@ -296,19 +306,19 @@ const Home: React.FC = () => {
                   <Building2 className="h-6 w-6" />
                 </div>
                 <div>
-                    <p className="text-sm uppercase tracking-[0.3em] text-[#866D2C]">{home?.about.card_label}</p>
-                   <h3 className="text-xl font-semibold text-[#1B2A4A]">{home?.about.card_title}</h3>
+                    <p className="text-sm uppercase tracking-[0.3em] text-[#866D2C]">{home?.about?.card_label}</p>
+                   <h3 className="text-xl font-semibold text-[#1B2A4A]">{home?.about?.card_title}</h3>
                 </div>
               </div>
 
               <div className="mt-6 rounded-[1.25rem] bg-[#1B2A4A] p-6 text-[#FFF9F1]">
                 <p className="text-sm uppercase tracking-[0.3em] text-[#C8A951]">Sambutan</p>
                 <p className="mt-4 text-lg leading-8">
-                   {home?.about.quote}
+                   {home?.about?.quote}
                 </p>
                 <div className="mt-5 flex items-center gap-2 text-sm font-semibold text-white">
                   <MapPin className="h-4 w-4" />
-                   {home?.about.location}
+                   {home?.about?.location}
                 </div>
               </div>
             </div>
