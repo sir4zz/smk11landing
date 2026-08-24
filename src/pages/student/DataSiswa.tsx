@@ -4,7 +4,7 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { UserRound, Loader2, Send, X, Clock, CheckCircle2, XCircle, ChevronRight, FileText, Eye, Download, KeyRound } from 'lucide-react';
 import { backendApi, studentDataApi, resolveImageUrl, STUDENT_CHANGE_REQUEST_STATUS_LABELS, type StudentDataPayload, type StudentChangeRequestRow, type StudentChangeRequestStatus } from '../../lib/api';
 import PageHero from '../../components/ui/PageHero';
-import { BIODATA_FIELDS, BIODATA_SECTIONS, emptyBiodata, groupFieldsBySubsection } from '../../lib/studentBiodata';
+import { BIODATA_FIELDS, BIODATA_SECTIONS, STUDENT_READONLY_KEYS, emptyBiodata, groupFieldsBySubsection } from '../../lib/studentBiodata';
 import type { BiodataFieldDef } from '../../lib/studentBiodata';
 import ImageField from '../../components/admin/ImageField';
 
@@ -179,6 +179,7 @@ export default function DataSiswa() {
     // Build only changed fields
     const proposedData: Record<string, unknown> = {};
     for (const field of BIODATA_FIELDS) {
+      if (STUDENT_READONLY_KEYS.has(field.key)) continue;
       const newVal = form[field.key] ?? '';
       const oldVal = String((studentData as Record<string, unknown>)[field.key] ?? '');
       if (newVal !== oldVal) {
@@ -384,7 +385,7 @@ export default function DataSiswa() {
                             <Fragment key={gi}>
                               {g.subsection && <p className="sm:col-span-2 border-b border-[#1B2A4A]/10 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-[#866D2C]">{g.subsection}</p>}
                               {g.fields.map((field) => (
-                                <BiodataField key={field.key} field={field} value={form[field.key] ?? ''} onChange={setValue(field.key)} error={errors[field.key]} />
+                                <BiodataField key={field.key} field={field} value={form[field.key] ?? ''} onChange={setValue(field.key)} error={errors[field.key]} disabled={STUDENT_READONLY_KEYS.has(field.key)} />
                               ))}
                             </Fragment>
                           ))}
@@ -658,23 +659,24 @@ function RequestDetailModal({ request, onClose }: { request: StudentChangeReques
   );
 }
 
-function BiodataField({ field, value, onChange, error }: { field: BiodataFieldDef; value: string; onChange: (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void; error?: string }) {
+function BiodataField({ field, value, onChange, error, disabled }: { field: BiodataFieldDef; value: string; onChange: (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void; error?: string; disabled?: boolean }) {
   const cls = field.full ? 'sm:col-span-2' : '';
-  const inputCls = `mt-1 w-full rounded-lg border bg-white px-3 py-2 font-normal ${error ? 'border-red-400' : 'border-[#1B2A4A]/20'}`;
+  const inputCls = `mt-1 w-full rounded-lg border bg-white px-3 py-2 font-normal ${error ? 'border-red-400' : 'border-[#1B2A4A]/20'} ${disabled ? 'cursor-not-allowed bg-gray-100 opacity-60' : ''}`;
+  const lockLabel = disabled ? <span className="ml-1 text-xs font-normal text-[#5B7088]">🔒 Dikelola admin</span> : null;
 
   return (
     <label className={`block text-sm font-semibold ${cls}`}>
-      {field.label}
+      {field.label}{lockLabel}
       {field.type === 'select' ? (
-        <select value={value} onChange={onChange} className={inputCls}>
+        <select value={value} onChange={onChange} className={inputCls} disabled={disabled}>
           {field.options?.map((opt) => (
             <option key={opt} value={opt}>{opt === '' ? 'Pilih' : opt}</option>
           ))}
         </select>
       ) : field.type === 'textarea' ? (
-        <textarea value={value} onChange={onChange} rows={2} className={inputCls} placeholder={field.placeholder} />
+        <textarea value={value} onChange={onChange} rows={2} className={inputCls} placeholder={field.placeholder} disabled={disabled} />
       ) : (
-        <input value={value} type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'} onChange={onChange} className={inputCls} placeholder={field.placeholder} />
+        <input value={value} type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'} onChange={onChange} className={inputCls} placeholder={field.placeholder} disabled={disabled} />
       )}
       {error && <span className="mt-1 block text-xs font-medium text-red-600">{error}</span>}
     </label>
