@@ -98,7 +98,7 @@ const Management: React.FC = () => {
           </div>
           <div className="grid gap-6 md:grid-cols-3">
             {latestActivities.map((activity) => (
-              <div key={activity.id} className="overflow-hidden rounded-2xl border border-[#1B2A4A]/10 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
+              <div key={activity.id} className="overflow-hidden rounded-2xl border border-[#1B2A4A]/10 bg-white shadow-sm">
                 <div className="relative h-44 w-full overflow-hidden">
                     {resolveImageUrl(activity.photo) && <img src={resolveImageUrl(activity.photo)!} alt={activity.title} loading="lazy" className="h-full w-full object-cover" />}
                   <span className="absolute right-3 top-3 rounded-full bg-[#C8A951] px-3 py-1 text-xs font-semibold text-[#1B2A4A]">{activity.category}</span>
@@ -124,7 +124,7 @@ const Management: React.FC = () => {
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {tendiks.slice(0, 4).map((member) => (
-              <div key={member.slug} className="rounded-2xl border border-[#1B2A4A]/10 bg-white p-6 text-center shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
+              <div key={member.slug} className="rounded-2xl border border-[#1B2A4A]/10 bg-white p-6 text-center shadow-sm">
                 <PersonAvatar photo={member.photo} name={member.name} className="mx-auto h-20 w-20 rounded-full object-cover" iconClassName="h-10 w-10" />
                 <h3 className="mt-4 font-bold text-[#1B2A4A]">{member.name}</h3>
                 <p className="mt-1 text-sm text-[#23314D]">{member.position || member.subject || 'Tenaga Kependidikan'}</p>

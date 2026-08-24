@@ -58,7 +58,7 @@ const KegiatanGuru: React.FC = () => {
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {filtered.map((activity) => (
-              <div key={activity.id} className="overflow-hidden rounded-2xl border border-[#1B2A4A]/10 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
+              <div key={activity.id} className="overflow-hidden rounded-2xl border border-[#1B2A4A]/10 bg-white shadow-sm">
                 <div className="relative h-48 w-full overflow-hidden">
                     {resolveImageUrl(activity.photo) && <img src={resolveImageUrl(activity.photo)!} alt={activity.title} loading="lazy" className="h-full w-full object-cover" />}
                   <div className="absolute inset-0 bg-gradient-to-t from-[#1B2A4A]/70 to-transparent" />

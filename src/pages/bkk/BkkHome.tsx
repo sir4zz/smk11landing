@@ -178,7 +178,7 @@ const BkkHome: React.FC = () => {
               return (
                 <div
                   key={service.title}
-                  className="flex items-start gap-4 rounded-2xl border border-[#1B2A4A]/10 bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg"
+                  className="flex items-start gap-4 rounded-2xl border border-[#1B2A4A]/10 bg-white p-6 shadow-sm transition-colors hover:border-[#C8A951]/20"
                 >
                   <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-[#1B2A4A] text-[#C8A951]">
                     <Icon className="h-6 w-6" />
@@ -289,7 +289,7 @@ const BkkHome: React.FC = () => {
             {partnerCompanies.map((company) => (
               <div
                 key={company.name}
-                className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-[#1B2A4A]/10 bg-white p-6 text-center shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg"
+                className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-[#1B2A4A]/10 bg-white p-6 text-center shadow-sm transition-colors hover:border-[#C8A951]/20"
               >
                 {company.logo && resolveImageUrl(company.logo) ? (
                   <img

@@ -97,7 +97,7 @@ type ApiResponse<T> = { data: T | null; error: ApiError; status?: number; count?
 type ApiResult<T> = Promise<ApiResponse<T>>;
 type Filter = { key: string; value: unknown };
 
-const PUBLIC_CACHE_TTL = 60_000;
+const PUBLIC_CACHE_TTL = 30_000;
 const responseCache = new Map<string, { expiresAt: number; value: ApiResponse<unknown> }>();
 const pendingRequests = new Map<string, Promise<ApiResponse<unknown>>>();
 

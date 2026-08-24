@@ -27,7 +27,7 @@ const History: React.FC = () => {
           {milestones.map((milestone, index) => (
             <div key={index} className="mb-8 md:mb-10 ml-6 md:ml-12 relative group">
               <span className="absolute -left-[38px] md:-left-[58px] top-1 h-5 w-5 md:h-6 md:w-6 rounded-full bg-[#C8A951] border-3 md:border-4 border-[#FAF6F0]" />
-              <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100 transition duration-300 hover:shadow-md">
+              <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-100">
                 <span className="inline-block text-[#866D2C] font-bold text-base sm:text-lg mb-2">{milestone.year}</span>
                 <h3 className="text-lg sm:text-xl font-semibold text-[#1B2A4A] mb-2">{milestone.title}</h3>
                 <p className="text-[#23314D] leading-relaxed">{milestone.description}</p>

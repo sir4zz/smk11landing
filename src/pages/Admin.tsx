@@ -87,7 +87,7 @@ const configs: Record<EditableSection, { title: string; icon: typeof FileText; f
   facilities: { title: 'Fasilitas', icon: Building2, fields: [{ key: 'name', label: 'Nama Fasilitas' }, { key: 'category', label: 'Kategori', type: 'select' }, { key: 'description', label: 'Deskripsi', multiline: true }, { key: 'photo', label: 'Foto', type: 'image' }] },
   staff: { title: 'Staf & Guru', icon: Users, fields: [{ key: 'name', label: 'Nama' }, { key: 'position', label: 'Jabatan', type: 'select' }, { key: 'department', label: 'Unit / Departemen', type: 'select' }, { key: 'photo', label: 'Foto', type: 'image' }, { key: 'description', label: 'Deskripsi Singkat', multiline: true }] },
   gurus: { title: 'Guru', icon: Users, fields: [{ key: 'name', label: 'Nama' }, { key: 'subject', label: 'Mata Pelajaran' }, { key: 'position', label: 'Jabatan', type: 'select' }, { key: 'photo', label: 'Foto', type: 'image' }] },
-  achievements: { title: 'Prestasi Siswa', icon: Trophy, fields: [{ key: 'title', label: 'Judul Prestasi' }, { key: 'event', label: 'Acara' }, { key: 'level', label: 'Tingkat', type: 'select' }, { key: 'rank', label: 'Peringkat', type: 'select' }, { key: 'year', label: 'Tahun', type: 'number' }, { key: 'photo', label: 'Foto', type: 'image' }] },
+  achievements: { title: 'Prestasi Siswa', icon: Trophy, fields: [{ key: 'title', label: 'Judul Prestasi' }, { key: 'event', label: 'Acara' }, { key: 'level', label: 'Tingkat', type: 'select' }, { key: 'rank', label: 'Peringkat', type: 'select' }, { key: 'year', label: 'Tahun', type: 'number' }, { key: 'students', label: 'Siswa Peraih Prestasi (satu per baris)', type: 'list' }, { key: 'photo', label: 'Foto', type: 'image' }] },
   teacherActivities: { title: 'Kegiatan Guru', icon: CalendarDays, fields: [{ key: 'title', label: 'Judul Kegiatan' }, { key: 'category', label: 'Kategori', type: 'select' }, { key: 'date', label: 'Tanggal', type: 'date' }, { key: 'photo', label: 'Foto', type: 'image' }, { key: 'description', label: 'Deskripsi', multiline: true }] },
   educationStaff: { title: 'Tenaga Kependidikan', icon: Briefcase, fields: [{ key: 'name', label: 'Nama' }, { key: 'position', label: 'Jabatan', type: 'select' }, { key: 'department', label: 'Unit / Departemen', type: 'select' }, { key: 'photo', label: 'Foto', type: 'image' }] },
   contentRecords: { title: 'Konten Beranda', icon: FileText, fields: [{ key: 'content_type', label: 'Tipe Konten' }] },
@@ -1003,7 +1003,8 @@ function PPDBDetail({ data, onClose, onUpdateStatus, onVerifyDoc }: {
 */
 
 function slugify(value: string) {
-  return value.toLowerCase().trim().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  const str = String(value ?? '');
+  return str.toLowerCase().trim().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
 
 function escapeHtml(value: string) {
@@ -1584,11 +1585,17 @@ function Editor({ config, item, onClose, onSave, section, options }: { config: {
       return;
     }
 
-    const listFields = section === 'programs' ? ['competencies', 'career_prospects', 'facilities'] : [];
+    const listFields = section === 'programs' ? ['competencies', 'career_prospects', 'facilities'] : section === 'achievements' ? ['students'] : [];
+    const slugFields: Record<string, string | undefined> = {
+      news: formValues.title,
+      programs: formValues.short_name || formValues.name,
+    };
+    const rawSlug = slugFields[section ?? ''];
+    const slugValue = rawSlug !== undefined ? slugify(rawSlug) : undefined;
     onSave({
       ...(item ?? {}),
       ...formValues,
-       slug: slugify(section === 'programs' ? formValues.short_name || formValues.name : formValues.title),
+      ...(slugValue !== undefined ? { slug: slugValue } : {}),
       ...imageValues,
       ...Object.fromEntries(listFields.map((key) => [key, String(formValues[key] ?? '').split('\n').map((value) => value.trim()).filter(Boolean)])),
     });
