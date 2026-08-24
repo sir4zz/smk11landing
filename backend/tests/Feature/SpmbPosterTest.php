@@ -150,6 +150,36 @@ class SpmbPosterTest extends TestCase
         $this->assertTrue(Storage::disk('public')->exists(str_replace('/storage/', '', $url)));
     }
 
+    public function test_poster_can_hold_multiple_photos(): void
+    {
+        Storage::fake('public');
+        $operator = $this->staff('operator_sekolah', ['spmb.view', 'spmb.create', 'spmb.edit']);
+
+        $created = $this->actingAs($operator, 'sanctum')
+            ->postJson('/api/admin/spmb/posters', [
+                'title' => 'Pengumuman Multi Foto',
+                'image' => '/storage/spmb/posters/sampul.webp',
+                'images' => ['/storage/spmb/posters/sampul.webp', '/storage/spmb/posters/halaman-2.webp'],
+            ])
+            ->assertCreated()
+            ->assertJsonCount(2, 'data.images');
+
+        $id = $created->json('data.id');
+
+        $this->getJson('/api/spmb/posters')
+            ->assertOk()
+            ->assertJsonPath('data.0.images.1', '/storage/spmb/posters/halaman-2.webp');
+
+        // Removing a photo from the carousel deletes its stored file.
+        Storage::disk('public')->put('spmb/posters/halaman-2.webp', 'x');
+        $this->actingAs($operator, 'sanctum')
+            ->patchJson('/api/admin/spmb/posters/'.$id, ['images' => ['/storage/spmb/posters/sampul.webp']])
+            ->assertOk()
+            ->assertJsonCount(1, 'data.images')
+            ->assertJsonPath('data.image', '/storage/spmb/posters/sampul.webp');
+        Storage::disk('public')->assertMissing('spmb/posters/halaman-2.webp');
+    }
+
     private function staff(string $roleSlug, array $permissionSlugs): User
     {
         $user = User::create([

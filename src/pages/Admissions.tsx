@@ -34,6 +34,7 @@ const Admissions: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [lightbox, setLightbox] = useState<number | null>(null);
   const [page, setPage] = useState(1);
+  const [featuredSlide, setFeaturedSlide] = useState(0);
 
   const PER_PAGE = 6;
 
@@ -51,32 +52,68 @@ const Admissions: React.FC = () => {
     setPage(1);
   }, [posters.length]);
 
-  const closeLightbox = () => setLightbox(null);
-  const prevPoster = () => setLightbox((current) => (current === null ? null : (current - 1 + posters.length) % posters.length));
-  const nextPoster = () => setLightbox((current) => (current === null ? null : (current + 1) % posters.length));
+  useEffect(() => {
+    setFeaturedSlide(0);
+  }, [posters]);
 
-  const openLightbox = (id: string | undefined) => {
-    const index = posters.findIndex((p) => p.id === id);
-    setLightbox(index >= 0 ? index : null);
+  const closeLightbox = () => setLightbox(null);
+
+  // Setiap pengumuman bisa memuat beberapa foto: gabungkan semua foto menjadi
+  // satu daftar slide agar lightbox bisa menelusurinya secara berurutan.
+  const slides = posters.flatMap((poster) => posterImages(poster).map((url, photo) => ({ poster, url, photo })));
+
+  const prevSlide = () => setLightbox((current) => (current === null ? null : (current - 1 + slides.length) % slides.length));
+  const nextSlide = () => setLightbox((current) => (current === null ? null : (current + 1) % slides.length));
+
+  const openLightbox = (id: string | undefined, slide = 0) => {
+    let offset = 0;
+    for (const poster of posters) {
+      const count = posterImages(poster).length;
+      if (poster.id === id && count > 0) {
+        setLightbox(offset + Math.min(Math.max(slide, 0), count - 1));
+        return;
+      }
+      offset += count;
+    }
+    setLightbox(null);
   };
 
-  const downloadPoster = async (poster: SpmbPoster) => {
-    const url = resolveImageUrl(poster.image);
+  const downloadPoster = async (poster: SpmbPoster, imageUrl?: string) => {
+    const raw = imageUrl || poster.image;
+    const url = resolveImageUrl(raw);
     if (!url) return;
     const ext = (url.split('?')[0].match(/\.([a-z0-9]+)$/i)?.[1] ?? 'jpg').toLowerCase();
     const slug = (poster.title || 'poster').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'poster';
+    const filename = `pengumuman-spmb-${slug}.${ext}`;
+
+    // For same-origin or proxy-served images, create a temporary <a> with the
+    // download attribute so the browser saves the file directly.
+    const isSameOrigin = url.startsWith(window.location.origin);
+    if (isSameOrigin) {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      return;
+    }
+
+    // For cross-origin images, try fetching as blob first. If that fails
+    // (CORS, network), fall back to opening the image in a new tab where the
+    // user can save it manually.
     try {
-      const res = await fetch(url, { credentials: 'include' });
+      const res = await fetch(url, { mode: 'cors' });
       if (!res.ok) throw new Error('fetch failed');
       const blob = await res.blob();
       const objectUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = objectUrl;
-      a.download = `pengumuman-spmb-${slug}.${ext}`;
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       a.remove();
-      URL.revokeObjectURL(objectUrl);
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 5000);
     } catch {
       window.open(url, '_blank', 'noopener,noreferrer');
     }
@@ -86,8 +123,8 @@ const Admissions: React.FC = () => {
     if (lightbox === null) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') closeLightbox();
-      if (e.key === 'ArrowLeft') prevPoster();
-      if (e.key === 'ArrowRight') nextPoster();
+      if (e.key === 'ArrowLeft') prevSlide();
+      if (e.key === 'ArrowRight') nextSlide();
     };
     window.addEventListener('keydown', onKey);
     document.body.style.overflow = 'hidden';
@@ -96,7 +133,7 @@ const Admissions: React.FC = () => {
       document.body.style.overflow = '';
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lightbox, posters.length]);
+  }, [lightbox, slides.length]);
 
   if (loading) {
     return (
@@ -110,6 +147,8 @@ const Admissions: React.FC = () => {
 
   const heroImage = content.banner_image || posters[0]?.image || '';
   const featured = posters.find((p) => p.is_featured) ?? null;
+  const featuredImages = featured ? posterImages(featured) : [];
+  const featuredIndex = Math.min(featuredSlide, Math.max(0, featuredImages.length - 1));
   const others = featured ? posters.filter((p) => p.id !== featured.id) : posters;
   const totalPages = Math.max(1, Math.ceil(others.length / PER_PAGE));
   const paged = others.slice((page - 1) * PER_PAGE, page * PER_PAGE);
@@ -181,22 +220,50 @@ const Admissions: React.FC = () => {
                       <span className="absolute left-6 top-6 z-10 inline-flex items-center gap-1.5 rounded-full bg-[#C8A951] px-4 py-1.5 text-xs font-bold uppercase tracking-wide text-[#1B2A4A]">
                         <Star className="h-3.5 w-3.5 fill-[#1B2A4A]" /> Pengumuman Utama
                       </span>
-                      <button
-                        type="button"
-                        onClick={() => openLightbox(featured.id)}
-                        className="block w-full"
-                        aria-label={`Lihat poster ${featured.title || 'Pengumuman Utama'}`}
-                      >
-                        <div className="aspect-[3/4] w-full overflow-hidden rounded-xl bg-white shadow-inner">
-                          {resolveImageUrl(featured.image) && (
-                            <img
-                              src={resolveImageUrl(featured.image)!}
-                              alt={featured.title || 'Pengumuman Utama SPMB'}
-                              className="h-full w-full object-contain transition-transform duration-300 hover:scale-[1.03]"
-                            />
-                          )}
-                        </div>
-                      </button>
+                      <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-white shadow-inner">
+                        {featuredImages[featuredIndex] && (
+                          <img
+                            src={featuredImages[featuredIndex]}
+                            alt={`${featured.title || 'Pengumuman Utama SPMB'} — foto ${featuredIndex + 1}`}
+                            className="absolute inset-0 h-full w-full cursor-zoom-in object-contain transition-transform duration-300 hover:scale-[1.03]"
+                            onClick={() => openLightbox(featured.id, featuredIndex)}
+                          />
+                        )}
+                        {featuredImages.length > 1 && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => setFeaturedSlide((s) => (s - 1 + featuredImages.length) % featuredImages.length)}
+                              className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/45 p-2 text-white backdrop-blur-sm transition-colors hover:bg-black/65"
+                              aria-label="Foto sebelumnya"
+                            >
+                              <ChevronLeft className="h-5 w-5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setFeaturedSlide((s) => (s + 1) % featuredImages.length)}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/45 p-2 text-white backdrop-blur-sm transition-colors hover:bg-black/65"
+                              aria-label="Foto berikutnya"
+                            >
+                              <ChevronRight className="h-5 w-5" />
+                            </button>
+                            <span className="absolute right-2 top-2 rounded-full bg-black/55 px-2.5 py-0.5 text-xs font-semibold text-white">
+                              {featuredIndex + 1} / {featuredImages.length}
+                            </span>
+                            <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5">
+                              {featuredImages.map((_, dot) => (
+                                <button
+                                  key={dot}
+                                  type="button"
+                                  onClick={() => setFeaturedSlide(dot)}
+                                  aria-label={`Ke foto ${dot + 1}`}
+                                  className={`h-2 rounded-full transition-all ${dot === featuredIndex ? 'w-4 bg-[#C8A951]' : 'w-2 bg-white/70 hover:bg-white'}`}
+                                />
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </div>
                     <div className="flex flex-col justify-center gap-4 p-8 md:p-12">
                       <span className="inline-flex w-fit items-center gap-2 rounded-full bg-[#FAF6F0] px-4 py-1.5 text-sm font-semibold text-[#866D2C]">
@@ -227,7 +294,7 @@ const Admissions: React.FC = () => {
                       <SpmbPosterCard
                         key={poster.id}
                         poster={poster}
-                        onView={() => openLightbox(poster.id)}
+                        onViewSlide={(slide) => openLightbox(poster.id, slide)}
                         onDownload={() => void downloadPoster(poster)}
                       />
                     ))}
@@ -263,36 +330,52 @@ const Admissions: React.FC = () => {
         </section>
 
         {/* Lampiran PDF */}
-        {content.pdf_attachment && (
-          <section className="mb-16">
-            <div className="mx-auto max-w-2xl overflow-hidden rounded-2xl border border-[#C8A951]/30 bg-white p-8 shadow-sm">
-              <div className="flex flex-col items-center text-center">
-                <div className="mb-4 grid h-16 w-16 place-items-center rounded-full bg-[#C8A951]/15">
-                  <FileText className="h-8 w-8 text-[#866D2C]" />
+        {(() => {
+          const allPdfs = [...new Set([content.pdf_attachment, ...(content.pdf_attachments ?? [])].filter(Boolean) as string[])];
+          if (allPdfs.length === 0) return null;
+          const pdfName = (url: string) => url.split('/').pop()?.replace(/^[^_]+-[^_]+-\d+-\d+-/, '') || url.split('/').pop() || 'file.pdf';
+          return (
+            <section className="mb-16">
+              <div className="mx-auto max-w-2xl overflow-hidden rounded-2xl border border-[#C8A951]/30 bg-white p-8 shadow-sm">
+                <div className="flex flex-col items-center text-center">
+                  <div className="mb-4 grid h-16 w-16 place-items-center rounded-full bg-[#C8A951]/15">
+                    <FileText className="h-8 w-8 text-[#866D2C]" />
+                  </div>
+                  <h3 className="text-xl font-bold text-[#1B2A4A]">Lampiran Dokumen</h3>
+                  <p className="mt-2 max-w-md text-sm text-[#5B7088]">
+                    Unduh dokumen lampiran untuk informasi lengkap terkait SPMB.
+                  </p>
                 </div>
-                <h3 className="text-xl font-bold text-[#1B2A4A]">Lampiran Dokumen</h3>
-                <p className="mt-2 max-w-md text-sm text-[#5B7088]">
-                  Unduh dokumen lampiran untuk informasi lengkap terkait SPMB.
-                </p>
-                <a
-                  href={content.pdf_attachment}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#1B2A4A] px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#15203a]"
-                >
-                  <Download className="h-5 w-5" /> Unduh PDF
-                </a>
+                <ul className="mt-6 space-y-2">
+                  {allPdfs.map((url) => (
+                    <li key={url}>
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 rounded-xl border border-[#1B2A4A]/10 bg-[#FAF6F0] px-4 py-3 text-left transition-colors hover:bg-[#1B2A4A]/5"
+                      >
+                        <FileText className="h-5 w-5 shrink-0 text-[#866D2C]" />
+                        <span className="min-w-0 flex-1 truncate text-sm font-medium text-[#1B2A4A]">{pdfName(url)}</span>
+                        <Download className="h-4 w-4 shrink-0 text-[#5B7088]" />
+                      </a>
+                    </li>
+                  ))}
+                </ul>
               </div>
-            </div>
-          </section>
-        )}
+            </section>
+          );
+        })()}
 
         {/* CTA */}
         <section className="relative overflow-hidden rounded-2xl bg-[#1B2A4A] text-center text-white">
           {heroImage && resolveImageUrl(heroImage) && (
             <>
-              <img src={resolveImageUrl(heroImage)!} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-r from-[#0C1527]/60 via-[#1B2A4A]/50 to-[#1B2A4A]/20" />
+              <div
+                className="absolute inset-0 bg-cover bg-center"
+                style={{ backgroundImage: `url(${resolveImageUrl(heroImage)})` }}
+              />
+              <div className="absolute inset-0 bg-[#1B2A4A]/80 bg-gradient-to-r from-[#1B2A4A]/90 to-[#1B2A4A]/60" />
             </>
           )}
           <div className="relative z-10 p-12">
@@ -322,7 +405,7 @@ const Admissions: React.FC = () => {
 
       {/* Lightbox */}
       <AnimatePresence>
-        {lightbox !== null && posters[lightbox] && (
+        {lightbox !== null && slides[lightbox] && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -341,7 +424,7 @@ const Admissions: React.FC = () => {
 
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); prevPoster(); }}
+              onClick={(e) => { e.stopPropagation(); prevSlide(); }}
               className="absolute left-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/10 p-2.5 text-white backdrop-blur-sm transition-colors hover:bg-white/20 sm:left-6"
               aria-label="Poster sebelumnya"
             >
@@ -349,7 +432,7 @@ const Admissions: React.FC = () => {
             </button>
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); nextPoster(); }}
+              onClick={(e) => { e.stopPropagation(); nextSlide(); }}
               className="absolute right-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/10 p-2.5 text-white backdrop-blur-sm transition-colors hover:bg-white/20 sm:right-6"
               aria-label="Poster berikutnya"
             >
@@ -357,7 +440,7 @@ const Admissions: React.FC = () => {
             </button>
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); void downloadPoster(posters[lightbox]); }}
+              onClick={(e) => { e.stopPropagation(); void downloadPoster(slides[lightbox].poster, slides[lightbox].url); }}
               className="absolute right-4 top-16 z-10 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white backdrop-blur-sm transition-colors hover:bg-white/20"
               aria-label="Download poster"
             >
@@ -373,23 +456,21 @@ const Admissions: React.FC = () => {
               className="max-h-[90vh] w-full max-w-5xl"
               onClick={(e) => e.stopPropagation()}
             >
-              {resolveImageUrl(posters[lightbox].image) && (
-                <img
-                  src={resolveImageUrl(posters[lightbox].image)!}
-                  alt={posters[lightbox].title || `Poster SPMB ${lightbox + 1}`}
-                  className="mx-auto max-h-[80vh] w-auto rounded-xl object-contain shadow-2xl"
-                />
-              )}
+              <img
+                src={slides[lightbox].url}
+                alt={`${slides[lightbox].poster.title || 'Pengumuman SPMB'} — foto ${(slides[lightbox].photo ?? lightbox) + 1}`}
+                className="mx-auto max-h-[80vh] w-auto rounded-xl object-contain shadow-2xl"
+              />
               <figcaption className="mt-3 flex items-center justify-between gap-4 text-sm text-white/80">
                 <span>
-                  {posters[lightbox].title || `Poster SPMB`}
-                  {formatPosterDate(posters[lightbox].published_at ?? posters[lightbox].created_at) && (
+                  {slides[lightbox].poster.title || `Pengumuman SPMB`}
+                  {formatPosterDate(slides[lightbox].poster.published_at ?? slides[lightbox].poster.created_at) && (
                     <span className="ml-3 inline-flex items-center gap-1 text-white/60">
-                      <CalendarDays className="h-3.5 w-3.5" /> {formatPosterDate(posters[lightbox].published_at ?? posters[lightbox].created_at)}
+                      <CalendarDays className="h-3.5 w-3.5" /> {formatPosterDate(slides[lightbox].poster.published_at ?? slides[lightbox].poster.created_at)}
                     </span>
                   )}
                 </span>
-                <span>{lightbox + 1} / {posters.length}</span>
+                <span>{lightbox + 1} / {slides.length}</span>
               </figcaption>
             </motion.figure>
           </motion.div>
@@ -399,22 +480,86 @@ const Admissions: React.FC = () => {
   );
 };
 
-function SpmbPosterCard({ poster, onView, onDownload }: { poster: SpmbPoster; onView: () => void; onDownload: () => void }) {
+function posterImages(poster: SpmbPoster): string[] {
+  const urls: string[] = [];
+  for (const src of [poster.image, ...(poster.images ?? [])]) {
+    const url = resolveImageUrl(src ?? '');
+    if (url && !urls.includes(url)) urls.push(url);
+  }
+  return urls;
+}
+
+function SpmbPosterCard({ poster, onViewSlide, onDownload }: { poster: SpmbPoster; onViewSlide: (slide: number) => void; onDownload: () => void }) {
+  const images = posterImages(poster);
+  const total = images.length;
+  const [slide, setSlide] = useState(0);
+  const index = Math.min(slide, Math.max(0, total - 1));
   const dateText = formatPosterDate(poster.published_at ?? poster.created_at);
   return (
     <div className="group overflow-hidden rounded-2xl bg-white p-4 text-left shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl">
-      <button type="button" onClick={onView} className="block w-full" aria-label={`Lihat poster ${poster.title || 'Pengumuman SPMB'}`}>
-        <div className="aspect-[3/4] overflow-hidden rounded-xl bg-[#FAF6F0]">
-          {resolveImageUrl(poster.image) && (
-            <img
-              src={resolveImageUrl(poster.image)!}
-              alt={poster.title || 'Pengumuman SPMB'}
+      <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-[#FAF6F0]">
+        {total > 0 ? (
+          <AnimatePresence initial={false} mode="popLayout">
+            <motion.img
+              key={index}
+              src={images[index]}
+              alt={`${poster.title || 'Pengumuman SPMB'} — foto ${index + 1}`}
               loading="lazy"
-              className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
+              onClick={() => onViewSlide(index)}
+              initial={{ opacity: 0, x: 24 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -24 }}
+              transition={{ duration: 0.25 }}
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.12}
+              onDragEnd={(_, info) => {
+                if (total < 2) return;
+                if (info.offset.x <= -48) setSlide((s) => (s + 1) % total);
+                else if (info.offset.x >= 48) setSlide((s) => (s - 1 + total) % total);
+              }}
+              className="absolute inset-0 h-full w-full cursor-zoom-in object-contain transition-transform duration-300 group-hover:scale-105"
             />
-          )}
-        </div>
-      </button>
+          </AnimatePresence>
+        ) : (
+          <div className="grid h-full place-items-center text-[#C8A951]/50"><FileImage className="h-10 w-10" /></div>
+        )}
+
+        {total > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={() => setSlide((s) => (s - 1 + total) % total)}
+              className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/45 p-1.5 text-white backdrop-blur-sm transition-colors hover:bg-black/65"
+              aria-label="Foto sebelumnya"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setSlide((s) => (s + 1) % total)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/45 p-1.5 text-white backdrop-blur-sm transition-colors hover:bg-black/65"
+              aria-label="Foto berikutnya"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+            <span className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/55 px-2 py-0.5 text-xs font-semibold text-white">
+              {index + 1}/{total}
+            </span>
+            <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1.5">
+              {images.map((_, dot) => (
+                <button
+                  key={dot}
+                  type="button"
+                  onClick={() => setSlide(dot)}
+                  aria-label={`Ke foto ${dot + 1}`}
+                  className={`h-2 rounded-full transition-all ${dot === index ? 'w-4 bg-[#C8A951]' : 'w-2 bg-white/70 hover:bg-white'}`}
+                />
+              ))}
+            </div>
+          </>
+        )}
+      </div>
       <div className="mt-3">
         <h3 className="truncate text-sm font-semibold text-[#1B2A4A]">{poster.title || 'Pengumuman SPMB'}</h3>
         <p className="mt-1 flex items-center gap-1.5 text-xs text-[#5B7088]">
@@ -423,7 +568,7 @@ function SpmbPosterCard({ poster, onView, onDownload }: { poster: SpmbPoster; on
         <div className="mt-3 flex gap-2">
           <button
             type="button"
-            onClick={onView}
+            onClick={() => onViewSlide(index)}
             className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#1B2A4A] px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#15203a]"
           >
             <Eye className="h-4 w-4" /> Lihat Poster

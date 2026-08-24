@@ -82,8 +82,9 @@ const BkkContact: React.FC = () => {
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {contactItems.map((item) => {
               const Icon = item.icon
+              const hoverClass = item.href ? 'hover:-translate-y-1 hover:shadow-lg cursor-pointer' : ''
               const contentCard = (
-                <div className="flex h-full flex-col rounded-2xl border border-[#1B2A4A]/10 bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
+                <div className={`flex h-full flex-col rounded-2xl border border-[#1B2A4A]/10 bg-white p-6 shadow-sm transition-all ${hoverClass}`}>
                   <div className="mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-[#1B2A4A] text-[#C8A951]">
                     <Icon className="h-7 w-7" />
                   </div>

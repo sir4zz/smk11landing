@@ -97,7 +97,7 @@ type ApiResponse<T> = { data: T | null; error: ApiError; status?: number; count?
 type ApiResult<T> = Promise<ApiResponse<T>>;
 type Filter = { key: string; value: unknown };
 
-const PUBLIC_CACHE_TTL = 60_000;
+const PUBLIC_CACHE_TTL = 30_000;
 const responseCache = new Map<string, { expiresAt: number; value: ApiResponse<unknown> }>();
 const pendingRequests = new Map<string, Promise<ApiResponse<unknown>>>();
 
@@ -165,9 +165,7 @@ const tablePaths: Record<string, string> = {
   news: 'news', programs: 'programs', facilities: 'facilities', staff: 'staff', achievements: 'achievements',
   teacher_activities: 'teacher-activities', education_staff: 'education-staff', spmb_content: 'spmb',
   osis: 'osis', osis_members: 'osis/members', osis_activities: 'osis/activities',
-  extracurriculars: 'extracurriculars', kesemaptaan: 'kesemaptaan', kesemaptaan_activities: 'kesemaptaan/activities',
-  kesemaptaan_schedules: 'kesemaptaan/schedules', kesemaptaan_instructors: 'kesemaptaan/instructors',
-  kesemaptaan_achievements: 'kesemaptaan/achievements', mading_categories: 'mading/categories', mading_posts: 'mading/posts',
+  extracurriculars: 'extracurriculars', mading_categories: 'mading/categories', mading_posts: 'mading/posts',
 };
 
 class QueryBuilder {
@@ -268,7 +266,7 @@ function normalizeContentRows<T>(type: string, rows: unknown[]): T { return (typ
 export async function fetchPublicContent<T>(type: string, options?: { limit?: number }): Promise<T> { const path = contentPath[type]; if (!path) return [] as T; const suffix = options?.limit ? `?limit=${options.limit}` : ''; const result = await request<unknown[]>(`/${path}${suffix}`); return result.data ? normalizeContentRows<T>(type, result.data) : [] as T; }
 export async function fetchPublicContentByIdResult<T extends { slug?: string }>(type: string, slug: string): Promise<{ data: T | null; error: ApiError }> { const path = contentPath[type]; if (!path) return { data: null, error: { message: 'Konten tidak tersedia.' } }; const result = await request<unknown>(`/${path}/${encodeURIComponent(slug)}`); return { data: result.data ? normalizeContentRow<T>(type, result.data) : null, error: result.status === 404 ? null : result.error }; }
 export async function fetchPublicContentById<T extends { slug?: string }>(type: string, slug: string): Promise<T | null> { return (await fetchPublicContentByIdResult<T>(type, slug)).data; }
-function normalizeSpmbContent(row: Record<string, unknown>): SpmbContent { return { id: row.id as string | undefined, status: (row.status as SpmbContent['status']) || 'ditutup', title: String(row.title ?? ''), description: String(row.description ?? ''), latest_info: String(row.latest_info ?? ''), requirements: Array.isArray(row.requirements) ? row.requirements as string[] : [], schedule: Array.isArray(row.schedule) ? row.schedule as SpmbContent['schedule'] : [], flow_steps: Array.isArray(row.flow_steps) ? row.flow_steps as SpmbContent['flow_steps'] : [], faq: Array.isArray(row.faq) ? row.faq as SpmbContent['faq'] : [], portal_url: String(row.portal_url ?? ''), banner_image: String(row.banner_image ?? ''), banner_title: String(row.banner_title ?? ''), banner_description: String(row.banner_description ?? ''), pdf_attachment: row.pdf_attachment as string | null | undefined, updated_at: row.updated_at as string | undefined }; }
+function normalizeSpmbContent(row: Record<string, unknown>): SpmbContent { return { id: row.id as string | undefined, status: (row.status as SpmbContent['status']) || 'ditutup', title: String(row.title ?? ''), description: String(row.description ?? ''), latest_info: String(row.latest_info ?? ''), requirements: Array.isArray(row.requirements) ? row.requirements as string[] : [], schedule: Array.isArray(row.schedule) ? row.schedule as SpmbContent['schedule'] : [], flow_steps: Array.isArray(row.flow_steps) ? row.flow_steps as SpmbContent['flow_steps'] : [], faq: Array.isArray(row.faq) ? row.faq as SpmbContent['faq'] : [], portal_url: String(row.portal_url ?? ''), banner_image: String(row.banner_image ?? ''), banner_title: String(row.banner_title ?? ''), banner_description: String(row.banner_description ?? ''), pdf_attachment: row.pdf_attachment as string | null | undefined, pdf_attachments: Array.isArray(row.pdf_attachments) ? row.pdf_attachments as string[] : [], updated_at: row.updated_at as string | undefined }; }
 export async function fetchSpmbContent(): Promise<SpmbContent | null> { const result = await request<Record<string, unknown>>('/spmb'); return result.data ? normalizeSpmbContent(result.data) : null; }
 
 // ---------- SPMB POSTERS (informational flyers / images) ----------
@@ -307,13 +305,6 @@ export const fetchOsisMembers = <T>() => fetchFromApi<T>('/osis/members');
 export const fetchOsisActivities = <T>() => fetchFromApi<T>('/osis/activities');
 export const fetchExtracurriculars = <T>() => fetchFromApi<T>('/extracurriculars');
 export const fetchExtracurricularBySlug = <T>(slug: string) => fetchFromApi<T | null>(`/extracurriculars/${encodeURIComponent(slug)}`);
-export const fetchKesemaptaanProfile = <T>() => fetchFromApi<T>('/kesemaptaan');
-export const fetchKesemaptaanActivities = <T>() => fetchFromApi<T>('/kesemaptaan/activities');
-export const fetchKesemaptaanSchedules = <T>() => fetchFromApi<T>('/kesemaptaan/schedules');
-export const fetchKesemaptaanInstructors = <T>() => fetchFromApi<T>('/kesemaptaan/instructors');
-export const fetchKesemaptaanAchievements = <T>() => fetchFromApi<T>('/kesemaptaan/achievements');
-export const fetchKesemaptaanGallery = <T>() => fetchFromApi<T>('/kesemaptaan/gallery');
-export const fetchKesemaptaanVideos = <T>() => fetchFromApi<T>('/kesemaptaan/videos');
 export const fetchMadingCategories = <T>() => fetchFromApi<T>('/mading/categories');
 
 // ---------- FAQ ----------
@@ -1446,3 +1437,81 @@ export async function downloadBackup(filename: string): Promise<void> {
   anchor.remove();
   URL.revokeObjectURL(url);
 }
+
+// ---------- AI CONTENT UPLOAD ----------
+export type AIContentType = 'auto' | 'kegiatan_guru' | 'kegiatan_siswa' | 'galeri' | 'prestasi' | 'osis' | 'ekstrakurikuler' | 'pengumuman' | 'berita' | 'mading' | 'lainnya';
+
+export const AI_CONTENT_TYPE_LABELS: Record<AIContentType, string> = {
+  auto: 'Auto Detect',
+  kegiatan_guru: 'Kegiatan Guru',
+  kegiatan_siswa: 'Kegiatan Siswa',
+  galeri: 'Galeri',
+  prestasi: 'Prestasi',
+  osis: 'OSIS',
+  ekstrakurikuler: 'Ekstrakurikuler',
+  pengumuman: 'Pengumuman',
+  berita: 'Berita',
+  mading: 'Mading',
+  lainnya: 'Lainnya',
+};
+
+export interface AIAnalysisResult {
+  title: string;
+  description: string;
+  category: string;
+  content_type: AIContentType;
+  date: string | null;
+  location: string | null;
+  tags: string[];
+  caption: string;
+  summary: string;
+  additional_info: string;
+  confidence: Record<string, string>;
+}
+
+export interface AISingleImageResult {
+  index: number;
+  image_url: string;
+  success: boolean;
+  data: AIAnalysisResult | null;
+  error?: string;
+}
+
+export interface AISaveResult {
+  type: string;
+  id: string;
+  slug?: string;
+}
+
+export const aiContentUploadApi = {
+  analyze(imageUrls: string[], contentType: AIContentType = 'auto'): ApiResult<AISingleImageResult[]> {
+    return request<AISingleImageResult[]>('/admin/ai-content-upload/analyze', {
+      method: 'POST',
+      body: JSON.stringify({ image_urls: imageUrls, content_type: contentType }),
+    });
+  },
+  save(payload: {
+    content_type: AIContentType;
+    image_urls: string[];
+    title: string;
+    description?: string;
+    category?: string;
+    date?: string;
+    location?: string;
+    tags?: string[];
+    caption?: string;
+    summary?: string;
+    status?: 'draft' | 'published';
+    author?: string;
+    level?: string;
+    rank?: string;
+    event?: string;
+    year?: number;
+    cover_image_index?: number;
+  }): ApiResult<AISaveResult> {
+    return request<AISaveResult>('/admin/ai-content-upload/save', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+};

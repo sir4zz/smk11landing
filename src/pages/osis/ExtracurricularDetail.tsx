@@ -110,7 +110,7 @@ const ExtracurricularDetail: React.FC = () => {
                 </h3>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {item.achievements.map((a, i) => (
-                    <div key={i} className="flex items-start gap-3 rounded-xl bg-[#FAF6F0] p-4 transition-colors hover:bg-[#C8A951]/10">
+                    <div key={i} className="flex items-start gap-3 rounded-xl bg-[#FAF6F0] p-4">
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#C8A951]/20">
                         <Star className="h-4 w-4 text-[#866D2C]" />
                       </div>
@@ -175,7 +175,7 @@ const ExtracurricularDetail: React.FC = () => {
 
 function InfoCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
-    <div className="flex items-center gap-4 rounded-2xl border border-[#1B2A4A]/5 bg-gradient-to-br from-[#FAF6F0] to-white p-5 transition-all hover:shadow-md">
+    <div className="flex items-center gap-4 rounded-2xl border border-[#1B2A4A]/5 bg-gradient-to-br from-[#FAF6F0] to-white p-5">
       <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#C8A951]/15 text-[#866D2C]">
         {icon}
       </div>

@@ -13,12 +13,6 @@ use App\Models\Gallery;
 use App\Models\JobVacancy;
 use App\Models\GalleryImage;
 use App\Models\Guru;
-use App\Models\Kesemaptaan;
-use App\Models\KesemaptaanAchievement;
-use App\Models\KesemaptaanActivity;
-use App\Models\KesemaptaanGallery;
-use App\Models\KesemaptaanInstructor;
-use App\Models\KesemaptaanSchedule;
 use App\Models\MadingCategory;
 use App\Models\MadingPost;
 use App\Models\News;
@@ -83,12 +77,6 @@ class DatabaseSeeder extends Seeder
             ['extracurricular.edit', 'Ekstrakurikuler - Ubah', 'extracurricular'],
             ['extracurricular.delete', 'Ekstrakurikuler - Hapus', 'extracurricular'],
             ['extracurricular.publish', 'Ekstrakurikuler - Publikasi', 'extracurricular'],
-
-            ['kesemaptaan.view', 'Kesemaptaan - Lihat', 'kesemaptaan'],
-            ['kesemaptaan.create', 'Kesemaptaan - Buat', 'kesemaptaan'],
-            ['kesemaptaan.edit', 'Kesemaptaan - Ubah', 'kesemaptaan'],
-            ['kesemaptaan.delete', 'Kesemaptaan - Hapus', 'kesemaptaan'],
-            ['kesemaptaan.publish', 'Kesemaptaan - Publikasi', 'kesemaptaan'],
 
             ['mading.view', 'Mading - Lihat', 'mading'],
             ['mading.create', 'Mading - Buat', 'mading'],
@@ -165,7 +153,6 @@ class DatabaseSeeder extends Seeder
             'osis.view', 'osis.create', 'osis.edit',
             'osis.activities.view', 'osis.activities.create', 'osis.activities.edit',
             'extracurricular.view', 'extracurricular.create', 'extracurricular.edit', 'extracurricular.delete',
-            'kesemaptaan.view', 'kesemaptaan.create', 'kesemaptaan.edit', 'kesemaptaan.delete',
             'mading.view', 'mading.create', 'mading.edit_own', 'mading.submit_review',
             'mading.review', 'mading.publish',
             'spmb.view',
@@ -382,7 +369,6 @@ class DatabaseSeeder extends Seeder
         $this->seedSpmbPosters();
         $this->seedOsis();
         $this->seedExtracurriculars();
-        $this->seedKesemaptaan();
         $this->seedMading();
         $this->seedGalleries();
         $this->seedFaqs();
@@ -751,83 +737,6 @@ class DatabaseSeeder extends Seeder
                 $row + ['slug' => $slug, 'place' => '', 'achievements' => [], 'documentation' => [], 'status' => 'published']
             );
         }
-    }
-
-    protected function seedKesemaptaan(): void
-    {
-        $profile = Kesemaptaan::query()->first();
-
-        $profileData = [
-            'title' => 'Kesemaptaan SMKN 11 Kabupaten Tangerang',
-            'description' => 'Kesemaptaan adalah program pembinaan kedisiplinan, fisik, dan ketahanan mental serta keterampilan baris-berbaris (PBB) bagi siswa. Kegiatan ini membentuk karakter disiplin, tangguh, dan bertanggung jawab yang sejalan dengan nilai-nilai sekolah.',
-            'photo' => '',
-            'hero_title' => 'Kesemaptaan SMKN 11 Kabupaten Tangerang',
-            'hero_description' => 'Pembinaan kedisiplinan, kesamaptaan fisik, dan keterampilan baris-berbaris untuk membentuk generasi yang disiplin, tangguh, dan berkarakter.',
-            'hero_image' => 'https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?auto=format&fit=crop&w=1600&q=80',
-            'about_title' => 'Tentang Kesemaptaan',
-            'about_description' => 'Kesemaptaan merupakan program pembinaan siswa yang menekankan pada penguatan kedisiplinan, kebugaran fisik, ketahanan mental, serta keterampilan baris-berbaris (PBB). Melalui kegiatan yang rutin dan terstruktur, siswa dilatih untuk disiplin, kompak, dan bertanggung jawab — nilai-nilai yang menjadi bekal penting dalam kehidupan dan dunia kerja.',
-            'goals' => [
-                ['title' => 'Membentuk Kedisiplinan', 'description' => 'Menanamkan sikap disiplin, tertib, dan patuh pada aturan melalui latihan rutin dan kegiatan yang terstruktur.'],
-                ['title' => 'Meningkatkan Kebugaran Fisik', 'description' => 'Melatih ketahanan dan kesamaptaan fisik agar siswa selalu sehat, bugar, dan siap menjalankan aktivitas belajar.'],
-                ['title' => 'Menumbuhkan Jiwa Korsa', 'description' => 'Membangun kekompakan, solidaritas, dan jiwa kebersamaan antaranggota dalam setiap kegiatan.'],
-                ['title' => 'Melatih Kepemimpinan', 'description' => 'Memberikan ruang bagi siswa untuk melatih kemampuan memimpin, mengkoordinasikan, dan mengambil keputusan.'],
-            ],
-        ];
-
-        if ($profile) {
-            $profile->update($profileData);
-        } else {
-            Kesemaptaan::create($profileData);
-        }
-
-        $activities = [];
-        // kegiatan kesemaptaan - dummy removed per request 2026-08-20
-
-        foreach ($activities as $activity) {
-            KesemaptaanActivity::updateOrCreate(['title' => $activity['title']], $activity);
-        }
-
-        $schedules = [];
-        // jadwal kesemaptaan - dummy removed per request 2026-08-20
-
-        foreach ($schedules as $schedule) {
-            KesemaptaanSchedule::updateOrCreate(
-                ['name' => $schedule['name']],
-                $schedule
-            );
-        }
-
-        $instructors = [
-            ['name' => 'Serka Ahmad Yani', 'role' => 'Pembina Utama', 'photo' => '', 'sort_order' => 1],
-            ['name' => 'Pelda Rina Kusuma', 'role' => 'Instruktur PBB', 'photo' => '', 'sort_order' => 2],
-            ['name' => 'Kopda Sutrisno', 'role' => 'Instruktur Fisik & Mental', 'photo' => '', 'sort_order' => 3],
-        ];
-
-        foreach ($instructors as $instructor) {
-            KesemaptaanInstructor::updateOrCreate(['name' => $instructor['name']], $instructor);
-        }
-
-        $achievements = [
-            ['name' => 'Juara II Lomba Baris-Berbaris Tingkat Kabupaten', 'year' => '2025', 'description' => 'Tim PBB SMKN 11 meraih juara kedua dalam ajang lomba baris-berbaris tingkat Kabupaten Tangerang.', 'documentation' => []],
-            ['name' => 'Juara III Lomba PBB Se-Kabupaten Tangerang', 'year' => '2024', 'description' => 'Tim PBB Satria 11 meraih juara ketiga dalam lomba baris-berbaris antar SMK se-Kabupaten Tangerang tahun 2024.', 'documentation' => []],
-            ['name' => 'Best Performance Pasukan Pengibar Bendera', 'year' => '2025', 'description' => 'Paskibra Satria 11 mendapatkan penghargaan Best Performance pada kegiatan upacara peringatan Hari Kemerdekaan tingkat kabupaten.', 'documentation' => []],
-        ];
-
-        foreach ($achievements as $achievement) {
-            KesemaptaanAchievement::updateOrCreate(['name' => $achievement['name']], $achievement);
-        }
-
-        $gallery = [];
-        // dokumentasi kesemaptaan - dummy removed per request 2026-08-20
-
-        foreach ($gallery as $index => $item) {
-            KesemaptaanGallery::updateOrCreate(
-                ['image' => $item['image']],
-                $item
-            );
-        }
-
-        // video kesemaptaan - dummy removed per request 2026-08-20 (tidak ada seed dummy; intentionally left empty)
     }
 
     protected function seedMading(): void

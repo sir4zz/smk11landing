@@ -24,8 +24,9 @@ export const Card: React.FC<CardProps> = ({
   className = '',
   children,
 }) => {
+  const hoverClass = link ? 'hover:-translate-y-1 hover:shadow-lg cursor-pointer' : '';
   const CardContent = (
-    <div className={`flex flex-col overflow-hidden rounded-[1.25rem] border border-[#1B2A4A]/10 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${className}`}>
+    <div className={`flex flex-col overflow-hidden rounded-[1.25rem] border border-[#1B2A4A]/10 bg-white shadow-sm transition-all duration-300 ${hoverClass} ${className}`}>
       {children ? children : (
         <>
           {image && (
