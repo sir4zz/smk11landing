@@ -145,7 +145,7 @@ const Achievements: React.FC = () => {
 
                 <div className="mt-auto flex items-start gap-2 pt-3 text-sm text-[#23314D]">
                   <Users className="mt-0.5 h-4 w-4 flex-shrink-0" />
-                  <span className="break-words">{achievement.students.join(', ')}</span>
+                  <span className="break-words">{(achievement.students ?? []).join(', ') || '-'}</span>
                 </div>
               </button>
             )
@@ -203,9 +203,9 @@ const Achievements: React.FC = () => {
                   <Users className="h-4 w-4 text-[#866D2C]" /> Siswa yang Meraih Prestasi
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {selected.students.map((student, index) => (
-                    <span key={student} className="rounded-full border border-[#1B2A4A]/10 bg-[#FAF6F0] px-3 py-1.5 text-sm font-medium text-[#23314D]">
-                      {index + 1}. {student}
+                  {((selected.students ?? []).length ? selected.students : ['-']).map((student, index) => (
+                    <span key={student + String(index)} className="rounded-full border border-[#1B2A4A]/10 bg-[#FAF6F0] px-3 py-1.5 text-sm font-medium text-[#23314D]">
+                      {(selected.students ?? []).length ? `${index + 1}. ${student}` : '-'}
                     </span>
                   ))}
                 </div>

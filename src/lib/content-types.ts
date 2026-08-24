@@ -42,25 +42,6 @@ export interface OsisProfile { id?: string; name: string; description: string; p
 export interface OsisMember { id?: string; osis_id?: string; name: string; position: string; division: string; photo: string; sort_order: number }
 export interface OsisActivity { id?: string; title: string; description: string; photo: string; activity_date?: string | null; status: string }
 
-export interface KesemaptaanGoal { title: string; description: string }
-export interface KesemaptaanProfile {
-  id?: string;
-  title: string;
-  description: string;
-  photo: string;
-  hero_title?: string;
-  hero_description?: string;
-  hero_image?: string;
-  about_title?: string;
-  about_description?: string;
-  goals?: KesemaptaanGoal[];
-}
-export interface KesemaptaanActivity { id?: string; title: string; description: string; activity_date?: string | null; documentation: string[]; photo?: string; status: string }
-export interface KesemaptaanSchedule { id?: string; name: string; date?: string | null; location: string; description: string }
-export interface KesemaptaanInstructor { id?: string; name: string; role: string; photo: string; sort_order: number }
-export interface KesemaptaanAchievement { id?: string; name: string; year: string; description: string; photo: string; documentation?: string[] }
-export interface KesemaptaanGalleryPhoto { id?: string; image: string; caption?: string; is_primary?: boolean; sort_order?: number }
-export interface KesemaptaanVideo { id?: string; youtube_url: string; title?: string; sort_order?: number }
 export interface MadingCategory { id?: string; slug: string; name: string; sort_order: number }
 export type MadingPostStatus = 'draft' | 'pending_review' | 'approved' | 'rejected' | 'published';
 export interface MadingVideo { url: string; title?: string }
@@ -73,10 +54,10 @@ export interface SpmbFaqItem { question: string; answer: string }
 export interface SpmbContent {
   id?: string; status: SpmbStatus; title: string; description: string; latest_info: string;
   requirements: string[]; schedule: SpmbScheduleItem[]; flow_steps: SpmbFlowStep[]; faq: SpmbFaqItem[];
-  portal_url: string; banner_image: string; banner_title: string; banner_description: string; pdf_attachment?: string | null; updated_at?: string;
+  portal_url: string; banner_image: string; banner_title: string; banner_description: string; pdf_attachment?: string | null; pdf_attachments?: string[] | null; updated_at?: string;
 }
 export interface SpmbPoster {
-  id?: string; title: string; image: string; is_active: boolean; sort_order: number;
+  id?: string; title: string; image: string; images?: string[] | null; is_active: boolean; sort_order: number;
   published_at?: string | null; is_featured?: boolean; created_by?: string | null; creator_name?: string | null;
   created_at?: string; updated_at?: string;
 }

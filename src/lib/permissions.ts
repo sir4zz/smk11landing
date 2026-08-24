@@ -27,12 +27,6 @@ export const PERMISSION_CATALOG: PermissionDef[] = [
   { slug: 'extracurricular.delete', name: 'Delete', module: 'extracurricular' },
   { slug: 'extracurricular.publish', name: 'Publish', module: 'extracurricular' },
 
-  { slug: 'kesemaptaan.view', name: 'View', module: 'kesemaptaan' },
-  { slug: 'kesemaptaan.create', name: 'Create', module: 'kesemaptaan' },
-  { slug: 'kesemaptaan.edit', name: 'Edit', module: 'kesemaptaan' },
-  { slug: 'kesemaptaan.delete', name: 'Delete', module: 'kesemaptaan' },
-  { slug: 'kesemaptaan.publish', name: 'Publish', module: 'kesemaptaan' },
-
   { slug: 'mading.view', name: 'View', module: 'mading' },
   { slug: 'mading.create', name: 'Create', module: 'mading' },
   { slug: 'mading.edit_own', name: 'Edit Own', module: 'mading' },
@@ -82,7 +76,6 @@ export const PERMISSION_MODULES: { key: string; label: string }[] = [
   { key: 'osis', label: 'OSIS' },
   { key: 'osis.activities', label: 'Kegiatan OSIS' },
   { key: 'extracurricular', label: 'Ekstrakurikuler' },
-  { key: 'kesemaptaan', label: 'Kesemaptaan' },
   { key: 'mading', label: 'Mading' },
   { key: 'spmb', label: 'SPMB' },
   { key: 'gallery', label: 'Galeri' },

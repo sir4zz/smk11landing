@@ -54,7 +54,7 @@ const VisionMission: React.FC = () => {
           <h2 className="text-3xl font-bold text-[#1B2A4A] text-center mb-12">Nilai Inti</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             {values.map((value, index) => (
-              <div key={index} className="bg-white p-6 sm:p-8 rounded-lg shadow-sm text-center flex flex-col items-center hover:shadow-md transition-shadow">
+              <div key={index} className="bg-white p-6 sm:p-8 rounded-lg shadow-sm text-center flex flex-col items-center">
                 <div className="w-16 h-16 rounded-full bg-[#FAF6F0] text-[#C8A951] flex items-center justify-center mb-6">
                   <value.icon size={32} />
                 </div>

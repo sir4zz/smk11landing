@@ -18,6 +18,7 @@ class SpmbPoster extends Model
     protected $fillable = [
         'title',
         'image',
+        'images',
         'is_active',
         'sort_order',
         'published_at',
@@ -29,6 +30,7 @@ class SpmbPoster extends Model
         'is_active' => 'boolean',
         'is_featured' => 'boolean',
         'published_at' => 'datetime',
+        'images' => 'array',
     ];
 
     public function creator(): BelongsTo

@@ -10,7 +10,6 @@ use App\Http\Controllers\ContentCrudController;
 use App\Http\Controllers\DatabaseBackupController;
 use App\Http\Controllers\ExtracurricularController;
 use App\Http\Controllers\FaqController;
-use App\Http\Controllers\KesemaptaanController;
 use App\Http\Controllers\MadingAiController;
 use App\Http\Controllers\MadingController;
 use App\Http\Controllers\MyProfileController;
@@ -87,15 +86,6 @@ Route::get('/osis/activities', [OsisController::class, 'activities']);
 // ---------- EXTRACURRICULARS ----------
 Route::get('/extracurriculars', [ExtracurricularController::class, 'index']);
 Route::get('/extracurriculars/{slug}', [ExtracurricularController::class, 'show']);
-
-// ---------- KESEMAPTAAN ----------
-Route::get('/kesemaptaan', [KesemaptaanController::class, 'profile']);
-Route::get('/kesemaptaan/activities', [KesemaptaanController::class, 'activities']);
-Route::get('/kesemaptaan/schedules', [KesemaptaanController::class, 'schedules']);
-Route::get('/kesemaptaan/instructors', [KesemaptaanController::class, 'instructors']);
-Route::get('/kesemaptaan/achievements', [KesemaptaanController::class, 'achievements']);
-Route::get('/kesemaptaan/gallery', [KesemaptaanController::class, 'gallery']);
-Route::get('/kesemaptaan/videos', [KesemaptaanController::class, 'videos']);
 
 // ---------- MADING ----------
 Route::get('/mading/categories', [MadingController::class, 'categories']);
@@ -322,22 +312,6 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::post('/extracurriculars', [ExtracurricularController::class, 'store']);
     Route::patch('/extracurriculars/{id}', [ExtracurricularController::class, 'update']);
     Route::delete('/extracurriculars/{id}', [ExtracurricularController::class, 'destroy']);
-
-    // Kesemaptaan
-    Route::post('/kesemaptaan', [KesemaptaanController::class, 'storeProfile']);
-    Route::patch('/kesemaptaan/{id}', [KesemaptaanController::class, 'updateProfile']);
-    Route::post('/kesemaptaan/activities', [KesemaptaanController::class, 'storeActivity']);
-    Route::patch('/kesemaptaan/activities/{id}', [KesemaptaanController::class, 'updateActivity']);
-    Route::delete('/kesemaptaan/activities/{id}', [KesemaptaanController::class, 'destroyActivity']);
-    Route::post('/kesemaptaan/schedules', [KesemaptaanController::class, 'storeSchedule']);
-    Route::patch('/kesemaptaan/schedules/{id}', [KesemaptaanController::class, 'updateSchedule']);
-    Route::delete('/kesemaptaan/schedules/{id}', [KesemaptaanController::class, 'destroySchedule']);
-    Route::post('/kesemaptaan/instructors', [KesemaptaanController::class, 'storeInstructor']);
-    Route::patch('/kesemaptaan/instructors/{id}', [KesemaptaanController::class, 'updateInstructor']);
-    Route::delete('/kesemaptaan/instructors/{id}', [KesemaptaanController::class, 'destroyInstructor']);
-    Route::post('/kesemaptaan/achievements', [KesemaptaanController::class, 'storeAchievement']);
-    Route::patch('/kesemaptaan/achievements/{id}', [KesemaptaanController::class, 'updateAchievement']);
-    Route::delete('/kesemaptaan/achievements/{id}', [KesemaptaanController::class, 'destroyAchievement']);
 
     // Roles & Permissions
     Route::get('/roles', [RolePermissionController::class, 'roles']);

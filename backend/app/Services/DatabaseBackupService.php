@@ -36,7 +36,6 @@ class DatabaseBackupService
         'mading',
         'osis',
         'extracurriculars',
-        'kesemaptaan',
         'student',
     ];
 

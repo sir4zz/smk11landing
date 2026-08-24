@@ -10,6 +10,7 @@ use App\Models\PpdbRegistration;
 use App\Services\MadingService;
 use App\Services\PermissionService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -26,11 +27,8 @@ class DataController extends Controller
         'achievements' => \App\Models\Achievement::class, 'teacher_activities' => \App\Models\TeacherActivity::class,
         'education_staff' => \App\Models\EducationStaff::class, 'spmb_content' => \App\Models\SpmbContent::class,
         'osis' => \App\Models\Osis::class, 'osis_members' => \App\Models\OsisMember::class,
-        'osis_activities' => \App\Models\OsisActivity::class, 'extracurriculars' => \App\Models\Extracurricular::class,
-        'kesemaptaan' => \App\Models\Kesemaptaan::class, 'kesemaptaan_activities' => \App\Models\KesemaptaanActivity::class,
-        'kesemaptaan_schedules' => \App\Models\KesemaptaanSchedule::class, 'kesemaptaan_instructors' => \App\Models\KesemaptaanInstructor::class,
-        'kesemaptaan_achievements' => \App\Models\KesemaptaanAchievement::class, 'kesemaptaan_gallery' => \App\Models\KesemaptaanGallery::class,
-        'kesemaptaan_videos' => \App\Models\KesemaptaanVideo::class, 'mading_categories' => \App\Models\MadingCategory::class,
+        'osis_activities' => \App\Models\OsisActivity::class,         'extracurriculars' => \App\Models\Extracurricular::class,
+        'mading_categories' => \App\Models\MadingCategory::class,
         'mading_posts' => \App\Models\MadingPost::class, 'roles' => \App\Models\Role::class,
         'permissions' => \App\Models\Permission::class, 'role_permissions' => \App\Models\RolePermission::class,
         'students' => \App\Models\Student::class, 'student_accounts' => \App\Models\StudentAccount::class,
@@ -39,7 +37,7 @@ class DataController extends Controller
         'ppdb_activity_log' => \App\Models\PpdbActivityLog::class, 'content_records' => \App\Models\ContentRecord::class,
         'alumni_graduations' => \App\Models\AlumniGraduation::class,
     ];
-    private const PUBLIC = ['news','programs','facilities','staff','achievements','teacher_activities','education_staff','spmb_content','osis','osis_members','osis_activities','extracurriculars','kesemaptaan','kesemaptaan_activities','kesemaptaan_schedules','kesemaptaan_instructors','kesemaptaan_achievements','mading_categories','content_records'];
+    private const PUBLIC = ['news','programs','facilities','staff','achievements','teacher_activities','education_staff','spmb_content','osis','osis_members','osis_activities','extracurriculars','mading_categories','content_records'];
 
     /**
      * Kolom file per tabel compat. dipakai untuk hapus fisik saat update/destroy.
@@ -57,10 +55,6 @@ class DataController extends Controller
         'osis_members' => ['photo'],
         'osis_activities' => ['photo'],
         'extracurriculars' => ['logo', 'photo'],
-        'kesemaptaan' => ['photo', 'hero_image'],
-        'kesemaptaan_activities' => ['photo'],
-        'kesemaptaan_instructors' => ['photo'],
-        'kesemaptaan_gallery' => ['image'],
         'mading_posts' => ['cover_image', 'images'],
         'profiles' => ['photo'],
         'content_records' => ['data'],
@@ -78,7 +72,7 @@ class DataController extends Controller
             if (in_array($key, ['order','limit','single','count'], true) || !in_array($key, (new $model)->getFillable(), true)) continue;
             $query->where($key, $value);
         }
-        if ((! $user || ! $this->permissions->isAdmin($user)) && in_array($table, ['osis_activities', 'extracurriculars', 'kesemaptaan_activities'], true) && in_array($table, self::PUBLIC, true)) {
+        if ((! $user || ! $this->permissions->isAdmin($user)) && in_array($table, ['osis_activities', 'extracurriculars'], true) && in_array($table, self::PUBLIC, true)) {
             $query->where('status', 'published');
         }
         if ($table === 'content_records' && ! $user && ! in_array($request->query('content_type'), ['home', 'bkk_home', 'bkk_contact'], true)) {
@@ -116,6 +110,7 @@ class DataController extends Controller
             }
             $created[] = $model::create($payload);
         }
+        $this->invalidateContentCache($table);
         return response()->json(['data' => count($created) === 1 ? $this->serialize($table, $created[0]) : $created, 'error' => null], 201);
     }
 
@@ -128,7 +123,7 @@ class DataController extends Controller
         if ($table === 'ppdb_registrations' && $row->user_id !== $request->user()?->id && !$this->permissions->isAdmin($request->user())) abort(403);
         if ($table === 'ppdb_documents' && $row->application->user_id !== $request->user()?->id && !$this->permissions->isAdmin($request->user())) abort(403);
         $this->cleanupReplacedFiles($table, $row, $payload);
-        $row->update($payload); return response()->json(['data' => $this->serialize($table, $row->fresh()), 'error' => null]);
+        $row->update($payload); $this->invalidateContentCache($table); return response()->json(['data' => $this->serialize($table, $row->fresh()), 'error' => null]);
     }
 
     public function destroy(Request $request, string $table)
@@ -146,6 +141,7 @@ class DataController extends Controller
             $this->deleteRowFiles($table, $row);
             $row->delete();
         }
+        $this->invalidateContentCache($table);
         return response()->json(['data' => null, 'error' => null]);
     }
 
@@ -233,7 +229,7 @@ class DataController extends Controller
         }
         // spmb_content banner/pdf are plain strings
         if (is_array($value)) {
-            // documentation array (kesemaptaan) — collect strings that look like /storage/
+            // documentation array — collect strings that look like /storage/
             $out = [];
             foreach ($value as $v) {
                 if (is_string($v) && str_starts_with($v, '/storage/')) {
@@ -280,7 +276,6 @@ class DataController extends Controller
             'osis', 'osis_members' => request()->isMethod('DELETE') ? 'osis.delete' : (request()->isMethod('POST') ? 'osis.create' : 'osis.edit'),
             'osis_activities' => request()->isMethod('DELETE') ? 'osis.activities.delete' : (request()->isMethod('POST') ? 'osis.activities.create' : 'osis.activities.edit'),
             'extracurriculars' => request()->isMethod('DELETE') ? 'extracurricular.delete' : (request()->isMethod('POST') ? 'extracurricular.create' : 'extracurricular.edit'),
-            'kesemaptaan', 'kesemaptaan_activities', 'kesemaptaan_schedules', 'kesemaptaan_instructors', 'kesemaptaan_achievements', 'kesemaptaan_gallery', 'kesemaptaan_videos' => request()->isMethod('DELETE') ? 'kesemaptaan.delete' : (request()->isMethod('POST') ? 'kesemaptaan.create' : 'kesemaptaan.edit'),
             'mading_categories', 'students', 'student_accounts' => 'mading.edit_all',
             default => null,
         };
@@ -290,5 +285,28 @@ class DataController extends Controller
         $data = $row->toArray();
         if ($table === 'mading_posts') $data['mading_categories'] = !empty($data['category']) ? ['name' => $data['category']['name']] : null;
         return $data;
+    }
+
+    private function invalidateContentCache(string $table): void
+    {
+        // Samakan dengan ContentCrudController::invalidatePublicCache — version bump
+        // agar GET /news, /teacher-activities dll yang di-Cache::remember langsung stale.
+        $typeMap = [
+            'news' => 'news',
+            'programs' => 'programs',
+            'facilities' => 'facilities',
+            'staff' => 'staff',
+            'achievements' => 'achievements',
+            'teacher_activities' => 'teacher-activities',
+            'education_staff' => 'education-staff',
+        ];
+        $type = $typeMap[$table] ?? null;
+        if ($type === null) return;
+        $key = 'public:content:version:' . $type;
+        Cache::add($key, 1);
+        Cache::increment($key);
+        if (in_array($type, ['programs', 'staff', 'education-staff'], true)) {
+            Cache::forget(\App\Http\Controllers\StatsController::CACHE_KEY);
+        }
     }
 }

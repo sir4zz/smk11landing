@@ -169,7 +169,7 @@ export default function DatabaseBackup() {
               <div>
                 <h3 className="font-bold text-[#1B2A4A]">Buat Backup Baru</h3>
                 <p className="mt-1 max-w-xl text-sm text-[#5B7088]">
-                  Backup mencakup seluruh konten website: berita, program, fasilitas, staf, galeri, OSIS, ekstrakurikuler, kesemaptaan, mading, SPMB, BKK, kelulusan, SDM, dan file media (foto, gambar galeri, poster SPMB). <span className="font-semibold">Tidak termasuk</span> akun user, role, dan permission. Format: <code className="rounded bg-[#FAF6F0] px-1.5 py-0.5 text-xs">.zip</code>
+                  Backup mencakup seluruh konten website: berita, program, fasilitas, staf, galeri, OSIS, ekstrakurikuler, mading, SPMB, BKK, kelulusan, SDM, dan file media (foto, gambar galeri, poster SPMB). <span className="font-semibold">Tidak termasuk</span> akun user, role, dan permission. Format: <code className="rounded bg-[#FAF6F0] px-1.5 py-0.5 text-xs">.zip</code>
                 </p>
               </div>
               <button

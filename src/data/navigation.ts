@@ -61,7 +61,6 @@ export const navigationData: NavItem[] = [
                 ],
             },
             { label: 'Ekstrakurikuler', href: '/osis/ekstrakurikuler' },
-            { label: 'Kesemaptaan', href: '/osis/kesemaptaan' },
             { label: 'Mading', href: '/mading' },
             { label: 'Prestasi Siswa', href: '/kesiswaan/prestasi' },
         ],

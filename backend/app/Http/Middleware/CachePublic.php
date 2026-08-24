@@ -17,7 +17,7 @@ class CachePublic
     private const PUBLIC_PREFIXES = [
         'news', 'programs', 'facilities', 'staff', 'achievements',
         'teacher-activities', 'education-staff', 'spmb', 'osis', 'extracurriculars',
-        'kesemaptaan', 'mading/categories', 'mading/posts', 'stats', 'faqs',
+        'mading/categories', 'mading/posts', 'stats', 'faqs',
         'galleries', 'gallery/categories', 'jobs', 'bkk/partners', 'public',
         'data/content_records', 'data/programs', 'data/facilities',
     ];
