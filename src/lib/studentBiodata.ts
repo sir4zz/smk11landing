@@ -82,7 +82,7 @@ export const BIODATA_FIELDS: BiodataFieldDef[] = [
   { key: 'address', label: 'Alamat Tempat Tinggal', section: 'residence', type: 'textarea', full: true },
   { key: 'phone', label: 'No. Telp / HP', section: 'residence', type: 'number' },
   { key: 'tinggal_dengan', label: 'Tinggal Dengan (Orang Tua/Saudara/Asrama/Kost)', section: 'residence' },
-  { key: 'jarak_sekolah', label: 'Jarak Tempat Tinggal ke Sekolah (KM)', section: 'residence', type: 'decimal' },
+  { key: 'jarak_sekolah', label: 'Jarak Tempat Tinggal ke Sekolah (Meter)', section: 'residence', type: 'decimal' },
 
   // C. Keterangan Kesehatan
   { key: 'golongan_darah', label: 'Golongan Darah', section: 'health', type: 'select', options: BLOOD_OPTIONS },
@@ -124,86 +124,146 @@ export const BIODATA_FIELDS: BiodataFieldDef[] = [
 // Field yang wajib dalam bentuk apa pun.
 export const REQUIRED_KEYS = ['nisn', 'name'];
 
-// Pemetaan posisi kolom (0-based) template BIODATA ke key DB.
-// Data template: baris 1-7 adalah header 3 lapis, baris ke-8 adalah nomor kolom.
-// Baris data dimulai dari index 8.
-export const TEMPLATE_COLUMNS: Record<number, string> = {
-  1: 'nis',
-  2: 'class',
-  3: 'nisn',
-  4: 'major',
-  5: 'name',
-  6: 'nickname',
-  7: 'gender',
-  8: 'place_of_birth',
-  9: 'date_of_birth',
-  10: 'religion',
-  11: 'kewarganegaraan',
-  12: 'anak_ke',
-  13: 'jml_saudara_kandung',
-  14: 'jml_saudara_tiri',
-  15: 'anak_yatim_piatu',
-  16: 'bahasa_sehari_hari',
-  17: 'address',
-  18: 'phone',
-  19: 'tinggal_dengan',
-  20: 'jarak_sekolah',
-  21: 'golongan_darah',
-  22: 'penyakit',
-  23: 'kelainan_jasmani',
-  24: 'tinggi_cm',
-  25: 'berat_kg',
-  26: 'lulusan_dari',
-  27: 'tanggal_sttb',
-  28: 'nomor_sttb',
-  29: 'lama_belajar',
-  30: 'pindahan_dari',
-  31: 'alasan_pindah',
-  32: 'diangkat',
-  33: 'kompetensi_keahlian',
-  34: 'tanggal_diterima',
-  35: 'ayah_nama',
-  36: 'ayah_tempat',
-  37: 'ayah_tanggal_lahir',
-  38: 'ayah_agama',
-  39: 'ayah_kewarganegaraan',
-  40: 'ayah_pendidikan',
-  41: 'ayah_pekerjaan',
-  42: 'ayah_penghasilan',
-  43: 'ayah_alamat',
-  44: 'ayah_no_telp',
-  45: 'ayah_status_hidup',
-  46: 'ibu_nama',
-  47: 'ibu_tempat',
-  48: 'ibu_tanggal_lahir',
-  49: 'ibu_agama',
-  50: 'ibu_kewarganegaraan',
-  51: 'ibu_pendidikan',
-  52: 'ibu_pekerjaan',
-  53: 'ibu_penghasilan',
-  54: 'ibu_alamat',
-  55: 'ibu_no_telp',
-  56: 'ibu_status_hidup',
-  57: 'wali_nama',
-  58: 'wali_tempat',
-  59: 'wali_tanggal_lahir',
-  60: 'wali_agama',
-  61: 'wali_kewarganegaraan',
-  62: 'wali_pendidikan',
-  63: 'wali_pekerjaan',
-  64: 'wali_penghasilan',
-  65: 'wali_alamat',
-  66: 'wali_no_telp',
-  67: 'gemar_kesenian',
-  68: 'gemar_olahraga',
-  69: 'gemar_kemasyarakatan',
-  70: 'gemar_lain',
-  71: 'siswa_status',
-  72: 'siswa_tanggal',
-};
+// Struktur template BIODATA: satu workbook, satu sheet per seksi.
+// Tiap sheet: baris index 0 judul, index 1 nama kolom, index 2 contoh,
+// data dimulai dari index 3 (TEMPLATE_HEADER_ROWS).
+// Kolom NISN (kolom pertama di sheet 02-08, kolom 3 di sheet 01) dipakai
+// sebagai kunci penggabungan antar-sheet menjadi satu record per siswa.
+export const TEMPLATE_SHEETS: { name: string; columns: Record<number, string> }[] = [
+  {
+    name: '01 - Peserta Didik',
+    columns: {
+      1: 'nis',
+      2: 'class',
+      3: 'nisn',
+      4: 'major',
+      5: 'name',
+      6: 'nickname',
+      7: 'gender',
+      8: 'place_of_birth',
+      9: 'date_of_birth',
+      10: 'religion',
+      11: 'kewarganegaraan',
+      12: 'anak_ke',
+      13: 'jml_saudara_kandung',
+      14: 'jml_saudara_tiri',
+      15: 'anak_yatim_piatu',
+      16: 'bahasa_sehari_hari',
+    },
+  },
+  {
+    name: '02 - Tempat Tinggal',
+    columns: {
+      0: 'nisn',
+      1: 'address',
+      2: 'phone',
+      3: 'tinggal_dengan',
+      4: 'jarak_sekolah',
+    },
+  },
+  {
+    name: '03 - Kesehatan',
+    columns: {
+      0: 'nisn',
+      1: 'golongan_darah',
+      2: 'penyakit',
+      3: 'kelainan_jasmani',
+      4: 'tinggi_cm',
+      5: 'berat_kg',
+    },
+  },
+  {
+    name: '04 - Pendidikan',
+    columns: {
+      0: 'nisn',
+      1: 'lulusan_dari',
+      2: 'tanggal_sttb',
+      3: 'nomor_sttb',
+      4: 'lama_belajar',
+      5: 'pindahan_dari',
+      6: 'alasan_pindah',
+      7: 'diangkat',
+      8: 'kompetensi_keahlian',
+      9: 'tanggal_diterima',
+    },
+  },
+  {
+    name: '05 - Ayah',
+    columns: {
+      0: 'nisn',
+      1: 'ayah_nama',
+      2: 'ayah_tempat',
+      3: 'ayah_tanggal_lahir',
+      4: 'ayah_agama',
+      5: 'ayah_kewarganegaraan',
+      6: 'ayah_pendidikan',
+      7: 'ayah_pekerjaan',
+      8: 'ayah_penghasilan',
+      9: 'ayah_alamat',
+      10: 'ayah_no_telp',
+      11: 'ayah_status_hidup',
+    },
+  },
+  {
+    name: '06 - Ibu',
+    columns: {
+      0: 'nisn',
+      1: 'ibu_nama',
+      2: 'ibu_tempat',
+      3: 'ibu_tanggal_lahir',
+      4: 'ibu_agama',
+      5: 'ibu_kewarganegaraan',
+      6: 'ibu_pendidikan',
+      7: 'ibu_pekerjaan',
+      8: 'ibu_penghasilan',
+      9: 'ibu_alamat',
+      10: 'ibu_no_telp',
+      11: 'ibu_status_hidup',
+    },
+  },
+  {
+    name: '07 - Wali',
+    columns: {
+      0: 'nisn',
+      1: 'wali_nama',
+      2: 'wali_tempat',
+      3: 'wali_tanggal_lahir',
+      4: 'wali_agama',
+      5: 'wali_kewarganegaraan',
+      6: 'wali_pendidikan',
+      7: 'wali_pekerjaan',
+      8: 'wali_penghasilan',
+      9: 'wali_alamat',
+      10: 'wali_no_telp',
+    },
+  },
+  {
+    name: '08 - Data Tambahan',
+    columns: {
+      0: 'nisn',
+      1: 'gemar_kesenian',
+      2: 'gemar_olahraga',
+      3: 'gemar_kemasyarakatan',
+      4: 'gemar_lain',
+      5: 'siswa_status',
+      6: 'siswa_tanggal',
+    },
+  },
+];
 
-// Baris header template (index 0-7), data mulai index 8.
-export const TEMPLATE_HEADER_ROWS = 8;
+// Jumlah baris header per sheet (0-2), data mulai index 3.
+export const TEMPLATE_HEADER_ROWS = 3;
+
+// Key yang memerlukan normalisasi tanggal saat import.
+export const DATE_KEYS: Set<string> = new Set([
+  'date_of_birth',
+  'tanggal_sttb',
+  'tanggal_diterima',
+  'ayah_tanggal_lahir',
+  'ibu_tanggal_lahir',
+  'wali_tanggal_lahir',
+  'siswa_tanggal',
+]);
 
 export function emptyBiodata(): Record<string, string> {
   const out: Record<string, string> = {};
@@ -231,6 +291,10 @@ export function toDateString(value: unknown): string {
     const [d, m, y] = raw.split('/');
     return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
   }
+  if (/^\d{1,2}-\d{1,2}-\d{4}$/.test(raw)) {
+    const [d, m, y] = raw.split('-');
+    return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+  }
   if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10);
   // Excel / Google Sheets serial number: days since 1899-12-30
   if (/^\d+(\.\d+)?$/.test(raw)) {
@@ -255,4 +319,116 @@ export function formatRupiah(raw: unknown): string {
   const num = Number(str.replace(/[^\d.-]/g, ''));
   if (Number.isNaN(num)) return str;
   return `Rp${num.toLocaleString('id-ID')}`;
+}
+
+// ==== DATA MASTER DAPODIK ====
+// Nama kolom header DATA MASTER DAPODIK (huruf kecil) -> key baris hasil import.
+const DAPODIK_COLUMN_MAP: Record<string, string> = {
+  nisn: 'nisn',
+  nis: 'nis',
+  'nama siswa': 'name',
+  'tempat lahir': 'place_of_birth',
+  'tanggal lahir': 'date_of_birth',
+  'jenis kelamin': 'gender',
+  agama: 'religion',
+  'anak ke': 'anak_ke',
+  'jumlah saudara': 'jml_saudara_kandung',
+  'no hp': 'phone',
+  'jarak sekolah (km)': 'jarak_sekolah',
+  'jarak sekolah (m)': 'jarak_sekolah',
+  'jarak sekolah (meter)': 'jarak_sekolah',
+  'jarak sekolah': 'jarak_sekolah',
+  'pilihan jurusan 1': 'major',
+  'status ayah': 'ayah_status_hidup',
+  'nama ayah': 'ayah_nama',
+  'tanggal lahir ayah': 'ayah_tanggal_lahir',
+  'pendidikan ayah': 'ayah_pendidikan',
+  'pekerjaan ayah': 'ayah_pekerjaan',
+  'penghasilan ayah': 'ayah_penghasilan',
+  'no hp ayah': 'ayah_no_telp',
+  'status ibu': 'ibu_status_hidup',
+  'nama ibu': 'ibu_nama',
+  'tanggal lahir ibu': 'ibu_tanggal_lahir',
+  'pendidikan ibu': 'ibu_pendidikan',
+  'pekerjaan ibu': 'ibu_pekerjaan',
+  'penghasilan ibu': 'ibu_penghasilan',
+  'no hp ibu': 'ibu_no_telp',
+};
+
+const DAPODIK_DATE_COLUMNS = new Set(['tanggal lahir', 'tanggal lahir ayah', 'tanggal lahir ibu']);
+const DAPODIK_ADDRESS_COLUMNS = ['alamat', 'kecamatan', 'kota', 'provinsi'];
+
+export function isDapodikHeader(row: unknown[] | undefined): boolean {
+  const cols = new Set((row ?? []).map((c) => String(c ?? '').trim().toLowerCase()));
+  return cols.has('nisn') && cols.has('nama siswa');
+}
+
+interface DapodikSheetGrid {
+  name: string;
+  grid: unknown[][];
+}
+
+/**
+ * Parse sheet DATA MASTER DAPODIK (baris pertama header, baris berikutnya data
+ * per siswa) menjadi record dengan key yang sama seperti template BIODATA.
+ * Kelas dibiarkan kosong, kewarganegaraan default "Indonesia".
+ */
+export function parseDapodikSheets(sheets: DapodikSheetGrid[]): { rows: Record<string, string>[]; errors: string[] } {
+  const rows: Record<string, string>[] = [];
+  const errors: string[] = [];
+
+  for (const { name, grid } of sheets) {
+    const header = grid[0] ?? [];
+    if (!isDapodikHeader(header)) continue;
+
+    const idx: Record<string, number> = {};
+    header.forEach((cell, i) => {
+      const col = String(cell ?? '').trim().toLowerCase();
+      if (col !== '') idx[col] = i;
+    });
+
+    const cell = (cells: unknown[], col: string): string => {
+      const i = idx[col];
+      const v = i === undefined ? undefined : (cells ?? [])[i];
+      return v === null || v === undefined ? '' : String(v).trim();
+    };
+
+    grid.slice(1).forEach((cells, i) => {
+      const record: Record<string, string> = { class: '' };
+      let hasData = false;
+
+      for (const [col, key] of Object.entries(DAPODIK_COLUMN_MAP)) {
+        const raw = cell(cells, col);
+        if (raw === '') continue;
+        hasData = true;
+        if (col === 'jenis kelamin') {
+          record[key] = normalizeGender(raw);
+        } else if (DAPODIK_DATE_COLUMNS.has(col)) {
+          record[key] = toDateString(raw);
+        } else if (col.startsWith('jarak sekolah')) {
+          // Satuan meter — angka dipakai apa adanya.
+          const match = raw.match(/^\d+(\.\d+)?/);
+          if (!match) continue;
+          record[key] = String(Math.round(parseFloat(match[0]) * 100) / 100);
+        } else {
+          record[key] = raw;
+        }
+      }
+
+      if (!hasData) return;
+      const nisn = record.nisn ?? '';
+      if (nisn === '') {
+        errors.push(`Sheet "${name}" baris ${i + 2}: NISN kosong.`);
+        return;
+      }
+
+      record.kewarganegaraan = 'Indonesia';
+      const address = DAPODIK_ADDRESS_COLUMNS.map((c) => cell(cells, c)).filter(Boolean).join(', ');
+      if (address !== '') record.address = address;
+
+      rows.push(record);
+    });
+  }
+
+  return { rows, errors };
 }

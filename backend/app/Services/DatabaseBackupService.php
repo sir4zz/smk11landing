@@ -31,6 +31,13 @@ class DatabaseBackupService
         'photos',
         'gallery',
         'spmb',
+        'program-keahlian',
+        'bkk',
+        'mading',
+        'osis',
+        'extracurriculars',
+        'kesemaptaan',
+        'student',
     ];
 
     /**

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import PageHero from '../../components/ui/PageHero';
 import { fetchExtracurriculars, resolveImageUrl } from '../../lib/api';
-import { CalendarDays, User, Clock, ChevronRight, ImageIcon } from 'lucide-react';
+import { User, Clock, ChevronRight, ImageIcon } from 'lucide-react';
 
 interface ExtracurricularRecord {
   id?: string;

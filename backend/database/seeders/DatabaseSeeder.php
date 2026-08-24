@@ -394,294 +394,8 @@ class DatabaseSeeder extends Seeder
 
     protected function seedJobVacancies(): void
     {
-        $rows = [
-            [
-                'company_name' => 'PT Teknologi Nusantara',
-                'company_logo' => 'https://images.unsplash.com/photo-1614680376593-902f74cf0d41?auto=format&fit=crop&w=200&q=80',
-                'position' => 'Network Administrator',
-                'slug' => 'network-administrator-pt-teknologi-nusantara',
-                'company_description' => 'PT Teknologi Nusantara adalah perusahaan penyedia layanan infrastruktur IT dan telekomunikasi yang berpusat di Jakarta dan melayani klien korporasi di seluruh Indonesia.',
-                'job_description' => 'Mengelola, memantau, dan menjaga stabilitas jaringan perusahaan serta memberikan dukungan teknis kepada pengguna internal.',
-                'responsibilities' => 'Melakukan konfigurasi dan maintenance perangkat jaringan (router, switch, firewall), memonitor performa jaringan, mengelola VPN dan akses pengguna, serta membuat dokumentasi jaringan.',
-                'requirements' => 'Lulusan SMK jurusan TJKT (Teknik Jaringan Komputer dan Telekomunikasi) atau sederajat, memahami MikroTik dan Cisco, menguasai TCP/IP dan VLAN, serta memiliki kemampuan troubleshooting jaringan.',
-                'benefits' => 'Gaji UMK, BPJS Ketenagakerjaan dan Kesehatan, tunjangan transportasi, kesempatan pelatihan bersertifikat, dan jenjang karir yang jelas.',
-                'education' => 'Minimal SMK / SMA sederajat',
-                'experience' => 'Fresh graduate dipersilakan',
-                'major' => ['Teknik Jaringan Komputer dan Telekomunikasi'],
-                'city' => 'Jakarta',
-                'location' => 'Kuningan, Jakarta Selatan',
-                'employment_type' => 'full_time',
-                'registration_link' => 'https://career.teknonusantara.co.id',
-                'hr_contact' => '0812-3456-7890 (HRD Tekno Nusantara)',
-                'deadline' => '2026-09-30',
-                'status' => 'open',
-                'is_published' => true,
-            ],
-            [
-                'company_name' => 'CV Kreatif Desain Studio',
-                'company_logo' => 'https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=200&q=80',
-                'position' => 'Desainer Grafis',
-                'slug' => 'desainer-grafis-cv-kreatif-desain-studio',
-                'company_description' => 'CV Kreatif Desain Studio adalah studio kreatif yang melayani kebutuhan branding, desain kemasan, dan konten digital untuk UMKM dan perusahaan di wilayah Tangerang.',
-                'job_description' => 'Membuat desain grafis untuk kebutuhan branding klien, media sosial, dan materi cetak sesuai brief yang diberikan.',
-                'responsibilities' => 'Membuat layout desain (poster, brosur, konten sosial media), berkoordinasi dengan tim kreatif, dan menjaga kualitas serta konsistensi brand klien.',
-                'requirements' => 'Lulusan SMK jurusan DKV (Desain Komunikasi Visual), mahir menggunakan Adobe Photoshop, CorelDRAW, dan Adobe Illustrator, kreatif serta memiliki portofolio desain.',
-                'benefits' => 'Gaji sesuai UMK Tangerang, insentif per proyek, suasana kerja kreatif dan kekeluargaan, serta kesempatan mengembangkan portofolio.',
-                'education' => 'Minimal SMK jurusan DKV',
-                'experience' => '0-1 tahun',
-                'major' => ['Desain Komunikasi Visual'],
-                'city' => 'Tangerang',
-                'location' => 'Balaraja, Kabupaten Tangerang',
-                'employment_type' => 'full_time',
-                'registration_link' => 'https://forms.gle/kreatifdesainstudio',
-                'hr_contact' => 'HRD Kreatif Desain Studio (0857-1122-3344)',
-                'deadline' => '2026-09-15',
-                'status' => 'open',
-                'is_published' => true,
-            ],
-            [
-                'company_name' => 'PT Astra Motor Sales Operation',
-                'company_logo' => 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=200&q=80',
-                'position' => 'Mekanik Sepeda Motor',
-                'slug' => 'mekanik-sepeda-motor-pt-astra-motor',
-                'company_description' => 'PT Astra Motor Sales Operation adalah dealer resmi sepeda motor terkemuka dengan jaringan bengkel servis resmi di berbagai kota, termasuk Tangerang.',
-                'job_description' => 'Melakukan perawatan dan perbaikan sepeda motor sesuai standar dealer resmi, memastikan kepuasan pelanggan atas kualitas layanan.',
-                'responsibilities' => 'Melakukan servis berkala, perbaikan mesin dan kelistrikan sepeda motor, serta mengisi laporan pengerjaan sesuai standar operasional.',
-                'requirements' => 'Lulusan SMK jurusan Teknik Otomotif atau Teknik Sepeda Motor, memahami sistem injeksi (EFI/PGM-FI), memiliki kedisiplinan tinggi, dan bersedia mengikuti pelatihan di dealer.',
-                'benefits' => 'Gaji pokok + tunjangan, BPJS, fasilitas makan, serta pelatihan dan sertifikasi mekanik resmi.',
-                'education' => 'Minimal SMK Teknik Otomotif',
-                'experience' => 'Fresh graduate dipersilakan',
-                'major' => ['Teknik Otomotif'],
-                'city' => 'Tangerang',
-                'location' => 'Pasar Kemis, Kabupaten Tangerang',
-                'employment_type' => 'full_time',
-                'registration_link' => 'https://recruitment.astra-motor.com',
-                'hr_contact' => 'HRD Astra Motor Tangerang (021-592-0000)',
-                'deadline' => '2026-08-31',
-                'status' => 'open',
-                'is_published' => true,
-            ],
-            [
-                'company_name' => 'PT PLN (Persero) Tangerang',
-                'company_logo' => 'https://images.unsplash.com/photo-1544882657-fbd6a4f9e5e9?auto=format&fit=crop&w=200&q=80',
-                'position' => 'Asisten Teknisi Instalasi Listrik',
-                'slug' => 'asisten-teknisi-instalasi-listrik-pln',
-                'company_description' => 'PT PLN (Persero) adalah Badan Usaha Milik Negara yang bergerak di bidang kelistrikan dan menjadi tulang punggung penyedia tenaga listrik di Indonesia.',
-                'job_description' => 'Membantu teknisi senior dalam pekerjaan pemasangan, pemeliharaan, dan perbaikan instalasi listrik di wilayah kerja PLTU/UP3 Tangerang.',
-                'responsibilities' => 'Membantu pemasangan jaringan dan instalasi, melakukan pemeliharaan rutin alat ukur, serta mendampingi teknisi saat kunjungan lapangan.',
-                'requirements' => 'Lulusan SMK jurusan TITL (Teknik Ketenagalistrikan) atau Teknik Elektro, memahami dasar instalasi listrik dan K3 kelistrikan, serta siap bekerja di lapangan.',
-                'benefits' => 'Honorarium menarik, sertifikat pengalaman kerja, BPJS, dan peluang menjadi pegawai kontrak.',
-                'education' => 'Minimal SMK TITL',
-                'experience' => 'Fresh graduate dipersilakan',
-                'major' => ['Teknik Ketenagalistrikan'],
-                'city' => 'Tangerang',
-                'location' => 'Kawasan Industri Tangerang',
-                'employment_type' => 'contract',
-                'registration_link' => 'https://rekrutmen.pln.co.id',
-                'hr_contact' => 'HRD PT PLN UP3 Tangerang',
-                'deadline' => '2026-09-10',
-                'status' => 'open',
-                'is_published' => true,
-            ],
-            [
-                'company_name' => 'PT Bank Banten Syariah',
-                'company_logo' => 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=200&q=80',
-                'position' => 'Teller / Customer Service',
-                'slug' => 'teller-customer-service-bank-banten-syariah',
-                'company_description' => 'PT Bank Banten Syariah adalah bank pembangunan daerah yang berkomitmen melayani kebutuhan perbankan masyarakat Banten dengan prinsip syariah.',
-                'job_description' => 'Melayani nasabah untuk transaksi keuangan (teller) serta memberikan informasi dan penanganan keluhan (customer service) di kantor cabang.',
-                'responsibilities' => 'Melayani transaksi setoran dan penarikan tunai, memverifikasi dokumen, memberikan informasi produk perbankan, serta menjaga kerahasiaan data nasabah.',
-                'requirements' => 'Lulusan SMK jurusan MPLB (Manajemen Perkantoran dan Layanan Bisnis) atau Akuntansi, komunikatif, teliti, rapi, dan berpenampilan menarik.',
-                'benefits' => 'Gaji UMK + tunjangan, BPJS Kesehatan dan Ketenagakerjaan, THR, serta kesempatan karier di perbankan.',
-                'education' => 'Minimal SMK MPLB',
-                'experience' => 'Fresh graduate dipersilakan',
-                'major' => ['Manajemen Perkantoran dan Layanan Bisnis'],
-                'city' => 'Tangerang',
-                'location' => 'Kantor Cabang Tangerang Kota',
-                'employment_type' => 'contract',
-                'registration_link' => 'https://karier.bankbantensyariah.co.id',
-                'hr_contact' => 'HRD Bank Banten Syariah (021-5577-1234)',
-                'deadline' => '2026-08-25',
-                'status' => 'closing',
-                'is_published' => true,
-            ],
-            [
-                'company_name' => 'CV Busana Nusantara',
-                'company_logo' => 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=200&q=80',
-                'position' => 'Operator Konveksi & Jahit',
-                'slug' => 'operator-konveksi-jahit-cv-busana-nusantara',
-                'company_description' => 'CV Busana Nusantara adalah konveksi dan rumah produksi busana yang memproduksi pakaian jadi untuk kebutuhan lokal dan ekspor dari Kabupaten Tangerang.',
-                'job_description' => 'Mengerjakan proses produksi busana mulai dari pemotongan pola, menjahit, hingga quality control hasil produksi.',
-                'responsibilities' => 'Menjahit komponen busana sesuai standar, melakukan quality control, dan membantu proses finishing serta packing produk.',
-                'requirements' => 'Lulusan SMK jurusan Tata Busana, mampu menjahit dengan mesin jahit industri, teliti, dan disiplin dalam bekerja.',
-                'benefits' => 'Gaji pokok + upah lembur, bonus produksi, jaminan sosial, dan makan siang.',
-                'education' => 'Minimal SMK Tata Busana',
-                'experience' => 'Fresh graduate dipersilakan',
-                'major' => ['Busana'],
-                'city' => 'Tangerang',
-                'location' => 'Rajeg, Kabupaten Tangerang',
-                'employment_type' => 'full_time',
-                'registration_link' => 'https://wa.me/628111223344',
-                'hr_contact' => 'Bu Nita (0811-1223-344)',
-                'deadline' => '2026-08-20',
-                'status' => 'closing',
-                'is_published' => true,
-            ],
-            [
-                'company_name' => 'PT Multimedia Kreatif Indonesia',
-                'company_logo' => 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?auto=format&fit=crop&w=200&q=80',
-                'position' => 'Videografer & Editor (Magang)',
-                'slug' => 'videografer-editor-magang-pt-multimedia-kreatif',
-                'company_description' => 'PT Multimedia Kreatif Indonesia merupakan production house yang memproduksi video promosi, dokumentasi acara, dan konten digital untuk berbagai merek nasional.',
-                'job_description' => 'Mendukung tim produksi dalam pengambilan gambar dan editing video untuk berbagai kebutuhan klien.',
-                'responsibilities' => 'Membantu persiapan peralatan produksi, melakukan pengambilan gambar, dan mengedit video sesuai brief menggunakan Adobe Premiere atau CapCut.',
-                'requirements' => 'Siswa SMK jurusan DKV atau Multimedia yang sedang/sudah menempuh PKL, menguasai dasar videografi dan editing video, serta kreatif.',
-                'benefits' => 'Uang saku magang, sertifikat pengalaman kerja, kemungkinan diangkat sebagai karyawan kontrak, dan portofolio produksi.',
-                'education' => 'SMK DKV / Multimedia',
-                'experience' => 'Magang / fresh graduate',
-                'major' => ['Desain Komunikasi Visual'],
-                'city' => 'Jakarta',
-                'location' => 'Kebayoran Baru, Jakarta Selatan',
-                'employment_type' => 'internship',
-                'registration_link' => 'https://forms.gle/multimediakreatif-magang',
-                'hr_contact' => 'HRD Multimedia Kreatif (0813-9988-7766)',
-                'deadline' => '2026-10-15',
-                'status' => 'open',
-                'is_published' => true,
-            ],
-            [
-                'company_name' => 'PT Jaringan Cepat Indonesia',
-                'company_logo' => 'https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?auto=format&fit=crop&w=200&q=80',
-                'position' => 'Teknisi Fiber Optik',
-                'slug' => 'teknisi-fiber-optik-pt-jaringan-cepat',
-                'company_description' => 'PT Jaringan Cepat Indonesia adalah penyedia layanan internet rumah (ISP) yang memperluas jaringan fiber optik di wilayah Tangerang dan sekitarnya.',
-                'job_description' => 'Melakukan instalasi, penyambungan, dan pemeliharaan jaringan fiber optik untuk pelanggan rumah dan korporasi.',
-                'responsibilities' => 'Instalasi kabel fiber optik (splicing), setting modem/ont, penanganan gangguan pelanggan, dan pelaporan pekerjaan harian.',
-                'requirements' => 'Lulusan SMK TJKT, memahami splicing fiber optik, troubleshooting jaringan, serta mampu bekerja di lapangan dan berkomunikasi baik dengan pelanggan.',
-                'benefits' => 'Gaji UMK + insentif, tunjangan transportasi, BPJS, dan peralatan kerja lengkap.',
-                'education' => 'Minimal SMK TJKT',
-                'experience' => '0-1 tahun',
-                'major' => ['Teknik Jaringan Komputer dan Telekomunikasi'],
-                'city' => 'Tangerang',
-                'location' => 'Jayanti, Kabupaten Tangerang',
-                'employment_type' => 'full_time',
-                'registration_link' => 'https://karier.jaringancepat.id',
-                'hr_contact' => 'HRD Jaringan Cepat (0812-2233-4455)',
-                'deadline' => '2026-09-20',
-                'status' => 'open',
-                'is_published' => true,
-            ],
-            [
-                'company_name' => 'PT Sentral Mesin Otomotif',
-                'company_logo' => 'https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=200&q=80',
-                'position' => 'Service Advisor',
-                'slug' => 'service-advisor-pt-sentral-mesin-otomotif',
-                'company_description' => 'PT Sentral Mesin Otomotif adalah bengkel perawatan kendaraan roda empat yang berlokasi di Tangerang dengan standar pelayanan profesional.',
-                'job_description' => 'Melayani pelanggan yang datang melakukan servis, mendiagnosis kebutuhan perawatan, berkoordinasi dengan mekanik, dan memastikan kepuasan pelanggan.',
-                'responsibilities' => 'Menerima keluhan dan kebutuhan pelanggan, membuat estimasi biaya, menghubungkan pelanggan dengan mekanik, serta follow-up hasil servis.',
-                'requirements' => 'Lulusan SMK Teknik Otomotif, komunikatif, jujur, mampu menjelaskan teknis mesin secara sederhana, dan memiliki pelayanan prima.',
-                'benefits' => 'Gaji UMK + komisi, BPJS, tunjangan makan, dan kesempatan mengikuti pelatihan manajemen bengkel.',
-                'education' => 'Minimal SMK Teknik Otomotif',
-                'experience' => '0-1 tahun',
-                'major' => ['Teknik Otomotif'],
-                'city' => 'Tangerang',
-                'location' => 'Cikupa, Kabupaten Tangerang',
-                'employment_type' => 'full_time',
-                'registration_link' => 'https://career.sentralmesin.co.id',
-                'hr_contact' => 'HRD Sentral Mesin (0856-9911-2233)',
-                'deadline' => '2026-08-15',
-                'status' => 'closing',
-                'is_published' => true,
-            ],
-            [
-                'company_name' => 'PT Listrik Bangun Mandiri',
-                'company_logo' => 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?auto=format&fit=crop&w=200&q=80',
-                'position' => 'Instalatir Listrik Gedung',
-                'slug' => 'instalatir-listrik-gedung-pt-listrik-bangun-mandiri',
-                'company_description' => 'PT Listrik Bangun Mandiri adalah kontraktor kelistrikan yang menangani instalasi listrik gedung komersial dan hunian di Jabodetabek.',
-                'job_description' => 'Melaksanakan pemasangan instalasi listrik penerangan dan tenaga pada proyek gedung sesuai gambar dan standar K3.',
-                'responsibilities' => 'Memasang panel listrik, kabel instalasi, dan stop kontak, melakukan pengecekan dan testing instalasi, serta menjaga keselamatan kerja di lokasi proyek.',
-                'requirements' => 'Lulusan SMK TITL, memahami gambar instalasi listrik dan K3, siap bekerja di ketinggian, serta memiliki lisensi SKTT (akan difasilitasi).',
-                'benefits' => 'Gaji proyek + tunjangan, fasilitas asuransi kecelakaan kerja, dan pelatihan lisensi kelistrikan.',
-                'education' => 'Minimal SMK TITL',
-                'experience' => 'Fresh graduate dipersilakan',
-                'major' => ['Teknik Ketenagalistrikan'],
-                'city' => 'Jakarta',
-                'location' => 'Berbagai lokasi proyek Jabodetabek',
-                'employment_type' => 'contract',
-                'registration_link' => 'https://karier.lbm.co.id',
-                'hr_contact' => 'HRD Listrik Bangun Mandiri (021-2200-9988)',
-                'deadline' => '2026-10-01',
-                'status' => 'open',
-                'is_published' => true,
-            ],
-            [
-                'company_name' => 'PT Ritel Makmur Bersama',
-                'company_logo' => 'https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?auto=format&fit=crop&w=200&q=80',
-                'position' => 'Admin & Kasir Minimarket',
-                'slug' => 'admin-kasir-minimarket-pt-ritel-makmur',
-                'company_description' => 'PT Ritel Makmur Bersama adalah perusahaan ritel modern yang mengoperasikan jaringan minimarket di wilayah Banten dan sekitarnya.',
-                'job_description' => 'Melayani transaksi kasir, mengelola administrasi toko, serta menjaga kerapihan dan ketersediaan stok barang.',
-                'responsibilities' => 'Proses pembayaran pelanggan, rekap laporan penjualan harian, input data stok, dan membantu pelayanan pelanggan di toko.',
-                'requirements' => 'Lulusan SMK MPLB atau Akuntansi, teliti, jujur, komunikatif, dan bersedia bekerja dengan sistem shift.',
-                'benefits' => 'Gaji UMK + tunjangan, BPJS, bonus penjualan, dan jenjang karir hingga kepala toko.',
-                'education' => 'Minimal SMK MPLB',
-                'experience' => 'Fresh graduate dipersilakan',
-                'major' => ['Manajemen Perkantoran dan Layanan Bisnis'],
-                'city' => 'Tangerang',
-                'location' => 'Beberapa cabang di Kabupaten Tangerang',
-                'employment_type' => 'full_time',
-                'registration_link' => 'https://recruitment.ritelmakmur.co.id',
-                'hr_contact' => 'HRD Ritel Makmur (0857-3344-5566)',
-                'deadline' => '2026-09-25',
-                'status' => 'open',
-                'is_published' => true,
-            ],
-            [
-                'company_name' => 'PT Garmen Sejahtera',
-                'company_logo' => 'https://images.unsplash.com/photo-1571945153237-4929e783af4a?auto=format&fit=crop&w=200&q=80',
-                'position' => 'Quality Control Produk Garmen (Magang)',
-                'slug' => 'quality-control-garmen-magang-pt-garmen-sejahtera',
-                'company_description' => 'PT Garmen Sejahtera adalah pabrik garmen berorientasi ekspor yang memproduksi berbagai jenis pakaian jadi dengan standar kualitas internasional.',
-                'job_description' => 'Melakukan pemeriksaan kualitas produk garmen sebelum packing untuk memastikan celah produk yang cacat tidak lolos ke konsumen.',
-                'responsibilities' => 'Memeriksa hasil jahitan dan material, mencatat produk cacat (defect), memberikan feedback ke bagian produksi, dan membantu proses packing.',
-                'requirements' => 'Siswa SMK Tata Busana yang sedang melaksanakan PKL atau lulusan baru, teliti, dan memahami dasar knowledge produk garmen.',
-                'benefits' => 'Uang saku, sertifikat PKL, penilaian kinerja untuk rekomendasi kerja, dan pengalaman industri garmen ekspor.',
-                'education' => 'SMK Tata Busana',
-                'experience' => 'Magang / fresh graduate',
-                'major' => ['Busana'],
-                'city' => 'Tangerang',
-                'location' => 'Kawasan Industri Jatake, Tangerang',
-                'employment_type' => 'internship',
-                'registration_link' => 'https://forms.gle/qc-garmen-sejahtera',
-                'hr_contact' => 'HRD Garmen Sejahtera (021-5932-7788)',
-                'deadline' => '2026-10-31',
-                'status' => 'open',
-                'is_published' => true,
-            ],
-            [
-                'company_name' => 'PT Garda Nusa Teknologi',
-                'company_logo' => 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=200&q=80',
-                'position' => 'IT Support Intern',
-                'slug' => 'it-support-intern-pt-garda-nusa-teknologi',
-                'company_description' => 'PT Garda Nusa Teknologi adalah perusahaan penyedia solusi keamanan siber dan manajemen infrastruktur TI untuk sektor pemerintahan dan swasta.',
-                'job_description' => 'Memberikan dukungan teknis harian untuk perangkat keras dan perangkat lunak karyawan perusahaan serta membantu administrasi sistem.',
-                'responsibilities' => 'Menangani tiket helpdesk, instalasi dan konfigurasi perangkat, troubleshooting komputer dan jaringan, serta dokumentasi inventaris.',
-                'requirements' => 'Lulusan SMK TJKT atau setara, memahami instalasi Windows/Linux, dasar jaringan LAN, dan memiliki sikap responsif serta mau belajar.',
-                'benefits' => 'Uang saku magang, sertifikat, mentoring oleh senior IT, dan kesempatan menjadi karyawan tetap.',
-                'education' => 'Minimal SMK TJKT',
-                'experience' => 'Magang / fresh graduate',
-                'major' => ['Teknik Jaringan Komputer dan Telekomunikasi', 'Desain Komunikasi Visual'],
-                'city' => 'Jakarta',
-                'location' => 'SCBD, Jakarta Selatan',
-                'employment_type' => 'internship',
-                'registration_link' => 'https://career.gardanusa.co.id',
-                'hr_contact' => 'HRD Garda Nusa (0813-5566-7788)',
-                'deadline' => '2026-11-15',
-                'status' => 'open',
-                'is_published' => true,
-            ],
-        ];
+        // Cleaned per user request 2026-08-20: lowongan kerja bkk - dummy data removed
+        $rows = [];
 
         foreach ($rows as $row) {
             JobVacancy::updateOrCreate(['slug' => $row['slug']], $row);
@@ -728,21 +442,8 @@ class DatabaseSeeder extends Seeder
 
     protected function seedBkkPartners(): void
     {
-        $rows = [
-            ['name' => 'PT Teknologi Nusantara', 'industry' => 'Teknologi Informasi & Telekomunikasi', 'location' => 'Jakarta', 'logo' => 'https://images.unsplash.com/photo-1614680376593-902f74cf0d41?auto=format&fit=crop&w=200&q=80'],
-            ['name' => 'CV Kreatif Desain Studio', 'industry' => 'Desain & Kreatif', 'location' => 'Tangerang', 'logo' => 'https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=200&q=80'],
-            ['name' => 'PT Astra Motor Sales Operation', 'industry' => 'Otomotif', 'location' => 'Tangerang', 'logo' => 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=200&q=80'],
-            ['name' => 'PT PLN (Persero) Tangerang', 'industry' => 'Energi & Kelistrikan', 'location' => 'Tangerang', 'logo' => 'https://images.unsplash.com/photo-1544882657-fbd6a4f9e5e9?auto=format&fit=crop&w=200&q=80'],
-            ['name' => 'PT Bank Banten Syariah', 'industry' => 'Perbankan', 'location' => 'Tangerang', 'logo' => 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=200&q=80'],
-            ['name' => 'CV Busana Nusantara', 'industry' => 'Tekstil & Garmen', 'location' => 'Tangerang', 'logo' => 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=200&q=80'],
-            ['name' => 'PT Multimedia Kreatif Indonesia', 'industry' => 'Media & Kreatif', 'location' => 'Jakarta', 'logo' => 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?auto=format&fit=crop&w=200&q=80'],
-            ['name' => 'PT Jaringan Cepat Indonesia', 'industry' => 'Telekomunikasi', 'location' => 'Tangerang', 'logo' => 'https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?auto=format&fit=crop&w=200&q=80'],
-            ['name' => 'PT Sentral Mesin Otomotif', 'industry' => 'Otomotif', 'location' => 'Tangerang', 'logo' => 'https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=200&q=80'],
-            ['name' => 'PT Listrik Bangun Mandiri', 'industry' => 'Konstruksi & Kelistrikan', 'location' => 'Jakarta', 'logo' => 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?auto=format&fit=crop&w=200&q=80'],
-            ['name' => 'PT Ritel Makmur Bersama', 'industry' => 'Ritel', 'location' => 'Tangerang', 'logo' => 'https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?auto=format&fit=crop&w=200&q=80'],
-            ['name' => 'PT Garmen Sejahtera', 'industry' => 'Tekstil & Garmen', 'location' => 'Tangerang', 'logo' => 'https://images.unsplash.com/photo-1571945153237-4929e783af4a?auto=format&fit=crop&w=200&q=80'],
-            ['name' => 'PT Garda Nusa Teknologi', 'industry' => 'Teknologi Informasi', 'location' => 'Jakarta', 'logo' => 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=200&q=80'],
-        ];
+        // Cleaned per user request 2026-08-20: perusahaan partner bkk - dummy data removed
+        $rows = [];
 
         foreach ($rows as $index => $row) {
             BkkPartner::updateOrCreate(
@@ -765,7 +466,7 @@ class DatabaseSeeder extends Seeder
             ['content_type' => 'home'],
             ['data' => [
                 'hero' => ['images' => ['/images/hero/hero-1.jpg', '/images/hero/hero-2.jpg', '/images/hero/hero-3.jpg'], 'frame_image' => '/images/hero/frame.jpg', 'description' => 'Sekolah kejuruan favorit yang menyiapkan lulusan unggul, berkarakter, dan memiliki kompetensi tinggi sesuai kebutuhan industri masa depan.', 'accreditation' => 'Peringkat B', 'facility_title' => 'Fasilitas Modern', 'facility_description' => 'Mendukung penuh kompetensi siswa di era digital.'],
-                'welcome' => ['image' => 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=800', 'principal_name' => 'Emma Sukmayati', 'principal_title' => 'Kepala SMKN 11 Kab. Tangerang', 'title' => 'Selamat Datang di Portal Resmi SMKN 11 Kabupaten Tangerang', 'paragraphs' => ['Puji syukur kita panjatkan ke hadirat Allah SWT atas rahmat dan karunia-Nya. Di era digitalisasi dan disrupsi teknologi saat ini, pendidikan vokasi memegang peran krusial dalam mencetak generasi muda yang tidak hanya kompeten, tetapi juga memiliki karakter dan daya adaptasi yang tinggi.', 'SMKN 11 Kabupaten Tangerang berkomitmen penuh untuk menjadi lembaga pendidikan yang inovatif, berdaya saing global, dan berakar pada nilai-nilai luhur bangsa. Melalui sinkronisasi kurikulum dengan industri, kami berupaya memastikan lulusan kami siap menghadapi tantangan dunia kerja masa depan.'], 'quote' => '"SMK BISA, SMK HEBAT, Vokasi Kuat Menguatkan Indonesia!"'],
+                'welcome' => ['principal_name' => 'Emma Sukmayati', 'principal_title' => 'Kepala SMKN 11 Kab. Tangerang', 'title' => 'Selamat Datang di Portal Resmi SMKN 11 Kabupaten Tangerang', 'paragraphs' => ['Puji syukur kita panjatkan ke hadirat Allah SWT atas rahmat dan karunia-Nya. Di era digitalisasi dan disrupsi teknologi saat ini, pendidikan vokasi memegang peran krusial dalam mencetak generasi muda yang tidak hanya kompeten, tetapi juga memiliki karakter dan daya adaptasi yang tinggi.', 'SMKN 11 Kabupaten Tangerang berkomitmen penuh untuk menjadi lembaga pendidikan yang inovatif, berdaya saing global, dan berakar pada nilai-nilai luhur bangsa. Melalui sinkronisasi kurikulum dengan industri, kami berupaya memastikan lulusan kami siap menghadapi tantangan dunia kerja masa depan.'], 'quote' => '"SMK BISA, SMK HEBAT, Vokasi Kuat Menguatkan Indonesia!"'],
                 'about' => ['title' => 'Tentang SMKN 11 Kabupaten Tangerang', 'subtitle' => 'Sekolah vokasi yang menyiapkan lulusan unggul, kompeten, dan siap bersaing di dunia kerja.', 'paragraphs' => ['SMKN 11 Kabupaten Tangerang adalah lembaga pendidikan kejuruan negeri yang berdiri pada tahun 2013 dan berkomitmen mencetak siswa berprestasi, berakhlaqul karimah, dan memiliki kompetensi sesuai kebutuhan industri.', 'Berlokasi di Kp. Saradan, Desa Pangkat, Kecamatan Jayanti, sekolah ini memiliki 6 program keahlian unggulan dengan 1.124 siswa aktif dan 51 tenaga pengajar profesional yang berdedikasi.', 'Dengan akreditasi B dan didukung fasilitas laboratorium, bengkel, serta lingkungan belajar yang kondusif, lulusan kami tidak hanya siap bekerja, tetapi juga memiliki jiwa kewirausahaan dan akhlak mulia yang kuat.'], 'card_label' => 'Sekolah kami', 'card_title' => 'Lingkungan belajar yang memotivasi', 'quote' => '"Kami terus mendorong setiap siswa untuk tumbuh menjadi pribadi yang unggul, disiplin, dan siap memberikan kontribusi nyata bagi masyarakat dan bangsa."', 'location' => 'Kabupaten Tangerang, Banten'],
                 'stats' => [['value' => '1.124+', 'label' => 'Siswa Aktif'], ['value' => '51+', 'label' => 'Tenaga Pengajar'], ['value' => '6', 'label' => 'Program Keahlian'], ['value' => '33', 'label' => 'Rombel']],
                 'social' => ['instagram' => 'https://instagram.com/official_smkn11kab.tng', 'tiktok' => 'https://tiktok.com/@osis_smkn11kabtangeran', 'email' => 'smkn11kabtangschool@gmail.com'],
@@ -776,143 +477,8 @@ class DatabaseSeeder extends Seeder
 
     protected function seedNews(): void
     {
-        $rows = [
-            [
-                'title' => 'Siswa SMKN 11 Kabupaten Tangerang Raih Medali Ajang Prestasi 2025',
-                'date' => '2025-10-15',
-                'excerpt' => 'Febriyani, siswa SMKN 11 Kabupaten Tangerang, berhasil meraih medali perak pada Ajang Prestasi SMK Tingkat Kabupaten Tangerang tahun 2025.',
-                'content' => '<p>Prestasi membanggakan kembali diraih oleh siswa SMKN 11 Kabupaten Tangerang. Febriyani berhasil meraih medali perak pada Ajang Prestasi SMK Tingkat Kabupaten Tangerang tahun 2025 yang diselenggarakan di Sub Rayon 03.</p><p>Keberhasilan ini merupakan buah dari persiapan matang dan bimbingan intensif dari para guru pembimbing. "Febriyani menunjukkan dedikasi yang luar biasa dan penguasaan materi yang sangat baik," ujar pembimbing.</p><p>Prestasi ini menjadi motivasi bagi siswa lainnya untuk terus berprestasi di berbagai ajang kompetisi. Pihak sekolah berkomitmen penuh untuk memberikan dukungan fasilitas dan pembimbingan intensif agar siswa dapat terus menorehkan prestasi gemilang.</p>',
-                'thumbnail' => 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=900&q=80',
-                'category' => 'Prestasi',
-                'author' => 'Tim Humas',
-            ],
-            [
-                'title' => 'Penerimaan Peserta Didik Baru (PPDB) Tahun Ajaran 2026/2027 Segera Dibuka',
-                'date' => '2026-06-15',
-                'excerpt' => 'Informasi lengkap terkait jadwal, persyaratan, dan alur pendaftaran PPDB SMKN 11 Kabupaten Tangerang tahun ajaran 2026/2027.',
-                'content' => '<p>Penerimaan Peserta Didik Baru (PPDB) SMKN 11 Kabupaten Tangerang tahun ajaran 2026/2027 akan segera dibuka secara online (daring) melalui portal resmi PPDB Provinsi Banten. Pendaftaran tahap pertama direncanakan mulai tanggal 20 hingga 25 Juni 2026.</p><p>Untuk tahun ini, SMKN 11 Kabupaten Tangerang membuka pendaftaran untuk 6 Program Keahlian, yaitu TJKT (Teknik Jaringan Komputer dan Telekomunikasi), DKV (Desain Komunikasi Visual), Teknik Otomotif, TITL (Teknik Ketenagalistrikan), MPLB (Manajemen Perkantoran dan Layanan Bisnis), dan Busana. Daya tampung total diperkirakan mencapai 400 siswa yang akan terbagi dalam 11 rombongan belajar. Jalur pendaftaran meliputi jalur zonasi, prestasi akademik/non-akademik, afirmasi, dan perpindahan tugas orang tua.</p><p>Calon peserta didik dan orang tua diimbau untuk menyiapkan dokumen persyaratan seperti SKL, Kartu Keluarga, dan sertifikat prestasi (jika ada) jauh-jauh hari. Informasi petunjuk teknis pendaftaran dapat diunduh melalui halaman utama website ini.</p>',
-                'thumbnail' => 'https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=900&q=80',
-                'category' => 'Informasi',
-                'author' => 'Panitia PPDB',
-            ],
-            [
-                'title' => 'Kunjungan Industri Jurusan Teknik Otomotif ke Pabrik Perakitan Mobil',
-                'date' => '2026-05-10',
-                'excerpt' => 'Siswa kelas XI Teknik Otomotif mengikuti kegiatan Kunjungan Industri (KI) ke salah satu pabrik perakitan mobil ternama di Cikarang.',
-                'content' => '<p>Dalam rangka menyelaraskan kurikulum dengan dunia industri, sebanyak 65 siswa kelas XI jurusan Teknik Otomotif beserta guru pendamping melaksanakan Kunjungan Industri (KI) ke sebuah pabrik perakitan mobil skala internasional di kawasan industri Cikarang pada hari Rabu lalu.</p><p>Selama kunjungan, para siswa diajak mengelilingi fasilitas produksi dan mengamati langsung proses perakitan kendaraan mulai dari pengelasan bodi (welding), pengecatan (painting), hingga tahap perakitan akhir (assembling) dan uji kualitas. Kegiatan ini memberikan gambaran nyata tentang standar operasional kerja dan teknologi mutakhir yang digunakan dalam industri otomotif.</p><p>Kepala Program Keahlian Teknik Otomotif berharap kegiatan KI ini dapat memotivasi siswa untuk terus mengasah keterampilan mereka agar kelak menjadi mekanik dan teknisi andal yang siap bersaing di dunia kerja nyata setelah lulus.</p>',
-                'thumbnail' => 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?auto=format&fit=crop&w=900&q=80',
-                'category' => 'Kegiatan',
-                'author' => 'Tim Humas',
-            ],
-            [
-                'title' => 'Peresmian Laboratorium Desain Komunikasi Visual Baru',
-                'date' => '2026-04-22',
-                'excerpt' => 'SMKN 11 Kabupaten Tangerang resmi membuka laboratorium multimedia baru khusus untuk praktik siswa jurusan Desain Komunikasi Visual (DKV).',
-                'content' => '<p>Dalam upaya meningkatkan kualitas pendidikan vokasi, Kepala SMKN 11 Kabupaten Tangerang resmi meresmikan Laboratorium Desain Komunikasi Visual (DKV) yang baru pada Kamis, 22 April 2026. Lab baru ini dilengkapi dengan 35 unit komputer spesifikasi tinggi (Core i7, RAM 16GB, SSD 512GB) yang sangat memadai untuk aktivitas desain grafis, editing video, dan rendering 3D.</p><p>Selain peningkatan perangkat keras, lab ini juga difasilitasi dengan koneksi internet serat optik dedicated, studio mini, dan perangkat kamera untuk praktik fotografi dan videografi. Pembaruan fasilitas ini diharapkan dapat mendukung pembelajaran produktif seperti desain grafis, animasi, dan produksi konten digital.</p><p>Siswa menyambut baik kehadiran lab ini. "Kami sangat senang dengan adanya lab baru ini, sekarang kami bisa melakukan rendering dan editing video dengan jauh lebih lancar tanpa kendala," ungkap salah satu siswa jurusan DKV.</p>',
-                'thumbnail' => '/images/news-4.jpg',
-                'category' => 'Fasilitas',
-                'author' => 'Tim Humas',
-            ],
-            [
-                'title' => 'Pelaksanaan Uji Kompetensi Keahlian (UKK) Tahun 2026 Berjalan Lancar',
-                'date' => '2026-03-05',
-                'excerpt' => 'Seluruh siswa kelas XII dari enam program keahlian sukses mengikuti Uji Kompetensi Keahlian (UKK) sebagai syarat kelulusan.',
-                'content' => '<p>Uji Kompetensi Keahlian (UKK) bagi siswa kelas XII SMKN 11 Kabupaten Tangerang tahun pelajaran 2025/2026 telah selesai diselenggarakan dengan sukses dan lancar. Kegiatan yang berlangsung selama satu pekan ini melibatkan penguji internal (guru produktif) maupun penguji eksternal dari dunia usaha dan industri (DUDI).</p><p>UKK bertujuan mengukur pencapaian kompetensi siswa pada jenjang tertentu sesuai dengan kompetensi keahlian yang ditempuh. Tiap jurusan menyajikan tantangan yang berbeda, misalnya jurusan MPLB dengan ujian praktik administrasi perkantoran, sedangkan jurusan Teknik Otomotif dengan praktik troubleshooting sistem injeksi dan perbaikan mesin.</p><p>Para penguji eksternal mengapresiasi kemampuan dan kedisiplinan kerja para siswa selama ujian. Sebagian besar siswa dinyatakan sangat kompeten dan memenuhi standar yang dibutuhkan oleh industri. Sertifikat kompetensi yang akan mereka peroleh nantinya sangat berguna sebagai bekal melamar pekerjaan.</p>',
-                'thumbnail' => '/images/news-5.jpg',
-                'category' => 'Akademik',
-                'author' => 'Kurikulum',
-            ],
-            [
-                'title' => 'Peringatan Hari Guru Nasional di SMKN 11 Kab. Tangerang',
-                'date' => '2025-11-25',
-                'excerpt' => 'Rangkaian acara meriah peringatan Hari Guru Nasional dirayakan oleh seluruh guru dan siswa dengan penuh rasa kekeluargaan.',
-                'content' => '<p>Peringatan Hari Guru Nasional (HGN) tahun ini di SMKN 11 Kabupaten Tangerang berlangsung sangat meriah dan penuh makna. Kegiatan diawali dengan upacara bendera di lapangan utama sekolah, di mana petugas upacara merupakan perwakilan dari bapak/ibu guru sendiri. Hal ini memberikan suasana berbeda dan sangat berkesan bagi para siswa.</p><p>Setelah upacara, acara dilanjutkan dengan pemotongan tumpeng dan penampilan pentas seni persembahan dari ekstrakurikuler serta perwakilan setiap kelas. Puncak acara ditandai dengan penyerahan buket bunga secara simbolis oleh pengurus OSIS kepada Kepala Sekolah dan para guru, sebagai bentuk penghormatan dan rasa terima kasih atas jasa mereka dalam mendidik siswa-siswi.</p><p>"Guru adalah pahlawan tanpa tanda jasa. Kami berharap semua guru senantiasa diberikan kesehatan dan kesabaran dalam mencetak generasi penerus bangsa yang unggul, terampil, dan berkarakter," tutur Ketua OSIS dalam sambutannya.</p>',
-                'thumbnail' => '/images/news-6.jpg',
-                'category' => 'Kegiatan',
-                'author' => 'OSIS',
-            ],
-            [
-                'title' => 'Tim Futsal SMKN 11 Juara 1 Bupati Cup Kabupaten Tangerang 2025',
-                'date' => '2025-09-20',
-                'excerpt' => 'Tim futsal putra SMKN 11 Kabupaten Tangerang berhasil meraih juara 1 pada Turnamen Futsal Bupati Cup Kabupaten Tangerang 2025.',
-                'content' => '<p>Tim futsal putra SMKN 11 Kabupaten Tangerang berhasil mengukir prestasi gemilang dengan meraih juara 1 pada Turnamen Futsal Bupati Cup Kabupaten Tangerang 2025. Turnamen yang berlangsung selama dua pekan ini diikuti oleh 24 tim SMK se-Kabupaten Tangerang.</p><p>Di partai final yang berlangsung ketat, tim futsal SMKN 11 berhasil mengalahkan tim asal SMKN 2 dengan skor akhir 3-2. Kapten tim, Reza Pratama, mencetak dua gol penentu kemenangan yang membawa tim meraih trofi juara.</p><p>Kepala Sekolah menyampaikan apresiasi tinggi kepada tim dan pelatih atas prestasi membanggakan ini. "Prestasi ini membuktikan bahwa siswa SMKN 11 tidak hanya unggul dalam akademik dan keahlian, tetapi juga dalam bidang olahraga," ujar beliau. Tim futsal berharap prestasi ini dapat memotivasi siswa lain untuk terus berprestasi di berbagai bidang.</p>',
-                'thumbnail' => 'https://images.unsplash.com/photo-1552664688-cf1ec3b78426?auto=format&fit=crop&w=900&q=80',
-                'category' => 'Prestasi',
-                'author' => 'Tim Humas',
-            ],
-            [
-                'title' => 'Praktik Kerja Lapangan (PKL) Siswa Kelas XI Dimulai',
-                'date' => '2026-07-01',
-                'excerpt' => 'Siswa kelas XI dari seluruh program keahlian memulai kegiatan Praktik Kerja Lapangan (PKL) di berbagai perusahaan mitra DUDI.',
-                'content' => '<p>Praktik Kerja Lapangan (PKL) bagi siswa kelas XI SMKN 11 Kabupaten Tangerang tahun pelajaran 2025/2026 resmi dimulai pada 1 Juli 2026. Kegiatan ini melibatkan ratusan siswa dari enam program keahlian yang ditempatkan di berbagai perusahaan mitra dunia usaha dan dunia industri (DUDI).</p><p>Penempatan PKL disesuaikan dengan kompetensi masing-masing jurusan. Siswa TJKT ditempatkan di perusahaan teknologi dan ISP, siswa DKV di agensi kreatif dan production house, siswa Teknik Otomotif di bengkel resmi dan dealer, siswa TITL di kontraktor listrik dan industri manufaktur, siswa MPLB di bank dan kantor, serta siswa Busana di butik dan konveksi.</p><p>Kepala Program Keahlian Hubin menyampaikan bahwa PKL merupakan momen penting bagi siswa untuk mengaplikasikan ilmu yang dipelajari di sekolah dalam dunia kerja nyata. "Melalui PKL, siswa dapat membangun jejaring dengan industri dan mempersiapkan diri untuk dunia kerja setelah lulus," tuturnya. Kegiatan PKL akan berlangsung selama tiga bulan hingga akhir September 2026.</p>',
-                'thumbnail' => 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=900&q=80',
-                'category' => 'Akademik',
-                'author' => 'Hubin',
-            ],
-            [
-                'title' => 'Sosialisasi Bahaya Perundungan (Bullying) dan Kenakalan Remaja',
-                'date' => '2026-04-10',
-                'excerpt' => 'Sekolah mengadakan sosialisasi pencegahan perundungan dan kenakalan remaja yang diikuti seluruh siswa dengan narasumber dari Kepolisian.',
-                'content' => '<p>Dalam upaya menciptakan lingkungan sekolah yang aman dan nyaman, SMKN 11 Kabupaten Tangerang mengadakan sosialisasi pencegahan perundungan (bullying) dan kenakalan remaja pada 10 April 2026. Kegiatan ini menghadirkan narasumber dari Kepolisian Resor Kabupaten Tangerang dan diikuti oleh seluruh siswa.</p><p>Sosialisasi membahas berbagai topik penting, antara lain jenis-jenis perundungan, dampak psikologis bagi korban dan pelaku, serta cara mencegah dan melaporkan tindakan perundungan. Selain itu, narasumber juga menyampaikan materi tentang bahaya penyalahgunaan narkoba dan pentingnya hukum bagi remaja.</p><p>Kepala Sekolah dalam sambutannya menekankan pentingnya rasa hormat dan empati antar siswa. "Sekolah berkomitmen menciptakan lingkungan belajar yang bebas dari perundungan. Setiap laporan akan kami tindak lanjuti dengan serius," tegas beliau. Kegiatan ini ditutup dengan penandatanganan komitmen anti-bullying oleh perwakilan OSIS dan seluruh ketua kelas.</p>',
-                'thumbnail' => 'https://images.unsplash.com/photo-1521791136064-7986c5920bc6?auto=format&fit=crop&w=900&q=80',
-                'category' => 'Kegiatan',
-                'author' => 'Kesiswaan',
-            ],
-            [
-                'title' => 'SMKN 11 Kabupaten Tangerang Raih Akreditasi "A" Unggul',
-                'date' => '2025-12-10',
-                'excerpt' => 'SMKN 11 Kabupaten Tangerang berhasil meraih predikat akreditasi "A" Unggul dari Badan Akreditasi Nasional Sekolah/Madrasah (BAN-S/M).',
-                'content' => '<p>SMKN 11 Kabupaten Tangerang berhasil meraih prestasi membanggakan dengan memperoleh predikat akreditasi "A" Unggul dari Badan Akreditasi Nasional Sekolah/Madrasah (BAN-S/M) hasil asesmen tahun 2025. Predikat ini diberikan setelah melalui proses asesmen menyeluruh terhadap delapan standar nasional pendidikan.</p><p>Asesmen akreditasi menilai berbagai aspek, mulai dari kualitas pendidik dan tenaga kependidikan, sarana prasarana, pengelolaan, pembiayaan, hingga prestasi siswa baik akademik maupun non-akademik. Sekolah mendapatkan nilai yang sangat memuaskan pada hampir seluruh komponen penilaian.</p><p>"Capaian akreditasi A Unggul ini adalah hasil kerja keras seluruh keluarga besar SMKN 11 Kabupaten Tangerang. Kami akan terus berinovasi dan meningkatkan mutu pendidikan agar lulusan semakin siap kerja dan berdaya saing tinggi," ujar Kepala Sekolah dalam rilis resmi. Predikat akreditasi A Unggul berlaku selama lima tahun dan menjadi bukti komitmen sekolah dalam menyelenggarakan pendidikan vokasi berkualitas.</p>',
-                'thumbnail' => 'https://images.unsplash.com/photo-1606857521015-7f7fc63a41f0?auto=format&fit=crop&w=900&q=80',
-                'category' => 'Pengumuman',
-                'author' => 'Admin',
-            ],
-            [
-                'title' => 'Lowongan Kerja Terbaru PT Teknologi Nusantara untuk Lulusan TJKT',
-                'date' => '2026-08-05',
-                'excerpt' => 'PT Teknologi Nusantara membuka lowongan Network Administrator untuk lulusan TJKT melalui BKK SMKN 11 Kabupaten Tangerang.',
-                'content' => '<p>BKK SMKN 11 Kabupaten Tangerang menerima informasi lowongan kerja terbaru dari PT Teknologi Nusantara. Perusahaan penyedia layanan infrastruktur IT dan telekomunikasi tersebut membutuhkan kandidat untuk posisi Network Administrator.</p><p>Posisi ini terbuka bagi lulusan SMK jurusan Teknik Jaringan Komputer dan Telekomunikasi (TJKT) yang memahami MikroTik, Cisco, serta dasar TCP/IP dan VLAN. Fresh graduate dipersilakan untuk mendaftar.</p><p>Alumni yang berminat dapat melihat detail lowongan melalui halaman Lowongan Kerja BKK atau menghubungi petugas BKK pada jam pelayanan. Batas akhir pendaftaran adalah 30 September 2026.</p>',
-                'thumbnail' => 'https://images.unsplash.com/photo-1531482615713-2afd69097998?auto=format&fit=crop&w=900&q=80',
-                'category' => 'Pengumuman',
-                'author' => 'BKK SMKN 11',
-            ],
-            [
-                'title' => 'Pendaftaran Program Magang Batch 2 PT Multimedia Kreatif Dibuka',
-                'date' => '2026-07-28',
-                'excerpt' => 'PT Multimedia Kreatif Indonesia kembali membuka program magang bagi siswa dan alumni DKV. Pendaftaran melalui BKK SMKN 11.',
-                'content' => '<p>BKK SMKN 11 Kabupaten Tangerang mengumumkan dibukanya pendaftaran program magang batch kedua dari PT Multimedia Kreatif Indonesia. Production house yang menangani berbagai merek nasional ini mencari kandidat untuk posisi Videografer &amp; Editor.</p><p>Program magang ini terbuka bagi siswa SMK jurusan DKV atau Multimedia yang sedang melaksanakan PKL maupun alumni baru. Kandidat diharapkan menguasai dasar videografi dan editing video menggunakan Adobe Premiere atau CapCut.</p><p>Peserta magang akan mendapatkan uang saku, sertifikat pengalaman kerja, dan kesempatan diangkat sebagai karyawan kontrak. Silakan hubungi BKK SMKN 11 untuk informasi pendaftaran lebih lanjut.</p>',
-                'thumbnail' => 'https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=900&q=80',
-                'category' => 'Pengumuman',
-                'author' => 'BKK SMKN 11',
-            ],
-            [
-                'title' => 'BKK Buka Layanan Konsultasi Karir untuk Alumni',
-                'date' => '2026-07-20',
-                'excerpt' => 'BKK SMKN 11 Kabupaten Tangerang menyediakan layanan konsultasi karir gratis bagi alumni setiap hari kerja.',
-                'content' => '<p>BKK SMKN 11 Kabupaten Tangerang membuka layanan konsultasi karir bagi alumni yang ingin mempersiapkan diri memasuki dunia kerja. Layanan ini mencakup bimbingan penyusunan curriculum vitae (CV), tips menghadapi wawancara kerja, serta informasi tren lowongan di berbagai sektor industri.</p><p>Konsultasi dapat dilakukan secara langsung di kantor BKK atau melalui WhatsApp pada jam pelayanan, Senin hingga Jumat pukul 07.00 - 15.00 WIB. Layanan ini gratis dan terbuka untuk seluruh alumni dari semua program keahlian.</p><p>Melalui layanan ini, BKK berharap alumni semakin siap bersaing dan mendapatkan pekerjaan yang sesuai dengan kompetensi masing-masing.</p>',
-                'thumbnail' => 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&w=900&q=80',
-                'category' => 'Pengumuman',
-                'author' => 'BKK SMKN 11',
-            ],
-            [
-                'title' => 'Rekrutmen Bersama Perusahaan Mitra BKK Tahun 2026',
-                'date' => '2026-07-12',
-                'excerpt' => 'BKK SMKN 11 mengadakan rekrutmen bersama yang diikuti perusahaan mitra dari berbagai sektor industri untuk menyalurkan lulusan.',
-                'content' => '<p>BKK SMKN 11 Kabupaten Tangerang akan menyelenggarakan kegiatan rekrutmen bersama yang diikuti oleh sejumlah perusahaan mitra dari berbagai sektor industri. Kegiatan ini menjadi wadah bagi alumni untuk bertemu langsung dengan perwakilan perusahaan dan mengajukan lamaran kerja.</p><p>Rekrutmen bersama menghadirkan perusahaan dari sektor teknologi informasi, otomotif, manufaktur, ritel, hingga perbankan. Alumni diharapkan membawa berkas lamaran lengkap dan berpakaian rapi saat mengikuti kegiatan.</p><p>Informasi jadwal dan daftar perusahaan peserta akan diumumkan melalui halaman Lowongan Kerja BKK. Pantau terus informasi terbaru agar tidak ketinggalan kesempatan ini.</p>',
-                'thumbnail' => 'https://images.unsplash.com/photo-1521791136064-7986c5920bc6?auto=format&fit=crop&w=900&q=80',
-                'category' => 'Pengumuman',
-                'author' => 'BKK SMKN 11',
-            ],
-            [
-                'title' => 'Workshop Persiapan Kerja: Tips CV dan Wawancara bagi Calon Lulusan',
-                'date' => '2026-06-25',
-                'excerpt' => 'BKK SMKN 11 menggelar workshop persiapan kerja untuk siswa kelas XII dalam menyusun CV dan menghadapi wawancara kerja.',
-                'content' => '<p>Dalam rangka mempersiapkan siswa kelas XII memasuki dunia kerja setelah lulus, BKK SMKN 11 Kabupaten Tangerang menyelenggarakan workshop persiapan kerja. Materi workshop meliputi teknik menyusun CV yang menarik, strategi menjawab wawancara kerja, dan etika berkomunikasi di lingkungan profesional.</p><p>Workshop menghadirkan praktisi dari perusahaan mitra yang membagikan pengalaman dan tips langsung dari dunia industri. Peserta juga berkesempatan melakukan simulasi wawancara kerja.</p><p>Kegiatan ini merupakan bagian dari program bimbingan karir BKK yang diadakan secara rutin setiap tahun menjelang kelulusan siswa kelas XII.</p>',
-                'thumbnail' => 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=900&q=80',
-                'category' => 'Pengumuman',
-                'author' => 'BKK SMKN 11',
-            ],
-        ];
+        // Cleaned per user request 2026-08-20: berita - dummy data removed, intentionally left empty
+        $rows = [];
 
         foreach ($rows as $row) {
             $row['slug'] = Str::slug($row['title']);
@@ -1040,18 +606,8 @@ class DatabaseSeeder extends Seeder
 
     protected function seedAchievements(): void
     {
-        $rows = [
-            ['title' => 'Medali Perak Ajang Prestasi SMK Kabupaten Tangerang', 'event' => 'Ajang Prestasi SMK Kabupaten Tangerang', 'year' => 2025, 'level' => 'Kabupaten', 'rank' => 'Medali Perak', 'students' => ['Febriyani'], 'photo' => 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=900&q=80'],
-            ['title' => 'Juara 2 LKS Bidang IT Network Systems Tingkat Kabupaten', 'event' => 'Lomba Kompetensi Siswa (LKS) Kabupaten Tangerang', 'year' => 2024, 'level' => 'Kabupaten', 'rank' => 'Juara 2', 'students' => ['Melati Febriyani', 'Rangga Saputra'], 'photo' => 'https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=900&q=80'],
-            ['title' => 'Juara 3 LKS Bidang Web Technologies Tingkat Provinsi Banten', 'event' => 'Lomba Kompetensi Siswa (LKS) Provinsi Banten', 'year' => 2025, 'level' => 'Provinsi', 'rank' => 'Juara 3', 'students' => ['Bayu Pratama', 'Dinda Aulia'], 'photo' => 'https://images.unsplash.com/photo-1567427017947-545c5f8d16ad?auto=format&fit=crop&w=900&q=80'],
-            ['title' => 'Partisipasi LKS Bidang IT Network Cabling Tingkat Kabupaten', 'event' => 'Lomba Kompetensi Siswa (LKS) Kabupaten Tangerang', 'year' => 2025, 'level' => 'Kabupaten', 'rank' => 'Peserta', 'students' => ['Febriyani', 'Ilham Maulana'], 'photo' => 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=900&q=80'],
-            ['title' => 'Juara 1 Lomba Cerdas Cermat Tingkat Kabupaten Tangerang', 'event' => 'Lomba Cerdas Cermat SMK Se-Kabupaten Tangerang', 'year' => 2024, 'level' => 'Kabupaten', 'rank' => 'Juara 1', 'students' => ['Tim SMKN 11 Kab. Tangerang'], 'photo' => 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?auto=format&fit=crop&w=900&q=80'],
-            ['title' => 'Juara 1 Turnamen Futsal Bupati Cup Kabupaten Tangerang', 'event' => 'Turnamen Futsal Bupati Cup Kabupaten Tangerang', 'year' => 2025, 'level' => 'Kabupaten', 'rank' => 'Juara 1', 'students' => ['Tim Futsal SMKN 11'], 'photo' => 'https://images.unsplash.com/photo-1552664688-cf1ec3b78426?auto=format&fit=crop&w=900&q=80'],
-            ['title' => 'Juara 2 Lomba Baris-Berbaris (PBB) Tingkat Kabupaten', 'event' => 'Lomba Baris-Berbaris PBB SMK Se-Kabupaten Tangerang', 'year' => 2025, 'level' => 'Kabupaten', 'rank' => 'Juara 2', 'students' => ['Tim PBB Satria 11'], 'photo' => 'https://images.unsplash.com/photo-1526976668913-0b7520b8c12d?auto=format&fit=crop&w=900&q=80'],
-            ['title' => 'Juara Harapan 1 Lomba Desain Poster Tingkat Provinsi Banten', 'event' => 'Festival Seni dan Desain Pelajar Provinsi Banten', 'year' => 2024, 'level' => 'Provinsi', 'rank' => 'Harapan', 'students' => ['Nabila Putri', 'Salsabila'], 'photo' => 'https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=900&q=80'],
-            ['title' => 'Juara 3 Lomba Videografi Pendek Tingkat Kabupaten', 'event' => 'Festival Film Pendek Pelajar Kabupaten Tangerang', 'year' => 2025, 'level' => 'Kabupaten', 'rank' => 'Juara 3', 'students' => ['Reza Pratama', 'Ayunda Kirana', 'Fadli Rahman'], 'photo' => 'https://images.unsplash.com/photo-1492619375914-88005aa9e8fb?auto=format&fit=crop&w=900&q=80'],
-            ['title' => 'Partisipasi Olimpiade Matematika Tingkat Provinsi Banten', 'event' => 'Olimpiade Sains Nasional (OSN) Provinsi Banten', 'year' => 2025, 'level' => 'Provinsi', 'rank' => 'Partisipasi', 'students' => ['Ahmad Zaki', 'Lestari Dewi'], 'photo' => 'https://images.unsplash.com/photo-1456513080510-7bf31984b480?auto=format&fit=crop&w=900&q=80'],
-        ];
+        // Cleaned per user request 2026-08-20: prestasi siswa - dummy data removed
+        $rows = [];
 
         foreach ($rows as $row) {
             Achievement::updateOrCreate(['title' => $row['title']], $row);
@@ -1060,16 +616,8 @@ class DatabaseSeeder extends Seeder
 
     protected function seedTeacherActivities(): void
     {
-        $rows = [
-            ['title' => 'Workshop Penyusunan Perangkat Pembelajaran Kurikulum Merdeka', 'date' => '2026-01-15', 'category' => 'Workshop', 'description' => 'Seluruh guru mengikuti workshop penyusunan modul ajar dan asesmen berbasis Kurikulum Merdeka yang dibimbing oleh narasumber dari Dinas Pendidikan Provinsi Banten.', 'photo' => 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=900&q=80'],
-            ['title' => 'Rapat Evaluasi Pembelajaran Semester Ganjil', 'date' => '2026-01-10', 'category' => 'Rapat', 'description' => 'Evaluasi hasil pembelajaran semester ganjil untuk perbaikan mutu layanan pembelajaran pada semester genap.', 'photo' => 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=900&q=80'],
-            ['title' => 'Pelatihan Asesmen Kompetensi dan Pembelajaran Berbasis Proyek', 'date' => '2026-02-05', 'category' => 'Workshop', 'description' => 'Pelatihan internal guru untuk menguatkan asesmen kompetensi dan penerapan pembelajaran berbasis proyek (PjBL).', 'photo' => 'https://images.unsplash.com/photo-1571260899304-425eee4c7efc?auto=format&fit=crop&w=900&q=80'],
-            ['title' => 'Upacara dan Syukuran Peringatan Hari Guru Nasional', 'date' => '2025-11-25', 'category' => 'Hari Besar', 'description' => 'Kegiatan apresiasi kepada seluruh guru atas dedikasi mereka dalam mencerdaskan murid SMKN 11 Kabupaten Tangerang.', 'photo' => 'https://images.unsplash.com/photo-1544923246-77307dd654cb?auto=format&fit=crop&w=900&q=80'],
-            ['title' => 'Gotong Royong dan Persiapan Lingkungan Sekolah', 'date' => '2026-02-14', 'category' => 'Kegiatan Sosial', 'description' => 'Seluruh pendidik dan tenaga kependidikan bergotong royong menata lingkungan sekolah menjelang dimulainya semester genap.', 'photo' => 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=900&q=80'],
-            ['title' => 'Pelatihan Pemanfaatan Teknologi AI dalam Pembelajaran', 'date' => '2026-04-20', 'category' => 'Workshop', 'description' => 'Guru mengikuti pelatihan pemanfaatan teknologi kecerdasan buatan (AI) untuk mendukung penyusunan bahan ajar dan asesmen yang inovatif.', 'photo' => 'https://images.unsplash.com/photo-1535223289827-42f1e9919769?auto=format&fit=crop&w=900&q=80'],
-            ['title' => 'Studi Tiru ke SMK Unggulan di Jakarta', 'date' => '2026-05-12', 'category' => 'Studi Tiru', 'description' => 'Sejumlah guru produktif melaksanakan studi tiru ke SMK unggulan di Jakarta untuk benchmarking kurikulum dan praktik industri.', 'photo' => 'https://images.unsplash.com/photo-1571260899304-425eee4c7efc?auto=format&fit=crop&w=900&q=80'],
-            ['title' => 'Rapat Koordinasi dengan Dunia Usaha dan Industri (DUDI)', 'date' => '2026-06-03', 'category' => 'Rapat', 'description' => 'Rapat koordinasi bersama perusahaan mitra untuk membahas program Praktik Kerja Lapangan (PKL) dan penyerapan lulusan tahun ajaran 2026/2027.', 'photo' => 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=900&q=80'],
-        ];
+        // Cleaned per user request 2026-08-20: teacher_activities - dummy data removed
+        $rows = [];
 
         foreach ($rows as $row) {
             TeacherActivity::updateOrCreate(['title' => $row['title']], $row);
@@ -1183,13 +731,8 @@ class DatabaseSeeder extends Seeder
             );
         }
 
-        $activities = [
-            ['title' => 'Latihan Kepemimpinan Siswa (LKS)', 'description' => 'Kegiatan pelatihan kepemimpinan yang diikuti oleh pengurus OSIS dan perwakilan kelas untuk membangun jiwa pemimpin yang tangguh dan bertanggung jawab.', 'photo' => 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=900&q=80', 'activity_date' => '2026-01-15', 'status' => 'published'],
-            ['title' => 'Peringatan Hari Kemerdekaan RI', 'description' => 'Rangkaian kegiatan perayaan HUT kemerdekaan RI ke-81 yang melibatkan seluruh warga sekolah, mulai dari upacara bendera hingga lomba-lomba kebangsaan.', 'photo' => 'https://images.unsplash.com/photo-1532375810709-75b1da00537c?auto=format&fit=crop&w=900&q=80', 'activity_date' => '2026-08-17', 'status' => 'published'],
-            ['title' => 'Bakti Sosial Peduli Lingkungan', 'description' => 'Kegiatan kerja bakti dan penghijauan di sekitar lingkungan sekolah sebagai wujud kepedulian OSIS terhadap kelestarian lingkungan.', 'photo' => 'https://images.unsplash.com/photo-1526392060635-9d6019884377?auto=format&fit=crop&w=900&q=80', 'activity_date' => '2026-03-05', 'status' => 'published'],
-            ['title' => 'Festival Seni & Budaya SMKN 11', 'description' => 'Pentas seni tahunan yang menampilkan berbagai penampilan siswa mulai dari tari, musik, teater, hingga pameran karya siswa jurusan DKV dan Busana.', 'photo' => 'https://images.unsplash.com/photo-1516280464613-81e30c6f1f0b?auto=format&fit=crop&w=900&q=80', 'activity_date' => '2026-05-25', 'status' => 'published'],
-            ['title' => 'Donor Darah & Sosialisasi Kesehatan', 'description' => 'Kegiatan donor darah bekerja sama dengan PMI Cabang Tangerang serta sosialisasi pola hidup sehat bagi seluruh siswa dan guru.', 'photo' => 'https://images.unsplash.com/photo-1615462136150-49bae8b18b30?auto=format&fit=crop&w=900&q=80', 'activity_date' => '2026-02-20', 'status' => 'published'],
-        ];
+        $activities = [];
+        // kegiatan osis - dummy removed per request 2026-08-20
 
         foreach ($activities as $activity) {
             OsisActivity::updateOrCreate(['title' => $activity['title']], $activity);
@@ -1198,18 +741,8 @@ class DatabaseSeeder extends Seeder
 
     protected function seedExtracurriculars(): void
     {
-        $rows = [
-            ['name' => 'Paskibra Satria 11', 'category' => 'Kedisiplinan', 'description' => 'Pasukan Pengibar Bendera yang melatih kedisiplinan, kekompakan, dan jiwa nasionalisme melalui latihan baris-berbaris dan tata upacara bendera.', 'photo' => 'https://images.unsplash.com/photo-1526976668913-0b7520b8c12d?auto=format&fit=crop&w=900&q=80', 'advisor' => 'Aiptu Hendra Gunawan', 'schedule' => 'Jumat & Sabtu'],
-            ['name' => 'Futsal', 'category' => 'Olahraga', 'description' => 'Wadah pengembangan bakat olahraga futsal yang telah menorehkan berbagai prestasi di tingkat kabupaten dan provinsi.', 'photo' => 'https://images.unsplash.com/photo-1552664688-cf1ec3b78476?auto=format&fit=crop&w=900&q=80', 'advisor' => 'Pak Rahmat Hidayat', 'schedule' => 'Selasa & Kamis'],
-            ['name' => 'Basket', 'category' => 'Olahraga', 'description' => 'Ekstrakurikuler bola basket yang mengedepankan kerja sama tim, ketangkasan, dan sportivitas dalam setiap pertandingan.', 'photo' => 'https://images.unsplash.com/photo-1574623452339-5e2b0dc96d8f?auto=format&fit=crop&w=900&q=80', 'advisor' => 'Pak Dede Supriyadi', 'schedule' => 'Senin & Rabu'],
-            ['name' => 'Rohis (Rohani Islam)', 'category' => 'Keagamaan', 'description' => 'Kegiatan kerohanian Islam yang bertujuan memperkuat iman, akhlak mulia, dan wawasan keislaman siswa melalui kajian, mentoring, dan kegiatan sosial.', 'photo' => 'https://images.unsplash.com/photo-1585412727339-54e4bae3bbf9?auto=format&fit=crop&w=900&q=80', 'advisor' => 'Bu Aisyah S.Pd.I', 'schedule' => 'Jumat'],
-            ['name' => 'PMR (Palang Merah Remaja)', 'category' => 'Sosial', 'description' => 'Organisasi kepalangmerahan yang melatih siswa menjadi relawan tanggap darurat, pertolongan pertama, dan donor darah.', 'photo' => 'https://images.unsplash.com/photo-1512486130939-2c4f79935e4f?auto=format&fit=crop&w=900&q=80', 'advisor' => 'Bu Dewi Sartika', 'schedule' => 'Sabtu'],
-            ['name' => 'Pramuka', 'category' => 'Kedisiplinan', 'description' => 'Kegiatan kepanduan yang membentuk karakter, kemandirian, dan jiwa kepemimpinan melalui berbagai kegiatan outdoor dan keterampilan.', 'photo' => 'https://images.unsplash.com/photo-1521185496952-571e42c3f5b0?auto=format&fit=crop&w=900&q=80', 'advisor' => 'Pak Sutrisno', 'schedule' => 'Jumat'],
-            ['name' => 'Jurnalistik & Multimedia', 'category' => 'Seni & Kreatif', 'description' => 'Wadah pengembangan minat di bidang penulisan, fotografi, videografi, dan produksi konten digital untuk publikasi sekolah.', 'photo' => 'https://images.unsplash.com/photo-1574717024653-61f18dee1fb0?auto=format&fit=crop&w=900&q=80', 'advisor' => 'Pak Wahyu Nugroho', 'schedule' => 'Rabu'],
-            ['name' => 'Seni Tari & Musik', 'category' => 'Seni & Kreatif', 'description' => 'Eksplorasi bakat seni tari tradisional dan modern, serta musik, yang sering tampil pada acara-acara sekolah dan lomba kebudayaan.', 'photo' => 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=900&q=80', 'advisor' => 'Bu Rina Marlina', 'schedule' => 'Kamis'],
-            ['name' => 'English Club', 'category' => 'Akademik', 'description' => 'Klub percakapan bahasa Inggris yang meningkatkan kemampuan speaking, listening, dan public speaking melalui debat, storytelling, dan diskusi.', 'photo' => 'https://images.unsplash.com/photo-1582656894606-c1c9e6ef015d?auto=format&fit=crop&w=900&q=80', 'advisor' => 'Bu Nani Kusmawati', 'schedule' => 'Selasa'],
-            ['name' => 'Taekwondo', 'category' => 'Olahraga', 'description' => 'Latihan bela diri taekwondo untuk mengembangkan kesehatan fisik, disiplin, dan kemampuan bela diri dengan pembinaan berjenjang.', 'photo' => 'https://images.unsplash.com/photo-1576200962002-b08bab9ca72f?auto=format&fit=crop&w=900&q=80', 'advisor' => 'Pak Agus Salim', 'schedule' => 'Kamis & Sabtu'],
-        ];
+        // Cleaned per user request 2026-08-20: extracurriculars - dummy data removed
+        $rows = [];
 
         foreach ($rows as $row) {
             $slug = Str::slug($row['name']);
@@ -1247,22 +780,15 @@ class DatabaseSeeder extends Seeder
             Kesemaptaan::create($profileData);
         }
 
-        $activities = [
-            ['title' => 'Latihan Dasar Kedisiplinan (LDK)', 'description' => 'Pelatihan dasar kedisiplinan dan pembinaan fisik untuk membentuk karakter siswa yang tertib, bertanggung jawab, dan siap menghadapi tantangan.', 'activity_date' => '2026-02-10', 'documentation' => [], 'photo' => 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=900&q=80', 'status' => 'published'],
-            ['title' => 'Pembinaan Fisik & Keterampilan Baris-Berbaris', 'description' => 'Latihan fisik dan keterampilan PBB yang rutin dilaksanakan untuk menjaga kebugaran dan membangun kekompakan antarsiswa.', 'activity_date' => '2026-03-20', 'documentation' => [], 'photo' => 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=900&q=80', 'status' => 'published'],
-            ['title' => 'Latihan Khusus Tim PBB Satria 11', 'description' => 'Latihan intensif bagi tim PBB Satria 11 dalam persiapan mengikuti lomba baris-berbaris tingkat kabupaten dan provinsi.', 'activity_date' => '2026-05-15', 'documentation' => [], 'photo' => 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=900&q=80', 'status' => 'published'],
-            ['title' => 'Upacara Apel Besar & Pelantikan Anggota Baru', 'description' => 'Apel besar sekolah sekaligus pelantikan anggota baru tim Kesemaptaan SMKN 11 Kabupaten Tangerang periode 2025/2026.', 'activity_date' => '2026-08-30', 'documentation' => [], 'photo' => 'https://images.unsplash.com/photo-1531058020387-3be344556be6?auto=format&fit=crop&w=900&q=80', 'status' => 'published'],
-        ];
+        $activities = [];
+        // kegiatan kesemaptaan - dummy removed per request 2026-08-20
 
         foreach ($activities as $activity) {
             KesemaptaanActivity::updateOrCreate(['title' => $activity['title']], $activity);
         }
 
-        $schedules = [
-            ['name' => 'Latihan Rutin Senam & PBB', 'date' => '2026-08-24', 'location' => 'Lapangan Sekolah', 'description' => 'Latihan fisik dan baris-berbaris untuk seluruh anggota kesemaptaan.'],
-            ['name' => 'Latihan Tim PBB Satria 11', 'date' => '2026-08-26', 'location' => 'Lapangan Sekolah', 'description' => 'Latihan intensif persiapan lomba baris-berbaris tingkat kabupaten.'],
-            ['name' => 'Apel Akbar & Pembinaan Karakter', 'date' => '2026-08-29', 'location' => 'Lapangan Sekolah', 'description' => 'Kegiatan apel besar sekaligus pembinaan kedisiplinan dan mental bagi anggota.'],
-        ];
+        $schedules = [];
+        // jadwal kesemaptaan - dummy removed per request 2026-08-20
 
         foreach ($schedules as $schedule) {
             KesemaptaanSchedule::updateOrCreate(
@@ -1291,13 +817,8 @@ class DatabaseSeeder extends Seeder
             KesemaptaanAchievement::updateOrCreate(['name' => $achievement['name']], $achievement);
         }
 
-        $gallery = [
-            ['image' => 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=900&q=80', 'caption' => 'Latihan fisik bersama di lapangan', 'is_primary' => true, 'sort_order' => 1],
-            ['image' => 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=900&q=80', 'caption' => 'Kegiatan apel dan pembinaan kedisiplinan', 'is_primary' => false, 'sort_order' => 2],
-            ['image' => 'https://images.unsplash.com/photo-1531058020387-3be344556be6?auto=format&fit=crop&w=900&q=80', 'caption' => 'Latihan baris-berbaris tim PBB', 'is_primary' => false, 'sort_order' => 3],
-            ['image' => 'https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?auto=format&fit=crop&w=900&q=80', 'caption' => 'Suasana lapangan saat kegiatan kesamaptaan', 'is_primary' => false, 'sort_order' => 4],
-            ['image' => 'https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=900&q=80', 'caption' => 'Koordinasi dan kekompakan antaranggota', 'is_primary' => false, 'sort_order' => 5],
-        ];
+        $gallery = [];
+        // dokumentasi kesemaptaan - dummy removed per request 2026-08-20
 
         foreach ($gallery as $index => $item) {
             KesemaptaanGallery::updateOrCreate(
@@ -1305,79 +826,21 @@ class DatabaseSeeder extends Seeder
                 $item
             );
         }
+
+        // video kesemaptaan - dummy removed per request 2026-08-20 (tidak ada seed dummy; intentionally left empty)
     }
 
     protected function seedMading(): void
     {
-        $categories = [
-            ['slug' => 'puisi', 'name' => 'Puisi', 'sort_order' => 1],
-            ['slug' => 'cerpen', 'name' => 'Cerpen', 'sort_order' => 2],
-            ['slug' => 'artikel', 'name' => 'Artikel', 'sort_order' => 3],
-            ['slug' => 'pantun', 'name' => 'Pantun', 'sort_order' => 4],
-            ['slug' => 'esai', 'name' => 'Esai', 'sort_order' => 5],
-            ['slug' => 'opini', 'name' => 'Opini', 'sort_order' => 6],
-            ['slug' => 'edukasi', 'name' => 'Edukasi', 'sort_order' => 7],
-            ['slug' => 'teknologi', 'name' => 'Teknologi', 'sort_order' => 8],
-            ['slug' => 'motivasi', 'name' => 'Motivasi', 'sort_order' => 9],
-            ['slug' => 'karya-kreatif', 'name' => 'Karya Kreatif', 'sort_order' => 10],
-            ['slug' => 'lainnya', 'name' => 'Lainnya', 'sort_order' => 11],
-        ];
+        // Cleaned per user request 2026-08-20: mading - dummy data removed
+        $categories = [];
 
         $categoryIds = [];
         foreach ($categories as $category) {
             $categoryIds[$category['slug']] = MadingCategory::updateOrCreate(['slug' => $category['slug']], $category)->id;
         }
 
-        $posts = [
-            [
-                'title' => 'Menjaga Semangat Belajar di Tengah Kesibukan',
-                'content' => 'Di tengah banyaknya kegiatan sekolah, penting bagi kita untuk tetap menjaga semangat belajar. Manajemen waktu yang baik, istirahat yang cukup, dan lingkungan yang mendukung adalah kunci agar tetap produktif dan tidak kehilangan motivasi.',
-                'category' => 'motivasi',
-                'author_name' => 'Redaksi Mading',
-                'published_at' => '2026-07-01 00:00:00',
-                'created_at' => '2026-06-28 10:00:00',
-            ],
-            [
-                'title' => 'Puisi: Senyum Hangus Rindu',
-                'content' => 'Di balik jendela yang kau tinggal, ada senyum yang malam ini ku simpan. Hingga hari-hari ini semakin panjang, kasih tak pernah kehilangan peta hatimu.',
-                'category' => 'puisi',
-                'author_name' => 'Siswa Kelas X',
-                'published_at' => '2026-06-20 00:00:00',
-                'created_at' => '2026-06-18 09:00:00',
-            ],
-            [
-                'title' => 'Tips Sukses Praktik Kerja Lapangan (PKL)',
-                'content' => 'PKL adalah kesempatan emas untuk mengenal dunia kerja. Berikut beberapa tips: datang tepat waktu, berpakaian rapi dan sopan, aktif bertanya kepada pembimbing industri, jujur dalam bekerja, dan dokumentasikan kegiatan harian sebagai laporan. Jangan lupa untuk membangun relasi yang baik dengan rekan kerja.',
-                'category' => 'edukasi',
-                'author_name' => 'Siswa Kelas XII',
-                'published_at' => '2026-07-05 00:00:00',
-                'created_at' => '2026-07-03 14:00:00',
-            ],
-            [
-                'title' => 'Pantun: Semangat Belajar',
-                'content' => 'Pergi ke pasar membeli mangga. Jangan lupa beli rambutan juga. Rajin belajar setiap pagi. Sukses pasti akan kau dapatkan nanti.',
-                'category' => 'pantun',
-                'author_name' => 'Siswa Kelas XI',
-                'published_at' => '2026-06-25 00:00:00',
-                'created_at' => '2026-06-22 11:00:00',
-            ],
-            [
-                'title' => 'Esai: Pentingnya Literasi Digital bagi Siswa SMK',
-                'content' => 'Di era industri 4.0, literasi digital bukan lagi pilihan melainkan keharusan. Siswa SMK dituntut tidak hanya mampu menggunakan teknologi, tetapi juga memahami etika digital, keamanan siber, dan kemampuan menyaring informasi. Literasi digital yang baik akan mempersiapkan kita menghadapi dunia kerja yang semakin berbasis teknologi.',
-                'category' => 'esai',
-                'author_name' => 'Redaksi Mading',
-                'published_at' => '2026-07-08 00:00:00',
-                'created_at' => '2026-07-05 08:00:00',
-            ],
-            [
-                'title' => 'Cerpen: Sepatu Baru Pak Surya',
-                'content' => 'Pak Surya adalah seorang guru produktif yang selalu datang lebih awal. Suatu pagi, ia datang memakai sepatu baru yang mengkilap. Para siswa heran, bukan karena sepatunya, melainkan karena Pak Surya tersenyum lebar sepanjang hari. "Sepatu baru, semangat baru," katanya. Ternyata, sepatu itu hadiah dari alumni yang kini sukses menjadi teknisi. Sebuah pengingat bahwa dedikasi guru tak pernah terlupakan.',
-                'category' => 'cerpen',
-                'author_name' => 'Siswa Kelas X',
-                'published_at' => '2026-06-30 00:00:00',
-                'created_at' => '2026-06-28 13:00:00',
-            ],
-        ];
+        $posts = [];
 
         foreach ($posts as $post) {
             MadingPost::updateOrCreate(
@@ -1401,20 +864,8 @@ class DatabaseSeeder extends Seeder
 
     protected function seedGalleries(): void
     {
-        $items = [
-            ['caption' => 'Kegiatan belajar mengajar di laboratorium komputer', 'category' => 'Akademik', 'date' => '2026-07-10', 'src' => '/images/uploads/gallery/lab-komputer.jpg'],
-            ['caption' => 'Tim futsal SMKN 11 bertanding di Bupati Cup', 'category' => 'Olahraga', 'date' => '2026-06-20', 'src' => '/images/uploads/gallery/futsal.jpg'],
-            ['caption' => 'Sosialisasi PPDB oleh panitia sekolah', 'category' => 'Kegiatan', 'date' => '2026-06-15', 'src' => '/images/uploads/gallery/sosialisasi-ppdb.jpg'],
-            ['caption' => 'Upacara bendera hari Senin yang khidmat', 'category' => 'Kegiatan', 'date' => '2026-06-01', 'src' => '/images/uploads/gallery/upacara.jpg'],
-            ['caption' => 'Siswa TJKT praktik konfigurasi jaringan', 'category' => 'Akademik', 'date' => '2026-05-20', 'src' => '/images/uploads/gallery/praktik-jaringan.jpg'],
-            ['caption' => 'Kunjungan industri jurusan Teknik Otomotif ke pabrik mobil', 'category' => 'Akademik', 'date' => '2026-05-10', 'src' => '/images/uploads/gallery/kunjungan-industri.jpg'],
-            ['caption' => 'Penampilan seni pada peringatan Hari Guru', 'category' => 'Kegiatan', 'date' => '2025-11-25', 'src' => 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=900&q=80'],
-            ['caption' => 'Kegiatan ekstrakurikuler jurnalistik', 'category' => 'Kegiatan', 'date' => '2026-04-15', 'src' => 'https://images.unsplash.com/photo-1574717024653-61f18dee1fb0?auto=format&fit=crop&w=900&q=80'],
-            ['caption' => 'Praktik perbaikan mesin siswa Teknik Otomotif', 'category' => 'Akademik', 'date' => '2026-03-12', 'src' => 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=900&q=80'],
-            ['caption' => 'Kegiatan Rohis kajian rutin Jumat berkah', 'category' => 'Keagamaan', 'date' => '2026-02-18', 'src' => 'https://images.unsplash.com/photo-1585412727339-54e4bae3bbf9?auto=format&fit=crop&w=900&q=80'],
-            ['caption' => 'Latihan Paskibra Satria 11', 'category' => 'Kegiatan', 'date' => '2026-01-25', 'src' => 'https://images.unsplash.com/photo-1526976668913-0b7520b8c12d?auto=format&fit=crop&w=900&q=80'],
-            ['caption' => 'Latihan taekwondo mingguan', 'category' => 'Olahraga', 'date' => '2026-01-10', 'src' => 'https://images.unsplash.com/photo-1576200962002-b08bab9ca72f?auto=format&fit=crop&w=900&q=80'],
-        ];
+        // Cleaned per user request 2026-08-20: galeri - dummy data removed
+        $items = [];
 
         foreach ($items as $index => $item) {
             $slug = 'galeri-'.($index + 1);

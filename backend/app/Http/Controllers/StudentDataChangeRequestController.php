@@ -4,13 +4,22 @@ namespace App\Http\Controllers;
 
 use App\Models\Student;
 use App\Models\StudentDataChangeRequest;
+use App\Models\User;
 use App\Services\PermissionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class StudentDataChangeRequestController extends Controller
 {
+    /**
+     * Kolom berkas siswa yang bisa diubah lewat pengajuan dan harus dibersihkan
+     * dari disk bila tidak jadi dipakai (ditolak/dibatalkan/diganti).
+     */
+    private const FILE_KEYS = ['foto', 'doc_kk', 'doc_akta', 'doc_ijazah', 'doc_lainnya'];
+
     public function __construct(protected PermissionService $permissions)
     {
     }
@@ -80,24 +89,26 @@ class StudentDataChangeRequestController extends Controller
             return response()->json(['error' => ['message' => 'Data perubahan tidak boleh kosong.']], 422);
         }
 
-        // Fields that students are allowed to request changes for
-        $allowedFields = [
-            'nickname', 'phone', 'address', 'tinggal_dengan', 'jarak_sekolah',
-            'golongan_darah', 'penyakit', 'kelainan_jasmani', 'tinggi_cm', 'berat_kg',
-            'ayah_nama', 'ayah_tempat', 'ayah_tanggal_lahir', 'ayah_agama', 'ayah_kewarganegaraan',
-            'ayah_pendidikan', 'ayah_pekerjaan', 'ayah_penghasilan', 'ayah_alamat', 'ayah_no_telp',
-            'ibu_nama', 'ibu_tempat', 'ibu_tanggal_lahir', 'ibu_agama', 'ibu_kewarganegaraan',
-            'ibu_pendidikan', 'ibu_pekerjaan', 'ibu_penghasilan', 'ibu_alamat', 'ibu_no_telp',
-            'wali_nama', 'wali_tempat', 'wali_tanggal_lahir', 'wali_agama', 'wali_kewarganegaraan',
-            'wali_pendidikan', 'wali_pekerjaan', 'wali_penghasilan', 'wali_alamat', 'wali_no_telp',
-            'gemar_kesenian', 'gemar_olahraga', 'gemar_kemasyarakatan', 'gemar_lain',
-            'kewarganegaraan', 'bahasa_sehari_hari',
-        ];
+        // PIN baru hanya boleh masuk pengajuan jika PIN saat ini terverifikasi.
+        if (array_key_exists('pin', $proposedData)) {
+            $currentPin = (string) ($proposedData['current_pin'] ?? '');
+            if (! Hash::check($currentPin, $user->password)) {
+                return response()->json(['error' => ['message' => 'PIN saat ini salah.']], 422);
+            }
+            $newPin = (string) ($proposedData['pin'] ?? '');
+            if (! preg_match('/^\d{4}$/', $newPin)) {
+                return response()->json(['error' => ['message' => 'PIN baru harus 4 digit angka.']], 422);
+            }
+        }
+
+        // Fields that students are allowed to request changes for. Full Admin
+        // biodata set, kecuali identifier login (nisn/nis) yang tetap Admin-only.
+        $allowedFields = $this->editableFields();
 
         $filtered = [];
         foreach ($proposedData as $key => $value) {
             if (in_array($key, $allowedFields, true)) {
-                $filtered[$key] = $value;
+                $filtered[$key] = $this->normalizeValue($key, $value);
             }
         }
 
@@ -117,7 +128,8 @@ class StudentDataChangeRequestController extends Controller
         // Build old_data snapshot
         $oldData = [];
         foreach (array_keys($filtered) as $key) {
-            $oldData[$key] = $student->{$key};
+            // Jangan mencatat PIN lama apa pun ke snapshot pengajuan.
+            $oldData[$key] = $key === 'pin' ? '' : $this->normalizeValue($key, $student->{$key});
         }
 
         $changeRequest = DB::transaction(function () use ($student, $oldData, $filtered) {
@@ -158,6 +170,8 @@ class StudentDataChangeRequestController extends Controller
         }
 
         $changeRequest->update(['status' => 'dibatalkan']);
+
+        $this->cleanupPendingFiles($changeRequest);
 
         return response()->json(['data' => $changeRequest, 'error' => null]);
     }
@@ -255,11 +269,134 @@ class StudentDataChangeRequestController extends Controller
             if ($status === 'disetujui') {
                 $student = Student::find($changeRequest->student_id);
                 if ($student) {
-                    $student->update($changeRequest->proposed_data);
+                    $proposed = $changeRequest->proposed_data;
+
+                    // Snapshot replaced uploaded files BEFORE the update: after
+                    // save() getOriginal() reflects the newly saved value.
+                    $previousFiles = [];
+                    foreach (self::FILE_KEYS as $fileKey) {
+                        $previousFiles[$fileKey] = $student->getRawOriginal($fileKey);
+                    }
+
+                    $student->update($proposed);
+
+                    // Keep login/display name mirrors in sync when the name changed.
+                    $accountUser = User::find($student->id);
+                    if ($accountUser) {
+                        if (isset($proposed['name']) && $proposed['name'] !== '') {
+                            $accountUser->update(['name' => $proposed['name']]);
+                            $accountUser->profileRecord?->update(['name' => $proposed['name']]);
+                        }
+                        // PIN baru juga harus disinkronkan ke hash login (users.password).
+                        if (isset($proposed['pin']) && $proposed['pin'] !== '') {
+                            $accountUser->update(['password' => Hash::make($proposed['pin'])]);
+                        }
+                    }
+
+                    foreach ($previousFiles as $fileKey => $previous) {
+                        if ($student->wasChanged($fileKey) && $previous) {
+                            $this->deleteUploadedFile($previous);
+                        }
+                    }
                 }
+                return;
             }
+
+            // Rejected: the submitted file (if any) is never promoted to the
+            // main profile, so remove it to avoid orphaned files.
+            $this->cleanupPendingFiles($changeRequest);
         });
 
         return response()->json(['data' => $changeRequest->fresh()->load(['student:id,name,nisn', 'verifier:id,name']), 'error' => null]);
+    }
+
+    /**
+     * Colom biodata Admin yang boleh diajukan siswa (identifier nisn/nis
+     * tetap Admin-only karena dipakai sebagai login account).
+     *
+     * @return string[]
+     */
+    private function editableFields(): array
+    {
+        $fields = [
+            // A. Keterangan Peserta Didik
+            'name', 'nickname', 'class', 'major', 'gender', 'place_of_birth',
+            'date_of_birth', 'religion', 'kewarganegaraan', 'anak_ke',
+            'jml_saudara_kandung', 'jml_saudara_tiri', 'anak_yatim_piatu',
+            'bahasa_sehari_hari',
+            // B. Keterangan Tempat Tinggal
+            'address', 'phone', 'tinggal_dengan', 'jarak_sekolah',
+            // C. Keterangan Kesehatan
+            'golongan_darah', 'penyakit', 'kelainan_jasmani', 'tinggi_cm', 'berat_kg',
+            // D. Keterangan Pendidikan
+            'lulusan_dari', 'tanggal_sttb', 'nomor_sttb', 'lama_belajar',
+            'pindahan_dari', 'alasan_pindah', 'diangkat', 'kompetensi_keahlian',
+            'tanggal_diterima',
+            // H. Kegemaran Siswa
+            'gemar_kesenian', 'gemar_olahraga', 'gemar_kemasyarakatan', 'gemar_lain',
+            // I. Keterangan Siswa
+            'siswa_status', 'siswa_tanggal',
+            // Dokumen siswa (opsional, bucket student/documents sama seperti Admin)
+            'doc_kk', 'doc_akta', 'doc_ijazah', 'doc_lainnya',
+            'foto',
+            // PIN login (tetap diverifikasi PIN saat ini saat pengajuan)
+            'pin',
+        ];
+
+        foreach (['ayah', 'ibu', 'wali'] as $p) {
+            foreach (['nama', 'tempat', 'tanggal_lahir', 'agama', 'kewarganegaraan', 'pendidikan', 'pekerjaan', 'penghasilan', 'alamat', 'no_telp', 'status_hidup'] as $c) {
+                $fields[] = "{$p}_{$c}";
+            }
+        }
+
+        return $fields;
+    }
+
+    /**
+     * Normalkan nilai sebelum disimpan ke snapshot old/proposed.
+     */
+    private function normalizeValue(string $key, mixed $value): mixed
+    {
+        if ($value instanceof \DateTimeInterface) {
+            return $value->toDateString();
+        }
+
+        if ($value === null || $value === '' || is_bool($value)) {
+            return $value;
+        }
+
+        return (string) $value;
+    }
+
+    /**
+     * Hapus berkas (foto/dokumen) yang diajukan namun tidak pernah menjadi
+     * data utama ketika pengajuan dibatalkan/ditolak (hindari file sampah).
+     */
+    private function cleanupPendingFiles(StudentDataChangeRequest $changeRequest): void
+    {
+        foreach (self::FILE_KEYS as $fileKey) {
+            $old = $changeRequest->old_data[$fileKey] ?? null;
+            $new = $changeRequest->proposed_data[$fileKey] ?? null;
+
+            if ($new !== null && $new !== '' && (string) $new !== (string) $old) {
+                $this->deleteUploadedFile((string) $new);
+            }
+        }
+    }
+
+    private function deleteUploadedFile(?string $url): void
+    {
+        if (! $url) {
+            return;
+        }
+
+        $path = parse_url($url, PHP_URL_PATH) ?? '';
+        $prefix = '/storage/';
+        if (str_starts_with($path, $prefix)) {
+            $path = substr($path, strlen($prefix));
+        }
+        if ($path !== '') {
+            Storage::disk('public')->delete($path);
+        }
     }
 }

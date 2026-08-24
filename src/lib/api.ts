@@ -13,7 +13,7 @@ export function resolveImageUrl(url: string | null | undefined): string | undefi
 
 export interface HomeContent {
   hero: { images: string[]; frame_image?: string; description: string; accreditation: string; facility_title: string; facility_description: string };
-  welcome: { image: string; principal_name: string; principal_title: string; title: string; paragraphs: string[]; quote: string };
+  welcome: { principal_name: string; principal_title: string; title: string; paragraphs: string[]; quote: string };
   about: { title: string; subtitle: string; paragraphs: string[]; card_label: string; card_title: string; quote: string; location: string };
   stats: { value: string; label: string }[];
   social?: { instagram: string; tiktok: string; email: string };
@@ -62,6 +62,35 @@ export function youtubeThumbnailUrl(url: string): string {
 }
 
 export { apiBaseUrl };
+
+/**
+ * Unduh file melalui endpoint API (bukan URL statis /storage), karena file
+ * statis dilewati web server sehingga tidak membawa header CORS dan fetch()
+ * dari SPA frontend akan diblokir browser. Kembalikan pesan error bila gagal.
+ */
+export async function downloadApiFile(path: string, filename: string): Promise<{ ok: true } | { ok: false; message: string }> {
+  const relative = path.startsWith('/storage/') ? path.slice('/storage/'.length) : path;
+  const url = `${apiBaseUrl}/admin/students/files/download?path=${encodeURIComponent(relative)}`;
+  try {
+    const res = await fetch(url, { credentials: 'include' });
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      return { ok: false, message: body?.error?.message ?? 'File tidak ditemukan.' };
+    }
+    const blob = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = objectUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(objectUrl);
+    return { ok: true };
+  } catch {
+    return { ok: false, message: 'Tidak dapat mengunduh file.' };
+  }
+}
 
 type ApiError = { message?: string; [key: string]: unknown } | null;
 type ApiResponse<T> = { data: T | null; error: ApiError; status?: number; count?: number | null; meta?: unknown };
@@ -239,7 +268,7 @@ function normalizeContentRows<T>(type: string, rows: unknown[]): T { return (typ
 export async function fetchPublicContent<T>(type: string, options?: { limit?: number }): Promise<T> { const path = contentPath[type]; if (!path) return [] as T; const suffix = options?.limit ? `?limit=${options.limit}` : ''; const result = await request<unknown[]>(`/${path}${suffix}`); return result.data ? normalizeContentRows<T>(type, result.data) : [] as T; }
 export async function fetchPublicContentByIdResult<T extends { slug?: string }>(type: string, slug: string): Promise<{ data: T | null; error: ApiError }> { const path = contentPath[type]; if (!path) return { data: null, error: { message: 'Konten tidak tersedia.' } }; const result = await request<unknown>(`/${path}/${encodeURIComponent(slug)}`); return { data: result.data ? normalizeContentRow<T>(type, result.data) : null, error: result.status === 404 ? null : result.error }; }
 export async function fetchPublicContentById<T extends { slug?: string }>(type: string, slug: string): Promise<T | null> { return (await fetchPublicContentByIdResult<T>(type, slug)).data; }
-function normalizeSpmbContent(row: Record<string, unknown>): SpmbContent { return { id: row.id as string | undefined, status: (row.status as SpmbContent['status']) || 'ditutup', title: String(row.title ?? ''), description: String(row.description ?? ''), latest_info: String(row.latest_info ?? ''), requirements: Array.isArray(row.requirements) ? row.requirements as string[] : [], schedule: Array.isArray(row.schedule) ? row.schedule as SpmbContent['schedule'] : [], flow_steps: Array.isArray(row.flow_steps) ? row.flow_steps as SpmbContent['flow_steps'] : [], faq: Array.isArray(row.faq) ? row.faq as SpmbContent['faq'] : [], portal_url: String(row.portal_url ?? ''), banner_image: String(row.banner_image ?? ''), banner_title: String(row.banner_title ?? ''), banner_description: String(row.banner_description ?? ''), updated_at: row.updated_at as string | undefined }; }
+function normalizeSpmbContent(row: Record<string, unknown>): SpmbContent { return { id: row.id as string | undefined, status: (row.status as SpmbContent['status']) || 'ditutup', title: String(row.title ?? ''), description: String(row.description ?? ''), latest_info: String(row.latest_info ?? ''), requirements: Array.isArray(row.requirements) ? row.requirements as string[] : [], schedule: Array.isArray(row.schedule) ? row.schedule as SpmbContent['schedule'] : [], flow_steps: Array.isArray(row.flow_steps) ? row.flow_steps as SpmbContent['flow_steps'] : [], faq: Array.isArray(row.faq) ? row.faq as SpmbContent['faq'] : [], portal_url: String(row.portal_url ?? ''), banner_image: String(row.banner_image ?? ''), banner_title: String(row.banner_title ?? ''), banner_description: String(row.banner_description ?? ''), pdf_attachment: row.pdf_attachment as string | null | undefined, updated_at: row.updated_at as string | undefined }; }
 export async function fetchSpmbContent(): Promise<SpmbContent | null> { const result = await request<Record<string, unknown>>('/spmb'); return result.data ? normalizeSpmbContent(result.data) : null; }
 
 // ---------- SPMB POSTERS (informational flyers / images) ----------
@@ -265,6 +294,11 @@ export const spmbPosterApi = {
     const form = new FormData();
     form.append('file', file);
     return request<{ url: string }>('/admin/spmb/posters/upload', { method: 'POST', body: form });
+  },
+  uploadPdf(file: File): ApiResult<{ url: string }> {
+    const form = new FormData();
+    form.append('file', file);
+    return request<{ url: string }>('/admin/spmb/pdf/upload', { method: 'POST', body: form });
   },
 };
 async function fetchFromApi<T>(path: string): Promise<T> { const result = await request<T>(path); return result.data ?? ([] as T); }
@@ -1325,6 +1359,56 @@ export interface RestoreResult {
   tables_restored: number;
   media_restored: boolean;
   manifest: Record<string, unknown> | null;
+}
+
+const CHUNK_SIZE = 1024 * 1024; // 1MB per chunk
+
+export async function restoreChunked(
+  file: File,
+  onProgress?: (chunkIndex: number, total: number) => void,
+): Promise<ApiResponse<RestoreResult>> {
+  const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+  const uploadId = crypto.randomUUID();
+
+  for (let i = 0; i < totalChunks; i++) {
+    const start = i * CHUNK_SIZE;
+    const end = Math.min(start + CHUNK_SIZE, file.size);
+    const chunk = file.slice(start, end);
+
+    const formData = new FormData();
+    formData.append('chunk', chunk, file.name);
+    formData.append('upload_id', uploadId);
+    formData.append('chunk_index', String(i));
+    formData.append('total_chunks', String(totalChunks));
+    formData.append('filename', file.name);
+
+    const res = await fetch(`${apiBaseUrl}/admin/backups/restore-chunk`, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      return { data: null, status: res.status, error: body?.error ?? { message: 'Gagal mengunggah chunk.' } };
+    }
+
+    onProgress?.(i + 1, totalChunks);
+  }
+
+  const commitRes = await fetch(`${apiBaseUrl}/admin/backups/restore-commit`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ upload_id: uploadId, total_chunks: totalChunks, filename: file.name }),
+  });
+
+  const body = await commitRes.json().catch(() => null);
+  if (!commitRes.ok) {
+    return { data: null, status: commitRes.status, error: body?.error ?? { message: 'Gagal melakukan restore.' } };
+  }
+  const payload = body && Object.prototype.hasOwnProperty.call(body, 'data') ? body.data : body;
+  return { data: payload as RestoreResult, status: commitRes.status, error: null };
 }
 
 export const backupApi = {

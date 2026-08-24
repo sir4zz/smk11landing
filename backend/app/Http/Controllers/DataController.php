@@ -41,6 +41,31 @@ class DataController extends Controller
     ];
     private const PUBLIC = ['news','programs','facilities','staff','achievements','teacher_activities','education_staff','spmb_content','osis','osis_members','osis_activities','extracurriculars','kesemaptaan','kesemaptaan_activities','kesemaptaan_schedules','kesemaptaan_instructors','kesemaptaan_achievements','mading_categories','content_records'];
 
+    /**
+     * Kolom file per tabel compat. dipakai untuk hapus fisik saat update/destroy.
+     */
+    private const MEDIA_COLUMNS = [
+        'news' => ['thumbnail'],
+        'programs' => ['logo', 'image'],
+        'facilities' => ['photo'],
+        'staff' => ['photo'],
+        'achievements' => ['photo'],
+        'teacher_activities' => ['photo'],
+        'education_staff' => ['photo'],
+        'spmb_content' => ['banner_image', 'pdf_attachment'],
+        'osis' => ['logo'],
+        'osis_members' => ['photo'],
+        'osis_activities' => ['photo'],
+        'extracurriculars' => ['logo', 'photo'],
+        'kesemaptaan' => ['photo', 'hero_image'],
+        'kesemaptaan_activities' => ['photo'],
+        'kesemaptaan_instructors' => ['photo'],
+        'kesemaptaan_gallery' => ['image'],
+        'mading_posts' => ['cover_image', 'images'],
+        'profiles' => ['photo'],
+        'content_records' => ['data'],
+    ];
+
     public function __construct(private PermissionService $permissions, private MadingService $mading) {}
 
     public function index(Request $request, string $table)
@@ -102,7 +127,7 @@ class DataController extends Controller
         if ($table === 'mading_posts') $payload = $this->mading->guardUpdate($request->user(), $row, $payload);
         if ($table === 'ppdb_registrations' && $row->user_id !== $request->user()?->id && !$this->permissions->isAdmin($request->user())) abort(403);
         if ($table === 'ppdb_documents' && $row->application->user_id !== $request->user()?->id && !$this->permissions->isAdmin($request->user())) abort(403);
-        if ($table === 'programs') $this->cleanupReplacedProgramFiles($row, $payload);
+        $this->cleanupReplacedFiles($table, $row, $payload);
         $row->update($payload); return response()->json(['data' => $this->serialize($table, $row->fresh()), 'error' => null]);
     }
 
@@ -118,10 +143,7 @@ class DataController extends Controller
             }
             if ($table === 'ppdb_documents' && $row->application->user_id !== $request->user()?->id && !$this->permissions->isStaff($request->user())) abort(403);
             if ($table === 'ppdb_documents' && $row->file_path) Storage::disk('public')->delete($row->file_path);
-            if ($table === 'programs') {
-                $this->deleteStoredFile($row->logo ?? null);
-                $this->deleteStoredFile($row->image ?? null);
-            }
+            $this->deleteRowFiles($table, $row);
             $row->delete();
         }
         return response()->json(['data' => null, 'error' => null]);
@@ -132,23 +154,111 @@ class DataController extends Controller
         if ($request->isJson()) return $request->json()->all();
         return $request->except(['single', 'order', 'limit', 'count']);
     }
-    private function cleanupReplacedProgramFiles($row, array $payload): void
+    private function cleanupReplacedFiles(string $table, $row, array $payload): void
     {
-        foreach (['logo', 'image'] as $field) {
-            if (!array_key_exists($field, $payload)) continue;
-            $old = (string) ($row->{$field} ?? '');
-            $new = (string) ($payload[$field] ?? '');
-            if ($old !== '' && $old !== $new) {
-                $this->deleteStoredFile($old);
+        $fields = self::MEDIA_COLUMNS[$table] ?? [];
+        if ($table === 'mading_posts') {
+            // cover_image: string; images: JSON array string; content_records: JSON blob handled separately
+            $fields = ['cover_image', 'images'];
+        }
+        foreach ($fields as $field) {
+            if (! array_key_exists($field, $payload)) {
+                continue;
+            }
+            $oldRaw = $row->{$field} ?? null;
+            $newRaw = $payload[$field] ?? null;
+
+            $oldUrls = $this->extractUrls($table, $field, $oldRaw);
+            $newUrls = $this->extractUrls($table, $field, $newRaw);
+
+            // Hapus file lama yang tidak lagi dipakai (diff old - new)
+            foreach (array_diff($oldUrls, $newUrls) as $oldUrl) {
+                if ($oldUrl !== '') {
+                    $this->deleteStoredFile($oldUrl);
+                }
             }
         }
+        // content_records.data = JSON (home/bkk) — diff URL di dalam JSON blob
+        if ($table === 'content_records' && array_key_exists('data', $payload)) {
+            $oldUrls = $this->extractUrls($table, 'data', $row->data ?? null);
+            $newUrls = $this->extractUrls($table, 'data', $payload['data'] ?? null);
+            foreach (array_diff($oldUrls, $newUrls) as $oldUrl) {
+                $this->deleteStoredFile($oldUrl);
+            }
+        }
+    }
+    private function deleteRowFiles(string $table, $row): void
+    {
+        foreach (self::MEDIA_COLUMNS[$table] ?? [] as $field) {
+            $value = $row->{$field} ?? null;
+            foreach ($this->extractUrls($table, $field, $value) as $url) {
+                $this->deleteStoredFile($url);
+            }
+        }
+        // mading_posts.images is JSON array — handled by extractUrls
+        // content_records.data handled same
+    }
+    private function extractUrls(string $table, string $field, mixed $value): array
+    {
+        if ($value === null || $value === '') {
+            return [];
+        }
+        // images: JSON array of string URLs / objects with image/url
+        if ($field === 'images') {
+            $arr = is_string($value) ? json_decode($value, true) : $value;
+            if (! is_array($arr)) {
+                return is_string($value) && str_starts_with($value, '/storage/') ? [$value] : [];
+            }
+            $out = [];
+            foreach ($arr as $item) {
+                if (is_string($item) && $item !== '') {
+                    $out[] = $item;
+                } elseif (is_array($item)) {
+                    $u = $item['image'] ?? $item['url'] ?? $item['src'] ?? null;
+                    if (is_string($u) && $u !== '') {
+                        $out[] = $u;
+                    }
+                }
+            }
+            return $out;
+        }
+        // content_records.data: scan JSON for /storage/ strings
+        if ($table === 'content_records' && $field === 'data') {
+            $json = is_string($value) ? $value : json_encode($value);
+            if (! is_string($json)) {
+                return [];
+            }
+            preg_match_all('#/storage/[^\s"\'<>]+#', $json, $m);
+            return $m[0] ?? [];
+        }
+        // spmb_content banner/pdf are plain strings
+        if (is_array($value)) {
+            // documentation array (kesemaptaan) — collect strings that look like /storage/
+            $out = [];
+            foreach ($value as $v) {
+                if (is_string($v) && str_starts_with($v, '/storage/')) {
+                    $out[] = $v;
+                }
+            }
+            return $out;
+        }
+        return is_string($value) && str_starts_with($value, '/storage/') ? [$value] : [];
     }
     private function deleteStoredFile(?string $url): void
     {
         if (empty($url)) return;
+        $path = parse_url($url, PHP_URL_PATH) ?? $url;
         $prefix = '/storage/';
-        if (str_starts_with($url, $prefix)) {
-            Storage::disk('public')->delete(substr($url, strlen($prefix)));
+        if (str_starts_with($path, $prefix)) {
+            $path = substr($path, strlen($prefix));
+        } else {
+            $path = ltrim($path, '/');
+            if (! str_starts_with($url, '/storage/')) {
+                return;
+            }
+        }
+        if ($path !== '') {
+            Storage::disk('public')->delete($path);
         }
     }
     private function payload(string $model, array $payload): array { return collect($payload)->only((new $model)->getFillable())->except(['id','created_at','updated_at','user_id'])->all(); }

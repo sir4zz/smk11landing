@@ -140,6 +140,103 @@ php artisan test
 cd ..
 ```
 
+## 8. Restore Backup via CLI
+
+Restore melalui CLI berguna jika upload dari halaman admin terkena batas
+`POST`, `post_max_size`, atau `upload_max_filesize` PHP.
+
+### 8.1 Salin file backup
+
+Salin file `.zip` ke folder berikut:
+
+```text
+backend/storage/app/private/backups/
+```
+
+Contoh:
+
+```text
+backend/storage/app/private/backups/smkn11-full-20260820-030201-huc0.zip
+```
+
+Di Windows/XAMPP, lokasinya biasanya:
+
+```text
+C:\xampp\htdocs\smk11landing\backend\storage\app\private\backups\
+```
+
+### 8.2 Periksa konfigurasi database
+
+Pastikan `backend/.env` menunjuk ke database tujuan:
+
+```dotenv
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=smkn11
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+Pastikan MySQL sudah aktif sebelum menjalankan restore.
+
+Sudah bisa dilakukan di web langsung
+### 8.3 Jalankan restore
+
+Dari folder `backend`, buka Laravel Tinker:
+
+```bash
+php artisan tinker
+```
+
+Jalankan perintah berikut di dalam Tinker. Ganti nama file sesuai backup:
+
+```php
+app(\App\Services\DatabaseBackupService::class)->restore(
+    storage_path('app/private/backups/smkn11-full-20260820-030201-huc0.zip')
+);
+```
+
+Jika berhasil, hasilnya akan berisi status `success`, jumlah tabel yang
+dipulihkan, dan daftar tabel yang dipertahankan.
+
+Keluar dari Tinker:
+
+```php
+exit
+```
+
+Bersihkan cache Laravel setelah restore:
+
+```bash
+php artisan optimize:clear
+php artisan storage:link
+```
+
+### 8.4 Tabel akun yang dipertahankan
+
+Restore tidak menimpa tabel akun lokal berikut:
+
+- `users`
+- `profiles`
+- `gurus`
+- `osis_accounts`
+- `student_accounts`
+
+Sebelum restore, sistem membuat snapshot tabel-tabel tersebut dan
+mengembalikannya kembali setelah proses SQL selesai. Jadi akun dan password
+lokal tetap dipertahankan meskipun backup berasal dari komputer lain.
+
+Dengan demikian akun admin lokal tetap dapat digunakan:
+
+```text
+Email: admin.test@smkn11.sch.id
+Password: smkn11admin
+```
+
+Tabel konten lain dan media tetap dipulihkan dari backup. Proses restore dapat
+mengganti data yang ada, jadi pastikan file backup yang digunakan benar.
+
 ## Catatan penting
 
 - **Jangan commit `.env`** atau `backend/.env` (berisi kunci rahasia).

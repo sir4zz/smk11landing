@@ -3,7 +3,7 @@ import { SectionHeading } from '../components/ui/SectionHeading';
 import { Button } from '../components/ui/Button';
 import { LoadingInline } from '../components/ui/LoadingScreen';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, CalendarDays, Download, ExternalLink, Eye, FileImage, GraduationCap, Lock, Star, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CalendarDays, Download, ExternalLink, Eye, FileImage, FileText, GraduationCap, Lock, Star, X } from 'lucide-react';
 import { fetchSpmbContent, fetchSpmbPosters, resolveImageUrl } from '../lib/api';
 import type { SpmbContent, SpmbPoster } from '../lib/content-types';
 
@@ -261,6 +261,31 @@ const Admissions: React.FC = () => {
             </>
           )}
         </section>
+
+        {/* Lampiran PDF */}
+        {content.pdf_attachment && (
+          <section className="mb-16">
+            <div className="mx-auto max-w-2xl overflow-hidden rounded-2xl border border-[#C8A951]/30 bg-white p-8 shadow-sm">
+              <div className="flex flex-col items-center text-center">
+                <div className="mb-4 grid h-16 w-16 place-items-center rounded-full bg-[#C8A951]/15">
+                  <FileText className="h-8 w-8 text-[#866D2C]" />
+                </div>
+                <h3 className="text-xl font-bold text-[#1B2A4A]">Lampiran Dokumen</h3>
+                <p className="mt-2 max-w-md text-sm text-[#5B7088]">
+                  Unduh dokumen lampiran untuk informasi lengkap terkait SPMB.
+                </p>
+                <a
+                  href={content.pdf_attachment}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#1B2A4A] px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#15203a]"
+                >
+                  <Download className="h-5 w-5" /> Unduh PDF
+                </a>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* CTA */}
         <section className="relative overflow-hidden rounded-2xl bg-[#1B2A4A] text-center text-white">

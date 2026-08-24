@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { UserRound, Loader2, Send, X, Clock, CheckCircle2, XCircle, ChevronRight, FileText, Eye } from 'lucide-react';
+import { UserRound, Loader2, Send, X, Clock, CheckCircle2, XCircle, ChevronRight, FileText, Eye, Download, KeyRound } from 'lucide-react';
 import { backendApi, studentDataApi, resolveImageUrl, STUDENT_CHANGE_REQUEST_STATUS_LABELS, type StudentDataPayload, type StudentChangeRequestRow, type StudentChangeRequestStatus } from '../../lib/api';
 import PageHero from '../../components/ui/PageHero';
 import { BIODATA_FIELDS, BIODATA_SECTIONS, emptyBiodata } from '../../lib/studentBiodata';
@@ -9,6 +9,16 @@ import type { BiodataFieldDef } from '../../lib/studentBiodata';
 import ImageField from '../../components/admin/ImageField';
 
 const studentSessionKey = 'smkn11-student-session';
+
+// Dokumen siswa — set yang sama persis dengan Profil di Mading Area Siswa
+// (dan Dokumen Siswa di Admin), dipakai untuk tampilan & pengajuan.
+const STUDENT_DOCS = [
+  { key: 'doc_kk', label: 'KK (Kartu Keluarga)' },
+  { key: 'doc_akta', label: 'Akta Kelahiran' },
+  { key: 'doc_ijazah', label: 'Ijazah' },
+  { key: 'doc_lainnya', label: 'Dokumen Lainnya' },
+];
+const WIZARD_STEPS = [...BIODATA_SECTIONS, { id: 'docs', title: 'J. Dokumen Siswa' }];
 
 const dateForInput = (value: unknown): string => (typeof value === 'string' ? value.slice(0, 10) : '');
 
@@ -32,6 +42,9 @@ function initFormFrom(student: StudentDataPayload | null): Record<string, string
   form.religion = String(student.religion ?? '');
   form.address = String(student.address ?? '');
   form.foto = String(student.foto ?? '');
+  for (const doc of STUDENT_DOCS) {
+    form[doc.key] = String((student as Record<string, unknown>)[doc.key] ?? '');
+  }
   return form;
 }
 
@@ -50,7 +63,8 @@ export default function DataSiswa() {
   const [msg, setMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
   const [detailRequest, setDetailRequest] = useState<StudentChangeRequestRow | null>(null);
 
-  const totalSteps = BIODATA_SECTIONS.length;
+  const totalSteps = WIZARD_STEPS.length;
+  const pendingRequest = requests.find((r) => r.status === 'menunggu') ?? null;
 
   const loadData = useCallback(async () => {
     const { data: userData } = await backendApi.auth.getCurrentUser();
@@ -112,7 +126,8 @@ export default function DataSiswa() {
 
   const validateStep = (current: Record<string, string>, stepIdx: number): Record<string, string> => {
     const fieldErrors: Record<string, string> = {};
-    const section = BIODATA_SECTIONS[stepIdx - 1];
+    const section = WIZARD_STEPS[stepIdx - 1];
+    if (section.id === 'docs') return fieldErrors;
     const fields = BIODATA_FIELDS.filter((f) => f.section === section.id);
 
     for (const f of fields) {
@@ -167,8 +182,22 @@ export default function DataSiswa() {
       const newVal = form[field.key] ?? '';
       const oldVal = String((studentData as Record<string, unknown>)[field.key] ?? '');
       if (newVal !== oldVal) {
-        proposedData[field.key] = field.type === 'number' ? (newVal === '' ? null : Number(newVal)) : newVal;
+        proposedData[field.key] = field.type === 'number' || field.type === 'decimal'
+          ? (newVal === '' ? null : Number(newVal))
+          : newVal;
       }
+    }
+
+    // Foto tidak ada di BIODATA_FIELDS — ikutkan bila berubah.
+    const newFoto = form.foto ?? '';
+    const oldFoto = String((studentData as Record<string, unknown>).foto ?? '');
+    if (newFoto !== oldFoto) proposedData.foto = newFoto;
+
+    // Dokumen siswa (KK/Akta/Ijazah/Lainnya).
+    for (const doc of STUDENT_DOCS) {
+      const newVal = String(form[doc.key] ?? '').trim();
+      const oldVal = String((studentData as Record<string, unknown>)[doc.key] ?? '').trim();
+      if (newVal !== oldVal) proposedData[doc.key] = newVal;
     }
 
     if (Object.keys(proposedData).length === 0) {
@@ -227,14 +256,58 @@ export default function DataSiswa() {
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-[#5B7088]">Berikut adalah data biodata Anda saat ini. Jika ada data yang perlu diperbarui, silakan ajukan perubahan.</p>
           {!showForm && (
-            <button onClick={openEditForm} className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-5 py-2.5 font-bold text-[#1B2A4A]">
+            <button
+              onClick={openEditForm}
+              disabled={!!pendingRequest}
+              title={pendingRequest ? 'Tunggu pengajuan yang sedang menunggu verifikasi' : undefined}
+              className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-5 py-2.5 font-bold text-[#1B2A4A] disabled:opacity-50"
+            >
               <FileText size={18} /> Ajukan Perubahan Data
             </button>
           )}
         </div>
+        {pendingRequest && (
+          <p className="mb-6 rounded-lg bg-[#C8A951]/10 p-3 text-sm font-medium text-[#866D2C]">
+            Anda memiliki pengajuan yang sedang menunggu verifikasi. Pengajuan baru dapat dibuat setelah pengajuan tersebut selesai.
+          </p>
+        )}
 
         {/* Student Data Display */}
         <StudentDataView student={studentData} />
+
+        {/* Dokumen siswa (read-only, dari data utama — perubahan lewat pengajuan) */}
+        <div className="mt-6 rounded-2xl bg-white p-6 shadow-sm">
+          <h2 className="mb-4 text-xl font-bold text-[#1B2A4A]">Dokumen Siswa</h2>
+          <div className="space-y-4">
+            {STUDENT_DOCS.map((doc) => {
+              const docSrc = resolveImageUrl(String((studentData as Record<string, unknown>)[doc.key] ?? ''));
+              return (
+                <div key={doc.key} className="overflow-hidden rounded-xl border border-[#1B2A4A]/10">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#1B2A4A]/10 bg-[#FAF6F0]/70 px-4 py-3">
+                    <p className="font-bold text-[#1B2A4A]">{doc.label}</p>
+                    {docSrc && (
+                      <a
+                        href={docSrc}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-[#1B2A4A] px-3 py-1.5 text-xs font-bold text-white hover:opacity-90"
+                      >
+                        <Download size={14} /> Download
+                      </a>
+                    )}
+                  </div>
+                  {docSrc ? (
+                    <div className="flex max-h-[540px] items-start justify-center bg-white p-3">
+                      <img src={docSrc} alt={doc.label} className="max-h-[520px] w-auto max-w-full object-contain" />
+                    </div>
+                  ) : (
+                    <p className="px-4 py-3 text-sm text-[#5B7088]">Belum diunggah</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
 
         {/* Change Request Form Modal */}
         {showForm && (
@@ -251,7 +324,7 @@ export default function DataSiswa() {
 
               {/* Step Navigation */}
               <div className="mb-5 flex items-center gap-1 overflow-x-auto pb-1">
-                {BIODATA_SECTIONS.map((section, i) => {
+                {WIZARD_STEPS.map((section, i) => {
                   const n = i + 1;
                   const active = n === step;
                   const done = n < step;
@@ -280,20 +353,38 @@ export default function DataSiswa() {
 
               {/* Step Content */}
               {(() => {
-                const section = BIODATA_SECTIONS[step - 1];
+                const section = WIZARD_STEPS[step - 1];
                 const fields = BIODATA_FIELDS.filter((f) => f.section === section.id);
                 return (
                   <div key={section.id} className="rounded-xl border border-[#1B2A4A]/10 p-4">
                     <p className="mb-3 font-bold text-[#1B2A4A]">{section.title}</p>
                     <div className="grid gap-4 sm:grid-cols-2">
-                      {section.id === 'identity' && (
-                        <div className="sm:col-span-2">
-                          <ImageField label="Foto Siswa (opsional)" value={form.foto ?? ''} onChange={(url) => setForm((v) => ({ ...v, foto: url }))} accept="image/jpeg,image/png" maxSizeMb={2} hint="JPG/JPEG atau PNG, maks. 2 MB." />
-                        </div>
+                      {section.id === 'docs' ? (
+                        STUDENT_DOCS.map((doc) => (
+                          <div key={doc.key}>
+                            <ImageField
+                              label={`${doc.label} — opsional`}
+                              value={form[doc.key] ?? ''}
+                              onChange={(url) => setForm((v) => ({ ...v, [doc.key]: url }))}
+                              bucket="student/documents"
+                              accept="image/jpeg,image/png,image/webp"
+                              maxSizeMb={5}
+                              hint="Dokumen baru diterapkan setelah disetujui admin."
+                            />
+                          </div>
+                        ))
+                      ) : (
+                        <>
+                          {section.id === 'identity' && (
+                            <div className="sm:col-span-2">
+                              <ImageField label="Foto Siswa (opsional)" value={form.foto ?? ''} onChange={(url) => setForm((v) => ({ ...v, foto: url }))} accept="image/jpeg,image/png" maxSizeMb={2} hint="JPG/JPEG atau PNG, maks. 2 MB." />
+                            </div>
+                          )}
+                          {fields.map((field) => (
+                            <BiodataField key={field.key} field={field} value={form[field.key] ?? ''} onChange={setValue(field.key)} error={errors[field.key]} />
+                          ))}
+                        </>
                       )}
-                      {fields.map((field) => (
-                        <BiodataField key={field.key} field={field} value={form[field.key] ?? ''} onChange={setValue(field.key)} error={errors[field.key]} />
-                      ))}
                     </div>
                   </div>
                 );
@@ -317,6 +408,11 @@ export default function DataSiswa() {
             </div>
           </div>
         )}
+
+        {/* Ubah PIN Login (via pengajuan, sama dengan Profil Mading) */}
+        <div className="mt-6">
+          <ChangePinCard pending={pendingRequest} />
+        </div>
 
         {/* Change Request History */}
         <div className="mt-8">
@@ -345,6 +441,85 @@ export default function DataSiswa() {
 }
 
 // ── Sub-components ──────────────────────────────────────────────────────
+
+function fieldLabel(key: string): string {
+  const def = BIODATA_FIELDS.find((f) => f.key === key);
+  if (def) return def.label;
+  const doc = STUDENT_DOCS.find((d) => d.key === key);
+  if (doc) return doc.label;
+  if (key === 'foto') return 'Foto Siswa';
+  if (key === 'pin') return 'PIN Login';
+  return key;
+}
+
+function changeValue(key: string, val: unknown): string {
+  if (val === null || val === undefined || val === '') return '-';
+  if (key === 'pin') return '••••';
+  return String(val);
+}
+
+function ChangePinCard({ pending }: { pending: StudentChangeRequestRow | null }) {
+  const [current, setCurrent] = useState('');
+  const [next, setNext] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+
+  const submit = async () => {
+    let err: string | null = null;
+    if (!/^\d{4}$/.test(next)) err = 'PIN baru harus 4 digit angka.';
+    else if (next !== confirm) err = 'Konfirmasi PIN baru tidak cocok.';
+    else if (!/^\d{4}$/.test(current)) err = 'PIN saat ini harus 4 digit angka.';
+    if (err) {
+      setMsg({ type: 'err', text: err });
+      return;
+    }
+    setSaving(true);
+    setMsg(null);
+    const { error } = await studentDataApi.submitChangeRequest({ current_pin: current, pin: next });
+    setSaving(false);
+    if (error) {
+      setMsg({ type: 'err', text: error.message ?? 'Gagal mengirim pengajuan.' });
+      return;
+    }
+    setCurrent('');
+    setNext('');
+    setConfirm('');
+    setMsg({ type: 'ok', text: 'Pengajuan ganti PIN berhasil dikirim dan menunggu verifikasi admin.' });
+  };
+
+  const inputCls = 'mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal';
+
+  return (
+    <div className="rounded-2xl bg-white p-6 shadow-sm">
+      <h2 className="mb-4 text-xl font-bold text-[#1B2A4A]">Ubah PIN Login</h2>
+      <p className="mb-4 rounded-lg bg-[#FAF6F0] p-3 text-xs text-[#5B7088]">
+        PIN baru hanya aktif setelah pengajuan disetujui admin. Selama menunggu verifikasi, PIN lama tetap berlaku.
+      </p>
+      {msg && <p className={`mb-4 rounded-lg p-3 text-sm ${msg.type === 'ok' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>{msg.text}</p>}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <label className="block text-sm font-semibold">PIN Saat Ini
+          <input value={current} type="password" onChange={(e) => setCurrent(e.target.value)} className={inputCls} />
+        </label>
+        <label className="block text-sm font-semibold">PIN Baru
+          <input value={next} type="password" onChange={(e) => setNext(e.target.value)} className={inputCls} />
+        </label>
+        <label className="block text-sm font-semibold">Ulangi PIN Baru
+          <input value={confirm} type="password" onChange={(e) => setConfirm(e.target.value)} className={inputCls} />
+        </label>
+      </div>
+      <button
+        onClick={submit}
+        disabled={saving || !!pending}
+        className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#1B2A4A] px-5 py-2.5 font-bold text-white disabled:opacity-50"
+        title={pending ? 'Tunggu pengajuan yang sedang menunggu verifikasi' : undefined}
+      >
+        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />} Ajukan Ganti PIN
+      </button>
+      {pending && <p className="mt-3 text-xs font-medium text-[#866D2C]">Ada pengajuan yang sedang menunggu verifikasi admin.</p>}
+    </div>
+  );
+}
 
 function StudentDataView({ student }: { student: StudentDataPayload }) {
   return (
@@ -421,7 +596,6 @@ function RequestCard({ request, onView }: { request: StudentChangeRequestRow; on
 }
 
 function RequestDetailModal({ request, onClose }: { request: StudentChangeRequestRow; onClose: () => void }) {
-  const allFields = [...BIODATA_FIELDS];
   const changedKeys = Object.keys(request.proposed_data);
 
   return (
@@ -454,15 +628,11 @@ function RequestDetailModal({ request, onClose }: { request: StudentChangeReques
             </thead>
             <tbody>
               {changedKeys.map((key) => {
-                const fieldDef = allFields.find((f) => f.key === key);
-                const label = fieldDef?.label ?? key;
-                const oldVal = request.old_data[key];
-                const newVal = request.proposed_data[key];
                 return (
                   <tr key={key} className="border-t border-[#1B2A4A]/10">
-                    <td className="p-3 font-medium text-[#5B7088]">{label}</td>
-                    <td className="p-3 text-[#1B2A4A]">{oldVal === null || oldVal === undefined || oldVal === '' ? '-' : String(oldVal)}</td>
-                    <td className="p-3 font-semibold text-green-700">{newVal === null || newVal === undefined || newVal === '' ? '-' : String(newVal)}</td>
+                    <td className="p-3 font-medium text-[#5B7088]">{fieldLabel(key)}</td>
+                    <td className="p-3 text-[#1B2A4A]">{changeValue(key, request.old_data[key])}</td>
+                    <td className="p-3 font-semibold text-green-700">{changeValue(key, request.proposed_data[key])}</td>
                   </tr>
                 );
               })}

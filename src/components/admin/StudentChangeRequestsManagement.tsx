@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Loader2, Search, Eye, X, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { Loader2, Search, Eye, X, CheckCircle2, XCircle, Clock, RefreshCw } from 'lucide-react';
 import {
   studentChangeRequestAdminApi,
   STUDENT_CHANGE_REQUEST_STATUS_LABELS,
@@ -31,6 +31,7 @@ export default function StudentChangeRequestsManagement() {
   const [detailId, setDetailId] = useState<string | null>(null);
   const [detailRequest, setDetailRequest] = useState<StudentChangeRequestRow | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -43,6 +44,17 @@ export default function StudentChangeRequestsManagement() {
   }, [statusFilter, search]);
 
   useEffect(() => { void load(); }, [load]);
+
+  // Muat ulang tanpa mengosongkan tabel (untuk cek request masuk).
+  const reload = async () => {
+    setRefreshing(true);
+    const { data } = await studentChangeRequestAdminApi.list({
+      status: statusFilter || undefined,
+      search: search || undefined,
+    });
+    if (data) setRequests(data as StudentChangeRequestRow[]);
+    setRefreshing(false);
+  };
 
   const openDetail = async (id: string) => {
     setDetailId(id);
@@ -82,6 +94,14 @@ export default function StudentChangeRequestsManagement() {
           <option value="disetujui">Disetujui</option>
           <option value="ditolak">Ditolak</option>
         </select>
+        <button
+          onClick={reload}
+          disabled={refreshing}
+          title="Muat ulang daftar pengajuan"
+          className="ml-auto inline-flex items-center gap-2 rounded-lg bg-[#1B2A4A] px-4 py-2 text-sm font-bold text-white disabled:opacity-60"
+        >
+          <RefreshCw size={15} className={refreshing ? 'animate-spin' : ''} /> Reload
+        </button>
       </div>
 
       {/* List */}
@@ -236,8 +256,8 @@ function DetailContent({ request, onClose, onVerified }: { request: StudentChang
               return (
                 <tr key={key} className={`border-t border-[#1B2A4A]/10 ${isChanged ? 'bg-green-50/50' : ''}`}>
                   <td className="p-3 font-medium text-[#5B7088]">{label}</td>
-                  <td className="p-3 text-[#1B2A4A]">{displayValue(fieldDef, oldVal)}</td>
-                  <td className="p-3 font-semibold text-green-700">{displayValue(fieldDef, newVal)}</td>
+                  <td className="p-3 text-[#1B2A4A]">{displayValue(key, fieldDef, oldVal)}</td>
+                  <td className="p-3 font-semibold text-green-700">{displayValue(key, fieldDef, newVal)}</td>
                 </tr>
               );
             })}
@@ -298,8 +318,9 @@ function DetailContent({ request, onClose, onVerified }: { request: StudentChang
   );
 }
 
-function displayValue(field: BiodataFieldDef | undefined, raw: unknown): string {
+function displayValue(key: string, field: BiodataFieldDef | undefined, raw: unknown): string {
   if (raw === null || raw === undefined || raw === '') return '-';
+  if (key === 'pin') return '••••';
   if (field && isRupiahField(field.key)) return formatRupiah(raw);
   if (field?.type === 'decimal') {
     const n = Number(String(raw));

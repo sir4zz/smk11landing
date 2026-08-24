@@ -32,6 +32,7 @@ use App\Http\Controllers\StudentDataChangeRequestController;
 use App\Http\Controllers\PageBannerController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\DataController;
+use App\Http\Controllers\MediaController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -59,6 +60,9 @@ Route::get('/public/tendik/{identifier}', [PublicProfileController::class, 'tend
 // ---------- PROFILES ----------
 Route::get('/profiles/{id}', [ProfileController::class, 'show']);
 Route::patch('/profiles/{id}', [ProfileController::class, 'update']);
+
+// ---------- MEDIA ----------
+Route::get('/media', [MediaController::class, 'index']);
 
 // ---------- PUBLIC CONTENT ----------
 Route::get('/news', [ContentCrudController::class, 'index'])->defaults('type', 'news');
@@ -192,6 +196,7 @@ Route::middleware(['auth:sanctum', 'staff'])->group(function () {
     Route::post('/admin/students/import', [StudentController::class, 'import'])->middleware('permission:mading.edit_all');
     Route::post('/admin/students/{studentId}/reset-pin', [StudentController::class, 'resetPin'])->middleware('permission:mading.edit_all');
     Route::delete('/admin/students/{studentId}', [StudentController::class, 'destroy'])->middleware('permission:mading.edit_all');
+    Route::get('/admin/students/files/download', [StudentController::class, 'downloadFile'])->middleware('permission:mading.edit_all');
 
     // Gallery management
     Route::get('/admin/galleries', [GalleryController::class, 'adminIndex'])->middleware('permission:gallery.view');
@@ -263,6 +268,7 @@ Route::middleware(['auth:sanctum', 'staff'])->group(function () {
     Route::get('/admin/spmb/posters', [SpmbController::class, 'adminPosters'])->middleware('permission:spmb.view');
     Route::post('/admin/spmb/posters', [SpmbController::class, 'storePoster'])->middleware('permission:spmb.create');
     Route::post('/admin/spmb/posters/upload', [SpmbController::class, 'uploadPoster'])->middleware('permission:spmb.edit');
+    Route::post('/admin/spmb/pdf/upload', [SpmbController::class, 'uploadPdf'])->middleware('permission:spmb.edit');
     Route::patch('/admin/spmb/posters/{id}', [SpmbController::class, 'updatePoster'])->middleware('permission:spmb.edit');
     Route::delete('/admin/spmb/posters/{id}', [SpmbController::class, 'destroyPoster'])->middleware('permission:spmb.delete');
 
@@ -271,6 +277,9 @@ Route::middleware(['auth:sanctum', 'staff'])->group(function () {
     Route::post('/admin/page-banners', [PageBannerController::class, 'store']);
     Route::put('/admin/page-banners/{id}', [PageBannerController::class, 'update']);
     Route::delete('/admin/page-banners/{id}', [PageBannerController::class, 'destroy']);
+
+    // Media inventory
+    Route::get('/admin/media', [MediaController::class, 'index']);
 });
 
 // ============================================================
@@ -347,6 +356,8 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::get('/backups', [DatabaseBackupController::class, 'index']);
     Route::post('/backups', [DatabaseBackupController::class, 'store']);
     Route::post('/backups/restore', [DatabaseBackupController::class, 'restore']);
+    Route::post('/backups/restore-chunk', [DatabaseBackupController::class, 'uploadChunk']);
+    Route::post('/backups/restore-commit', [DatabaseBackupController::class, 'restoreCommit']);
     Route::get('/backups/{filename}', [DatabaseBackupController::class, 'download']);
     Route::delete('/backups/{filename}', [DatabaseBackupController::class, 'destroy']);
 });

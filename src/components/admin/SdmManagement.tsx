@@ -323,10 +323,19 @@ export default function SdmManagement({ type, permissions }: SdmManagementProps)
     setOpen(true);
   };
 
-  const openEdit = (person: SdmPersonRow) => {
+  const openEdit = async (person: SdmPersonRow) => {
+    setTab('pribadi');
+    if (person.id) {
+      const { data, error } = await sdmApi.get(type, person.id);
+      if (!error && data) {
+        setEditing(data);
+        setForm(formFromPerson(data));
+        setOpen(true);
+        return;
+      }
+    }
     setEditing(person);
     setForm(formFromPerson(person));
-    setTab('pribadi');
     setOpen(true);
   };
 
