@@ -319,19 +319,16 @@ class StudentDataChangeRequestController extends Controller
     private function editableFields(): array
     {
         $fields = [
-            // A. Keterangan Peserta Didik
-            'name', 'nickname', 'class', 'major', 'gender', 'place_of_birth',
-            'date_of_birth', 'religion', 'kewarganegaraan', 'anak_ke',
+            // A. Keterangan Peserta Didik (name, place_of_birth, date_of_birth, anak_ke dikecualikan)
+            'nickname', 'class', 'major', 'gender',
+            'religion', 'kewarganegaraan',
             'jml_saudara_kandung', 'jml_saudara_tiri', 'anak_yatim_piatu',
             'bahasa_sehari_hari',
-            // B. Keterangan Tempat Tinggal
-            'address', 'phone', 'tinggal_dengan', 'jarak_sekolah',
+            // B. Keterangan Tempat Tinggal (address dikecualikan)
+            'phone', 'tinggal_dengan', 'jarak_sekolah',
             // C. Keterangan Kesehatan
             'golongan_darah', 'penyakit', 'kelainan_jasmani', 'tinggi_cm', 'berat_kg',
-            // D. Keterangan Pendidikan
-            'lulusan_dari', 'tanggal_sttb', 'nomor_sttb', 'lama_belajar',
-            'pindahan_dari', 'alasan_pindah', 'diangkat', 'kompetensi_keahlian',
-            'tanggal_diterima',
+            // D. Keterangan Pendidikan — seluruhnya dikecualikan
             // H. Kegemaran Siswa
             'gemar_kesenian', 'gemar_olahraga', 'gemar_kemasyarakatan', 'gemar_lain',
             // I. Keterangan Siswa
@@ -344,7 +341,7 @@ class StudentDataChangeRequestController extends Controller
         ];
 
         foreach (['ayah', 'ibu', 'wali'] as $p) {
-            foreach (['nama', 'tempat', 'tanggal_lahir', 'agama', 'kewarganegaraan', 'pendidikan', 'pekerjaan', 'penghasilan', 'alamat', 'no_telp', 'status_hidup'] as $c) {
+            foreach (['tempat', 'tanggal_lahir', 'agama', 'kewarganegaraan', 'pendidikan', 'pekerjaan', 'penghasilan', 'alamat', 'no_telp', 'status_hidup'] as $c) {
                 $fields[] = "{$p}_{$c}";
             }
         }
