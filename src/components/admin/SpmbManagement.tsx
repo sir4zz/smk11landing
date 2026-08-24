@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import {
   ChevronDown,
   ChevronUp,
+  FileText,
   GraduationCap,
   ImageIcon,
   Images,
@@ -18,7 +19,6 @@ import type { SpmbContent, SpmbFaqItem, SpmbFlowStep, SpmbPoster, SpmbScheduleIt
 import { backendApi, resolveImageUrl, spmbPosterApi } from '../../lib/api';
 import { LoadingInline } from '../ui/LoadingScreen';
 import ImageField from './ImageField';
-import PdfField from './PdfField';
 
 interface Props {
   permissions: string[];
@@ -100,9 +100,11 @@ function PostersTab() {
   const sorted = [...rows].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
 
   const save = async (record: Partial<SpmbPoster>) => {
+    const images = (record.images ?? []).map((url) => url.trim()).filter(Boolean);
     const payload = {
       title: record.title ?? '',
       image: record.image ?? '',
+      images,
       is_active: Boolean(record.is_active),
       sort_order: Number(record.sort_order ?? 0),
       published_at: record.published_at ?? null,
@@ -193,7 +195,14 @@ function PostersTab() {
             <div key={poster.id ?? index} className="overflow-hidden rounded-2xl border border-[#1B2A4A]/10 bg-white shadow-sm">
               <div className="grid aspect-[3/4] place-items-center bg-[#FAF6F0] p-4">
                 {poster.image && resolveImageUrl(poster.image) ? (
-                  <img src={resolveImageUrl(poster.image)!} alt={poster.title || 'Poster SPMB'} className="h-full w-full object-contain" />
+                  <div className="relative h-full w-full">
+                    <img src={resolveImageUrl(poster.image)!} alt={poster.title || 'Poster SPMB'} className="h-full w-full object-contain" />
+                    {(poster.images?.length ?? 0) > 1 && (
+                      <span className="absolute right-1 top-1 inline-flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-xs font-semibold text-white">
+                        <Images size={12} /> {poster.images!.length + 1} foto
+                      </span>
+                    )}
+                  </div>
                 ) : (
                   <ImageIcon className="h-10 w-10 text-[#C8A951]/50" />
                 )}
@@ -271,7 +280,9 @@ function PostersTab() {
 
 function PosterForm({ item, onClose, onSave }: { item: SpmbPoster | null; onClose: () => void; onSave: (r: Partial<SpmbPoster>) => void }) {
   const [title, setTitle] = useState(item?.title ?? '');
-  const [image, setImage] = useState(item?.image ?? '');
+  const [images, setImages] = useState<string[]>(
+    item?.images?.length ? item.images : item?.image ? [item.image] : [],
+  );
   const [isActive, setIsActive] = useState<boolean>(item ? Boolean(item.is_active) : true);
   const [sortOrder, setSortOrder] = useState<number>(item?.sort_order ?? 0);
   const [publishedAt, setPublishedAt] = useState<string>(item?.published_at ? item.published_at.slice(0, 10) : '');
@@ -279,11 +290,12 @@ function PosterForm({ item, onClose, onSave }: { item: SpmbPoster | null; onClos
   const [error, setError] = useState('');
 
   const submit = () => {
-    if (!image.trim()) { setError('Poster/gambar wajib diisi.'); return; }
+    if (images.length === 0) { setError('Minimal satu foto poster wajib diisi.'); return; }
     setError('');
     onSave({
       title: title.trim(),
-      image: image.trim(),
+      image: images[0],
+      images,
       is_active: isActive,
       sort_order: sortOrder,
       published_at: publishedAt || null,
@@ -301,7 +313,11 @@ function PosterForm({ item, onClose, onSave }: { item: SpmbPoster | null; onClos
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <PosterImageField label="Poster / Gambar" value={image} onChange={setImage} hint="JPG, JPEG, atau PNG (maks. 10 MB). Gambar otomatis dikompres ke WebP." />
+            <PosterImagesField images={images} onChange={setImages} />
+            <p className="mt-1 text-xs font-normal text-[#5B7088]">
+              Unggah beberapa foto untuk satu pengumuman. Foto pertama menjadi sampul; foto lainnya dapat digeser
+              (slide) oleh pengunjung di dalam kartu poster yang sama.
+            </p>
           </div>
           <label className="block text-sm font-semibold">Judul
             <input value={title} onChange={(e) => setTitle(e.target.value)} className={inputClass} placeholder="cth: Pengumuman Hasil Seleksi SPMB 2026" />
@@ -339,20 +355,25 @@ function PosterForm({ item, onClose, onSave }: { item: SpmbPoster | null; onClos
   );
 }
 
-function PosterImageField({ label, value, onChange, hint }: { label: string; value: string; onChange: (url: string) => void; hint?: string }) {
+function PosterImagesField({ images, onChange }: { images: string[]; onChange: (urls: string[]) => void }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+  const [urlDraft, setUrlDraft] = useState('');
 
-  const upload = async (file: File | undefined) => {
-    if (!file) return;
+  const uploadFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
     setUploading(true);
     setError('');
+    const added: string[] = [];
     try {
-      const { data, error } = await spmbPosterApi.upload(file);
-      if (error) throw error;
-      if (!data?.url) throw new Error('Gagal mengunggah poster.');
-      onChange(data.url);
+      for (const file of Array.from(files)) {
+        const { data, error } = await spmbPosterApi.upload(file);
+        if (error) throw error;
+        if (!data?.url) throw new Error('Gagal mengunggah poster.');
+        added.push(data.url);
+      }
+      onChange([...images, ...added]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal mengunggah poster.');
     } finally {
@@ -361,49 +382,94 @@ function PosterImageField({ label, value, onChange, hint }: { label: string; val
     }
   };
 
+  const removeAt = (index: number) => onChange(images.filter((_, i) => i !== index));
+
+  const makeCover = (index: number) => {
+    if (index === 0) return;
+    const next = [...images];
+    const [picked] = next.splice(index, 1);
+    onChange([picked, ...next]);
+  };
+
+  const addUrl = () => {
+    const url = urlDraft.trim();
+    if (!url || images.includes(url)) { setUrlDraft(''); return; }
+    onChange([...images, url]);
+    setUrlDraft('');
+  };
+
   return (
     <div className="block">
-      <span className="text-sm font-semibold">{label}</span>
-      <div className="mt-1 overflow-hidden rounded-lg border border-[#1B2A4A]/20 bg-white">
-        {value && resolveImageUrl(value) ? (
-          <div className="relative">
-            <img src={resolveImageUrl(value)!} alt="" className="mx-auto h-64 w-full bg-[#FAF6F0] object-contain" />
-            <button
-              type="button"
-              title="Hapus gambar"
-              onClick={() => onChange('')}
-              className="absolute right-2 top-2 rounded-full bg-black/60 p-1.5 text-white hover:bg-black/80"
-            >
-              <X size={16} />
-            </button>
-          </div>
+      <span className="text-sm font-semibold">Foto Poster ({images.length})</span>
+      <div className="mt-1 rounded-lg border border-[#1B2A4A]/20 bg-white p-3">
+        {images.length > 0 ? (
+          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {images.map((url, index) => (
+              <li key={`${url}-${index}`} className="group relative overflow-hidden rounded-lg border border-[#1B2A4A]/10 bg-[#FAF6F0]">
+                <img src={resolveImageUrl(url)!} alt={`Foto ${index + 1}`} className="h-36 w-full object-contain" />
+                {index === 0 ? (
+                  <span className="absolute left-1.5 top-1.5 inline-flex items-center gap-1 rounded-full bg-[#C8A951] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#1B2A4A]">
+                    <Star size={10} className="fill-[#1B2A4A]" /> Sampul
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => makeCover(index)}
+                    title="Jadikan foto sampul"
+                    className="absolute left-1.5 top-1.5 rounded-full bg-black/55 p-1 text-white opacity-0 transition group-hover:opacity-100 hover:bg-black/80"
+                  >
+                    <Star size={12} />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => removeAt(index)}
+                  title="Hapus foto ini"
+                  className="absolute right-1.5 top-1.5 rounded-full bg-black/60 p-1 text-white transition hover:bg-red-600"
+                >
+                  <X size={12} />
+                </button>
+              </li>
+            ))}
+          </ul>
         ) : (
-          <div className="grid h-40 place-items-center bg-[#FAF6F0] text-[#5B7088]">
-            <ImageIcon size={28} />
+          <div className="grid h-32 place-items-center bg-[#FAF6F0] text-[#5B7088]">
+            <Images size={28} />
           </div>
         )}
-        <div className="flex items-center gap-2 border-t border-[#1B2A4A]/10 p-3">
+
+        <div className="mt-3 flex items-center gap-2 border-t border-[#1B2A4A]/10 pt-3">
           <input
             ref={inputRef}
             type="file"
             accept="image/jpeg,image/png,image/webp"
+            multiple
             disabled={uploading}
-            onChange={(e) => upload(e.target.files?.[0])}
+            onChange={(e) => void uploadFiles(e.target.files)}
             className="block w-full text-sm text-[#1B2A4A] file:mr-3 file:rounded-lg file:border-0 file:bg-[#1B2A4A] file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-[#15203a] disabled:opacity-60"
           />
           {uploading && <Loader2 size={18} className="shrink-0 animate-spin text-[#866D2C]" />}
         </div>
-        <div className="border-t border-[#1B2A4A]/10 px-3 py-2">
+        <div className="flex items-center gap-2 border-t border-[#1B2A4A]/10 px-0 py-2">
           <input
             type="text"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder="...atau tempel URL gambar"
+            value={urlDraft}
+            onChange={(e) => setUrlDraft(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addUrl(); } }}
+            placeholder="...atau tempel URL gambar lalu tekan Enter"
             className="block w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 text-sm font-normal"
           />
+          <button
+            type="button"
+            onClick={addUrl}
+            disabled={!urlDraft.trim()}
+            className="shrink-0 rounded-lg border-2 border-[#1B2A4A]/20 px-3 py-2 text-sm font-semibold text-[#1B2A4A] transition-colors hover:bg-[#1B2A4A]/5 disabled:opacity-40"
+          >
+            Tambah
+          </button>
         </div>
       </div>
-      {hint && <p className="mt-1 text-xs font-normal text-[#5B7088]">{hint}</p>}
+      <p className="mt-1 text-xs font-normal text-[#5B7088]">JPG, JPEG, PNG, atau WebP (maks. 10 MB per foto). Bisa pilih beberapa file sekaligus; otomatis dikompres ke WebP.</p>
       {error && <p className="mt-1 text-xs font-normal text-red-600">{error}</p>}
     </div>
   );
@@ -429,6 +495,7 @@ function normalizeSpmbRow(row: Record<string, unknown>): SpmbContent {
     banner_title: String(row.banner_title ?? ''),
     banner_description: String(row.banner_description ?? ''),
     pdf_attachment: (row.pdf_attachment as string) || '',
+    pdf_attachments: Array.isArray(row.pdf_attachments) ? (row.pdf_attachments as string[]) : [],
     updated_at: row.updated_at as string | undefined,
   };
 }
@@ -523,8 +590,14 @@ function PortalSettingsTab() {
 
       <div className="rounded-xl bg-white p-6 shadow-sm">
         <h3 className="mb-4 text-lg font-bold">Lampiran PDF</h3>
-        <p className="mb-4 text-sm text-[#5B7088]">Unggah file PDF yang akan ditampilkan di bawah pengumuman pada halaman SPMB.</p>
-        <PdfField label="File PDF" value={content.pdf_attachment ?? ''} onChange={(url) => update('pdf_attachment', url)} hint="Format PDF, maks. 20 MB." />
+        <p className="mb-4 text-sm text-[#5B7088]">Unggah satu atau lebih file PDF yang akan ditampilkan di bawah pengumuman pada halaman SPMB.</p>
+        <MultiPdfField
+          urls={content.pdf_attachments ?? (content.pdf_attachment ? [content.pdf_attachment] : [])}
+          onChange={(urls) => {
+            update('pdf_attachments', urls);
+            update('pdf_attachment', urls[0] ?? '');
+          }}
+        />
       </div>
 
       {message && <p className={`rounded-lg p-3 text-sm ${message.startsWith('Informasi') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>{message}</p>}
@@ -543,6 +616,110 @@ function Field({ label, value, onChange, multiline = false, type = 'text' }: { l
         <input type={type} value={value} onChange={(e) => onChange(e.target.value)} className={inputClass} />
       )}
     </label>
+  );
+}
+
+function MultiPdfField({ urls, onChange }: { urls: string[]; onChange: (urls: string[]) => void }) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState('');
+  const [urlDraft, setUrlDraft] = useState('');
+
+  const uploadFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    setError('');
+    const added: string[] = [];
+    try {
+      for (const file of Array.from(files)) {
+        if (file.size > 20 * 1024 * 1024) { setError('Ukuran file melebihi 20 MB.'); continue; }
+        const { data, error } = await spmbPosterApi.uploadPdf(file);
+        if (error) throw error;
+        if (!data?.url) throw new Error('Gagal mengunggah PDF.');
+        added.push(data.url);
+      }
+      if (added.length) onChange([...urls, ...added]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Gagal mengunggah PDF.');
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = '';
+    }
+  };
+
+  const removeAt = (index: number) => onChange(urls.filter((_, i) => i !== index));
+
+  const addUrl = () => {
+    const url = urlDraft.trim();
+    if (!url || urls.includes(url)) { setUrlDraft(''); return; }
+    onChange([...urls, url]);
+    setUrlDraft('');
+  };
+
+  const fileName = (url: string) => url.split('/').pop()?.replace(/^[^_]+-[^_]+-\d+-\d+-/, '') || url.split('/').pop() || 'file.pdf';
+
+  return (
+    <div className="block">
+      <div className="rounded-lg border border-[#1B2A4A]/20 bg-white">
+        {urls.length > 0 ? (
+          <ul className="divide-y divide-[#1B2A4A]/10">
+            {urls.map((url, index) => (
+              <li key={`${url}-${index}`} className="flex items-center gap-3 bg-[#FAF6F0] px-4 py-3">
+                <FileText size={20} className="shrink-0 text-[#866D2C]" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-[#1B2A4A]">{fileName(url)}</p>
+                  <a href={url} target="_blank" rel="noopener noreferrer" className="text-xs text-[#866D2C] hover:underline">Buka di tab baru</a>
+                </div>
+                <button
+                  type="button"
+                  title="Hapus PDF ini"
+                  onClick={() => removeAt(index)}
+                  className="shrink-0 rounded-full bg-black/60 p-1.5 text-white transition hover:bg-red-600"
+                >
+                  <X size={14} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="grid h-24 place-items-center text-[#5B7088]">
+            <FileText size={28} />
+          </div>
+        )}
+        <div className="flex items-center gap-2 border-t border-[#1B2A4A]/10 p-3">
+          <input
+            ref={inputRef}
+            type="file"
+            accept=".pdf,application/pdf"
+            multiple
+            disabled={uploading}
+            onChange={(e) => void uploadFiles(e.target.files)}
+            className="block w-full text-sm text-[#1B2A4A] file:mr-3 file:rounded-lg file:border-0 file:bg-[#1B2A4A] file:px-4 file:py-2 file:font-semibold file:text-white hover:file:bg-[#15203a] disabled:opacity-60"
+          />
+          {uploading && <Loader2 size={18} className="shrink-0 animate-spin text-[#866D2C]" />}
+        </div>
+        <div className="flex items-center gap-2 border-t border-[#1B2A4A]/10 px-3 py-2">
+          <input
+            type="text"
+            value={urlDraft}
+            onChange={(e) => setUrlDraft(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addUrl(); } }}
+            placeholder="...atau tempel URL PDF lalu tekan Enter"
+            className="block w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 text-sm font-normal"
+          />
+          <button
+            type="button"
+            onClick={addUrl}
+            disabled={!urlDraft.trim()}
+            className="shrink-0 rounded-lg border-2 border-[#1B2A4A]/20 px-3 py-2 text-sm font-semibold text-[#1B2A4A] transition-colors hover:bg-[#1B2A4A]/5 disabled:opacity-40"
+          >
+            Tambah
+          </button>
+        </div>
+      </div>
+      <p className="mt-1 text-xs font-normal text-[#5B7088]">Format PDF, maks. 20 MB per file. Bisa pilih beberapa file sekaligus.</p>
+      {error && <p className="mt-1 text-xs font-normal text-red-600">{error}</p>}
+    </div>
   );
 }
 

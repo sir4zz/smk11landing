@@ -174,6 +174,13 @@ $guru = Guru::query()
             return $this->normalizeDate($value);
         }
 
+        if (str_ends_with($key, '_status_hidup')) {
+            $lower = strtolower($raw);
+            if ($lower === 'meninggal') return 'Meninggal';
+            if ($lower === 'masih hidup' || $lower === 'hidup') return 'Masih Hidup';
+            return null;
+        }
+
         $texts = ['penyakit', 'kelainan_jasmani', 'ayah_alamat', 'ibu_alamat', 'wali_alamat'];
         if (in_array($key, $texts, true)) {
             return $raw;

@@ -28,6 +28,7 @@ class SpmbContent extends Model
         'banner_title',
         'banner_description',
         'pdf_attachment',
+        'pdf_attachments',
     ];
 
     protected $casts = [
@@ -35,5 +36,6 @@ class SpmbContent extends Model
         'schedule' => 'array',
         'flow_steps' => 'array',
         'faq' => 'array',
+        'pdf_attachments' => 'array',
     ];
 }

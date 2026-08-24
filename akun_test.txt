@@ -1,3 +1,2 @@
 Guru: guru.test@smkn11.sch.id / smkn11guru
 OSIS: osis.test@smkn11.sch.id / smkn11osis
-Siswa: NISN 1234567890, PIN smkn11student (login di Mading)

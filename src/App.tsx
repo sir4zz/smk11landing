@@ -32,7 +32,6 @@ const OsisStruktur = lazy(() => import('./pages/osis/OsisStruktur'))
 const OsisKegiatan = lazy(() => import('./pages/osis/OsisKegiatan'))
 const OsisExtracurriculars = lazy(() => import('./pages/osis/Extracurriculars'))
 const OsisExtracurricularDetail = lazy(() => import('./pages/osis/ExtracurricularDetail'))
-const Kesemaptaan = lazy(() => import('./pages/osis/Kesemaptaan'))
 const Mading = lazy(() => import('./pages/mading/Mading'))
 const MadingDetail = lazy(() => import('./pages/mading/MadingDetail'))
 const StudentLogin = lazy(() => import('./pages/mading/StudentLogin'))
@@ -112,7 +111,6 @@ function App() {
           <Route path="osis/kegiatan" element={suspend(<OsisKegiatan />)} />
           <Route path="osis/ekstrakurikuler" element={suspend(<OsisExtracurriculars />)} />
           <Route path="osis/ekstrakurikuler/:slug" element={suspend(<OsisExtracurricularDetail />)} />
-          <Route path="osis/kesemaptaan" element={suspend(<Kesemaptaan />)} />
           <Route path="mading" element={suspend(<Mading />)} />
           <Route path="mading/login" element={suspend(<StudentLogin />)} />
           <Route element={<StudentRouteGuard />}>

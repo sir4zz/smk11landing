@@ -200,8 +200,16 @@ class PublicProfileController extends Controller
         // lama.
         $sdmGurus = SdmGuru::query()
             ->where('is_active', true)
+            ->with('assignments')
             ->orderBy('name', 'asc')
             ->get()
+            ->filter(fn (SdmGuru $guru) => ! $guru->assignments->contains(
+                fn ($a) => $a->jenis === \App\Models\SdmAssignment::JENIS_TUGAS_TAMBAHAN
+                    && (
+                        stripos((string) $a->uraian, 'KEPALA SEKOLAH') !== false
+                        || stripos((string) $a->uraian, 'WAKASEK') !== false
+                    )
+            ))
             ->map(fn (SdmGuru $guru) => [
                 'role' => 'guru',
                 'slug' => $guru->id,
