@@ -35,6 +35,16 @@ return [
         ],
     ],
 
+    'whatsapp' => [
+        // Base URL dari WhatsApp service (Baileys) di server/index.js
+        'url' => env('WHATSAPP_SERVICE_URL', 'http://127.0.0.1:5001'),
+        // Harus sama dengan env WA_TOKEN di WhatsApp service
+        'token' => env('WHATSAPP_SERVICE_TOKEN', ''),
+        'enabled' => env('WHATSAPP_ENABLED', true),
+        'connect_timeout' => (int) env('WHATSAPP_CONNECT_TIMEOUT', 5),
+        'timeout' => (int) env('WHATSAPP_TIMEOUT', 15),
+    ],
+
     'openrouter' => [
         'key' => env('OPENROUTER_API_KEY'),
         'model' => env('OPENROUTER_CHAT_MODEL', 'openai/gpt-4o-mini'),
