@@ -44,3 +44,6 @@ package-lock.json
 
 # Uploaded media (user-generated content)
 backend/storage/app/public/
+
+# WhatsApp (Baileys) session credentials
+storage/wa-session/

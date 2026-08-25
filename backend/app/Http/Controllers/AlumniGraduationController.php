@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AlumniGraduation;
+use App\Services\WhatsAppService;
 use Illuminate\Http\Request;
 
 class AlumniGraduationController extends Controller
@@ -93,6 +94,11 @@ class AlumniGraduationController extends Controller
             $record->update($payload);
         }
 
+        // Kirim notifikasi WhatsApp bila status verifikasi berubah lewat update.
+        if ($record->wasChanged('verification_status') && $record->verification_status !== 'menunggu') {
+            app(WhatsAppService::class)->sendGraduationVerification($record->fresh());
+        }
+
         return response()->json(['data' => $record->fresh(), 'error' => null]);
     }
 
@@ -119,6 +125,11 @@ class AlumniGraduationController extends Controller
             'verification_status' => $status,
             'verification_note' => $note,
         ]);
+
+        // Kirim notifikasi WhatsApp ke siswa/alumni (gagal kirim tidak menggagalkan verifikasi).
+        if ($record->wasChanged('verification_status') && $status !== 'menunggu') {
+            app(WhatsAppService::class)->sendGraduationVerification($record->fresh());
+        }
 
         return response()->json(['data' => $record->fresh(), 'error' => null]);
     }
