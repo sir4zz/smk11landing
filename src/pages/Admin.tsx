@@ -517,6 +517,10 @@ function AdminPanel() {
               {section === 'programs' && <div className="mt-8"><BannerTab pageKey="akademik_program_keahlian" label="Banner Program Keahlian" /></div>}
               {section === 'gurus' && <div className="mt-8"><BannerTab pageKey="profil_guru" label="Banner Profil Guru" /><div className="mt-4"><BannerTab pageKey="profil_direktori" label="Banner Direktori Profil" /></div></div>}
               {section === 'educationStaff' && <div className="mt-8"><BannerTab pageKey="manajemen_tendik" label="Banner Tenaga Kependidikan" /></div>}
+              {section === 'osis' && <div className="mt-8"><BannerTab pageKey="osis" label="Banner OSIS" /></div>}
+              {section === 'extracurriculars' && <div className="mt-8"><BannerTab pageKey="osis_ekskul" label="Banner Ekstrakurikuler" /></div>}
+              {section === 'mading' && <div className="mt-8"><BannerTab pageKey="mading" label="Banner Mading" /></div>}
+              {section === 'bkk' && <div className="mt-8"><BannerTab pageKey="bkk_kelulusan" label="Banner BKK" /></div>}
             </>
           )}
 
