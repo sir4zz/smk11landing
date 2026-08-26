@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
-import { Plus, Pencil, Trash2, X, Save, Loader2, Search, ChevronLeft, ChevronRight, Building2, Briefcase, Home, Contact, Phone, Mail, MapPin, Clock, Image } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, Save, Loader2, Search, ChevronLeft, ChevronRight, Building2, Briefcase, Home, Contact, Phone, Mail, MapPin, Clock, Image, ClipboardList, Upload, Download } from 'lucide-react';
 import { fetchPublicContent, type BkkHomeContent, type BkkContactContent } from '../../lib/api';
 import {
   jobAdminApi,
   bkkPartnerAdminApi,
+  bkkPlacementAdminApi,
   resolveImageUrl,
   JOB_STATUS_LABELS,
   JOB_EMPLOYMENT_LABELS,
@@ -13,8 +14,11 @@ import {
   type JobEmploymentType,
   type JobListMeta,
   type BkkPartner,
+  type BkkPlacement,
+  type BkkPlacementImportResult,
 } from '../../lib/api';
 import { backendApi } from '../../lib/api';
+import { downloadPlacementTemplate, parseBkkPlacementWorkbook } from '../../lib/bkkPlacementImport';
 import { can } from '../../lib/permissions';
 import ImageField from './ImageField';
 import BannerTab from './BannerTab';
@@ -35,11 +39,12 @@ const statusStyles: Record<string, string> = {
 const inputClass = 'mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal';
 
 export default function BkkManagement({ permissions, isAdmin }: Props) {
-  const [tab, setTab] = useState<'jobs' | 'partners' | 'home' | 'contact' | 'banner'>('jobs');
+  const [tab, setTab] = useState<'jobs' | 'partners' | 'placements' | 'home' | 'contact' | 'banner'>('jobs');
 
   const tabs = [
     { key: 'jobs' as const, label: 'Lowongan Kerja', icon: Briefcase },
     { key: 'partners' as const, label: 'Perusahaan Partner', icon: Building2 },
+    { key: 'placements' as const, label: 'Penempatan BKK', icon: ClipboardList },
     { key: 'home' as const, label: 'Beranda BKK', icon: Home, adminOnly: true },
     { key: 'contact' as const, label: 'Kontak BKK', icon: Contact, adminOnly: true },
     { key: 'banner' as const, label: 'Banner BKK', icon: Image },
@@ -66,6 +71,7 @@ export default function BkkManagement({ permissions, isAdmin }: Props) {
 
       {tab === 'jobs' && <JobsTab permissions={permissions} />}
       {tab === 'partners' && <PartnersTab permissions={permissions} />}
+      {tab === 'placements' && <PlacementsTab permissions={permissions} />}
       {tab === 'home' && isAdmin && <HomeTab />}
       {tab === 'contact' && isAdmin && <ContactTab />}
       {tab === 'banner' && <BannerTab pageKey="bkk_kelulusan" label="Banner BKK Kelulusan" />}
@@ -655,6 +661,290 @@ function PartnerForm({ item, onClose, onSave }: { item: BkkPartner | null; onClo
             className="inline-flex items-center gap-2 rounded-lg bg-[#1B2A4A] px-4 py-2 font-bold text-white"
           >
             <Save className="h-4 w-4" /> Simpan
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ==========================================================================
+// TAB: PENEMPATAN BKK (laporan penempatan — data hanya via impor XLSX)
+// ==========================================================================
+
+function PlacementsTab({ permissions }: { permissions: string[] }) {
+  const [rows, setRows] = useState<BkkPlacement[]>([]);
+  const [meta, setMeta] = useState<JobListMeta>({ total: 0, page: 1, limit: PAGE_SIZE, last_page: 1 });
+  const [loading, setLoading] = useState(true);
+  const [msg, setMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [importOpen, setImportOpen] = useState(false);
+
+  const load = useCallback(async () => {
+    const { data, error, meta: m } = await bkkPlacementAdminApi.list({
+      search: search || undefined,
+      page,
+      limit: PAGE_SIZE,
+    });
+    if (!error && data) {
+      setRows(data);
+      setMeta((m as JobListMeta) ?? { total: 0, page: 1, limit: PAGE_SIZE, last_page: 1 });
+    } else if (error) {
+      setMsg({ type: 'err', text: (error as { message?: string }).message ?? 'Gagal memuat data.' });
+    }
+    setLoading(false);
+  }, [search, page]);
+
+  useEffect(() => {
+    const delay = window.setTimeout(() => {
+      setLoading(true);
+      void load();
+    }, 300);
+    return () => window.clearTimeout(delay);
+  }, [load]);
+
+  const flash = (type: 'ok' | 'err', text: string) => {
+    setMsg({ type, text });
+    setTimeout(() => setMsg(null), 4000);
+  };
+
+  const remove = async (id: string) => {
+    if (!confirm('Hapus data penempatan ini?')) return;
+    const r = await bkkPlacementAdminApi.remove(id);
+    if (r.error) { flash('err', (r.error as { message?: string }).message ?? 'Gagal menghapus.'); return; }
+    await load();
+    flash('ok', 'Data penempatan dihapus.');
+  };
+
+  if (loading && rows.length === 0) return <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-[#C8A951]" /></div>;
+
+  const totalPages = Math.max(meta.last_page, 1);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-[#23314D]">Laporan penempatan alumni BKK. Data hanya dapat ditambahkan melalui impor file Excel (.xlsx).</p>
+        {can(permissions, 'job.create') && (
+          <button
+            onClick={() => setImportOpen(true)}
+            className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-4 py-2 font-bold text-[#1B2A4A]"
+          >
+            <Upload size={18} /> Impor XLSX
+          </button>
+        )}
+      </div>
+
+      {msg && <p className={`rounded-lg p-3 text-sm ${msg.type === 'ok' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>{msg.text}</p>}
+
+      <div className="relative min-w-[200px] max-w-md">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#23314D]/50" />
+        <input
+          value={search}
+          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+          placeholder="Cari nama alumni / NIK / perusahaan / jabatan..."
+          className="w-full rounded-lg border border-[#1B2A4A]/20 bg-white py-2 pl-10 pr-4 text-sm"
+        />
+      </div>
+
+      <div className="overflow-x-auto rounded-xl bg-white shadow-sm">
+        <table className="w-full text-left text-sm">
+          <thead className="bg-[#FAF6F0] text-[#1B2A4A]">
+            <tr>
+              <th className="p-4">Periode</th>
+              <th className="p-4">Nama Alumni</th>
+              <th className="p-4">JK</th>
+              <th className="p-4">Jurusan</th>
+              <th className="p-4">Jabatan</th>
+              <th className="p-4">Status</th>
+              <th className="p-4">Perusahaan</th>
+              <th className="p-4">NIK</th>
+              <th className="p-4">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 && (
+              <tr><td colSpan={9} className="p-8 text-center text-[#5B7088]">Belum ada data penempatan. Unggah file Excel untuk mengisi data.</td></tr>
+            )}
+            {rows.map((item) => (
+              <tr key={item.id} className="border-t border-[#1B2A4A]/10 align-top">
+                <td className="p-4 whitespace-nowrap text-[#23314D]">{item.month || '-'}<span className="block text-xs font-semibold text-[#5B7088]">{item.year || '-'}</span></td>
+                <td className="p-4 font-semibold text-[#1B2A4A]">{item.alumni_name || '-'}</td>
+                <td className="p-4 text-[#23314D]">{item.gender || '-'}</td>
+                <td className="p-4 text-[#23314D]">{item.major || '-'}</td>
+                <td className="p-4 text-[#23314D]">{item.position || '-'}</td>
+                <td className="p-4">
+                  {item.status
+                    ? <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">{item.status}</span>
+                    : '-'}
+                </td>
+                <td className="p-4 text-[#23314D]">{item.company_name || '-'}<span className="block max-w-[220px] truncate text-xs text-[#5B7088]" title={item.company_address}>{item.company_address}</span></td>
+                <td className="p-4 font-mono text-xs text-[#23314D]">{item.nik || '-'}</td>
+                <td className="p-4">
+                  {can(permissions, 'job.delete') && (
+                    <button onClick={() => remove(item.id)} className="text-red-600"><Trash2 size={17} /></button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page <= 1}
+            className="inline-flex items-center gap-1 rounded-lg border border-[#1B2A4A]/20 bg-white px-3 py-2 text-sm font-semibold text-[#1B2A4A] disabled:opacity-40 hover:bg-[#FAF6F0]"
+          >
+            <ChevronLeft className="h-4 w-4" /> Sebelumnya
+          </button>
+          <span className="px-4 text-sm font-medium text-[#23314D]">Halaman {meta.page} dari {totalPages} · {meta.total} data</span>
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page >= totalPages}
+            className="inline-flex items-center gap-1 rounded-lg border border-[#1B2A4A]/20 bg-white px-3 py-2 text-sm font-semibold text-[#1B2A4A] disabled:opacity-40 hover:bg-[#FAF6F0]"
+          >
+            Berikutnya <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
+      {importOpen && (
+        <PlacementImportModal
+          onClose={() => setImportOpen(false)}
+          onImported={async (result) => {
+            await load();
+            flash(
+              result.failed > 0 ? 'err' : 'ok',
+              result.failed > 0
+                ? `${result.imported} baris berhasil diimpor, ${result.failed} gagal.`
+                : `${result.imported} baris berhasil diimpor.`,
+            );
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function PlacementImportModal({ onClose, onImported }: { onClose: () => void; onImported: (result: BkkPlacementImportResult) => void }) {
+  const [parsedRows, setParsedRows] = useState<Record<string, unknown>[] | null>(null);
+  const [parseWarnings, setParseWarnings] = useState<string[]>([]);
+  const [year, setYear] = useState<number>(new Date().getFullYear());
+  const [replace, setReplace] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const pickFile = async (e: ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files?.[0];
+    if (!selected) return;
+    setError('');
+    setBusy(true);
+    try {
+      const result = await parseBkkPlacementWorkbook(selected);
+      setParseWarnings(result.warnings);
+      setParsedRows(result.rows as unknown as Record<string, unknown>[]);
+    } catch {
+      setError('Gagal membaca file. Pastikan file berformat .xlsx atau .xls.');
+      setParsedRows(null);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const submit = async () => {
+    if (!parsedRows || parsedRows.length === 0) {
+      setError('Tidak ada baris data untuk diimpor.');
+      return;
+    }
+    setError('');
+    setBusy(true);
+    const effectiveYear = Number.isNaN(year) ? new Date().getFullYear() : year;
+    const rows = parsedRows.map((row) => ({ ...row, year: effectiveYear }));
+    const r = await bkkPlacementAdminApi.import({ rows, replace });
+    setBusy(false);
+    if (r.error || !r.data) {
+      setError((r.error as { message?: string })?.message ?? 'Impor gagal.');
+      return;
+    }
+    onImported(r.data);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 p-4 py-10">
+      <div className="mx-auto w-full max-w-xl rounded-xl bg-white p-6 shadow-xl">
+        <div className="mb-5 flex justify-between">
+          <h2 className="text-xl font-bold text-[#1B2A4A]">Impor Penempatan BKK</h2>
+          <button onClick={onClose}><X /></button>
+        </div>
+
+        <div className="space-y-4">
+          <label className="block text-sm font-semibold">File Excel (.xlsx / .xls)
+            <input
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              onChange={pickFile}
+              disabled={busy}
+              className="mt-1 block w-full rounded-lg border border-dashed border-[#1B2A4A]/30 px-3 py-6 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-[#1B2A4A] file:px-4 file:py-2 file:text-sm file:font-bold file:text-white"
+            />
+          </label>
+          <p className="-mt-2 text-xs text-[#5B7088]">
+            Gunakan format laporan penempatan BKK (kolom: NO, BULAN, NAMA SEKOLAH, NAMA ALUMNI, dst).
+            {' '}
+            <button onClick={() => void downloadPlacementTemplate()} className="inline-flex items-center gap-1 font-bold text-[#866D2C] hover:underline">
+              <Download size={13} /> Unduh Template
+            </button>
+          </p>
+
+          {busy && parsedRows === null && (
+            <p className="flex items-center gap-2 rounded-lg bg-[#FAF6F0] p-3 text-sm text-[#23314D]"><Loader2 className="h-4 w-4 animate-spin" /> Membaca file...</p>
+          )}
+
+          {parsedRows !== null && (
+            <div className={`rounded-lg p-3 text-sm ${parsedRows.length > 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+              {parsedRows.length > 0 ? `${parsedRows.length} baris data terbaca dan siap diimpor.` : 'Tidak ada baris data yang dikenali pada file ini.'}
+            </div>
+          )}
+
+          {parseWarnings.map((w, i) => (
+            <p key={i} className="rounded-lg bg-[#FAF6F0] p-2 text-xs text-[#5B7088]">{w}</p>
+          ))}
+
+          <label className="block text-sm font-semibold">Tahun Laporan
+            <input
+              type="number"
+              min={2000}
+              max={2100}
+              value={Number.isNaN(year) ? '' : year}
+              onChange={(e) => setYear(parseInt(e.target.value, 10))}
+              className={inputClass}
+            />
+          </label>
+
+          <label className="flex items-center gap-2 text-sm font-semibold">
+            <input
+              type="checkbox"
+              checked={replace}
+              onChange={(e) => setReplace(e.target.checked)}
+              className="h-4 w-4 accent-[#1B2A4A]"
+            />
+            Hapus semua data penempatan yang ada sebelum impor
+          </label>
+
+          {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+        </div>
+
+        <div className="mt-6 flex justify-end gap-3">
+          <button onClick={onClose} className="px-4 py-2 text-[#5B7088]">Batal</button>
+          <button
+            onClick={() => void submit()}
+            disabled={busy || !parsedRows || parsedRows.length === 0}
+            className="inline-flex items-center gap-2 rounded-lg bg-[#1B2A4A] px-4 py-2 font-bold text-white disabled:opacity-50"
+          >
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Impor Sekarang
           </button>
         </div>
       </div>

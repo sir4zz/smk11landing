@@ -908,6 +908,62 @@ export const bkkPartnerAdminApi = {
   },
 };
 
+// ---------- BKK / PENEMPATAN (placement report, XLSX import only) ----------
+export interface BkkPlacement {
+  id: string;
+  year: number;
+  month: string;
+  school_name: string;
+  alumni_name: string;
+  gender: string;
+  birth_place: string;
+  birth_date: string;
+  nik: string;
+  ak1_no: string;
+  address: string;
+  district: string;
+  province: string;
+  regency: string;
+  email: string;
+  major: string;
+  position: string;
+  status: string;
+  company_name: string;
+  company_business_type: string;
+  business_field: string;
+  company_address: string;
+  company_province: string;
+  company_regency: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface BkkPlacementImportResult {
+  imported: number;
+  failed: number;
+  total: number;
+  errors: { line: number; message: string }[];
+}
+
+export const bkkPlacementAdminApi = {
+  list(params?: { search?: string; year?: number; month?: string; page?: number; limit?: number }): ApiResult<BkkPlacement[]> {
+    const q = new URLSearchParams();
+    if (params?.search) q.set('search', params.search);
+    if (params?.year) q.set('year', String(params.year));
+    if (params?.month) q.set('month', params.month);
+    if (params?.page) q.set('page', String(params.page));
+    if (params?.limit) q.set('limit', String(params.limit));
+    const suffix = q.size ? `?${q}` : '';
+    return request<BkkPlacement[]>(`/admin/bkk/placements${suffix}`);
+  },
+  import(payload: { rows: Record<string, unknown>[]; replace?: boolean }): ApiResult<BkkPlacementImportResult> {
+    return request<BkkPlacementImportResult>('/admin/bkk/placements/import', { method: 'POST', body: JSON.stringify(payload) });
+  },
+  remove(id: string): ApiResult<null> {
+    return request<null>(`/admin/bkk/placements/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  },
+};
+
 // ---------- KELULUSAN SISWA (ALUMNI GRADUATION) ----------
 export type AlumniStatus = 'bekerja' | 'kuliah' | 'wirausaha' | 'belum_bekerja';
 export type VerificationStatus = 'menunggu' | 'terverifikasi' | 'ditolak';

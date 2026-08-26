@@ -5,6 +5,7 @@ use App\Http\Controllers\AlumniGraduationController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\StudentAuthController;
 use App\Http\Controllers\BkkPartnerController;
+use App\Http\Controllers\BkkPlacementController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ContentCrudController;
 use App\Http\Controllers\DatabaseBackupController;
@@ -223,6 +224,11 @@ Route::middleware(['auth:sanctum', 'staff'])->group(function () {
     Route::post('/admin/bkk/partners', [BkkPartnerController::class, 'store'])->middleware('permission:job.create');
     Route::put('/admin/bkk/partners/{id}', [BkkPartnerController::class, 'update'])->middleware('permission:job.edit');
     Route::delete('/admin/bkk/partners/{id}', [BkkPartnerController::class, 'destroy'])->middleware('permission:job.delete');
+
+    // BKK / Penempatan (placement report — data only via XLSX import)
+    Route::get('/admin/bkk/placements', [BkkPlacementController::class, 'adminIndex'])->middleware('permission:job.view');
+    Route::post('/admin/bkk/placements/import', [BkkPlacementController::class, 'import'])->middleware('permission:job.create');
+    Route::delete('/admin/bkk/placements/{id}', [BkkPlacementController::class, 'destroy'])->middleware('permission:job.delete');
 
     // KELULUSAN SISWA (Alumni Graduation)
     Route::get('/admin/kelulusan', [AlumniGraduationController::class, 'adminIndex'])->middleware('permission:job.view');

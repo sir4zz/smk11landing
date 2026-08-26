@@ -112,3 +112,9 @@ cd ..
 - **Jangan commit `.env`** atau `backend/.env` (berisi kunci rahasia).
 - Jalur lokal memakai **MySQL**. File `init_schema.sql`, `temp_seed.sql`, dan folder `migrations/` di root adalah untuk deployment PostgreSQL/Supabase — **tidak dipakai** untuk jalur lokal.
 - Setelah migrate (tanpa data), tabel konten kosong. Frontend menampilkan data statis cadangan dari `src/data/*`; admin bisa menambah konten lewat panel `/admin`.
+
+
+kalau mau buang file sampah di storage
+php artisan media:prune-orphans --dry-run   # lihat saja
+php artisan media:prune-orphans             # hapus + konfirmasi
+php artisan media:prune-orphans --force     # hapus tanpa konfirmasi
