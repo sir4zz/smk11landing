@@ -9,7 +9,6 @@ import {
   fetchLatestBaileysVersion,
 } from "@whiskeysockets/baileys";
 import { Boom } from "@hapi/boom";
-import QRCode from "qrcode-terminal";
 import pino from "pino";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -17,12 +16,16 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.WA_PORT || 5001);
 const AUTH_DIR = process.env.WA_AUTH_DIR || path.join(__dirname, "..", "storage", "wa-session");
 const API_TOKEN = process.env.WA_TOKEN || "";
+const RECONNECT_BASE_MS = 3000;
+const RECONNECT_MAX_MS = 60000;
 
 let sock = null;
 let connected = false;
 let connectedAs = null;
 let currentQr = null;
 let starting = false;
+let retryCount = 0;
+let cachedVersion = null;
 
 const logger = pino({ level: "silent" });
 
@@ -42,44 +45,68 @@ function normalizeJid(phone) {
   return null;
 }
 
+function hasSession() {
+  try {
+    return fs.existsSync(path.join(AUTH_DIR, "creds.json"));
+  } catch {
+    return false;
+  }
+}
+
 async function startWhatsApp() {
-  if (starting) return;
+  if (starting || connected) return;
   starting = true;
 
   try {
     const { state, saveCreds } = await createAuthState(AUTH_DIR);
-    const { version } = await fetchLatestBaileysVersion();
+    if (!cachedVersion) {
+      cachedVersion = (await fetchLatestBaileysVersion()).version;
+    }
 
     sock = makeWASocket({
-      version,
+      version: cachedVersion,
       auth: state,
       printQRInTerminal: false,
       logger,
       browser: ["SMKN11-WA", "Chrome", "1.0.0"],
+      keepAliveIntervalMs: 30000,
     });
 
     sock.ev.on("creds.update", saveCreds);
 
     sock.ev.on("connection.update", ({ connection, lastDisconnect, qr }) => {
-      if (qr) {
-        currentQr = qr;
-        console.log("\nScan QR ini dengan WhatsApp (Perangkat Tertaut):\n");
-        QRCode.generate(qr, { small: true });
-      }
+      if (qr) currentQr = qr;
 
       if (connection === "open") {
         connected = true;
         connectedAs = sock.user?.id?.split(":")[0] ?? null;
         currentQr = null;
+        retryCount = 0;
         console.log(`[WA] Terhubung ke WhatsApp${connectedAs ? ` sebagai ${connectedAs}` : ""}.`);
       }
 
       if (connection === "close") {
         connected = false;
         connectedAs = null;
+        // Socket & QR lama tidak berlaku lagi — wajib dibuang agar
+        // reconnect benar-benar membuat koneksi baru.
+        try {
+          sock?.end(undefined);
+        } catch {
+          // abaikan
+        }
+        sock = null;
+        currentQr = null;
+
+        // Backoff eksponensial: 3s, 6s, 12s, ... maks 60s. Tidak menyerah —
+        // koneksi 408/515 biasanya berhasil pada percobaan berikutnya.
+        const delay = Math.min(RECONNECT_BASE_MS * 2 ** retryCount, RECONNECT_MAX_MS);
+        retryCount += 1;
         const code = new Boom(lastDisconnect?.error)?.output?.statusCode;
-        console.log(`[WA] Terputus (code=${code}), menyambung ulang dalam 5 detik...`);
-        setTimeout(startWhatsApp, 5000);
+        console.log(`[WA] Terputus (code=${code}), menyambung ulang dalam ${Math.round(delay / 1000)} detik...`);
+        setTimeout(() => {
+          startWhatsApp().catch((err) => console.error("[WA] Gagal reconnect:", err.message));
+        }, delay);
       }
     });
   } finally {
@@ -92,13 +119,41 @@ app.use(cors());
 app.use(express.json());
 
 app.get("/status", (_req, res) => {
-  res.json({ ok: true, connected, connectedAs, hasQr: !!currentQr });
+  res.json({
+    ok: true,
+    connected,
+    connectedAs,
+    hasQr: !!currentQr,
+    started: !!(sock || starting),
+  });
 });
 
-app.get("/qr", (_req, res) => {
+app.get("/qr", async (_req, res) => {
   if (connected) return res.json({ ok: true, connected: true, qr: null });
-  if (!currentQr) return res.status(503).json({ ok: false, error: "QR belum tersedia, coba lagi." });
+
+  if (!sock && !starting) {
+    return res.status(409).json({ ok: false, error: "Belum dimulai. Klik pairing untuk memulai.", started: false });
+  }
+
+  // Handshake WhatsApp butuh beberapa detik sebelum QR pertama tersedia;
+  // tunggu agar polling dari admin tidak kena error "belum tersedia".
+  const deadline = Date.now() + 8000;
+  while (!currentQr && !connected && Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+
+  if (connected) return res.json({ ok: true, connected: true, qr: null });
   res.json({ ok: true, connected: false, qr: currentQr });
+});
+
+app.post("/start", requireToken, async (_req, res) => {
+  if (connected) return res.json({ ok: true, connected: true });
+  try {
+    await startWhatsApp();
+  } catch (err) {
+    return res.status(500).json({ ok: false, error: `Gagal memulai: ${err.message}` });
+  }
+  res.json({ ok: true, connected });
 });
 
 app.post("/logout", requireToken, async (_req, res) => {
@@ -110,14 +165,22 @@ app.post("/logout", requireToken, async (_req, res) => {
     // Sesi mungkin sudah tidak valid; tetap bersihkan.
   }
 
+  try {
+    sock.ev.removeAllListeners();
+    sock.end(undefined);
+  } catch {
+    // abaikan
+  }
+
+  sock = null;
   connected = false;
   connectedAs = null;
   currentQr = null;
+  retryCount = 0;
 
   fs.rmSync(AUTH_DIR, { recursive: true, force: true });
-  console.log("[WA] Session dihapus. Menyiapkan QR baru...");
+  console.log("[WA] Session dihapus.");
 
-  setTimeout(startWhatsApp, 2000);
   res.json({ ok: true });
 });
 
@@ -153,8 +216,11 @@ app.post("/send", requireToken, async (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`[WA] WhatsApp service berjalan di http://127.0.0.1:${PORT}`);
-  startWhatsApp().catch((err) => {
-    console.error("[WA] Gagal start:", err);
-    process.exit(1);
-  });
+
+  if (hasSession()) {
+    console.log("[WA] Session ditemukan, menyambungkan ke WhatsApp...");
+    startWhatsApp().catch((err) => console.error("[WA] Gagal start:", err.message));
+  } else {
+    console.log("[WA] Belum ada session. Pairing dari menu admin WhatsApp untuk memulai.");
+  }
 });

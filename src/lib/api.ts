@@ -1343,6 +1343,7 @@ export interface WhatsAppStatus {
   connected: boolean;
   connectedAs: string | null;
   hasQr: boolean;
+  started?: boolean;
   offline?: boolean;
 }
 
@@ -1361,6 +1362,9 @@ export const whatsappApi = {
   },
   logout(): ApiResult<{ ok: boolean }> {
     return request<{ ok: boolean }>('/admin/whatsapp/logout', { method: 'POST' });
+  },
+  start(): ApiResult<{ ok: boolean; connected: boolean }> {
+    return request<{ ok: boolean; connected: boolean }>('/admin/whatsapp/start', { method: 'POST' });
   },
 };
 
