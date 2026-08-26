@@ -21,9 +21,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => CheckPermission::class,
             'admin' => AdminOnly::class,
             'staff' => StaffOnly::class,
+            'optional-sanctum' => \App\Http\Middleware\OptionalSanctumAuth::class,
         ]);
-
-        $middleware->statefulApi();
 
         $middleware->trustProxies(at: '*');
 

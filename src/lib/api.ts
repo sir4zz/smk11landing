@@ -72,7 +72,8 @@ export async function downloadApiFile(path: string, filename: string): Promise<{
   const relative = path.startsWith('/storage/') ? path.slice('/storage/'.length) : path;
   const url = `${apiBaseUrl}/admin/students/files/download?path=${encodeURIComponent(relative)}`;
   try {
-    const res = await fetch(url, { credentials: 'include' });
+    const token = getAuthToken();
+    const res = await fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
     if (!res.ok) {
       const body = await res.json().catch(() => null);
       return { ok: false, message: body?.error?.message ?? 'File tidak ditemukan.' };
@@ -96,6 +97,30 @@ type ApiError = { message?: string; [key: string]: unknown } | null;
 type ApiResponse<T> = { data: T | null; error: ApiError; status?: number; count?: number | null; meta?: unknown };
 type ApiResult<T> = Promise<ApiResponse<T>>;
 type Filter = { key: string; value: unknown };
+
+const STAFF_TOKEN_KEY = 'smkn11_staff_token';
+const STUDENT_TOKEN_KEY = 'smkn11_student_token';
+
+export function getAuthToken(): string | null {
+  try {
+    const path = window.location.pathname;
+    if (path.startsWith('/admin') || path.startsWith('/guru')) {
+      return localStorage.getItem(STAFF_TOKEN_KEY);
+    }
+    if (path.startsWith('/mading/area') || path.startsWith('/mading/login') || path.startsWith('/student') || path.startsWith('/siswa')) {
+      return localStorage.getItem(STUDENT_TOKEN_KEY);
+    }
+    return localStorage.getItem(STAFF_TOKEN_KEY) || localStorage.getItem(STUDENT_TOKEN_KEY);
+  } catch { return null; }
+}
+
+export function setAuthToken(token: string | null, role?: 'staff' | 'student'): void {
+  try {
+    const key = role === 'student' ? STUDENT_TOKEN_KEY : STAFF_TOKEN_KEY;
+    if (token) localStorage.setItem(key, token);
+    else localStorage.removeItem(key);
+  } catch { /* ignore */ }
+}
 
 const PUBLIC_CACHE_TTL = 30_000;
 const responseCache = new Map<string, { expiresAt: number; value: ApiResponse<unknown> }>();
@@ -132,12 +157,13 @@ async function request<T>(path: string, options: RequestInit = {}): ApiResult<T>
   const run = (async (): Promise<ApiResponse<T>> => {
   try {
     const isFormData = options.body instanceof FormData;
+    const token = getAuthToken();
     const response = await fetch(`${apiBaseUrl}${path}`, {
-      credentials: 'include',
       ...options,
       headers: {
         Accept: 'application/json',
         ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...(options.headers ?? {}),
       },
     });
@@ -234,9 +260,9 @@ export const backendApi: any = {
   },
   auth: {
     async getCurrentUser() { const result = await request<any>('/auth/me'); return { data: result.data ? { user: result.data.user, role: result.data.role, status: result.data.status, mustChangePassword: result.data.must_change_password, permissions: result.data.permissions } : null, error: result.error }; },
-    async signInWithPassword(credentials: { email?: string; password: string; identifier?: string }) { const body: Record<string, string> = { password: credentials.password }; if (credentials.identifier) body.identifier = credentials.identifier; else if (credentials.email) body.email = credentials.email; const result = await request<{ user: { id: string; email?: string }; role?: string; must_change_password?: boolean }>('/auth/login', { method: 'POST', body: JSON.stringify(body) }); if (result.data) listeners.forEach((listener) => listener('signedIn')); return { data: result.data, error: result.error }; },
-    async signUp(credentials: { email: string; password: string; name?: string; options?: { data?: { name?: string } } }) { const result = await request<{ user: { id: string; email?: string } }>('/auth/register', { method: 'POST', body: JSON.stringify({ email: credentials.email, password: credentials.password, name: credentials.name ?? credentials.options?.data?.name }) }); if (result.data) listeners.forEach((listener) => listener('signedIn')); return { data: result.data, error: result.error }; },
-    async signOut() { const result = await request('/auth/logout', { method: 'POST' }); listeners.forEach((listener) => listener('signedOut')); return result; },
+    async signInWithPassword(credentials: { email?: string; password: string; identifier?: string }) { const body: Record<string, string> = { password: credentials.password }; if (credentials.identifier) body.identifier = credentials.identifier; else if (credentials.email) body.email = credentials.email; const result = await request<{ user: { id: string; email?: string }; role?: string; must_change_password?: boolean; token?: string }>('/auth/login', { method: 'POST', body: JSON.stringify(body) }); if (result.data) { if (result.data.token) { const r = result.data.role; const roleKey: 'staff' | 'student' = (r === 'student') ? 'student' : 'staff'; setAuthToken(result.data.token, roleKey); } listeners.forEach((listener) => listener('signedIn')); } return { data: result.data, error: result.error }; },
+    async signUp(credentials: { email: string; password: string; name?: string; options?: { data?: { name?: string } } }) { const result = await request<{ user: { id: string; email?: string }; token?: string }>('/auth/register', { method: 'POST', body: JSON.stringify({ email: credentials.email, password: credentials.password, name: credentials.name ?? credentials.options?.data?.name }) }); if (result.data) { if (result.data.token) setAuthToken(result.data.token, 'staff'); listeners.forEach((listener) => listener('signedIn')); } return { data: result.data, error: result.error }; },
+    async signOut() { const result = await request('/auth/logout', { method: 'POST' }); setAuthToken(null, 'staff'); setAuthToken(null, 'student'); listeners.forEach((listener) => listener('signedOut')); return result; },
     onAuthStateChange(listener: (event: 'signedIn' | 'signedOut') => void) { listeners.add(listener); return () => listeners.delete(listener); },
   },
   storage: {
@@ -1391,6 +1417,7 @@ export async function restoreChunked(
 ): Promise<ApiResponse<RestoreResult>> {
   const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
   const uploadId = crypto.randomUUID();
+  const token = getAuthToken();
 
   for (let i = 0; i < totalChunks; i++) {
     const start = i * CHUNK_SIZE;
@@ -1406,7 +1433,7 @@ export async function restoreChunked(
 
     const res = await fetch(`${apiBaseUrl}/admin/backups/restore-chunk`, {
       method: 'POST',
-      credentials: 'include',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: formData,
     });
 
@@ -1420,8 +1447,7 @@ export async function restoreChunked(
 
   const commitRes = await fetch(`${apiBaseUrl}/admin/backups/restore-commit`, {
     method: 'POST',
-    credentials: 'include',
-    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
     body: JSON.stringify({ upload_id: uploadId, total_chunks: totalChunks, filename: file.name }),
   });
 
@@ -1451,8 +1477,9 @@ export const backupApi = {
 };
 
 export async function downloadBackup(filename: string): Promise<void> {
+  const token = getAuthToken();
   const response = await fetch(`${apiBaseUrl}/admin/backups/${encodeURIComponent(filename)}`, {
-    credentials: 'include',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
   if (!response.ok) {
     const body = await response.json().catch(() => null);

@@ -45,9 +45,9 @@ use Illuminate\Support\Facades\Route;
 // ---------- AUTH ----------
 Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:auth');
 Route::post('/auth/register', [AuthController::class, 'register'])->middleware('throttle:auth');
-Route::post('/auth/logout', [AuthController::class, 'logout']);
-Route::get('/auth/me', [AuthController::class, 'me']);
-Route::get('/auth/permissions', [AuthController::class, 'permissions']);
+Route::post('/auth/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+Route::get('/auth/me', [AuthController::class, 'me'])->middleware('auth:sanctum');
+Route::get('/auth/permissions', [AuthController::class, 'permissions'])->middleware('auth:sanctum');
 Route::post('/auth/student-email', [StudentAuthController::class, 'studentEmail']);
 
 // ---------- PUBLIC PROFILES ----------
@@ -124,10 +124,10 @@ Route::post('/kelulusan', [AlumniGraduationController::class, 'store']);
 
 // Compatibility REST resources for the existing React CRUD layer. They are
 // backed by Laravel models and authorization.
-Route::get('/data/{table}', [DataController::class, 'index']);
-Route::post('/data/{table}', [DataController::class, 'store']);
-Route::patch('/data/{table}', [DataController::class, 'update']);
-Route::delete('/data/{table}', [DataController::class, 'destroy']);
+Route::get('/data/{table}', [DataController::class, 'index'])->middleware('optional-sanctum');
+Route::post('/data/{table}', [DataController::class, 'store'])->middleware('optional-sanctum');
+Route::patch('/data/{table}', [DataController::class, 'update'])->middleware('optional-sanctum');
+Route::delete('/data/{table}', [DataController::class, 'destroy'])->middleware('optional-sanctum');
 
 // ============================================================
 // AUTHENTICATED (SPA session)
