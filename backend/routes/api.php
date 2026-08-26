@@ -8,6 +8,7 @@ use App\Http\Controllers\BkkPartnerController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ContentCrudController;
 use App\Http\Controllers\DatabaseBackupController;
+use App\Http\Controllers\WhatsAppAdminController;
 use App\Http\Controllers\ExtracurricularController;
 use App\Http\Controllers\FaqController;
 use App\Http\Controllers\MadingAiController;
@@ -25,6 +26,7 @@ use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\SdmAccountController;
 use App\Http\Controllers\SdmController;
 use App\Http\Controllers\SpmbController;
+use App\Http\Controllers\AIContentUploadController;
 use App\Http\Controllers\StatsController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\StudentDataChangeRequestController;
@@ -268,6 +270,10 @@ Route::middleware(['auth:sanctum', 'staff'])->group(function () {
     Route::put('/admin/page-banners/{id}', [PageBannerController::class, 'update']);
     Route::delete('/admin/page-banners/{id}', [PageBannerController::class, 'destroy']);
 
+    // AI Content Upload
+    Route::post('/admin/ai-content-upload/analyze', [AIContentUploadController::class, 'analyze'])->middleware('throttle:mading-ai');
+    Route::post('/admin/ai-content-upload/save', [AIContentUploadController::class, 'save']);
+
     // Media inventory
     Route::get('/admin/media', [MediaController::class, 'index']);
 });
@@ -334,4 +340,9 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::post('/backups/restore-commit', [DatabaseBackupController::class, 'restoreCommit']);
     Route::get('/backups/{filename}', [DatabaseBackupController::class, 'download']);
     Route::delete('/backups/{filename}', [DatabaseBackupController::class, 'destroy']);
+
+    // WhatsApp (Baileys) session management
+    Route::get('/whatsapp/status', [WhatsAppAdminController::class, 'status']);
+    Route::get('/whatsapp/qr', [WhatsAppAdminController::class, 'qr']);
+    Route::post('/whatsapp/logout', [WhatsAppAdminController::class, 'logout']);
 });

@@ -32,7 +32,18 @@ export default function BannerTab({ pageKey, label }: Props) {
   };
 
   const update = (key: keyof PageBanner, value: unknown) => {
-    setBanner((prev) => prev ? { ...prev, [key]: value } : prev);
+    setBanner((prev) => {
+      if (prev) return { ...prev, [key]: value };
+      return {
+        page_key: pageKey,
+        title: '',
+        subtitle: '',
+        image: '',
+        is_active: false,
+        sort_order: 0,
+        [key]: value,
+      } as PageBanner;
+    });
   };
 
   const save = async () => {
@@ -53,7 +64,7 @@ export default function BannerTab({ pageKey, label }: Props) {
           title: banner?.title ?? '',
           subtitle: banner?.subtitle ?? '',
           image: banner?.image ?? '',
-          is_active: true,
+          is_active: Boolean(banner?.is_active),
         });
         if (error) throw error;
         if (data) setBanner(data);

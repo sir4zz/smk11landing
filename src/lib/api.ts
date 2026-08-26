@@ -1363,6 +1363,33 @@ export interface PublicSdmProfile {
 
 export type PublicProfileType = 'guru' | 'siswa' | 'osis' | 'tendik';
 
+// ---------- WHATSAPP (Baileys, admin) ----------
+export interface WhatsAppStatus {
+  ok: boolean;
+  connected: boolean;
+  connectedAs: string | null;
+  hasQr: boolean;
+  offline?: boolean;
+}
+
+export interface WhatsAppQrPayload {
+  ok: boolean;
+  connected: boolean;
+  qr: string | null;
+}
+
+export const whatsappApi = {
+  status(): ApiResult<WhatsAppStatus> {
+    return request<WhatsAppStatus>('/admin/whatsapp/status');
+  },
+  qr(): ApiResult<WhatsAppQrPayload> {
+    return request<WhatsAppQrPayload>('/admin/whatsapp/qr');
+  },
+  logout(): ApiResult<{ ok: boolean }> {
+    return request<{ ok: boolean }>('/admin/whatsapp/logout', { method: 'POST' });
+  },
+};
+
 // ---------- BACKUP / RESTORE (admin) ----------
 export interface BackupFileRow {
   name: string;
@@ -1464,3 +1491,81 @@ export async function downloadBackup(filename: string): Promise<void> {
   anchor.remove();
   URL.revokeObjectURL(url);
 }
+
+// ---------- AI CONTENT UPLOAD ----------
+export type AIContentType = 'auto' | 'kegiatan_guru' | 'kegiatan_siswa' | 'galeri' | 'prestasi' | 'osis' | 'ekstrakurikuler' | 'pengumuman' | 'berita' | 'mading' | 'lainnya';
+
+export const AI_CONTENT_TYPE_LABELS: Record<AIContentType, string> = {
+  auto: 'Auto Detect',
+  kegiatan_guru: 'Kegiatan Guru',
+  kegiatan_siswa: 'Kegiatan Siswa',
+  galeri: 'Galeri',
+  prestasi: 'Prestasi',
+  osis: 'OSIS',
+  ekstrakurikuler: 'Ekstrakurikuler',
+  pengumuman: 'Pengumuman',
+  berita: 'Berita',
+  mading: 'Mading',
+  lainnya: 'Lainnya',
+};
+
+export interface AIAnalysisResult {
+  title: string;
+  description: string;
+  category: string;
+  content_type: AIContentType;
+  date: string | null;
+  location: string | null;
+  tags: string[];
+  caption: string;
+  summary: string;
+  additional_info: string;
+  confidence: Record<string, string>;
+}
+
+export interface AISingleImageResult {
+  index: number;
+  image_url: string;
+  success: boolean;
+  data: AIAnalysisResult | null;
+  error?: string;
+}
+
+export interface AISaveResult {
+  type: string;
+  id: string;
+  slug?: string;
+}
+
+export const aiContentUploadApi = {
+  analyze(imageUrls: string[], contentType: AIContentType = 'auto'): ApiResult<AISingleImageResult[]> {
+    return request<AISingleImageResult[]>('/admin/ai-content-upload/analyze', {
+      method: 'POST',
+      body: JSON.stringify({ image_urls: imageUrls, content_type: contentType }),
+    });
+  },
+  save(payload: {
+    content_type: AIContentType;
+    image_urls: string[];
+    title: string;
+    description?: string;
+    category?: string;
+    date?: string;
+    location?: string;
+    tags?: string[];
+    caption?: string;
+    summary?: string;
+    status?: 'draft' | 'published';
+    author?: string;
+    level?: string;
+    rank?: string;
+    event?: string;
+    year?: number;
+    cover_image_index?: number;
+  }): ApiResult<AISaveResult> {
+    return request<AISaveResult>('/admin/ai-content-upload/save', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+};

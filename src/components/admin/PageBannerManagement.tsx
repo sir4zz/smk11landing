@@ -18,6 +18,7 @@ const PAGE_KEY_OPTIONS = [
   { value: 'osis_ekskul', label: 'OSIS - Ekstrakurikuler' },
   { value: 'kesiswaan_prestasi', label: 'Kesiswaan - Prestasi' },
   { value: 'akademik_fasilitas', label: 'Akademik - Fasilitas' },
+  { value: 'akademik_program_keahlian', label: 'Akademik - Program Keahlian' },
   { value: 'mading', label: 'Mading' },
   { value: 'mading_detail', label: 'Mading - Detail' },
   { value: 'bkk_kelulusan', label: 'BKK - Kelulusan' },

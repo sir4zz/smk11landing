@@ -258,7 +258,7 @@ class DatabaseSeeder extends Seeder
             ['id' => $studentId],
             [
                 'email' => $studentEmail,
-                'password' => Hash::make('smkn11student'),
+                'password' => Hash::make('7890'),
                 'name' => 'Student Test',
                 'profile' => ['name' => 'Student Test'],
                 'email_verified_at' => now(),
@@ -279,9 +279,14 @@ class DatabaseSeeder extends Seeder
             ['id' => $studentId],
             [
                 'nisn' => '1234567890',
+                'pin' => '7890',
                 'name' => 'Student Test',
                 'class' => 'XII TJKT 1',
-                'major' => 'Teknik Jaringan',
+                'major' => 'Teknik Jaringan Komputer dan Telekomunikasi',
+                'gender' => 'Laki-laki',
+                'date_of_birth' => '2009-01-15',
+                'place_of_birth' => 'Tangerang',
+                'address' => 'Kp. Saradan RT. 03/01, Desa Pangkat, Kec. Jayanti, Kab. Tangerang, Banten',
             ]
         );
 

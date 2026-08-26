@@ -6,6 +6,7 @@ use App\Models\Student;
 use App\Models\StudentDataChangeRequest;
 use App\Models\User;
 use App\Services\PermissionService;
+use App\Services\WhatsAppService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -307,7 +308,14 @@ class StudentDataChangeRequestController extends Controller
             $this->cleanupPendingFiles($changeRequest);
         });
 
-        return response()->json(['data' => $changeRequest->fresh()->load(['student:id,name,nisn', 'verifier:id,name']), 'error' => null]);
+        $fresh = $changeRequest->fresh();
+        $fresh->load(['student:id,name,nisn,class,major,phone', 'verifier:id,name']);
+
+        // Kirim notifikasi WhatsApp ke siswa (gagal kirim tidak menggagalkan verifikasi).
+        // Nomor tujuan: nomor baru hasil pengajuan bila ada, jika tidak pakai nomor lama.
+        app(WhatsAppService::class)->sendStudentDataChangeVerification($fresh);
+
+        return response()->json(['data' => $fresh, 'error' => null]);
     }
 
     /**
