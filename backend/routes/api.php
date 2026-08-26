@@ -343,6 +343,7 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
 
     // WhatsApp (Baileys) session management
     Route::get('/whatsapp/status', [WhatsAppAdminController::class, 'status']);
+    Route::post('/whatsapp/start', [WhatsAppAdminController::class, 'start']);
     Route::get('/whatsapp/qr', [WhatsAppAdminController::class, 'qr']);
     Route::post('/whatsapp/logout', [WhatsAppAdminController::class, 'logout']);
 });

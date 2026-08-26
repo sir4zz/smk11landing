@@ -30,12 +30,24 @@ export default function WhatsAppManagement() {
     setLoading(false);
   }, []);
 
+  const qrWaitCount = useRef(0);
+
   const loadQr = useCallback(async () => {
-    const { data, error } = await whatsappApi.qr();
+    const { data } = await whatsappApi.qr();
     if (data?.qr) {
+      qrWaitCount.current = 0;
       setQr(data.qr);
-    } else if (!data?.connected) {
-      setMsg({ type: 'err', text: (error as { message?: string })?.message ?? 'QR belum tersedia.' });
+      setMsg(null);
+    } else if (data?.connected) {
+      setQr(null);
+    } else {
+      // QR lama sudah tidak valid (misal reconnect setelah scan) — jangan
+      // tampilkan QR basi, kembali ke spinner sampai QR baru tersedia.
+      setQr(null);
+      qrWaitCount.current += 1;
+      if (qrWaitCount.current >= 15) {
+        setMsg({ type: 'err', text: 'QR tidak kunjung tersedia. Pastikan WhatsApp service berjalan, lalu coba pairing ulang.' });
+      }
     }
   }, []);
 
@@ -53,14 +65,31 @@ export default function WhatsAppManagement() {
     return () => clearInterval(timer);
   }, [showQr, status?.connected, loadQr, loadStatus]);
 
+  const startPairing = async () => {
+    setMsg(null);
+    qrWaitCount.current = 0;
+    setQr(null);
+    const { data, error } = await whatsappApi.start();
+    if (error) {
+      setMsg({ type: 'err', text: (error as { message?: string })?.message ?? 'Gagal memulai WhatsApp service.' });
+      return;
+    }
+    if (data?.connected) {
+      await loadStatus();
+      return;
+    }
+    setShowQr(true);
+  };
+
   const handleLogout = async () => {
     setLoggingOut(true);
     setMsg(null);
     const { error } = await whatsappApi.logout();
     if (!error) {
-      setMsg({ type: 'ok', text: 'Session WhatsApp dihapus. Scan QR baru untuk pairing ulang.' });
+      setMsg({ type: 'ok', text: 'Session WhatsApp dihapus. Klik "Pairing via QR Code" untuk menghubungkan ulang.' });
       setShowLogoutConfirm(false);
-      setShowQr(true);
+      setShowQr(false);
+      setQr(null);
       await loadStatus();
     } else {
       setMsg({ type: 'err', text: (error as { message?: string })?.message ?? 'Gagal menghapus session.' });
@@ -109,7 +138,7 @@ export default function WhatsAppManagement() {
               )}
 
               {!status?.connected && !showQr && (
-                <button onClick={() => { setShowQr(true); setMsg(null); }} className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-4 py-2 text-sm font-bold text-[#1B2A4A] hover:bg-[#b3954a]">
+                <button onClick={startPairing} className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-4 py-2 text-sm font-bold text-[#1B2A4A] hover:bg-[#b3954a]">
                   <QrCode size={16} /> Pairing via QR Code
                 </button>
               )}

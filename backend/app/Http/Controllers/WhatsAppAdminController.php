@@ -52,13 +52,31 @@ class WhatsAppAdminController extends Controller
         }
 
         try {
-            $response = $this->serviceRequest()->get($this->serviceUrl('/qr'));
+            $response = $this->serviceRequest()->timeout(20)->get($this->serviceUrl('/qr'));
 
             if (!$response->successful()) {
                 return response()->json([
                     'data' => null,
                     'error' => ['message' => $response->json('error') ?? 'QR belum tersedia, coba lagi.'],
                 ], 503);
+            }
+
+            return response()->json(['data' => $response->json(), 'error' => null]);
+        } catch (\Throwable $e) {
+            return response()->json(['data' => null, 'error' => ['message' => 'WhatsApp service tidak berjalan.']], 503);
+        }
+    }
+
+    public function start(): JsonResponse
+    {
+        try {
+            $response = $this->serviceRequest()->post($this->serviceUrl('/start'));
+
+            if (!$response->successful()) {
+                return response()->json([
+                    'data' => null,
+                    'error' => ['message' => $response->json('error') ?? 'Gagal memulai WhatsApp service.'],
+                ], 500);
             }
 
             return response()->json(['data' => $response->json(), 'error' => null]);
