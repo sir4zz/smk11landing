@@ -69,7 +69,6 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
 
   const loadContent = useCallback(async () => {
     if (loadedRef.current) return;
-    loadedRef.current = true;
     setLoading(true);
     const results: SearchResult[] = [];
     const push = (type: string, items: SearchResult[]) => {
@@ -128,6 +127,9 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
       type: '',
     })));
 
+    const total = news.length + programs.length + extracurriculars.length
+      + galleries.rows.length + mading.length + jobs.rows.length;
+    if (total > 0) loadedRef.current = true;
     setDynamicResults(results);
     setLoading(false);
   }, []);
@@ -240,20 +242,22 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
                   ))}
                 </div>
                 <p className="mt-4 text-sm text-[#23314D]/60">
-                  Ketik untuk mencari di seluruh konten situs: berita, program keahlian, ekstrakurikuler, galeri, mading, dan lowongan kerja.
+                  {loading ? 'Memuat indeks pencarian...' : 'Ketik untuk mencari di seluruh konten situs: berita, program keahlian, ekstrakurikuler, galeri, mading, dan lowongan kerja.'}
                 </p>
               </div>
-            ) : loading ? (
-              <div className="flex items-center justify-center gap-2 py-10 text-sm text-[#23314D]/70">
-                <Loader2 size={18} className="animate-spin text-[#C8A951]" />
-                Memuat indeks pencarian...
-              </div>
-            ) : totalResults === 0 ? (
-              <div className="py-10 text-center">
-                <Search size={40} className="mx-auto text-[#C8A951]/40" />
-                <p className="mt-3 font-medium text-[#23314D]">Tidak ada hasil untuk "{query}"</p>
-                <p className="mt-1 text-sm text-[#23314D]/60">Coba kata kunci lain yang lebih umum.</p>
-              </div>
+            ) : filteredGroups.length === 0 ? (
+              loading ? (
+                <div className="flex items-center justify-center gap-2 py-10 text-sm text-[#23314D]/70">
+                  <Loader2 size={18} className="animate-spin text-[#C8A951]" />
+                  Mencari...
+                </div>
+              ) : (
+                <div className="py-10 text-center">
+                  <Search size={40} className="mx-auto text-[#C8A951]/40" />
+                  <p className="mt-3 font-medium text-[#23314D]">Tidak ada hasil untuk "{query}"</p>
+                  <p className="mt-1 text-sm text-[#23314D]/60">Coba kata kunci lain yang lebih umum.</p>
+                </div>
+              )
             ) : (
               <div className="space-y-5">
                 {filteredGroups.map((group) => (

@@ -68,7 +68,7 @@ export default function PdfCanvasViewer({ sourcePath, title }: PdfCanvasViewerPr
       canvas.style.height = `${Math.floor(viewport.height)}px`;
       const context = canvas.getContext('2d');
       if (!context || cancelled) return;
-      await pdfPage.render({ canvasContext: context, viewport, transform: ratio === 1 ? undefined : [ratio, 0, 0, ratio, 0, 0] }).promise;
+      await pdfPage.render({ canvas, canvasContext: context, viewport, transform: ratio === 1 ? undefined : [ratio, 0, 0, ratio, 0, 0] }).promise;
     };
     render().catch(() => { if (!cancelled) setError('Halaman PDF tidak dapat ditampilkan.'); });
     return () => { cancelled = true; };
