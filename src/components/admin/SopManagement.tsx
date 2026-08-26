@@ -1,5 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
-import type { FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Eye, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { sopAdminApi, type SopRow } from '../../lib/api';
 import PdfCanvasViewer from '../sop/PdfCanvasViewer';
