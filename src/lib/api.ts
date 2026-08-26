@@ -1337,6 +1337,33 @@ export interface PublicSdmProfile {
 
 export type PublicProfileType = 'guru' | 'siswa' | 'osis' | 'tendik';
 
+// ---------- WHATSAPP (Baileys, admin) ----------
+export interface WhatsAppStatus {
+  ok: boolean;
+  connected: boolean;
+  connectedAs: string | null;
+  hasQr: boolean;
+  offline?: boolean;
+}
+
+export interface WhatsAppQrPayload {
+  ok: boolean;
+  connected: boolean;
+  qr: string | null;
+}
+
+export const whatsappApi = {
+  status(): ApiResult<WhatsAppStatus> {
+    return request<WhatsAppStatus>('/admin/whatsapp/status');
+  },
+  qr(): ApiResult<WhatsAppQrPayload> {
+    return request<WhatsAppQrPayload>('/admin/whatsapp/qr');
+  },
+  logout(): ApiResult<{ ok: boolean }> {
+    return request<{ ok: boolean }>('/admin/whatsapp/logout', { method: 'POST' });
+  },
+};
+
 // ---------- BACKUP / RESTORE (admin) ----------
 export interface BackupFileRow {
   name: string;

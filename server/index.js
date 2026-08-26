@@ -1,11 +1,11 @@
 import express from "express";
 import cors from "cors";
 import path from "node:path";
+import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import {
   default as makeWASocket,
   useMultiFileAuthState as createAuthState,
-  DisconnectReason,
   fetchLatestBaileysVersion,
 } from "@whiskeysockets/baileys";
 import { Boom } from "@hapi/boom";
@@ -20,7 +20,9 @@ const API_TOKEN = process.env.WA_TOKEN || "";
 
 let sock = null;
 let connected = false;
+let connectedAs = null;
 let currentQr = null;
+let starting = false;
 
 const logger = pino({ level: "silent" });
 
@@ -41,43 +43,48 @@ function normalizeJid(phone) {
 }
 
 async function startWhatsApp() {
-  const { state, saveCreds } = await createAuthState(AUTH_DIR);
-  const { version } = await fetchLatestBaileysVersion();
+  if (starting) return;
+  starting = true;
 
-  sock = makeWASocket({
-    version,
-    auth: state,
-    printQRInTerminal: false,
-    logger,
-    browser: ["SMKN11-WA", "Chrome", "1.0.0"],
-  });
+  try {
+    const { state, saveCreds } = await createAuthState(AUTH_DIR);
+    const { version } = await fetchLatestBaileysVersion();
 
-  sock.ev.on("creds.update", saveCreds);
+    sock = makeWASocket({
+      version,
+      auth: state,
+      printQRInTerminal: false,
+      logger,
+      browser: ["SMKN11-WA", "Chrome", "1.0.0"],
+    });
 
-  sock.ev.on("connection.update", ({ connection, lastDisconnect, qr }) => {
-    if (qr) {
-      currentQr = qr;
-      console.log("\nScan QR ini dengan WhatsApp (Perangkat Tertaut):\n");
-      QRCode.generate(qr, { small: true });
-    }
+    sock.ev.on("creds.update", saveCreds);
 
-    if (connection === "open") {
-      connected = true;
-      currentQr = null;
-      console.log("[WA] Terhubung ke WhatsApp.");
-    }
-
-    if (connection === "close") {
-      connected = false;
-      const code = new Boom(lastDisconnect?.error)?.output?.statusCode;
-      if (code === DisconnectReason.loggedOut) {
-        console.log("[WA] Sesi logout. Hapus folder storage/wa-session lalu restart untuk scan ulang.");
-        return;
+    sock.ev.on("connection.update", ({ connection, lastDisconnect, qr }) => {
+      if (qr) {
+        currentQr = qr;
+        console.log("\nScan QR ini dengan WhatsApp (Perangkat Tertaut):\n");
+        QRCode.generate(qr, { small: true });
       }
-      console.log(`[WA] Terputus (code=${code}), menyambung ulang dalam 5 detik...`);
-      setTimeout(startWhatsApp, 5000);
-    }
-  });
+
+      if (connection === "open") {
+        connected = true;
+        connectedAs = sock.user?.id?.split(":")[0] ?? null;
+        currentQr = null;
+        console.log(`[WA] Terhubung ke WhatsApp${connectedAs ? ` sebagai ${connectedAs}` : ""}.`);
+      }
+
+      if (connection === "close") {
+        connected = false;
+        connectedAs = null;
+        const code = new Boom(lastDisconnect?.error)?.output?.statusCode;
+        console.log(`[WA] Terputus (code=${code}), menyambung ulang dalam 5 detik...`);
+        setTimeout(startWhatsApp, 5000);
+      }
+    });
+  } finally {
+    starting = false;
+  }
 }
 
 const app = express();
@@ -85,13 +92,33 @@ app.use(cors());
 app.use(express.json());
 
 app.get("/status", (_req, res) => {
-  res.json({ ok: true, connected, hasQr: !!currentQr });
+  res.json({ ok: true, connected, connectedAs, hasQr: !!currentQr });
 });
 
 app.get("/qr", (_req, res) => {
   if (connected) return res.json({ ok: true, connected: true, qr: null });
   if (!currentQr) return res.status(503).json({ ok: false, error: "QR belum tersedia, coba lagi." });
   res.json({ ok: true, connected: false, qr: currentQr });
+});
+
+app.post("/logout", requireToken, async (_req, res) => {
+  if (!sock) return res.status(503).json({ ok: false, error: "Service belum siap." });
+
+  try {
+    await sock.logout();
+  } catch {
+    // Sesi mungkin sudah tidak valid; tetap bersihkan.
+  }
+
+  connected = false;
+  connectedAs = null;
+  currentQr = null;
+
+  fs.rmSync(AUTH_DIR, { recursive: true, force: true });
+  console.log("[WA] Session dihapus. Menyiapkan QR baru...");
+
+  setTimeout(startWhatsApp, 2000);
+  res.json({ ok: true });
 });
 
 app.post("/send", requireToken, async (req, res) => {

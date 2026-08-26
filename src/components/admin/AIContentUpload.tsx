@@ -199,7 +199,7 @@ export default function AIContentUpload() {
     setContentType('auto');
     setImageForms([]);
     setError('');
-    setDoneCount(0);
+    setAnalysisMessage(0);
     setStep('upload');
   };
 

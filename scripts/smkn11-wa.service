@@ -1,0 +1,30 @@
+# Contoh systemd unit untuk WhatsApp (Baileys) service di production.
+#
+# Install:
+#   sudo cp scripts/smkn11-wa.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now smkn11-wa
+#
+# Cek log / QR pairing:
+#   journalctl -u smkn11-wa -f
+
+[Unit]
+Description=SMKN11 WhatsApp Notification Service (Baileys)
+After=network-online.target
+
+[Service]
+Type=simple
+# SESUAIKAN: user dan path ke folder project di server produksi
+User=www-data
+WorkingDirectory=/var/www/smk11landing
+Environment=WA_PORT=5001
+Environment=WA_AUTH_DIR=/var/www/smk11landing/storage/wa-session
+# Token rahasia agar hanya backend Laravel yang bisa mengirim pesan.
+# Isi nilai yang sama di backend/.env -> WHATSAPP_SERVICE_TOKEN
+Environment=WA_TOKEN=ganti-dengan-token-acak-yang-panjang
+ExecStart=/usr/bin/node server/index.js
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
