@@ -8,6 +8,7 @@ use App\Http\Controllers\BkkPartnerController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\ContentCrudController;
 use App\Http\Controllers\DatabaseBackupController;
+use App\Http\Controllers\WhatsAppAdminController;
 use App\Http\Controllers\ExtracurricularController;
 use App\Http\Controllers\FaqController;
 use App\Http\Controllers\MadingAiController;
@@ -339,4 +340,9 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::post('/backups/restore-commit', [DatabaseBackupController::class, 'restoreCommit']);
     Route::get('/backups/{filename}', [DatabaseBackupController::class, 'download']);
     Route::delete('/backups/{filename}', [DatabaseBackupController::class, 'destroy']);
+
+    // WhatsApp (Baileys) session management
+    Route::get('/whatsapp/status', [WhatsAppAdminController::class, 'status']);
+    Route::get('/whatsapp/qr', [WhatsAppAdminController::class, 'qr']);
+    Route::post('/whatsapp/logout', [WhatsAppAdminController::class, 'logout']);
 });
