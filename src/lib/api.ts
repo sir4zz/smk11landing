@@ -108,7 +108,9 @@ function canCache(path: string, method: string): boolean {
     && !path.startsWith('/data/')
     && !path.startsWith('/me')
     && !path.startsWith('/upload')
-    && !path.startsWith('/uploads');
+    && !path.startsWith('/uploads')
+    // SOP should reflect a new publication immediately after an admin save.
+    && !path.startsWith('/sop');
 }
 
 function clearCache(): void {
@@ -557,6 +559,43 @@ export const galleryAdminApi = {
   reorderVideos(videos: { id: string; sort_order: number }[]): ApiResult<null> {
     return request<null>('/admin/gallery-videos/reorder', { method: 'PUT', body: JSON.stringify({ videos }) });
   },
+};
+
+// ---------- SOP (private PDF documents) ----------
+export interface SopRow {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  category: string;
+  file_path?: string;
+  is_published: boolean;
+  sort_order: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export async function fetchPublishedSops(): Promise<SopRow[]> {
+  const result = await request<SopRow[]>('/sop');
+  return result.data ?? [];
+}
+
+export async function fetchSopPdf(path: string): Promise<Blob> {
+  const response = await fetch(`${apiBaseUrl}${path}`, {
+    credentials: 'include',
+    cache: 'no-store',
+    headers: { Accept: 'application/pdf' },
+  });
+  if (!response.ok) throw new Error(response.status === 404 ? 'Dokumen SOP tidak tersedia.' : 'Dokumen SOP tidak dapat dimuat.');
+  return response.blob();
+}
+
+export const sopAdminApi = {
+  list(): ApiResult<SopRow[]> { return request<SopRow[]>('/admin/sop'); },
+  create(payload: FormData): ApiResult<SopRow> { return request<SopRow>('/admin/sop', { method: 'POST', body: payload }); },
+  update(id: string, payload: FormData): ApiResult<SopRow> { return request<SopRow>(`/admin/sop/${encodeURIComponent(id)}`, { method: 'PATCH', body: payload }); },
+  remove(id: string): ApiResult<null> { return request<null>(`/admin/sop/${encodeURIComponent(id)}`, { method: 'DELETE' }); },
+  previewPath(id: string): string { return `/admin/sop/${encodeURIComponent(id)}/preview`; },
 };
 
 // ---------- SELF-SERVICE PROFILE (guru / siswa / osis / admin) ----------

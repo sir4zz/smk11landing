@@ -34,6 +34,7 @@ use App\Http\Controllers\PageBannerController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\DataController;
 use App\Http\Controllers\MediaController;
+use App\Http\Controllers\SopController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -79,6 +80,10 @@ Route::get('/education-staff', [ContentCrudController::class, 'index'])->default
 // ---------- SPMB ----------
 Route::get('/spmb', [SpmbController::class, 'index']);
 Route::get('/spmb/posters', [SpmbController::class, 'posters']);
+
+// ---------- SOP ----------
+Route::get('/sop', [SopController::class, 'index']);
+Route::get('/sop/{slug}/view', [SopController::class, 'view'])->middleware('throttle:60,1');
 
 // ---------- OSIS ----------
 Route::get('/osis', [OsisController::class, 'profile']);
@@ -276,6 +281,13 @@ Route::middleware(['auth:sanctum', 'staff'])->group(function () {
 
     // Media inventory
     Route::get('/admin/media', [MediaController::class, 'index']);
+
+    // SOP documents stay on Laravel's private disk and are streamed only by these routes.
+    Route::get('/admin/sop', [SopController::class, 'adminIndex'])->middleware('admin');
+    Route::post('/admin/sop', [SopController::class, 'store'])->middleware('admin');
+    Route::patch('/admin/sop/{id}', [SopController::class, 'update'])->middleware('admin');
+    Route::delete('/admin/sop/{id}', [SopController::class, 'destroy'])->middleware('admin');
+    Route::get('/admin/sop/{id}/preview', [SopController::class, 'preview'])->middleware('admin');
 });
 
 // ============================================================

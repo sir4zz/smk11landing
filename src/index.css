@@ -119,3 +119,20 @@
   background-color: var(--color-gold-100);
   color: var(--color-navy);
 }
+
+@media print {
+  body.sop-print-protected > * {
+    display: none !important;
+  }
+
+  body.sop-print-protected::after {
+    content: 'Dokumen SOP bersifat internal dan tidak diizinkan untuk dicetak.';
+    display: block;
+    padding-top: 45vh;
+    text-align: center;
+    font-family: var(--font-sans);
+    font-size: 14pt;
+    font-weight: 700;
+    color: #1b2a4a;
+  }
+}
