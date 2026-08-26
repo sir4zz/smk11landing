@@ -17,7 +17,7 @@ import {
   type JobListMeta,
 } from '../../lib/api';
 import { can } from '../../lib/permissions';
-import { fetchPublicContent } from '../../lib/api';
+import { fetchPublicContent, getAuthToken } from '../../lib/api';
 
 interface Props {
   permissions: string[];
@@ -329,7 +329,7 @@ function DataTab({ permissions, isAdmin: _isAdmin }: { permissions: string[]; is
               if (majorFilter) q.set('major', majorFilter);
               if (statusFilter) q.set('status', statusFilter);
               const suffix = q.size ? `?${q}` : '';
-              const res = await fetch(`${apiBaseUrl}/admin/kelulusan/export${suffix}`, { credentials: 'include' });
+              const res = await fetch(`${apiBaseUrl}/admin/kelulusan/export${suffix}`, { headers: getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {} });
               if (!res.ok) { flash('err', 'Gagal export data.'); return; }
               const blob = await res.blob();
               const url = URL.createObjectURL(blob);
@@ -924,7 +924,7 @@ function RekapTab() {
             if (yearFilter) q.set('graduation_year', String(yearFilter));
             if (majorFilter) q.set('major', majorFilter);
             const suffix = q.size ? `?${q}` : '';
-            const res = await fetch(`${apiBaseUrl}/admin/kelulusan/export${suffix}`, { credentials: 'include' });
+            const res = await fetch(`${apiBaseUrl}/admin/kelulusan/export${suffix}`, { headers: getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {} });
             if (!res.ok) return;
             const blob = await res.blob();
             const url = URL.createObjectURL(blob);

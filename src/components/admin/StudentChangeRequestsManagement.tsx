@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Loader2, Search, Eye, X, CheckCircle2, XCircle, Clock, RefreshCw } from 'lucide-react';
+import { Loader2, Search, Eye, X, CheckCircle2, XCircle, Clock, RefreshCw, AlertTriangle } from 'lucide-react';
 import {
   studentChangeRequestAdminApi,
   STUDENT_CHANGE_REQUEST_STATUS_LABELS,
@@ -32,29 +32,41 @@ export default function StudentChangeRequestsManagement() {
   const [detailRequest, setDetailRequest] = useState<StudentChangeRequestRow | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [authExpired, setAuthExpired] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data } = await studentChangeRequestAdminApi.list({
+    const { data, status } = await studentChangeRequestAdminApi.list({
       status: statusFilter || undefined,
       search: search || undefined,
     });
+    if (status === 403) {
+      setAuthExpired(true);
+      setLoading(false);
+      return;
+    }
     if (data) setRequests(data as StudentChangeRequestRow[]);
+    setAuthExpired(false);
     setLoading(false);
   }, [statusFilter, search]);
 
   useEffect(() => { void load(); }, [load]);
 
-  // Muat ulang tanpa mengosongkan tabel (untuk cek request masuk).
-  const reload = async () => {
+  const reload = useCallback(async () => {
     setRefreshing(true);
-    const { data } = await studentChangeRequestAdminApi.list({
+    const { data, error, status } = await studentChangeRequestAdminApi.list({
       status: statusFilter || undefined,
       search: search || undefined,
     });
-    if (data) setRequests(data as StudentChangeRequestRow[]);
+    if (status === 403) {
+      setAuthExpired(true);
+      setRefreshing(false);
+      return;
+    }
+    if (!error && data) setRequests(data as StudentChangeRequestRow[]);
+    setAuthExpired(false);
     setRefreshing(false);
-  };
+  }, [statusFilter, search]);
 
   const openDetail = async (id: string) => {
     setDetailId(id);
@@ -107,6 +119,18 @@ export default function StudentChangeRequestsManagement() {
       {/* List */}
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-[#C8A951]" /></div>
+      ) : authExpired ? (
+        <div className="rounded-2xl bg-white p-10 text-center shadow-sm">
+          <AlertTriangle className="mx-auto mb-3 h-10 w-10 text-red-400" />
+          <p className="mb-1 font-semibold text-[#23314D]">Sesi telah berakhir</p>
+          <p className="mb-4 text-sm text-[#5B7088]">Akun Anda tidak lagi terautentikasi. Silakan login ulang untuk melanjutkan.</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="rounded-lg bg-[#1B2A4A] px-4 py-2 text-sm font-bold text-white hover:bg-[#23314D]"
+          >
+            Login Ulang
+          </button>
+        </div>
       ) : requests.length === 0 ? (
         <div className="rounded-2xl bg-white p-10 text-center shadow-sm">
           <Clock className="mx-auto mb-3 h-10 w-10 text-[#C8A951]/40" />

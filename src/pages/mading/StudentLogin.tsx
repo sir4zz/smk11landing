@@ -49,8 +49,7 @@ export default function StudentLogin() {
       if (signInError) throw new Error('NISN atau PIN salah.');
       if (!data?.user) throw new Error('Sesi siswa tidak dapat dibuat.');
 
-      const { data: profile } = await backendApi.database.from('profiles').select('role').eq('id', data.user.id).single();
-      if (profile?.role !== 'student') {
+      if (data.role !== 'student') {
         await backendApi.auth.signOut();
         throw new Error('Akun ini bukan akun siswa.');
       }
