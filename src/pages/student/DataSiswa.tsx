@@ -106,10 +106,11 @@ export default function DataSiswa() {
     if (loading || requests.length === 0) return;
     const rejected = requests.filter((r) => r.status === 'ditolak');
     if (rejected.length === 0) return;
-    const shownKey = 'smkn11-student-shown-rejections';
-    const shown: string[] = JSON.parse(localStorage.getItem(shownKey) ?? '[]');
-    const latest = rejected.find((r) => !shown.includes(r.id));
-    if (latest) setRejectionPopup(latest);
+    const sorted = [...rejected].sort((a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime());
+    const latestRejection = sorted[0];
+    const hasApprovedAfter = requests.some((r) => r.status === 'disetujui' && new Date(r.created_at ?? 0).getTime() > new Date(latestRejection.created_at ?? 0).getTime());
+    if (hasApprovedAfter) return;
+    setRejectionPopup(latestRejection);
   }, [loading, requests]);
 
   const flash = (type: 'ok' | 'err', text: string) => {
@@ -118,12 +119,6 @@ export default function DataSiswa() {
   };
 
   const dismissRejection = () => {
-    if (rejectionPopup) {
-      const shownKey = 'smkn11-student-shown-rejections';
-      const shown: string[] = JSON.parse(localStorage.getItem(shownKey) ?? '[]');
-      shown.push(rejectionPopup.id);
-      localStorage.setItem(shownKey, JSON.stringify(shown));
-    }
     setRejectionPopup(null);
   };
 
