@@ -4,7 +4,7 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { UserRound, Loader2, Send, X, Clock, CheckCircle2, XCircle, ChevronRight, FileText, Eye, Download, KeyRound } from 'lucide-react';
 import { backendApi, studentDataApi, resolveImageUrl, STUDENT_CHANGE_REQUEST_STATUS_LABELS, type StudentDataPayload, type StudentChangeRequestRow, type StudentChangeRequestStatus } from '../../lib/api';
 import PageHero from '../../components/ui/PageHero';
-import { BIODATA_FIELDS, BIODATA_SECTIONS, emptyBiodata, groupFieldsBySubsection } from '../../lib/studentBiodata';
+import { BIODATA_FIELDS, BIODATA_SECTIONS, STUDENT_READONLY_KEYS, emptyBiodata, groupFieldsBySubsection } from '../../lib/studentBiodata';
 import type { BiodataFieldDef } from '../../lib/studentBiodata';
 import ImageField from '../../components/admin/ImageField';
 
@@ -62,6 +62,7 @@ export default function DataSiswa() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
   const [detailRequest, setDetailRequest] = useState<StudentChangeRequestRow | null>(null);
+  const [rejectionPopup, setRejectionPopup] = useState<StudentChangeRequestRow | null>(null);
 
   const totalSteps = WIZARD_STEPS.length;
   const pendingRequest = requests.find((r) => r.status === 'menunggu') ?? null;
@@ -101,9 +102,24 @@ export default function DataSiswa() {
     void loadData();
   }, [loadData]);
 
+  useEffect(() => {
+    if (loading || requests.length === 0) return;
+    const rejected = requests.filter((r) => r.status === 'ditolak');
+    if (rejected.length === 0) return;
+    const sorted = [...rejected].sort((a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime());
+    const latestRejection = sorted[0];
+    const hasApprovedAfter = requests.some((r) => r.status === 'disetujui' && new Date(r.created_at ?? 0).getTime() > new Date(latestRejection.created_at ?? 0).getTime());
+    if (hasApprovedAfter) return;
+    setRejectionPopup(latestRejection);
+  }, [loading, requests]);
+
   const flash = (type: 'ok' | 'err', text: string) => {
     setMsg({ type, text });
     setTimeout(() => setMsg(null), 5000);
+  };
+
+  const dismissRejection = () => {
+    setRejectionPopup(null);
   };
 
   const openEditForm = () => {
@@ -179,6 +195,7 @@ export default function DataSiswa() {
     // Build only changed fields
     const proposedData: Record<string, unknown> = {};
     for (const field of BIODATA_FIELDS) {
+      if (STUDENT_READONLY_KEYS.has(field.key)) continue;
       const newVal = form[field.key] ?? '';
       const oldVal = String((studentData as Record<string, unknown>)[field.key] ?? '');
       if (newVal !== oldVal) {
@@ -384,7 +401,7 @@ export default function DataSiswa() {
                             <Fragment key={gi}>
                               {g.subsection && <p className="sm:col-span-2 border-b border-[#1B2A4A]/10 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-[#866D2C]">{g.subsection}</p>}
                               {g.fields.map((field) => (
-                                <BiodataField key={field.key} field={field} value={form[field.key] ?? ''} onChange={setValue(field.key)} error={errors[field.key]} />
+                                <BiodataField key={field.key} field={field} value={form[field.key] ?? ''} onChange={setValue(field.key)} error={errors[field.key]} disabled={STUDENT_READONLY_KEYS.has(field.key)} />
                               ))}
                             </Fragment>
                           ))}
@@ -439,6 +456,27 @@ export default function DataSiswa() {
         {/* Request Detail Modal */}
         {detailRequest && (
           <RequestDetailModal request={detailRequest} onClose={() => setDetailRequest(null)} />
+        )}
+
+        {rejectionPopup && (
+          <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4">
+            <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+              <div className="mb-4 flex items-center gap-2">
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-red-100 text-red-600"><XCircle size={22} /></span>
+                <h3 className="text-lg font-bold text-[#1B2A4A]">Pengajuan Data Ditolak</h3>
+              </div>
+              <p className="mb-2 text-sm text-[#5B7088]">
+                Pengajuan perubahan data Anda telah <strong className="text-red-600">ditolak</strong> oleh admin.
+              </p>
+              {rejectionPopup.rejection_reason && (
+                <div className="mb-4 rounded-lg bg-red-50 p-3">
+                  <p className="mb-1 text-xs font-semibold text-red-700">Alasan Penolakan:</p>
+                  <p className="text-sm text-red-800">{rejectionPopup.rejection_reason}</p>
+                </div>
+              )}
+              <button onClick={dismissRejection} className="w-full rounded-lg bg-[#1B2A4A] py-2.5 font-bold text-white hover:opacity-90">Mengerti</button>
+            </div>
+          </div>
         )}
       </div>
     </div>
@@ -658,23 +696,24 @@ function RequestDetailModal({ request, onClose }: { request: StudentChangeReques
   );
 }
 
-function BiodataField({ field, value, onChange, error }: { field: BiodataFieldDef; value: string; onChange: (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void; error?: string }) {
+function BiodataField({ field, value, onChange, error, disabled }: { field: BiodataFieldDef; value: string; onChange: (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void; error?: string; disabled?: boolean }) {
   const cls = field.full ? 'sm:col-span-2' : '';
-  const inputCls = `mt-1 w-full rounded-lg border bg-white px-3 py-2 font-normal ${error ? 'border-red-400' : 'border-[#1B2A4A]/20'}`;
+  const inputCls = `mt-1 w-full rounded-lg border bg-white px-3 py-2 font-normal ${error ? 'border-red-400' : 'border-[#1B2A4A]/20'} ${disabled ? 'cursor-not-allowed bg-gray-100 opacity-60' : ''}`;
+  const lockLabel = disabled ? <span className="ml-1 text-xs font-normal text-[#5B7088]">🔒 Dikelola admin</span> : null;
 
   return (
     <label className={`block text-sm font-semibold ${cls}`}>
-      {field.label}
+      {field.label}{lockLabel}
       {field.type === 'select' ? (
-        <select value={value} onChange={onChange} className={inputCls}>
+        <select value={value} onChange={onChange} className={inputCls} disabled={disabled}>
           {field.options?.map((opt) => (
             <option key={opt} value={opt}>{opt === '' ? 'Pilih' : opt}</option>
           ))}
         </select>
       ) : field.type === 'textarea' ? (
-        <textarea value={value} onChange={onChange} rows={2} className={inputCls} placeholder={field.placeholder} />
+        <textarea value={value} onChange={onChange} rows={2} className={inputCls} placeholder={field.placeholder} disabled={disabled} />
       ) : (
-        <input value={value} type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'} onChange={onChange} className={inputCls} placeholder={field.placeholder} />
+        <input value={value} type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : 'text'} onChange={onChange} className={inputCls} placeholder={field.placeholder} disabled={disabled} />
       )}
       {error && <span className="mt-1 block text-xs font-medium text-red-600">{error}</span>}
     </label>

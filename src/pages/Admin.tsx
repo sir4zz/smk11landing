@@ -3,7 +3,7 @@ import type { FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { BarChart3, BookOpen, Briefcase, Building2, CalendarDays, ChevronDown, ChevronRight, DatabaseBackup as DatabaseBackupIcon, FileText, GraduationCap, LogOut, Mail, MapPin, Menu, MessageCircle, Pencil, Plus, Trophy, Trash2, Upload, Users, X, Save, ShieldCheck, UsersRound, Dumbbell, Newspaper, UserCog, Camera, UserRound, Loader2, ArrowLeft, Wand2, FileCheck2 } from 'lucide-react';
 import logoSekolah from '../assets/logo.png';
-import { backendApi, apiBaseUrl, resolveImageUrl, fetchStats } from '../lib/api';
+import { backendApi, apiBaseUrl, resolveImageUrl, fetchStats, getAuthToken } from '../lib/api';
 import { LoadingInline } from '../components/ui/LoadingScreen';
 import ImportModal from '../components/admin/ImportModal';
 import ImageField from '../components/admin/ImageField';
@@ -145,8 +145,8 @@ export function AdminLogin() {
       if (signInError) throw signInError;
       if (!data?.user) throw new Error('Sesi login tidak dapat dibuat.');
 
-      const { data: profile } = await backendApi.database.from('profiles').select('role').eq('id', data.user.id).single();
-      if (!profile?.role || !(STAFF_ROLES as readonly string[]).includes(profile.role)) {
+      const role = data.role;
+      if (!role || !(STAFF_ROLES as readonly string[]).includes(role)) {
         await backendApi.auth.signOut();
         throw new Error('Akun ini bukan akun admin, guru, atau OSIS.');
       }
@@ -1031,7 +1031,7 @@ const READER_FALLBACKS: { name: string; build: (url: string) => { url: string; i
     name: 'Proxy Lokal',
     build: (url) => ({
       url: `${apiBaseUrl}/admin/proxy/fetch?url=${encodeURIComponent(url)}`,
-      init: { credentials: 'include' },
+      init: { headers: getAuthToken() ? { Authorization: `Bearer ${getAuthToken()}` } : {} },
     }),
   },
   { name: 'CORSProxy', build: (url) => ({ url: `https://corsproxy.io/?url=${encodeURIComponent(url)}` }) },

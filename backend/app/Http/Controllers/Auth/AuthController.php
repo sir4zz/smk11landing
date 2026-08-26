@@ -8,9 +8,7 @@ use App\Models\User;
 use App\Services\AccountService;
 use App\Services\PermissionService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
@@ -55,14 +53,16 @@ class AuthController extends Controller
             ], 403);
         }
 
-        $request->session()->regenerate();
-        Auth::login($user, false);
+        // Revoke any existing tokens for this user and create a new one.
+        $user->tokens()->delete();
+        $token = $user->createToken('auth-token')->plainTextToken;
 
         return response()->json([
             'data' => [
                 'user' => $this->userPayload($user),
                 'role' => $profile?->role,
                 'must_change_password' => (bool) ($profile?->must_change_password ?? false),
+                'token' => $token,
             ],
             'error' => null,
         ]);
@@ -91,12 +91,12 @@ class AuthController extends Controller
             'updated_at' => now(),
         ]);
 
-        Auth::login($user, false);
-        $request->session()->regenerate();
+        $token = $user->createToken('auth-token')->plainTextToken;
 
         return response()->json([
             'data' => [
                 'user' => $this->userPayload($user),
+                'token' => $token,
             ],
             'error' => null,
         ]);
@@ -104,9 +104,7 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        Auth::guard('web')->logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        $request->user()?->currentAccessToken()?->delete();
 
         return response()->json(['data' => null, 'error' => null]);
     }

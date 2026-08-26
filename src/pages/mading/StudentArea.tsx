@@ -45,6 +45,7 @@ export default function StudentArea() {
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [tab, setTab] = useState<Tab>('explore');
+  const [rejectionPopup, setRejectionPopup] = useState<StudentChangeRequestRow | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -63,7 +64,10 @@ export default function StudentArea() {
         navigate('/mading/login', { replace: true });
         return;
       }
-      const { data: me } = await myProfileApi.show();
+      const [{ data: me }, { data: reqs }] = await Promise.all([
+        myProfileApi.show(),
+        studentDataApi.myChangeRequests(),
+      ]);
       if (cancelled) return;
       if (me) {
         setProfile({
@@ -74,10 +78,24 @@ export default function StudentArea() {
           email: me.email,
         });
       }
+      if (reqs) {
+        const allReqs = reqs as StudentChangeRequestRow[];
+        const rejected = allReqs.filter((r) => r.status === 'ditolak');
+        if (rejected.length > 0) {
+          const sorted = [...rejected].sort((a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime());
+          const latestRejection = sorted[0];
+          const hasApprovedAfter = allReqs.some((r) => r.status === 'disetujui' && new Date(r.created_at ?? 0).getTime() > new Date(latestRejection.created_at ?? 0).getTime());
+          if (!hasApprovedAfter) setRejectionPopup(latestRejection);
+        }
+      }
       setLoading(false);
     })();
     return () => { cancelled = true; };
   }, [navigate]);
+
+  const dismissRejection = () => {
+    setRejectionPopup(null);
+  };
 
   if (loading) {
     return (
@@ -135,6 +153,27 @@ export default function StudentArea() {
           {tab === 'profile' && <ProfileTab profile={profile} />}
         </div>
       </div>
+
+      {rejectionPopup && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+            <div className="mb-4 flex items-center gap-2">
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-red-100 text-red-600"><XCircle size={22} /></span>
+              <h3 className="text-lg font-bold text-[#1B2A4A]">Pengajuan Data Ditolak</h3>
+            </div>
+            <p className="mb-2 text-sm text-[#5B7088]">
+              Pengajuan perubahan data Anda telah <strong className="text-red-600">ditolak</strong> oleh admin.
+            </p>
+            {rejectionPopup.rejection_reason && (
+              <div className="mb-4 rounded-lg bg-red-50 p-3">
+                <p className="mb-1 text-xs font-semibold text-red-700">Alasan Penolakan:</p>
+                <p className="text-sm text-red-800">{rejectionPopup.rejection_reason}</p>
+              </div>
+            )}
+            <button onClick={dismissRejection} className="w-full rounded-lg bg-[#1B2A4A] py-2.5 font-bold text-white hover:opacity-90">Mengerti</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
