@@ -45,6 +45,8 @@ const BkkKelulusan = lazy(() => import('./pages/bkk/BkkKelulusan'))
 const MustChangePassword = lazy(() => import('./pages/admin/MustChangePassword'))
 const ProfileDirectory = lazy(() => import('./pages/profiles/ProfileDirectory'))
 const ProfilePage = lazy(() => import('./pages/profiles/ProfilePage'))
+const SopList = lazy(() => import('./pages/sop/SopList'))
+const SopViewer = lazy(() => import('./pages/sop/SopViewer'))
 
 function RouteFallback() {
   return (
@@ -74,6 +76,8 @@ function App() {
           <Route path="profil/sejarah" element={suspend(<History />)} />
           <Route path="profil/visi-misi" element={suspend(<VisionMission />)} />
           <Route path="profil/struktur-organisasi" element={suspend(<OrganizationStructure />)} />
+          <Route path="sop" element={suspend(<SopList />)} />
+          <Route path="sop/:slug/view" element={suspend(<SopViewer />)} />
           <Route path="profil/direktori" element={suspend(<ProfileDirectory />)} />
           <Route path="profil/guru/:id" element={suspend(<ProfilePage />)} />
           <Route path="profil/tendik/:id" element={suspend(<ProfilePage />)} />

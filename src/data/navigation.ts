@@ -12,9 +12,10 @@ export const navigationData: NavItem[] = [
         label: 'Profil',
         href: '/profil',
         children: [
-            { label: 'Sejarah', href: '/profil/sejarah' },
+            { label: 'Tentang Sekolah', href: '/profil/sejarah' },
             { label: 'Visi & Misi', href: '/profil/visi-misi' },
             { label: 'Struktur Organisasi', href: '/profil/struktur-organisasi' },
+            { label: 'SOP', href: '/sop' },
         ],
     },
     {

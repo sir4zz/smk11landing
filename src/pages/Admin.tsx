@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { BarChart3, BookOpen, Briefcase, Building2, CalendarDays, ChevronDown, ChevronRight, DatabaseBackup as DatabaseBackupIcon, FileText, GraduationCap, LogOut, Mail, MapPin, Menu, MessageCircle, Pencil, Plus, Trophy, Trash2, Upload, Users, X, Save, ShieldCheck, UsersRound, Dumbbell, Newspaper, UserCog, Camera, UserRound, Loader2, ArrowLeft, Wand2 } from 'lucide-react';
+import { BarChart3, BookOpen, Briefcase, Building2, CalendarDays, ChevronDown, ChevronRight, DatabaseBackup as DatabaseBackupIcon, FileText, GraduationCap, LogOut, Mail, MapPin, Menu, MessageCircle, Pencil, Plus, Trophy, Trash2, Upload, Users, X, Save, ShieldCheck, UsersRound, Dumbbell, Newspaper, UserCog, Camera, UserRound, Loader2, ArrowLeft, Wand2, FileCheck2 } from 'lucide-react';
 import logoSekolah from '../assets/logo.png';
 import { backendApi, apiBaseUrl, resolveImageUrl, fetchStats, getAuthToken } from '../lib/api';
 import { LoadingInline } from '../components/ui/LoadingScreen';
@@ -26,11 +26,12 @@ import BannerTab from '../components/admin/BannerTab';
 import MyProfile from '../components/admin/MyProfile';
 import Dashboard from '../components/admin/Dashboard';
 import AIContentUpload from '../components/admin/AIContentUpload';
+import SopManagement from '../components/admin/SopManagement';
 import { StaffAuthProvider, useStaffAuth } from '../lib/staffAuth';
 import { can, STAFF_ROLES } from '../lib/permissions';
 
-type Section = 'dashboard' | 'aiUpload' | 'news' | 'programs' | 'facilities' | 'staff' | 'gurus' | 'achievements' | 'teacherActivities' | 'educationStaff' | 'contentRecords' | 'spmb' | 'contact' | 'contactSettings' | 'permissions' | 'osis' | 'extracurriculars' | 'mading' | 'students' | 'accounts' | 'gallery' | 'bkk' | 'kelulusan' | 'myProfile' | 'studentChangeRequests' | 'guruChangeRequests' | 'sdmGurus' | 'sdmTendiks' | 'backup' | 'whatsapp';
-type EditableSection = Exclude<Section, 'dashboard' | 'aiUpload' | 'contact' | 'contactSettings' | 'spmb' | 'permissions' | 'osis' | 'extracurriculars' | 'mading' | 'students' | 'accounts' | 'gallery' | 'bkk' | 'kelulusan' | 'myProfile' | 'studentChangeRequests' | 'guruChangeRequests' | 'sdmGurus' | 'sdmTendiks' | 'backup' | 'whatsapp'>;
+type Section = 'dashboard' | 'aiUpload' | 'news' | 'programs' | 'facilities' | 'staff' | 'gurus' | 'achievements' | 'teacherActivities' | 'educationStaff' | 'contentRecords' | 'spmb' | 'contact' | 'contactSettings' | 'permissions' | 'osis' | 'extracurriculars' | 'mading' | 'students' | 'accounts' | 'gallery' | 'sop' | 'bkk' | 'kelulusan' | 'myProfile' | 'studentChangeRequests' | 'guruChangeRequests' | 'sdmGurus' | 'sdmTendiks' | 'backup' | 'whatsapp';
+type EditableSection = Exclude<Section, 'dashboard' | 'aiUpload' | 'contact' | 'contactSettings' | 'spmb' | 'permissions' | 'osis' | 'extracurriculars' | 'mading' | 'students' | 'accounts' | 'gallery' | 'sop' | 'bkk' | 'kelulusan' | 'myProfile' | 'studentChangeRequests' | 'guruChangeRequests' | 'sdmGurus' | 'sdmTendiks' | 'backup' | 'whatsapp'>;
 type Item = Record<string, unknown>;
 const ADMIN_SECTION_PATHS: Record<Section, string> = {
   dashboard: '/admin',
@@ -55,6 +56,7 @@ const ADMIN_SECTION_PATHS: Record<Section, string> = {
   students: '/admin/data-siswa',
   accounts: '/admin/akun',
   gallery: '/admin/galeri',
+  sop: '/admin/sop',
   bkk: '/admin/bkk',
   kelulusan: '/admin/kelulusan',
   studentChangeRequests: '/admin/verifikasi-data-siswa',
@@ -355,8 +357,8 @@ function AdminPanel() {
     if (data) setData(current => ({ ...current, [key]: data as Item[] }));
   };
 
-  const active = section === 'dashboard' ? null : section === 'aiUpload' ? { title: 'Upload dengan AI', icon: Wand2, fields: [] } : section === 'myProfile' ? { title: 'Profil Saya', icon: UserRound, fields: [] } : section === 'contact' ? { title: 'Pesan Kontak', icon: Mail, fields: [] } : section === 'contactSettings' ? { title: 'Pengaturan Kontak', icon: MapPin, fields: [] } : section === 'spmb' ? { title: 'Kelola SPMB', icon: GraduationCap, fields: [] } : section === 'permissions' ? { title: 'Role & Permission', icon: ShieldCheck, fields: [] } : section === 'osis' ? { title: 'OSIS', icon: UsersRound, fields: [] } : section === 'extracurriculars' ? { title: 'Ekstrakurikuler', icon: Dumbbell, fields: [] } : section === 'mading' ? { title: 'Mading', icon: Newspaper, fields: [] } : section === 'students' ? { title: 'Data Siswa', icon: UserCog, fields: [] } : section === 'accounts' ? { title: 'Kelola Akun', icon: Users, fields: [] } : section === 'gallery' ? { title: 'Galeri', icon: Camera, fields: [] } : section === 'bkk' ? { title: 'BKK (Bursa Kerja Khusus)', icon: Briefcase, fields: [] } : section === 'kelulusan' ? { title: 'Kelulusan Siswa', icon: GraduationCap, fields: [] } : section === 'studentChangeRequests' ? { title: 'Verifikasi Data Siswa', icon: FileText, fields: [] } : section === 'guruChangeRequests' ? { title: 'Verifikasi Data Guru', icon: FileText, fields: [] } : section === 'sdmGurus' ? { title: 'Data Guru', icon: Users, fields: [] } : section === 'sdmTendiks' ? { title: 'Tenaga Kependidikan', icon: Briefcase, fields: [] } : section === 'backup' ? { title: 'Backup Database', icon: DatabaseBackupIcon, fields: [] } : section === 'whatsapp' ? { title: 'WhatsApp', icon: MessageCircle, fields: [] } : configs[section];
-  const editableSections = section !== 'dashboard' && section !== 'aiUpload' && section !== 'myProfile' && section !== 'contact' && section !== 'contactSettings' && section !== 'spmb' && section !== 'permissions' && section !== 'osis' && section !== 'extracurriculars' && section !== 'mading' && section !== 'students' && section !== 'accounts' && section !== 'gallery' && section !== 'bkk' && section !== 'kelulusan' && section !== 'studentChangeRequests' && section !== 'guruChangeRequests' && section !== 'sdmGurus' && section !== 'sdmTendiks' && section !== 'backup' && section !== 'whatsapp';
+  const active = section === 'dashboard' ? null : section === 'aiUpload' ? { title: 'Upload dengan AI', icon: Wand2, fields: [] } : section === 'myProfile' ? { title: 'Profil Saya', icon: UserRound, fields: [] } : section === 'contact' ? { title: 'Pesan Kontak', icon: Mail, fields: [] } : section === 'contactSettings' ? { title: 'Pengaturan Kontak', icon: MapPin, fields: [] } : section === 'spmb' ? { title: 'Kelola SPMB', icon: GraduationCap, fields: [] } : section === 'permissions' ? { title: 'Role & Permission', icon: ShieldCheck, fields: [] } : section === 'osis' ? { title: 'OSIS', icon: UsersRound, fields: [] } : section === 'extracurriculars' ? { title: 'Ekstrakurikuler', icon: Dumbbell, fields: [] } : section === 'mading' ? { title: 'Mading', icon: Newspaper, fields: [] } : section === 'students' ? { title: 'Data Siswa', icon: UserCog, fields: [] } : section === 'accounts' ? { title: 'Kelola Akun', icon: Users, fields: [] } : section === 'gallery' ? { title: 'Galeri', icon: Camera, fields: [] } : section === 'sop' ? { title: 'SOP', icon: FileCheck2, fields: [] } : section === 'bkk' ? { title: 'BKK (Bursa Kerja Khusus)', icon: Briefcase, fields: [] } : section === 'kelulusan' ? { title: 'Kelulusan Siswa', icon: GraduationCap, fields: [] } : section === 'studentChangeRequests' ? { title: 'Verifikasi Data Siswa', icon: FileText, fields: [] } : section === 'guruChangeRequests' ? { title: 'Verifikasi Data Guru', icon: FileText, fields: [] } : section === 'sdmGurus' ? { title: 'Data Guru', icon: Users, fields: [] } : section === 'sdmTendiks' ? { title: 'Tenaga Kependidikan', icon: Briefcase, fields: [] } : section === 'backup' ? { title: 'Backup Database', icon: DatabaseBackupIcon, fields: [] } : section === 'whatsapp' ? { title: 'WhatsApp', icon: MessageCircle, fields: [] } : configs[section];
+  const editableSections = section !== 'dashboard' && section !== 'aiUpload' && section !== 'myProfile' && section !== 'contact' && section !== 'contactSettings' && section !== 'spmb' && section !== 'permissions' && section !== 'osis' && section !== 'extracurriculars' && section !== 'mading' && section !== 'students' && section !== 'accounts' && section !== 'gallery' && section !== 'sop' && section !== 'bkk' && section !== 'kelulusan' && section !== 'studentChangeRequests' && section !== 'guruChangeRequests' && section !== 'sdmGurus' && section !== 'sdmTendiks' && section !== 'backup' && section !== 'whatsapp';
 
   const navGroups: { label: string; items: { key: Section; label: string; icon: typeof FileText; visible: boolean }[] }[] = [
     { label: 'Menu', items: [
@@ -377,6 +379,7 @@ function AdminPanel() {
       { key: 'bkk', label: 'BKK', icon: Briefcase, visible: canViewBkk },
       { key: 'kelulusan', label: 'Kelulusan Siswa', icon: GraduationCap, visible: canViewKelulusan },
       { key: 'gallery', label: 'Galeri', icon: Camera, visible: canViewGallery },
+      { key: 'sop', label: 'SOP', icon: FileCheck2, visible: isAdmin },
       { key: 'students', label: 'Data Siswa', icon: UserCog, visible: canViewStudents },
     ]},
     { label: 'SDM', items: [
@@ -479,6 +482,8 @@ function AdminPanel() {
           {section === 'kelulusan' && canViewKelulusan && <KelulusanSiswaManagement permissions={permissions} isAdmin={isAdmin} />}
 
           {section === 'gallery' && canViewGallery && <GalleryManagement />}
+
+          {section === 'sop' && isAdmin && <SopManagement />}
 
           {section === 'students' && canViewStudents && <StudentsManagement />}
 
