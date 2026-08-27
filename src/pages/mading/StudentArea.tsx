@@ -13,7 +13,7 @@ import ImageField from '../../components/admin/ImageField';
 import { SkeletonList, SkeletonProfile } from '../../components/ui/Skeleton';
 import { GalleryUpload, VideoUrlsField } from '../../components/mading/MediaEditor';
 import { MADING_STATUSES } from '../../lib/ui-constants';
-import { BIODATA_FIELDS, BIODATA_SECTIONS, STUDENT_READONLY_KEYS, groupFieldsBySubsection } from '../../lib/studentBiodata';
+import { BIODATA_FIELDS, BIODATA_SECTIONS, STUDENT_READONLY_KEYS, formatClass, groupFieldsBySubsection } from '../../lib/studentBiodata';
 import type { BiodataFieldDef } from '../../lib/studentBiodata';
 
 const studentSessionKey = 'smkn11-student-session';
@@ -125,7 +125,7 @@ export default function StudentArea() {
     <div className="min-h-screen bg-[#FAF6F0]">
       <PageHero
         title={`Halo, ${profile?.name ?? 'Siswa'}`}
-        subtitle={profile ? `${profile.class} · ${profile.major}` : 'Area siswa Mading SMKN 11'}
+        subtitle={profile ? `${formatClass(profile.class)} · ${profile.major}` : 'Area siswa Mading SMKN 11'}
         breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Mading', href: '/mading' }, { label: 'Area Siswa' }]}
       />
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
@@ -765,7 +765,7 @@ function ProfileTab({ profile }: { profile: StudentProfile | null }) {
               <h3 className="mb-4 font-bold text-[#1B2A4A]">{section.title}</h3>
               {isIdentity && (
                 <dl className="mb-3 grid gap-x-8 gap-y-1.5 text-sm sm:grid-cols-2">
-                  <ProfileDetailRow label="Kelas" value={std?.class} />
+                  <ProfileDetailRow label="Kelas" value={formatClass(String(std?.class ?? ''))} />
                   <ProfileDetailRow label="Jurusan" value={std?.major} />
                 </dl>
               )}
@@ -913,9 +913,9 @@ function ProfileTab({ profile }: { profile: StudentProfile | null }) {
                             value={changeForm[doc.key] ?? ''}
                             onChange={(url) => setChange(doc.key)(url)}
                             bucket="student/documents"
-                            accept="image/jpeg,image/png,image/webp"
+                            accept="image/jpeg,image/png,image/webp,application/pdf"
                             maxSizeMb={5}
-                            hint="Dokumen baru diterapkan setelah disetujui admin."
+                            hint="JPG/PNG/WEBP/PDF, maks. 5 MB. Dokumen baru diterapkan setelah disetujui admin."
                           />
                         </div>
                       ))

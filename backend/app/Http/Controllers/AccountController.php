@@ -341,7 +341,7 @@ class AccountController extends Controller
             throw $this->httpFail('NISN tidak valid (minimal 4 karakter).');
         }
         if ($class !== '' && ! Student::isValidClass($class)) {
-            throw $this->httpFail('Kelas "'.$class.'" tidak valid. Kelas harus berupa X, XI, atau XII.');
+            throw $this->httpFail('Kelas "'.$class.'" tidak valid. Kelas harus berupa X/XI/XII atau 10/11/12.');
         }
         if (Student::query()->where('nisn', $nisn)->where('id', '!=', $user->id)->exists()) {
             throw $this->httpFail('NISN sudah terdaftar.');
@@ -559,7 +559,7 @@ class AccountController extends Controller
         $class = Student::normalizeClass($request->input('class', ''));
 
         if ($class !== '' && ! Student::isValidClass($class)) {
-            throw $this->httpFail('Kelas "'.$class.'" tidak valid. Kelas harus berupa X, XI, atau XII.');
+            throw $this->httpFail('Kelas "'.$class.'" tidak valid. Kelas harus berupa X/XI/XII atau 10/11/12.');
         }
 
         Student::create(array_merge([

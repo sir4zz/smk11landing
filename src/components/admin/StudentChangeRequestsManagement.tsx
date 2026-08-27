@@ -6,7 +6,7 @@ import {
   type StudentChangeRequestRow,
   type StudentChangeRequestStatus,
 } from '../../lib/api';
-import { BIODATA_FIELDS, formatRupiah, isRupiahField } from '../../lib/studentBiodata';
+import { BIODATA_FIELDS, formatClass, formatRupiah, isRupiahField } from '../../lib/studentBiodata';
 import type { BiodataFieldDef } from '../../lib/studentBiodata';
 
 const statusStyles: Record<string, string> = {
@@ -159,7 +159,7 @@ export default function StudentChangeRequestsManagement() {
                   <tr key={req.id} className="border-t border-[#1B2A4A]/10">
                     <td className="p-4 font-semibold">{req.student?.name ?? '-'}</td>
                     <td className="p-4 font-mono text-xs">{req.student?.nisn ?? '-'}</td>
-                    <td className="p-4">{req.student?.class ?? '-'}</td>
+                    <td className="p-4">{formatClass(req.student?.class)}</td>
                     <td className="p-4">{req.student?.major ?? '-'}</td>
                     <td className="p-4">{fieldCount} field</td>
                     <td className="p-4">
