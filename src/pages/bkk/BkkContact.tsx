@@ -3,7 +3,8 @@ import PageHero from '../../components/ui/PageHero'
 import SectionHeading from '../../components/ui/SectionHeading'
 import BkkSubNav from '../../components/bkk/BkkSubNav'
 import { fetchBkkContactContent, type BkkContactContent } from '../../lib/api'
-import { Phone, Mail, MapPin, Clock, MessageCircle, ExternalLink, Loader2 } from 'lucide-react'
+import { Phone, Mail, MapPin, Clock, MessageCircle, ExternalLink } from 'lucide-react'
+import { SkeletonList } from '../../components/ui/Skeleton'
 
 const BKK_HERO_IMAGE = 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=1600&q=80'
 
@@ -69,7 +70,7 @@ const BkkContact: React.FC = () => {
 
       {contact === null ? (
         <div className="flex justify-center py-24">
-          <Loader2 className="h-10 w-10 animate-spin text-[#C8A951]" />
+          <SkeletonList count={4} className="grid gap-5 px-4 sm:grid-cols-2 lg:grid-cols-4" />
         </div>
       ) : (
         <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 md:py-20">

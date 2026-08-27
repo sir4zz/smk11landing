@@ -227,6 +227,7 @@ Route::middleware(['auth:sanctum', 'staff'])->group(function () {
 
     // BKK / Penempatan (placement report — data only via XLSX import)
     Route::get('/admin/bkk/placements', [BkkPlacementController::class, 'adminIndex'])->middleware('permission:job.view');
+    Route::post('/admin/bkk/placements', [BkkPlacementController::class, 'store'])->middleware('permission:job.create');
     Route::post('/admin/bkk/placements/import', [BkkPlacementController::class, 'import'])->middleware('permission:job.create');
     Route::delete('/admin/bkk/placements/{id}', [BkkPlacementController::class, 'destroy'])->middleware('permission:job.delete');
 

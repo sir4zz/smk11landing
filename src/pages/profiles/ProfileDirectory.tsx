@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, BookOpen, Loader2, Search } from 'lucide-react';
+import { Users, BookOpen, Search } from 'lucide-react';
+import { SkeletonProfile } from '../../components/ui/Skeleton';
 import PageHero from '../../components/ui/PageHero';
 import { publicProfileApi, resolveImageUrl, type PublicDirectory, type PublicDirectoryEntry } from '../../lib/api';
 import { usePageBanner } from '../../lib/usePageBanner';
@@ -72,7 +73,7 @@ function ProfileDirectory() {
         </div>
 
         {loading ? (
-          <div className="py-20 text-center"><Loader2 className="mx-auto h-10 w-10 animate-spin text-[#C8A951]" /></div>
+          <SkeletonProfile count={6} />
         ) : filtered.length === 0 ? (
           <div className="rounded-2xl bg-white p-12 text-center shadow-sm">
             <Users className="mx-auto mb-3 h-10 w-10 text-[#C8A951]/40" />

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { Globe, Link2, Mail, Phone, MapPin, Medal, Award, Briefcase, GraduationCap, Users, BookOpen, Compass, ArrowLeft, Loader2, Trophy, Camera, ThumbsUp, MessageCircle, Music2, Video, Contact, Code } from 'lucide-react';
+import { Globe, Link2, Mail, Phone, MapPin, Medal, Award, Briefcase, GraduationCap, Users, BookOpen, Compass, ArrowLeft, Trophy, Camera, ThumbsUp, MessageCircle, Music2, Video, Contact, Code } from 'lucide-react';
 import PageHero from '../../components/ui/PageHero';
 import { publicProfileApi, resolveImageUrl, type PublicProfile, type PublicProfileType, type PublicSdmProfile } from '../../lib/api';
 import { formatClass } from '../../lib/studentBiodata';
 import { usePageBanner } from '../../lib/usePageBanner';
+import { SkeletonProfile } from '../../components/ui/Skeleton';
 
 const ROLE_META: Record<string, { label: string; badge: string }> = {
   guru: { label: 'Guru', badge: 'bg-blue-50 text-blue-700' },
@@ -71,7 +72,7 @@ function ProfilePage() {
     return (
       <div className="min-h-screen bg-[#FAF6F0]">
         <PageHero title="Profil" subtitle="Profil warga SMKN 11" breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Profil' }]} backgroundImage={backgroundImage} />
-        <div className="py-24"><Loader2 className="mx-auto h-10 w-10 animate-spin text-[#C8A951]" /></div>
+        <div className="py-24"><div className="mx-auto max-w-xl"><SkeletonProfile count={1} /></div></div>
       </div>
     );
   }

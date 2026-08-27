@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { Routes, Route, Navigate, useParams } from 'react-router-dom'
 import Layout from './components/layout/Layout'
 import { AdminRouteGuard, StudentRouteGuard } from './components/auth/RouteGuards'
+import { SkeletonPage } from './components/ui/Skeleton'
 
 const Home = lazy(() => import('./pages/Home'))
 const History = lazy(() => import('./pages/profile/History'))
@@ -49,11 +50,7 @@ const SopList = lazy(() => import('./pages/sop/SopList'))
 const SopViewer = lazy(() => import('./pages/sop/SopViewer'))
 
 function RouteFallback() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-[#FAF6F0]">
-      <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#C8A951] border-t-transparent" />
-    </div>
-  )
+  return <SkeletonPage />
 }
 
 function suspend(node: React.ReactNode) {

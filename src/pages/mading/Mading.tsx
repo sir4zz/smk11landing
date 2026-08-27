@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import PageHero from '../../components/ui/PageHero';
 import SectionHeading from '../../components/ui/SectionHeading';
-import { LoadingInline } from '../../components/ui/LoadingScreen';
+import { SkeletonList } from '../../components/ui/Skeleton';
 import { usePageBanner } from '../../lib/usePageBanner';
 import { fetchMadingPublished, fetchMadingCategories, resolveImageUrl, type MadingPostRow } from '../../lib/api';
 import type { MadingCategory, MadingPost } from '../../lib/content-types';
@@ -44,7 +44,7 @@ const Mading: React.FC = () => {
     return (
       <div className="min-h-screen bg-[#FAF6F0]">
         <PageHero title="Mading" subtitle="Media Aspirasi Digital SMKN 11 Kabupaten Tangerang" breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Mading' }]} backgroundImage={backgroundImage} />
-        <div className="py-24"><LoadingInline /></div>
+        <SkeletonList count={6} className="grid gap-6 px-4 py-12 sm:grid-cols-2 lg:grid-cols-3" />
       </div>
     );
   }

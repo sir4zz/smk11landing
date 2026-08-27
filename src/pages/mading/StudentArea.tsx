@@ -10,6 +10,7 @@ import type { MadingVideo } from '../../lib/content-types';
 import PageHero from '../../components/ui/PageHero';
 import AIContentAssistant, { AiNote } from '../../components/mading/AIContentAssistant';
 import ImageField from '../../components/admin/ImageField';
+import { SkeletonList, SkeletonProfile } from '../../components/ui/Skeleton';
 import { GalleryUpload, VideoUrlsField } from '../../components/mading/MediaEditor';
 import { MADING_STATUSES } from '../../lib/ui-constants';
 import { BIODATA_FIELDS, BIODATA_SECTIONS, STUDENT_READONLY_KEYS, formatClass, groupFieldsBySubsection } from '../../lib/studentBiodata';
@@ -101,7 +102,7 @@ export default function StudentArea() {
     return (
       <div className="min-h-screen bg-[#FAF6F0]">
         <PageHero title="Mading Saya" subtitle="Area siswa SMKN 11" breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Mading', href: '/mading' }, { label: 'Area Siswa' }]} />
-        <div className="py-24"><Loader2 className="mx-auto h-10 w-10 animate-spin text-[#C8A951]" /></div>
+        <SkeletonProfile count={2} />
       </div>
     );
   }
@@ -211,7 +212,7 @@ function ExploreTab() {
   return (
     <Section title="Jelajahi Karya">
       {loading ? (
-        <div className="py-16 text-center"><Loader2 className="mx-auto h-8 w-8 animate-spin text-[#C8A951]" /></div>
+        <SkeletonList count={3} className="grid gap-5 md:grid-cols-3" />
       ) : rows.length === 0 ? (
         <Empty text="Belum ada karya yang dipublikasikan." />
       ) : (
@@ -318,7 +319,7 @@ function MyWorksTab({ userId }: { userId: string }) {
     <Section title="Karya Saya">
       {editMsg && <p className={`mb-4 rounded-lg p-3 text-sm ${editMsg.type === 'ok' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>{editMsg.text}</p>}
       {loading ? (
-        <div className="py-16 text-center"><Loader2 className="mx-auto h-8 w-8 animate-spin text-[#C8A951]" /></div>
+        <SkeletonList count={3} className="grid gap-5 md:grid-cols-3" />
       ) : rows.length === 0 ? (
         <Empty text="Kamu belum membuat karya. Mulai dari menu Buat Karya." />
       ) : (
@@ -713,7 +714,7 @@ function ProfileTab({ profile }: { profile: StudentProfile | null }) {
   if (loading) {
     return (
       <Section title="Profil">
-        <div className="flex justify-center py-10"><Loader2 className="h-8 w-8 animate-spin text-[#C8A951]" /></div>
+        <SkeletonProfile count={1} />
       </Section>
     );
   }

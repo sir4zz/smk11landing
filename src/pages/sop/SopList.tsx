@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { FileText, FolderOpen, Loader2 } from 'lucide-react';
+import { FileText, FolderOpen } from 'lucide-react';
+import { Skeleton as Loader2 } from '../../components/ui/Skeleton';
 import { Link } from 'react-router-dom';
 import PageHero from '../../components/ui/PageHero';
 import { fetchPublishedSops, type SopRow } from '../../lib/api';

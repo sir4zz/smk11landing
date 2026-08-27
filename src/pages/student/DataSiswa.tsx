@@ -7,6 +7,7 @@ import PageHero from '../../components/ui/PageHero';
 import { BIODATA_FIELDS, BIODATA_SECTIONS, STUDENT_READONLY_KEYS, emptyBiodata, groupFieldsBySubsection } from '../../lib/studentBiodata';
 import type { BiodataFieldDef } from '../../lib/studentBiodata';
 import ImageField from '../../components/admin/ImageField';
+import { SkeletonDetail } from '../../components/ui/Skeleton';
 
 const studentSessionKey = 'smkn11-student-session';
 
@@ -240,7 +241,7 @@ export default function DataSiswa() {
     return (
       <div className="min-h-screen bg-[#FAF6F0]">
         <PageHero title="Data Siswa" subtitle="Lihat dan kelola data biodata Anda" breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Ruang Siswa', href: '/siswa/data-diri' }, { label: 'Data Diri' }]} />
-        <div className="py-24"><Loader2 className="mx-auto h-10 w-10 animate-spin text-[#C8A951]" /></div>
+        <SkeletonDetail />
       </div>
     );
   }

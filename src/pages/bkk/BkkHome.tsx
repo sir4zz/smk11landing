@@ -24,7 +24,6 @@ import {
   Building2,
   MapPin,
   CalendarClock,
-  Loader2,
   ArrowRight,
   Handshake,
   Compass,
@@ -210,7 +209,7 @@ const BkkHome: React.FC = () => {
 
           {jobsLoading ? (
             <div className="flex justify-center py-24">
-              <Loader2 className="h-10 w-10 animate-spin text-[#C8A951]" />
+              <div className="mx-auto h-10 w-48"><div className="skeleton-shimmer h-full rounded-lg" /></div>
             </div>
           ) : jobs.length === 0 ? (
             <div className="py-20 text-center">

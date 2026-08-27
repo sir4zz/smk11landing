@@ -12,7 +12,8 @@ import {
   type JobStatus,
   type JobEmploymentType,
 } from '../../lib/api'
-import { Search, MapPin, Building2, CalendarClock, Loader2, Briefcase, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, MapPin, Building2, CalendarClock, Briefcase, ChevronLeft, ChevronRight } from 'lucide-react'
+import { SkeletonList } from '../../components/ui/Skeleton'
 
 const PAGE_SIZE = 9
 
@@ -137,9 +138,7 @@ const BkkList: React.FC = () => {
         </p>
 
         {loading ? (
-          <div className="flex justify-center py-24">
-            <Loader2 className="h-10 w-10 animate-spin text-[#C8A951]" />
-          </div>
+          <SkeletonList count={6} className="grid gap-6 md:grid-cols-2 lg:grid-cols-3" />
         ) : rows.length === 0 ? (
           <div className="py-20 text-center">
             <Briefcase className="mx-auto h-12 w-12 text-[#C8A951]/40" />

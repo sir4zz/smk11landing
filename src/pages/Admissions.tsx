@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { SectionHeading } from '../components/ui/SectionHeading';
 import { Button } from '../components/ui/Button';
-import { LoadingInline } from '../components/ui/LoadingScreen';
+import { SkeletonDetail } from '../components/ui/Skeleton';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, CalendarDays, Download, ExternalLink, Eye, FileImage, FileText, GraduationCap, Lock, Star, X } from 'lucide-react';
 import { fetchSpmbContent, fetchSpmbPosters, resolveImageUrl } from '../lib/api';
@@ -138,7 +138,7 @@ const Admissions: React.FC = () => {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#FAF6F0]">
-        <LoadingInline />
+        <SkeletonDetail />
       </div>
     );
   }
