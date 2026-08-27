@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import {
   Activity, ArrowUpRight, BadgeCheck, BarChart3, BookOpen, Building2, CalendarDays,
   CheckCircle2, Clock, GraduationCap, Layers, Lightbulb, Mail, MapPin, MessageSquareText,
-  Newspaper, Phone, School, Sparkles, Star, Trophy, UserCog, Users,
+  Newspaper, Phone, School, Sparkles, Star, Trophy, UserCog,
 } from 'lucide-react';
 import logoSekolah from '../../assets/logo.png';
 import { fetchStats, guruChangeRequestAdminApi, resolveImageUrl, studentChangeRequestAdminApi } from '../../lib/api';
