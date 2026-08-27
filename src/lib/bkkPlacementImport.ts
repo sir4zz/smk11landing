@@ -213,6 +213,60 @@ export async function parseBkkPlacementWorkbook(file: File): Promise<BkkPlacemen
   return { rows, warnings };
 }
 
+/** Export an array of BkkPlacement records to a downloadable XLSX file. */
+export async function exportBkkPlacementXlsx(rows: {
+  month?: string; school_name?: string; alumni_name?: string; gender?: string;
+  birth_place?: string; birth_date?: string; nik?: string; ak1_no?: string;
+  address?: string; district?: string; province?: string; regency?: string;
+  email?: string; major?: string; position?: string; status?: string;
+  company_name?: string; company_business_type?: string; business_field?: string;
+  company_address?: string; company_province?: string; company_regency?: string;
+}[]): Promise<void> {
+  const XLSX = await import('xlsx');
+  const headers = [
+    'NO', 'BULAN', 'NAMA SEKOLAH', 'NAMA ALUMNI', 'JENIS KELAMIN', 'TEMPAT LAHIR',
+    'TANGGAL LAHIR', 'NIK', 'NO AK.I', 'ALAMAT', 'KECAMATAN', 'PROVINSI', 'KAB/KOTA',
+    'EMAIL', 'JURUSAN', 'JABATAN', 'STATUS', 'NAMA PERUSAHAAN', 'JENIS USAHA',
+    'LAPANGAN USAHA', 'ALAMAT ', 'PROVINSI ', 'KAB/KOTA ',
+  ];
+
+  const aoa: unknown[][] = [headers];
+  rows.forEach((r, idx) => {
+    aoa.push([
+      idx + 1,
+      r.month ?? '',
+      r.school_name ?? '',
+      r.alumni_name ?? '',
+      r.gender ?? '',
+      r.birth_place ?? '',
+      r.birth_date ?? '',
+      r.nik ?? '',
+      r.ak1_no ?? '',
+      r.address ?? '',
+      r.district ?? '',
+      r.province ?? '',
+      r.regency ?? '',
+      r.email ?? '',
+      r.major ?? '',
+      r.position ?? '',
+      r.status ?? '',
+      r.company_name ?? '',
+      r.company_business_type ?? '',
+      r.business_field ?? '',
+      r.company_address ?? '',
+      r.company_province ?? '',
+      r.company_regency ?? '',
+    ]);
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols'] = headers.map(() => ({ wch: 20 }));
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Data Penempatan');
+  XLSX.writeFile(wb, 'penempatan_bkk.xlsx');
+}
+
 /** Download an empty XLSX template following the official penempatan layout. */
 export async function downloadPlacementTemplate(): Promise<void> {
   const XLSX = await import('xlsx');

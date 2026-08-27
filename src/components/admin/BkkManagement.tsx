@@ -18,7 +18,7 @@ import {
   type BkkPlacementImportResult,
 } from '../../lib/api';
 import { backendApi } from '../../lib/api';
-import { downloadPlacementTemplate, parseBkkPlacementWorkbook } from '../../lib/bkkPlacementImport';
+import { downloadPlacementTemplate, parseBkkPlacementWorkbook, exportBkkPlacementXlsx } from '../../lib/bkkPlacementImport';
 import { can } from '../../lib/permissions';
 import ImageField from './ImageField';
 import BannerTab from './BannerTab';
@@ -680,6 +680,8 @@ function PlacementsTab({ permissions }: { permissions: string[] }) {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [importOpen, setImportOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
 
   const load = useCallback(async () => {
     const { data, error, meta: m } = await bkkPlacementAdminApi.list({
@@ -717,22 +719,64 @@ function PlacementsTab({ permissions }: { permissions: string[] }) {
     flash('ok', 'Data penempatan dihapus.');
   };
 
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const { data, error } = await bkkPlacementAdminApi.exportAll({
+        search: search || undefined,
+      });
+      if (error || !data) {
+        flash('err', (error as { message?: string })?.message ?? 'Gagal mengambil data untuk export.');
+        return;
+      }
+      if (data.length === 0) {
+        flash('err', 'Tidak ada data untuk di-export.');
+        return;
+      }
+      await exportBkkPlacementXlsx(data);
+      flash('ok', `${data.length} data berhasil di-export.`);
+    } catch {
+      flash('err', 'Gagal export data.');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   if (loading && rows.length === 0) return <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-[#C8A951]" /></div>;
 
   const totalPages = Math.max(meta.last_page, 1);
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-[#23314D]">Laporan penempatan alumni BKK. Data hanya dapat ditambahkan melalui impor file Excel (.xlsx).</p>
-        {can(permissions, 'job.create') && (
-          <button
-            onClick={() => setImportOpen(true)}
-            className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-4 py-2 font-bold text-[#1B2A4A]"
-          >
-            <Upload size={18} /> Impor XLSX
-          </button>
-        )}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-[#23314D]">Laporan penempatan alumni BKK.</p>
+        <div className="flex flex-wrap items-center gap-2">
+          {can(permissions, 'job.create') && (
+            <button
+              onClick={() => setImportOpen(true)}
+              className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-4 py-2 font-bold text-[#1B2A4A]"
+            >
+              <Upload size={18} /> <span className="hidden sm:inline">Impor</span><span className="sm:hidden">Impor XLSX</span>
+            </button>
+          )}
+          {can(permissions, 'job.create') && (
+            <button
+              onClick={() => setFormOpen(true)}
+              className="inline-flex items-center gap-2 rounded-lg bg-[#1B2A4A] px-4 py-2 font-bold text-white"
+            >
+              <Plus size={18} /> <span className="hidden sm:inline">Tambah</span><span className="sm:hidden">Tambah Baru</span>
+            </button>
+          )}
+          {can(permissions, 'job.view') && (
+            <button
+              onClick={() => void handleExport()}
+              disabled={exporting}
+              className="inline-flex items-center gap-2 rounded-lg border-2 border-[#1B2A4A] px-4 py-2 font-bold text-[#1B2A4A] hover:bg-[#1B2A4A]/5 disabled:opacity-50"
+            >
+              {exporting ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />} <span className="hidden sm:inline">Export</span><span className="sm:hidden">Export XLSX</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {msg && <p className={`rounded-lg p-3 text-sm ${msg.type === 'ok' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>{msg.text}</p>}
@@ -822,6 +866,17 @@ function PlacementsTab({ permissions }: { permissions: string[] }) {
                 ? `${result.imported} baris berhasil diimpor, ${result.failed} gagal.`
                 : `${result.imported} baris berhasil diimpor.`,
             );
+          }}
+        />
+      )}
+
+      {formOpen && (
+        <PlacementForm
+          onClose={() => setFormOpen(false)}
+          onSaved={async () => {
+            await load();
+            setFormOpen(false);
+            flash('ok', 'Data penempatan berhasil ditambahkan.');
           }}
         />
       )}
@@ -945,6 +1000,167 @@ function PlacementImportModal({ onClose, onImported }: { onClose: () => void; on
             className="inline-flex items-center gap-2 rounded-lg bg-[#1B2A4A] px-4 py-2 font-bold text-white disabled:opacity-50"
           >
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Impor Sekarang
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PlacementForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+  const currentYear = new Date().getFullYear();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const [year, setYear] = useState(currentYear);
+  const [month, setMonth] = useState('');
+  const [schoolName, setSchoolName] = useState('');
+  const [alumniName, setAlumniName] = useState('');
+  const [gender, setGender] = useState('');
+  const [birthPlace, setBirthPlace] = useState('');
+  const [birthDate, setBirthDate] = useState('');
+  const [nik, setNik] = useState('');
+  const [ak1No, setAk1No] = useState('');
+  const [address, setAddress] = useState('');
+  const [district, setDistrict] = useState('');
+  const [province, setProvince] = useState('');
+  const [regency, setRegency] = useState('');
+  const [email, setEmail] = useState('');
+  const [major, setMajor] = useState('');
+  const [position, setPosition] = useState('');
+  const [status, setStatus] = useState('');
+  const [companyName, setCompanyName] = useState('');
+  const [companyBusinessType, setCompanyBusinessType] = useState('');
+  const [businessField, setBusinessField] = useState('');
+  const [companyAddress, setCompanyAddress] = useState('');
+  const [companyProvince, setCompanyProvince] = useState('');
+  const [companyRegency, setCompanyRegency] = useState('');
+
+  const submit = async () => {
+    if (!alumniName.trim() || alumniName.trim().length < 2) {
+      setError('Nama alumni wajib diisi (minimal 2 karakter).');
+      return;
+    }
+    if (!month.trim()) {
+      setError('Bulan wajib diisi.');
+      return;
+    }
+    setError('');
+    setBusy(true);
+    const r = await bkkPlacementAdminApi.create({
+      year, month: month.trim(), school_name: schoolName, alumni_name: alumniName.trim(),
+      gender, birth_place: birthPlace, birth_date: birthDate, nik, ak1_no: ak1No,
+      address, district, province, regency, email, major, position, status,
+      company_name: companyName, company_business_type: companyBusinessType,
+      business_field: businessField, company_address: companyAddress,
+      company_province: companyProvince, company_regency: companyRegency,
+    });
+    setBusy(false);
+    if (r.error) {
+      setError((r.error as { message?: string })?.message ?? 'Gagal menyimpan data.');
+      return;
+    }
+    onSaved();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 p-4 py-10">
+      <div className="mx-auto w-full max-w-3xl rounded-xl bg-white p-6 shadow-xl">
+        <div className="mb-5 flex justify-between">
+          <h2 className="text-xl font-bold text-[#1B2A4A]">Tambah Penempatan Alumni</h2>
+          <button onClick={onClose}><X /></button>
+        </div>
+
+        <div className="max-h-[70vh] overflow-y-auto space-y-6 pr-2">
+
+          {/* Data Periode & Identitas */}
+          <div>
+            <h3 className="mb-3 text-sm font-bold text-[#C8A951] uppercase tracking-wide">Data Periode & Identitas</h3>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block text-sm font-semibold">Tahun *
+                <input type="number" min={2000} max={2100} value={year} onChange={(e) => setYear(parseInt(e.target.value, 10) || currentYear)} className={inputClass} />
+              </label>
+              <label className="block text-sm font-semibold">Bulan *
+                <select value={month} onChange={(e) => setMonth(e.target.value)} className={inputClass}>
+                  <option value="">-- Pilih Bulan --</option>
+                  {['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'].map((m) => (
+                    <option key={m} value={m.toUpperCase()}>{m}</option>
+                  ))}
+                </select>
+              </label>
+              <Field label="Nama Alumni *" value={alumniName} onChange={(e) => setAlumniName(e.target.value)} placeholder="Nama lengkap alumni" />
+              <label className="block text-sm font-semibold">Jenis Kelamin
+                <select value={gender} onChange={(e) => setGender(e.target.value)} className={inputClass}>
+                  <option value="">-- Pilih --</option>
+                  <option value="Laki-laki">Laki-laki</option>
+                  <option value="Perempuan">Perempuan</option>
+                </select>
+              </label>
+              <Field label="Tempat Lahir" value={birthPlace} onChange={(e) => setBirthPlace(e.target.value)} />
+              <Field label="Tanggal Lahir" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} placeholder="DD/MM/YYYY" />
+              <Field label="NIK" value={nik} onChange={(e) => setNik(e.target.value)} placeholder="Nomor induk kependudukan" />
+              <Field label="No. AK.1" value={ak1No} onChange={(e) => setAk1No(e.target.value)} />
+              <Field label="Email" value={email} onChange={(e) => setEmail(e.target.value)} type="email" />
+              <Field label="Nama Sekolah" value={schoolName} onChange={(e) => setSchoolName(e.target.value)} placeholder="SMKN 11 Kab. Tangerang" />
+            </div>
+          </div>
+
+          {/* Alamat Alumni */}
+          <div>
+            <h3 className="mb-3 text-sm font-bold text-[#C8A951] uppercase tracking-wide">Alamat Alumni</h3>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <Field label="Alamat" value={address} onChange={(e) => setAddress(e.target.value)} multiline placeholder="Alamat lengkap" />
+              </div>
+              <Field label="Kecamatan" value={district} onChange={(e) => setDistrict(e.target.value)} />
+              <Field label="Kabupaten / Kota" value={regency} onChange={(e) => setRegency(e.target.value)} />
+              <Field label="Provinsi" value={province} onChange={(e) => setProvince(e.target.value)} />
+            </div>
+          </div>
+
+          {/* Pendidikan & Penempatan */}
+          <div>
+            <h3 className="mb-3 text-sm font-bold text-[#C8A951] uppercase tracking-wide">Pendidikan & Penempatan</h3>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Jurusan" value={major} onChange={(e) => setMajor(e.target.value)} placeholder="contoh: DPB, TIK, AKL" />
+              <Field label="Jabatan" value={position} onChange={(e) => setPosition(e.target.value)} placeholder="contoh: Operator, Staff" />
+              <label className="block text-sm font-semibold">Status
+                <select value={status} onChange={(e) => setStatus(e.target.value)} className={inputClass}>
+                  <option value="">-- Pilih --</option>
+                  <option value="BEKERJA">Bekerja</option>
+                  <option value="PKL/Praktik Kerja">PKL / Praktik Kerja</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          {/* Data Perusahaan */}
+          <div>
+            <h3 className="mb-3 text-sm font-bold text-[#C8A951] uppercase tracking-wide">Data Perusahaan</h3>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Nama Perusahaan" value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
+              <Field label="Jenis Usaha" value={companyBusinessType} onChange={(e) => setCompanyBusinessType(e.target.value)} placeholder="contoh: Manufaktur, Jasa" />
+              <Field label="Lapangan Usaha" value={businessField} onChange={(e) => setBusinessField(e.target.value)} />
+              <div className="sm:col-span-2">
+                <Field label="Alamat Perusahaan" value={companyAddress} onChange={(e) => setCompanyAddress(e.target.value)} multiline />
+              </div>
+              <Field label="Provinsi Perusahaan" value={companyProvince} onChange={(e) => setCompanyProvince(e.target.value)} />
+              <Field label="Kabupaten / Kota Perusahaan" value={companyRegency} onChange={(e) => setCompanyRegency(e.target.value)} />
+            </div>
+          </div>
+
+        </div>
+
+        {error && <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+
+        <div className="mt-6 flex justify-end gap-3">
+          <button onClick={onClose} className="px-4 py-2 text-[#5B7088]">Batal</button>
+          <button
+            onClick={() => void submit()}
+            disabled={busy}
+            className="inline-flex items-center gap-2 rounded-lg bg-[#1B2A4A] px-4 py-2 font-bold text-white disabled:opacity-50"
+          >
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Simpan
           </button>
         </div>
       </div>

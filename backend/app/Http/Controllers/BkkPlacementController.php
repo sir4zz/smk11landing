@@ -148,4 +148,39 @@ class BkkPlacementController extends Controller
 
         return response()->json(['data' => null, 'error' => null]);
     }
+
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            'year' => ['required', 'integer', 'min:2000', 'max:2100'],
+            'month' => ['required', 'string', 'max:50'],
+            'school_name' => ['nullable', 'string'],
+            'alumni_name' => ['required', 'string', 'min:2', 'max:191'],
+            'gender' => ['nullable', 'string', 'max:20'],
+            'birth_place' => ['nullable', 'string'],
+            'birth_date' => ['nullable', 'string'],
+            'nik' => ['nullable', 'string', 'max:32'],
+            'ak1_no' => ['nullable', 'string', 'max:64'],
+            'address' => ['nullable', 'string'],
+            'district' => ['nullable', 'string'],
+            'province' => ['nullable', 'string'],
+            'regency' => ['nullable', 'string'],
+            'email' => ['nullable', 'string', 'max:191'],
+            'major' => ['nullable', 'string'],
+            'position' => ['nullable', 'string'],
+            'status' => ['nullable', 'string', 'max:50'],
+            'company_name' => ['nullable', 'string'],
+            'company_business_type' => ['nullable', 'string'],
+            'business_field' => ['nullable', 'string'],
+            'company_address' => ['nullable', 'string'],
+            'company_province' => ['nullable', 'string', 'max:32'],
+            'company_regency' => ['nullable', 'string'],
+        ]);
+
+        $data['nik'] = preg_replace('/\s+/', '', $data['nik'] ?? '');
+
+        $placement = BkkPlacement::create($data);
+
+        return response()->json(['data' => $placement, 'error' => null], 201);
+    }
 }

@@ -962,6 +962,17 @@ export const bkkPlacementAdminApi = {
   remove(id: string): ApiResult<null> {
     return request<null>(`/admin/bkk/placements/${encodeURIComponent(id)}`, { method: 'DELETE' });
   },
+  exportAll(params?: { search?: string; year?: number; month?: string }): ApiResult<BkkPlacement[]> {
+    const q = new URLSearchParams();
+    if (params?.search) q.set('search', params.search);
+    if (params?.year) q.set('year', String(params.year));
+    if (params?.month) q.set('month', params.month);
+    q.set('limit', '10000');
+    return request<BkkPlacement[]>(`/admin/bkk/placements?${q}`);
+  },
+  create(payload: Partial<BkkPlacement>): ApiResult<BkkPlacement> {
+    return request<BkkPlacement>('/admin/bkk/placements', { method: 'POST', body: JSON.stringify(payload) });
+  },
 };
 
 // ---------- KELULUSAN SISWA (ALUMNI GRADUATION) ----------
