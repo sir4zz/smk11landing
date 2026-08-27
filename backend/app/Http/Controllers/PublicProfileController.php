@@ -224,18 +224,36 @@ class PublicProfileController extends Controller
             ->with('assignments')
             ->orderBy('name', 'asc')
             ->get()
-            ->map(fn (SdmTendik $tendik) => [
-                'role' => 'tendik',
-                'slug' => $tendik->id,
-                'name' => $tendik->name,
-                'photo' => $tendik->photo ?? '',
-                'position' => $tendik->jabatan,
-                'subject' => $tendik->assignments
-                    ->filter(fn ($a) => $a->jenis === \App\Models\SdmAssignment::JENIS_TUGAS_MENGAJAR)
+            ->map(function (SdmTendik $tendik) {
+                $jabatan = strtoupper((string) $tendik->jabatan);
+                $tugasTambahan = strtoupper($tendik->assignments
+                    ->filter(fn ($a) => $a->jenis === \App\Models\SdmAssignment::JENIS_TUGAS_TAMBAHAN)
                     ->pluck('uraian')
-                    ->unique()
-                    ->implode(', '),
-            ]);
+                    ->implode(' '));
+                $all = $jabatan . ' ' . $tugasTambahan;
+
+                if (preg_match('/KEAMANAN|SATPAM/', $all)) {
+                    $kategori = 'keamanan';
+                } elseif (preg_match('/KEBERSIHAN|PESURUH|PRAMUBAKTI|PRAMUSAJI|PTUGAS KEBERSIHAN/', $all)) {
+                    $kategori = 'pramubakti';
+                } else {
+                    $kategori = 'tendik';
+                }
+
+                return [
+                    'role' => 'tendik',
+                    'slug' => $tendik->id,
+                    'name' => $tendik->name,
+                    'photo' => $tendik->photo ?? '',
+                    'position' => $tendik->jabatan,
+                    'subject' => $tendik->assignments
+                        ->filter(fn ($a) => $a->jenis === \App\Models\SdmAssignment::JENIS_TUGAS_MENGAJAR)
+                        ->pluck('uraian')
+                        ->unique()
+                        ->implode(', '),
+                    'kategori' => $kategori,
+                ];
+            });
 
         return response()->json([
             'data' => [
