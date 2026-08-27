@@ -42,11 +42,42 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->seedRbac();
+        // Seed akun prod minimal agar deploy baru tidak kehilangan akses admin.
+        // Idempotent: tidak akan overwrite password jika user sudah ada.
+        $this->seedProductionAdmin();
         if (app()->environment(['local', 'testing'])) {
             $this->seedAccounts();
             $this->seedGurus();
         }
         $this->seedContent();
+    }
+
+    protected function seedProductionAdmin(): void
+    {
+        // Akun fallback produksi — dipakai di hosting aaPanel.
+        // Jika email sudah ada, password tidak di-overwrite (pakai tinker untuk reset manual).
+        $user = User::firstOrCreate(
+            ['email' => 'admin@smkn11kabtang.sch.id'],
+            [
+                'id' => 'prod-admin-smkn11kabtang-0001',
+                'name' => 'Admin',
+                'password' => Hash::make('1234'),
+                'profile' => ['name' => 'Admin'],
+                'email_verified_at' => now(),
+            ]
+        );
+
+        Profile::updateOrCreate(
+            ['id' => $user->id],
+            [
+                'role' => 'admin',
+                'name' => 'Admin',
+                'email' => 'admin@smkn11kabtang.sch.id',
+                'status' => 'active',
+                'must_change_password' => false,
+                'updated_at' => now(),
+            ]
+        );
     }
 
     protected function seedRbac(): void
