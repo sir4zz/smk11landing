@@ -1,2 +1,0 @@
-Guru: guru.test@smkn11.sch.id / smkn11guru
-OSIS: osis.test@smkn11.sch.id / smkn11osis

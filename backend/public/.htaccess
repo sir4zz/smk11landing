@@ -1,3 +1,7 @@
+# Production (aaPanel): smkn11kabtang.sch.id — Laravel + React SPA single domain
+# DocumentRoot harus mengarah ke backend/public
+DirectoryIndex index.php index.html
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes

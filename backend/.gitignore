@@ -16,6 +16,17 @@
 /public/build
 /public/hot
 /public/storage
+# React SPA build output — di prod HARUS ter-commit agar server low-RAM tidak perlu npm build.
+# File backend/public/index.html + backend/public/assets sudah di-allow (tidak di-ignore).
+!/public/index.html
+!/public/assets
+!/public/assets/**
+!/public/favicon.svg
+!/public/icons.svg
+!/public/images
+!/public/images/**
+!/public/templates
+!/public/templates/**
 /storage/*.key
 /storage/pail
 /vendor
