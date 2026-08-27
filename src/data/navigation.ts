@@ -51,7 +51,7 @@ export const navigationData: NavItem[] = [
         label: 'Ruang Siswa',
         href: '/osis',
         children: [
-            { label: 'Data Diri', href: '/siswa/data-diri', studentOnly: true },
+            { label: 'Data Diri', href: '/siswa/data-diri' },
             {
                 label: 'OSIS',
                 href: '/osis',

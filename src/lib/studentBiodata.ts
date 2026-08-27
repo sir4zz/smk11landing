@@ -35,8 +35,14 @@ const BLOOD_OPTIONS = ['', 'A', 'B', 'AB', 'O'];
 const YATIM_OPTIONS = ['', 'Yatim', 'Piatu', 'Yatim-Piatu'];
 const ALIVE_OPTIONS = ['', 'Masih Hidup', 'Meninggal'];
 
-export const VALID_CLASSES = ['X', 'XI', 'XII'];
+export const VALID_CLASSES = ['10', '11', '12'];
 export const CLASS_OPTIONS = ['', ...VALID_CLASSES];
+
+const CLASS_ROMAN: Record<string, string> = { '10': 'X', '11': 'XI', '12': 'XII' };
+
+export function formatClass(value?: string | null): string {
+  return CLASS_ROMAN[value ?? ''] ?? value ?? '-';
+}
 
 /** Field yang tidak bisa diubah siswa lewat pengajuan perubahan data. */
 export const STUDENT_READONLY_KEYS = new Set([
@@ -48,7 +54,11 @@ export const STUDENT_READONLY_KEYS = new Set([
 ]);
 
 export function normalizeClass(value: unknown): string {
-  return String(value ?? '').trim().toUpperCase();
+  const v = String(value ?? '').trim().toUpperCase();
+  if (v === 'X' || v === '10') return '10';
+  if (v === 'XI' || v === '11') return '11';
+  if (v === 'XII' || v === '12') return '12';
+  return v;
 }
 
 export function isValidClass(value: unknown): boolean {
@@ -94,7 +104,7 @@ export const BIODATA_FIELDS: BiodataFieldDef[] = [
   { key: 'address', label: 'Alamat Tempat Tinggal', section: 'residence', type: 'textarea', full: true },
   { key: 'phone', label: 'No. Telp / HP', section: 'residence', type: 'number' },
   { key: 'tinggal_dengan', label: 'Tinggal Dengan (Orang Tua/Saudara/Asrama/Kost)', section: 'residence' },
-  { key: 'jarak_sekolah', label: 'Jarak Tempat Tinggal ke Sekolah (Meter)', section: 'residence', type: 'decimal' },
+  { key: 'jarak_sekolah', label: 'Jarak Tempat Tinggal ke Sekolah (Km)', section: 'residence', type: 'number' },
 
   // C. Keterangan Kesehatan
   { key: 'golongan_darah', label: 'Golongan Darah', section: 'health', type: 'select', options: BLOOD_OPTIONS },
@@ -360,13 +370,25 @@ export function formatRupiah(raw: unknown): string {
 const DAPODIK_COLUMN_MAP: Record<string, string> = {
   nisn: 'nisn',
   nis: 'nis',
+  kelas: 'class',
   'nama siswa': 'name',
+  'nama lengkap': 'name',
+  'nama peserta didik': 'name',
+  'nama panggilan': 'nickname',
+  nama: 'name',
   'tempat lahir': 'place_of_birth',
   'tanggal lahir': 'date_of_birth',
   'jenis kelamin': 'gender',
+  'kelamin': 'gender',
   agama: 'religion',
   'anak ke': 'anak_ke',
   'jumlah saudara': 'jml_saudara_kandung',
+  'jml saudara kandung': 'jml_saudara_kandung',
+  'jml saudara tiri': 'jml_saudara_tiri',
+  'anak yatim/piatu': 'anak_yatim_piatu',
+  'anak yatim piatu': 'anak_yatim_piatu',
+  'kewarganegaraan': 'kewarganegaraan',
+  'jurusan': 'major',
   'no hp': 'phone',
   'jarak sekolah (km)': 'jarak_sekolah',
   'jarak sekolah (m)': 'jarak_sekolah',
@@ -414,8 +436,203 @@ const DAPODIK_DATE_COLUMNS = new Set(['tanggal lahir', 'tanggal lahir ayah', 'ta
 const DAPODIK_ADDRESS_COLUMNS = ['alamat', 'kecamatan', 'kota', 'provinsi'];
 
 export function isDapodikHeader(row: unknown[] | undefined): boolean {
-  const cols = new Set((row ?? []).map((c) => String(c ?? '').trim().toLowerCase()));
-  return cols.has('nisn') && cols.has('nama siswa');
+  const cells = (row ?? []).map((c) => String(c ?? '').trim().toLowerCase());
+  const nonEmpty = cells.filter(Boolean);
+  // Title rows are typically 1-3 cells; real headers have many columns.
+  if (nonEmpty.length < 6) return false;
+  const cols = new Set(nonEmpty);
+  const knownCols = Object.keys(DAPODIK_COLUMN_MAP);
+  const matchCount = knownCols.filter((k) => cols.has(k)).length;
+  const hasName = cols.has('nama siswa') || cols.has('nama lengkap') || cols.has('nama peserta didik') || cols.has('nama');
+  return cols.has('nisn') && hasName && matchCount >= 4;
+}
+
+/**
+ * Detect the single-sheet multi-row header template:
+ * Row N: NO, NIS, KELAS, NISN, JURUSAN, NAMA, KELAMIN, TEMPAT, TANGGAL LAHIR, AGAMA, ...
+ * Row N+1: (sub-headers under NAMA): NAMA LENGKAP, NAMA PANGGILAN
+ */
+export function isMultiRowTemplateHeader(grid: unknown[][]): boolean {
+  for (let r = 0; r < Math.min(10, grid.length); r++) {
+    const row = grid[r];
+    const cols = new Set((row ?? []).map((c) => String(c ?? '').trim().toLowerCase()));
+    if (cols.has('nisn') && cols.has('nis') && cols.has('kelamin') && !cols.has('nama siswa')) {
+      return true;
+    }
+  }
+  return false;
+}
+
+const MULTI_ROW_TEMPLATE_COLUMNS: Record<number, string> = {
+  1: 'nis',
+  2: 'class',
+  3: 'nisn',
+  4: 'major',
+  5: 'name',
+  6: 'nickname',
+  7: 'gender',
+  8: 'place_of_birth',
+  9: 'date_of_birth',
+  10: 'religion',
+  11: 'kewarganegaraan',
+  12: 'anak_ke',
+  13: 'jml_saudara_kandung',
+  14: 'jml_saudara_tiri',
+  15: 'anak_yatim_piatu',
+  16: 'bahasa_sehari_hari',
+};
+
+// Header text (lowercase) → field key, used for dynamic column detection.
+const HEADER_TEXT_TO_FIELD: Record<string, string> = {
+  'nis': 'nis',
+  'kelas': 'class',
+  'nisn': 'nisn',
+  'jurusan': 'major',
+  'nama': 'name',
+  'nama lengkap': 'name',
+  'nama panggilan': 'nickname',
+  'kelamin': 'gender',
+  'jenis kelamin': 'gender',
+  'tempat': 'place_of_birth',
+  'tempat lahir': 'place_of_birth',
+  'tanggal lahir': 'date_of_birth',
+  'agama': 'religion',
+  'kewarganegaraan': 'kewarganegaraan',
+  'anak ke': 'anak_ke',
+  'jml saudara kandung': 'jml_saudara_kandung',
+  'jumlah saudara kandung': 'jml_saudara_kandung',
+  'jumlah saudara': 'jml_saudara_kandung',
+  'jml saudara tiri': 'jml_saudara_tiri',
+  'anak yatim/piatu': 'anak_yatim_piatu',
+  'anak yatim piatu': 'anak_yatim_piatu',
+  'bahasa sehari - hari': 'bahasa_sehari_hari',
+  'bahasa sehari-hari': 'bahasa_sehari_hari',
+  'tinggal dengan': 'tinggal_dengan',
+  'tinggal': 'tinggal_dengan',
+  'jarak sekolah': 'jarak_sekolah',
+  'jarak tempat': 'jarak_sekolah',
+  'golongan darah': 'golongan_darah',
+  'penyakit': 'penyakit',
+  'kelainan': 'kelainan_jasmani',
+  'tinggi': 'tinggi_cm',
+  'berat': 'berat_kg',
+  'lulusan dari': 'lulusan_dari',
+  'nomor sttb': 'nomor_sttb',
+  'tanggal sttb': 'tanggal_sttb',
+  'lama belajar': 'lama_belajar',
+  'pindahan dari': 'pindahan_dari',
+  'alasan pindah': 'alasan_pindah',
+  'diangkat': 'diangkat',
+  'kompetensi': 'kompetensi_keahlian',
+  'tanggal diterima': 'tanggal_diterima',
+  'no hp': 'phone',
+  'email': 'email',
+  'no kk': 'no_kk',
+  'kepala keluarga': 'kepala_keluarga',
+  'alamat': 'address',
+  'provinsi': 'provinsi',
+  'kota': 'kota',
+  'kecamatan': 'kecamatan',
+  'desa': 'desa',
+  'kode pos': 'kode_pos',
+  'nama ayah': 'ayah_nama',
+  'nama ibu': 'ibu_nama',
+  'nama wali': 'wali_nama',
+};
+
+/** Build a column-index → field-key map from a header row. */
+function buildDynamicColumnMap(header: unknown[]): Record<number, string> {
+  const result: Record<number, string> = {};
+  const normalized = header.map(h => String(h ?? '').trim().toLowerCase());
+  const used = new Set<number>();
+
+  const sortedKeys = Object.keys(HEADER_TEXT_TO_FIELD).sort((a, b) => b.length - a.length);
+  for (const text of sortedKeys) {
+    const field = HEADER_TEXT_TO_FIELD[text];
+    // Exact match first.
+    let ki = normalized.findIndex((h, i) => !used.has(i) && h === text);
+    // Substring match at word boundary.
+    if (ki < 0) {
+      ki = normalized.findIndex((h, i) => {
+        if (used.has(i)) return false;
+        const idx = h.indexOf(text);
+        if (idx < 0) return false;
+        const before = idx > 0 ? h[idx - 1] : ' ';
+        const after = idx + text.length < h.length ? h[idx + text.length] : ' ';
+        return /[\s(]/.test(before) && /[\s)]/.test(after);
+      });
+    }
+    if (ki >= 0) {
+      result[ki] = field;
+      used.add(ki);
+    }
+  }
+  return result;
+}
+
+export function parseMultiRowTemplate(grid: unknown[][]): { rows: Record<string, string>[]; errors: string[] } {
+  const rows: Record<string, string>[] = [];
+  const errors: string[] = [];
+
+  let headerIdx = -1;
+  for (let r = 0; r < Math.min(10, grid.length); r++) {
+    const cols = new Set((grid[r] ?? []).map((c) => String(c ?? '').trim().toLowerCase()));
+    if (cols.has('nisn') && cols.has('kelamin') && !cols.has('nama siswa')) {
+      headerIdx = r;
+      break;
+    }
+  }
+  if (headerIdx < 0) return { rows, errors };
+
+  // Build dynamic column map from the header row.
+  const dynamicColumns = buildDynamicColumnMap(grid[headerIdx] ?? []);
+
+  // If dynamic detection found at least NISN + NAMA + KELAMIN, use it.
+  // Otherwise fall back to fixed MULTI_ROW_TEMPLATE_COLUMNS.
+  const hasDynamic = Object.values(dynamicColumns).some(f => f === 'nisn')
+    && Object.values(dynamicColumns).some(f => f === 'name')
+    && Object.values(dynamicColumns).some(f => f === 'gender');
+  const columnMap = hasDynamic
+    ? Object.fromEntries(Object.entries(dynamicColumns).map(([k, v]) => [Number(k), v]))
+    : MULTI_ROW_TEMPLATE_COLUMNS;
+
+  // Data starts after header rows — skip any row that's all numbers.
+  let dataStart = headerIdx + 1;
+  for (let r = headerIdx + 1; r < Math.min(headerIdx + 5, grid.length); r++) {
+    const cells = grid[r] ?? [];
+    const nonEmpty = cells.filter((c) => c !== '' && c !== null && c !== undefined);
+    if (nonEmpty.length === 0) continue;
+    const allNumeric = nonEmpty.every((c) => /^\d+$/.test(String(c).trim()));
+    if (allNumeric) { dataStart = r + 1; continue; }
+    dataStart = r;
+    break;
+  }
+
+  grid.slice(dataStart).forEach((cells) => {
+    const out: Record<string, string> = {};
+    for (const [colIdx, key] of Object.entries(columnMap)) {
+      const value = cells[Number(colIdx)];
+      if (value === null || value === undefined || String(value).trim() === '') continue;
+      if (key === 'gender') {
+        out.gender = normalizeGender(value);
+      } else if (key === 'class') {
+        out.class = normalizeClass(value);
+      } else if (DATE_KEYS.has(key)) {
+        out[key] = toDateString(value);
+      } else {
+        out[key] = String(value).trim();
+      }
+    }
+
+    const nisn = (out.nisn ?? '').trim().replace(/^'+/, '');
+    if (!nisn) return;
+    // Skip non-numeric or very short NISNs (sub-header rows like "NAMA LENGKAP").
+    if (!/^\d{4,}$/.test(nisn)) return;
+
+    rows.push(out);
+  });
+
+  return { rows, errors };
 }
 
 interface DapodikSheetGrid {
@@ -429,26 +646,62 @@ interface DapodikSheetGrid {
  * Kelas dibiarkan kosong, kewarganegaraan default "Indonesia".
  */
 export function parseDapodikSheets(sheets: DapodikSheetGrid[]): { rows: Record<string, string>[]; errors: string[] } {
-  const rows: Record<string, string>[] = [];
+  const resolvedMap = new Map<string, Record<string, string>>();
   const errors: string[] = [];
 
-  for (const { name, grid } of sheets) {
-    const header = grid[0] ?? [];
+  for (const { grid } of sheets) {
+    // Find the actual header row by scanning first 15 rows.
+    let headerIdx = 0;
+    for (let r = 0; r < Math.min(15, grid.length); r++) {
+      if (isDapodikHeader(grid[r])) { headerIdx = r; break; }
+    }
+    const header = grid[headerIdx] ?? [];
     if (!isDapodikHeader(header)) continue;
 
-    const idx: Record<string, number> = {};
-    header.forEach((cell, i) => {
-      const col = String(cell ?? '').trim().toLowerCase();
-      if (col !== '') idx[col] = i;
-    });
+    const normalizedHeaders = (header ?? []).map(h => String(h ?? '').trim().toLowerCase());
+    const usedHeaders = new Set<number>();
+    const resolvedIdx: Record<string, number> = {};
+
+    // Sort keys longest-first so "nama peserta didik" matches before "nama", "nisn" before "nis".
+    const sortedKeys = Object.keys(DAPODIK_COLUMN_MAP).sort((a, b) => b.length - a.length);
+    for (const key of sortedKeys) {
+      // 1) Exact match.
+      let ki = normalizedHeaders.findIndex((h, i) => !usedHeaders.has(i) && h === key);
+      // 2) Header contains key at word boundary.
+      if (ki < 0) {
+        ki = normalizedHeaders.findIndex((h, i) => {
+          if (usedHeaders.has(i)) return false;
+          const idx = h.indexOf(key);
+          if (idx < 0) return false;
+          const before = idx > 0 ? h[idx - 1] : ' ';
+          const after = idx + key.length < h.length ? h[idx + key.length] : ' ';
+          return /[\s(]/.test(before) && /[\s)]/.test(after);
+        });
+      }
+      if (ki >= 0) {
+        resolvedIdx[key] = ki;
+        usedHeaders.add(ki);
+      }
+    }
+    // Also resolve the education anchor (not in DAPODIK_COLUMN_MAP).
+    const eduKi = normalizedHeaders.findIndex((h, i) => !usedHeaders.has(i) && (
+      h === EDU_SECTION_ANCHOR || (() => {
+        const idx = h.indexOf(EDU_SECTION_ANCHOR);
+        if (idx < 0) return false;
+        const before = idx > 0 ? h[idx - 1] : ' ';
+        const after = idx + EDU_SECTION_ANCHOR.length < h.length ? h[idx + EDU_SECTION_ANCHOR.length] : ' ';
+        return /[\s(]/.test(before) && /[\s)]/.test(after);
+      })()
+    ));
+    if (eduKi >= 0) resolvedIdx[EDU_SECTION_ANCHOR] = eduKi;
 
     const cell = (cells: unknown[], col: string): string => {
-      const i = idx[col];
+      const i = resolvedIdx[col];
       const v = i === undefined ? undefined : (cells ?? [])[i];
       return v === null || v === undefined ? '' : String(v).trim();
     };
 
-    grid.slice(1).forEach((cells, i) => {
+    grid.slice(headerIdx + 1).forEach((cells) => {
       const record: Record<string, string> = { class: '' };
       let hasData = false;
 
@@ -456,22 +709,25 @@ export function parseDapodikSheets(sheets: DapodikSheetGrid[]): { rows: Record<s
         const raw = cell(cells, col);
         if (raw === '') continue;
         hasData = true;
-        if (col === 'jenis kelamin') {
+        if (col === 'jenis kelamin' || col === 'kelamin') {
           record[key] = normalizeGender(raw);
+        } else if (key === 'class') {
+          record[key] = normalizeClass(raw);
         } else if (DAPODIK_DATE_COLUMNS.has(col)) {
           record[key] = toDateString(raw);
         } else if (col.startsWith('jarak sekolah')) {
-          // Satuan meter — angka dipakai apa adanya.
           const match = raw.match(/^\d+(\.\d+)?/);
           if (!match) continue;
-          record[key] = String(Math.round(parseFloat(match[0]) * 100) / 100);
+          let val = parseFloat(match[0]);
+          if (val > 1000) val = Math.round(val / 1000 * 100) / 100;
+          record[key] = String(val);
         } else {
           record[key] = raw;
         }
       }
 
       // Anchor-based mapping for education fields (handles "Tanggal" duplicates).
-      const eduAnchorIdx = idx[EDU_SECTION_ANCHOR];
+      const eduAnchorIdx = resolvedIdx[EDU_SECTION_ANCHOR];
       if (eduAnchorIdx !== undefined) {
         for (const [offset, key] of EDU_OFFSETS) {
           const raw = String((cells ?? [])[eduAnchorIdx + offset] ?? '').trim();
@@ -486,19 +742,30 @@ export function parseDapodikSheets(sheets: DapodikSheetGrid[]): { rows: Record<s
       }
 
       if (!hasData) return;
-      const nisn = record.nisn ?? '';
-      if (nisn === '') {
-        errors.push(`Sheet "${name}" baris ${i + 2}: NISN kosong.`);
-        return;
-      }
+      const nisn = (record.nisn ?? '').replace(/^'+/, '');
+      // Rows without NISN (footer/summary rows) — silently skip.
+      if (!nisn) return;
+      // Skip column-number rows (1, 2, 3...) and very short NISNs.
+      if (/^\d{1,3}$/.test(nisn)) return;
+      record.nisn = nisn;
 
       record.kewarganegaraan = 'Indonesia';
       const address = DAPODIK_ADDRESS_COLUMNS.map((c) => cell(cells, c)).filter(Boolean).join(', ');
       if (address !== '') record.address = address;
 
-      rows.push(record);
+      // Merge by NISN: keep the most complete record (prefer non-empty values).
+      const existing = resolvedMap.get(nisn);
+      if (existing) {
+        for (const [k, v] of Object.entries(record)) {
+          if (v && v !== '' && v !== '0' && (!existing[k] || existing[k] === '' || existing[k] === '0')) {
+            existing[k] = v;
+          }
+        }
+      } else {
+        resolvedMap.set(nisn, { ...record });
+      }
     });
   }
 
-  return { rows, errors };
+  return { rows: Array.from(resolvedMap.values()), errors };
 }

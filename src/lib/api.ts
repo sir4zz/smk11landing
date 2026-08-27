@@ -464,7 +464,7 @@ export const accountsApi = {
   remove(id: string): ApiResult<null> {
     return request<null>(`/admin/accounts/${encodeURIComponent(id)}`, { method: 'DELETE' });
   },
-  importStudents(rows: Record<string, string>[]): ApiResult<{ imported: number; skipped: number; errors: { row: number; nisn?: string; message: string }[] }> {
+  importStudents(rows: Record<string, string>[]): ApiResult<{ imported: number; updated: number; skipped: number; errors: { row: number; nisn?: string; message: string }[] }> {
     return request('/admin/accounts/import', { method: 'POST', body: JSON.stringify({ rows }) });
   },
 };

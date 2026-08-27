@@ -144,6 +144,7 @@ class StudentController extends Controller
 
         $defaultPin = trim((string) ($data['default_pin'] ?? ''));
         $imported = 0;
+        $updated = 0;
         $skipped = 0;
         $errors = [];
         $seen = [];
@@ -171,20 +172,73 @@ class StudentController extends Controller
                     throw new \RuntimeException('Nama wajib diisi (minimal 2 karakter).');
                 }
                 if ($class !== '' && ! Student::isValidClass($class)) {
-                    throw new \RuntimeException('Kelas "'.$class.'" tidak valid. Kelas harus berupa X, XI, atau XII.');
+                    throw new \RuntimeException('Kelas "'.$class.'" tidak valid. Kelas harus berupa X/XI/XII atau 10/11/12.');
                 }
 
-                $email = $this->accounts->studentEmail($nisn);
-                if (isset($seen[$nisn]) || Student::query()->where('nisn', $nisn)->exists() || User::query()->where('email', $email)->exists()) {
-                    throw new \RuntimeException('NISN sudah terdaftar.');
+                // Duplicate detection within the same import batch.
+                if (isset($seen[$nisn])) {
+                    $skipped++;
+                    continue;
                 }
-                $seen[$nisn] = true;
 
+                $existingStudent = Student::query()->where('nisn', $nisn)->first();
+
+                if ($existingStudent) {
+                    // Upsert: update existing student with non-empty fields from the row.
+                    $updates = [];
+                    if ($name !== '') $updates['name'] = $name;
+                    if ($nis !== '') $updates['nis'] = $nis;
+                    if ($class !== '') $updates['class'] = $class;
+
+                    $fieldMap = [
+                        'major' => 'major',
+                        'gender' => 'gender',
+                        'date_of_birth' => 'date_of_birth',
+                        'place_of_birth' => 'place_of_birth',
+                        'religion' => 'religion',
+                        'address' => 'address',
+                    ];
+                    foreach ($fieldMap as $rowKey => $dbKey) {
+                        $val = trim((string) ($row[$rowKey] ?? ''));
+                        if ($val !== '') {
+                            $updates[$dbKey] = $rowKey === 'gender'
+                                ? $this->accounts->normalizeGender($row[$rowKey] ?? '')
+                                : ($rowKey === 'date_of_birth'
+                                    ? $this->accounts->normalizeDate($row[$rowKey] ?? null)
+                                    : $val);
+                        }
+                    }
+
+                    // Biodata fields.
+                    foreach ($this->accounts->biodataKeys() as $key) {
+                        $val = $row[$key] ?? null;
+                        if ($val !== null && $val !== '') {
+                            $updates[$key] = $this->accounts->biodataValue($key, $val);
+                        }
+                    }
+
+                    if ($updates !== []) {
+                        $existingStudent->update($updates);
+                        // Also update User name if changed.
+                        if ($name !== '' && $existingUser = $existingStudent->user) {
+                            $existingUser->update(['name' => $name]);
+                        }
+                    }
+
+                    $seen[$nisn] = true;
+                    $updated++;
+                    continue;
+                }
+
+                // New student: validate NIS uniqueness.
                 if ($nis !== '' && (isset($seenNis[$nis]) || Student::query()->where('nis', $nis)->exists())) {
-                    throw new \RuntimeException('NIS sudah terdaftar.');
+                    $skipped++;
+                    continue;
                 }
                 $seenNis[$nis] = true;
+                $seen[$nisn] = true;
 
+                $email = $this->accounts->studentEmail($nisn);
                 $pin = $this->defaultPin($nisn, $defaultPin);
                 $password = $pinHashes[$pin] ??= Hash::make($pin, ['rounds' => 10]);
                 $id = (string) \Illuminate\Support\Str::uuid();
@@ -244,6 +298,7 @@ class StudentController extends Controller
         return response()->json([
             'data' => [
                 'imported' => $imported,
+                'updated' => $updated,
                 'skipped' => $skipped,
                 'errors' => $errors,
             ],
