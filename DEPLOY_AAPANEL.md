@@ -209,23 +209,52 @@ php backend/artisan config:cache
 
 ---
 
-## 4. WhatsApp (Baileys) — tetap terpisah
+## 4. WhatsApp (Baileys) — tetap terpisah (TANPA `npm install` di server low-RAM)
 
-Tidak digabung ke Laravel; jalankan sebagai service terpisah:
+> **Server low-RAM jangan `npm install` untuk Baileys juga** — `node_modules` Baileys (>300MB + compile) akan OOM killed. Pack di **lokal**, upload hasil pack, jalanin tanpa `npm` di server.
 
+**Di lokal (sekali):**
 ```bash
-# PM2
-pm2 start server/index.js --name smkn11-wa -- --port 5001
+# sudah npm install di lokal kan?
+./scripts/pack-wa.sh
+# hasil: /tmp/smkn11-wa.tar.gz (~80-120MB setelah exclude dev deps)
+
+# upload via aaPanel > Files > Upload ke /www/wwwroot/smkn11kabtang.sch.id/
+# atau: scp /tmp/smkn11-wa.tar.gz root@IP:/www/wwwroot/smkn11kabtang.sch.id/
+```
+
+**Di server — TANPA npm:**
+```bash
+cd /www/wwwroot/smkn11kabtang.sch.id
+tar -xzf smkn11-wa.tar.gz
+mkdir -p storage/wa-session
+chown -R www:www storage
+
+# PM2 (paling gampang di aaPanel):
+pm2 start server/index.js --name smkn11-wa --update-env -- --port 5001
 pm2 save
 pm2 startup
 
-# atau systemd (lihat scripts/smkn11-wa.service)
+# atau systemd (lihat scripts/smkn11-wa.service) — edit dulu:
+# nano scripts/smkn11-wa.service
+#   User=www  (atau www-data, cek enable-php-*.conf pakai user apa)
+#   WorkingDirectory=/www/wwwroot/smkn11kabtang.sch.id
+#   Environment=WA_AUTH_DIR=/www/wwwroot/smkn11kabtang.sch.id/storage/wa-session
 sudo cp scripts/smkn11-wa.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now smkn11-wa
+journalctl -u smkn11-wa -f  # lihat QR pairing
 ```
 
-`backend/.env` harus punya `WHATSAPP_SERVICE_URL=http://127.0.0.1:5001`
+**Update `backend/.env` di server:**
+```env
+WHATSAPP_SERVICE_URL=http://127.0.0.1:5001
+WHATSAPP_SERVICE_TOKEN=  # kosongkan kalau tidak pakai token, atau isi sama dengan WA_TOKEN di service
+WHATSAPP_ENABLED=true
+```
+Lalu `php backend/artisan config:cache`
+
+**Update kedepan (WA ada perubahan):** ulang `./scripts/pack-wa.sh` di lokal → upload ulang → `pm2 restart smkn11-wa` atau `systemctl restart smkn11-wa`. Tidak perlu `npm` di server.
 
 ---
 
