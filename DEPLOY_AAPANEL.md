@@ -113,19 +113,71 @@ chown -R www:www /www/wwwroot/smk11landing
 chmod -R 755 backend/storage backend/bootstrap/cache
 ```
 
-### 2.6 Nginx/Apache
-- Pastikan `.htaccess` aktif (`DirectoryIndex index.php index.html` sudah diset).
-- Untuk **Nginx** (aaPanel default), set `try_files` ke:
+### 2.6 Nginx — ganti `dist` ke `backend/public` (single-domain)
+
+Config kamu saat ini masih **split `dist` + Laravel** — `location /` ngarah ke `.../dist` sedangkan build prod baru ada di `backend/public` (`index.html` + `assets/`). Akibatnya nginx tidak menemukan `index.html` baru dan SPA akan 404. Ganti 4 block `location` jadi seperti ini:
+
+**Sebelum (salah untuk branch `prod`):**
 ```nginx
-location / {
-    try_files $uri $uri/ /index.php?$query_string;
-}
-location /assets/ {
-    expires 1y;
-    add_header Cache-Control "public, immutable";
-}
+    # --- 1 DOMAIN: React dist + Laravel ---
+    location ^~ /api/ {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+    location ^~ /sanctum/ {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+    location ^~ /storage/ {
+        alias /www/wwwroot/smkn11kabtang.sch.id/backend/storage/app/public/;
+        expires 7d;
+        access_log off;
+    }
+    location / {
+        root /www/wwwroot/smkn11kabtang.sch.id/dist;
+        try_files $uri $uri/ /index.html;
+    }
 ```
-aaPanel biasanya generate otomatis dari template Laravel — cukup pastikan `root` ke `backend/public`.
+
+**Sesudah (ganti di aaPanel > Website > smkn11kabtang.sch.id > Config):**
+```nginx
+    # --- single-domain: React dist sudah menyatu di backend/public ---
+    location ^~ /api/ {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+    location ^~ /sanctum/ {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+    location ^~ /storage/ {
+        # symlink backend/public/storage -> ../storage/app/public
+        # alias opsional — try_files akan serve file langsung, fallback ke Laravel jika perlu
+        try_files $uri $uri/ /index.php?$query_string;
+        expires 7d;
+        access_log off;
+    }
+    location ^~ /assets/ {
+        # file Vite hashed — cache forever, jangan lewatkan PHP
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        access_log off;
+        try_files $uri =404;
+    }
+    location / {
+        # JANGAN lagi override root ke /dist — root server sudah backend/public
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+```
+
+`root` di baris atas tetap:
+```nginx
+root /www/wwwroot/smkn11kabtang.sch.id/backend/public;
+# jika clone ke /www/wwwroot/smk11landing, sesuaikan jadi:
+# root /www/wwwroot/smk11landing/backend/public;
+```
+
+Alur: `*.js/css/png` & `/assets/*` → nginx serve langsung → `*.php` → `enable-php-85.conf` → SPA route (`/profil/visi-misi` dll) → nginx `try_files ... /index.php` → Laravel `Route::fallback()` → `public/index.html`. `/api/*` & `/storage/*` tetap ke Laravel.
+
+> Catatan: folder `/www/wwwroot/smkn11kabtang.sch.id/dist` sekarang **nganggur** — boleh dihapus setelah ganti config. `.htaccess` (`DirectoryIndex index.php index.html`) tidak berpengaruh di nginx, fallback ditangani Laravel.
+
+Setelah edit: `nginx -t && nginx -s reload` (atau Save di aaPanel → otomatis reload).
 
 ---
 
