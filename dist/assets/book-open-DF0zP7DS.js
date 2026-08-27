@@ -1,5 +1,0 @@
-<<<<<<<< HEAD:dist/assets/book-open-DaBYhq9B.js
-import{Ut as e}from"./index-Wak8xpzk.js";var t=e(`book-open`,[[`path`,{d:`M12 5v16`,key:`1f6ucr`}],[`path`,{d:`M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z`,key:`1fyvmf`}]]);export{t};
-========
-import{Ut as e}from"./index-CJaC0CDZ.js";var t=e(`book-open`,[[`path`,{d:`M12 5v16`,key:`1f6ucr`}],[`path`,{d:`M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z`,key:`1fyvmf`}]]);export{t};
->>>>>>>> 61ac64e81d5e077ca157c36e94d1def6e0142a28:dist/assets/book-open-DF0zP7DS.js

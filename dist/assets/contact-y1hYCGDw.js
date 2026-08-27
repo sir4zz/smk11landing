@@ -1,5 +1,0 @@
-<<<<<<<< HEAD:dist/assets/contact-BHMA9XHV.js
-import{Ut as e}from"./index-Wak8xpzk.js";var t=e(`contact`,[[`path`,{d:`M16 2v2`,key:`scm5qe`}],[`path`,{d:`M7 22v-2a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2`,key:`1waht3`}],[`path`,{d:`M8 2v2`,key:`pbkmx`}],[`circle`,{cx:`12`,cy:`11`,r:`3`,key:`itu57m`}],[`rect`,{x:`3`,y:`4`,width:`18`,height:`18`,rx:`2`,key:`12vinp`}]]);export{t};
-========
-import{Ut as e}from"./index-CJaC0CDZ.js";var t=e(`contact`,[[`path`,{d:`M16 2v2`,key:`scm5qe`}],[`path`,{d:`M7 22v-2a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2`,key:`1waht3`}],[`path`,{d:`M8 2v2`,key:`pbkmx`}],[`circle`,{cx:`12`,cy:`11`,r:`3`,key:`itu57m`}],[`rect`,{x:`3`,y:`4`,width:`18`,height:`18`,rx:`2`,key:`12vinp`}]]);export{t};
->>>>>>>> 61ac64e81d5e077ca157c36e94d1def6e0142a28:dist/assets/contact-y1hYCGDw.js

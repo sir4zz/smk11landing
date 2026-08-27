@@ -1,5 +1,0 @@
-<<<<<<<< HEAD:dist/assets/calendar-clock-CoGVfxqB.js
-import{Ut as e}from"./index-Wak8xpzk.js";var t=e(`calendar-clock`,[[`path`,{d:`M16 14v2.2l1.6 1`,key:`fo4ql5`}],[`path`,{d:`M16 2v4`,key:`4m81vk`}],[`path`,{d:`M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5`,key:`1osxxc`}],[`path`,{d:`M3 10h5`,key:`r794hk`}],[`path`,{d:`M8 2v4`,key:`1cmpym`}],[`circle`,{cx:`16`,cy:`16`,r:`6`,key:`qoo3c4`}]]);export{t};
-========
-import{Ut as e}from"./index-CJaC0CDZ.js";var t=e(`calendar-clock`,[[`path`,{d:`M16 14v2.2l1.6 1`,key:`fo4ql5`}],[`path`,{d:`M16 2v4`,key:`4m81vk`}],[`path`,{d:`M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5`,key:`1osxxc`}],[`path`,{d:`M3 10h5`,key:`r794hk`}],[`path`,{d:`M8 2v4`,key:`1cmpym`}],[`circle`,{cx:`16`,cy:`16`,r:`6`,key:`qoo3c4`}]]);export{t};
->>>>>>>> 61ac64e81d5e077ca157c36e94d1def6e0142a28:dist/assets/calendar-clock-CdcB38bf.js
