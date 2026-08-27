@@ -221,6 +221,7 @@ class PublicProfileController extends Controller
 
         $tendiks = SdmTendik::query()
             ->where('is_active', true)
+            ->with('assignments')
             ->orderBy('name', 'asc')
             ->get()
             ->map(fn (SdmTendik $tendik) => [
@@ -229,7 +230,11 @@ class PublicProfileController extends Controller
                 'name' => $tendik->name,
                 'photo' => $tendik->photo ?? '',
                 'position' => $tendik->jabatan,
-                'subject' => $tendik->jabatan,
+                'subject' => $tendik->assignments
+                    ->filter(fn ($a) => $a->jenis === \App\Models\SdmAssignment::JENIS_TUGAS_MENGAJAR)
+                    ->pluck('uraian')
+                    ->unique()
+                    ->implode(', '),
             ]);
 
         return response()->json([
@@ -300,6 +305,7 @@ class PublicProfileController extends Controller
     private function resolveSdm(string $model, string $identifier): ?object
     {
         return $model::query()
+            ->with(['assignments', 'educations', 'certifications'])
             ->where('is_active', true)
             ->where(function ($q) use ($identifier) {
                 $q->where('id', $identifier)
