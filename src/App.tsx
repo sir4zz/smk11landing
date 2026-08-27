@@ -76,9 +76,7 @@ function App() {
           <Route path="sop" element={suspend(<SopList />)} />
           <Route path="sop/:slug/view" element={suspend(<SopViewer />)} />
           <Route path="profil/direktori" element={suspend(<ProfileDirectory />)} />
-          <Route path="profil/guru/:id" element={suspend(<ProfilePage />)} />
-          <Route path="profil/tendik/:id" element={suspend(<ProfilePage />)} />
-          <Route path="profil/osis/:id" element={suspend(<ProfilePage />)} />
+          <Route path="profil/:role/:id" element={suspend(<ProfilePage />)} />
 
           {/* Academics */}
           <Route path="akademik/program-keahlian" element={suspend(<StudyPrograms />)} />

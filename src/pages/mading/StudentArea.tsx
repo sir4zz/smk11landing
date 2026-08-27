@@ -764,12 +764,21 @@ function ProfileTab({ profile }: { profile: StudentProfile | null }) {
             <div key={section.id} className="rounded-2xl bg-white p-6 shadow-sm">
               <h3 className="mb-4 font-bold text-[#1B2A4A]">{section.title}</h3>
               {isIdentity && (
-                <dl className="mb-3 grid gap-x-8 gap-y-1.5 text-sm sm:grid-cols-2">
-                  <ProfileDetailRow label="Kelas" value={formatClass(String(std?.class ?? ''))} />
-                  <ProfileDetailRow label="Jurusan" value={std?.major} />
-                </dl>
+                <div className="mb-4 flex items-center gap-4">
+                  {std?.foto ? (
+                    <img src={resolveImageUrl(String(std.foto))} alt={me?.name ?? ''} className="h-24 w-24 rounded-lg border border-[#1B2A4A]/10 object-cover" />
+                  ) : (
+                    <span className="grid h-24 w-24 place-items-center rounded-lg border border-dashed border-[#1B2A4A]/20 bg-[#FAF6F0]">
+                      <UserRound className="h-10 w-10 text-[#866D2C]/50" />
+                    </span>
+                  )}
+                  <div>
+                    <p className="font-bold text-[#1B2A4A]">{me?.name ?? profile?.name}</p>
+                    <p className="text-sm text-[#5B7088]">NISN: {me?.student?.nisn ?? profile?.nisn ?? '-'}</p>
+                  </div>
+                </div>
               )}
-              <dl className="grid gap-x-8 gap-y-1.5 text-sm sm:grid-cols-2">
+              <dl className="grid gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
                 {groupFieldsBySubsection(fields).map((g, gi) => (
                   <Fragment key={gi}>
                     {g.subsection && <dt className="sm:col-span-2 border-b border-[#1B2A4A]/10 pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-[#866D2C]">{g.subsection}</dt>}
@@ -979,12 +988,15 @@ function ProfileDetailRow({ label, value, field }: { label?: string; value: unkn
   const raw = value ?? '';
   let display = raw === '' || raw === null || raw === undefined ? '-' : String(raw);
   if (field) {
-    if (field.type === 'date') display = String(raw).slice(0, 10);
+    if (field.type === 'date') {
+      const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(raw));
+      display = m ? `${m[3]}/${m[2]}/${m[1]}` : String(raw).slice(0, 10);
+    }
     if (field.key === 'gender') display = raw === 'L' ? 'Laki-laki' : raw === 'P' ? 'Perempuan' : display;
   }
   return (
     <div className="flex gap-2">
-      <dt className="w-44 shrink-0 font-medium text-[#5B7088]">{label ?? field?.label ?? '-'}</dt>
+      <dt className="w-28 sm:w-44 shrink-0 font-medium text-[#5B7088]">{label ?? field?.label ?? '-'}</dt>
       <dd className="font-semibold text-[#1B2A4A]">{display}</dd>
     </div>
   );

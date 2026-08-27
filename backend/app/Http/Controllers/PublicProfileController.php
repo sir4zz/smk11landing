@@ -221,16 +221,39 @@ class PublicProfileController extends Controller
 
         $tendiks = SdmTendik::query()
             ->where('is_active', true)
+            ->with('assignments')
             ->orderBy('name', 'asc')
             ->get()
-            ->map(fn (SdmTendik $tendik) => [
-                'role' => 'tendik',
-                'slug' => $tendik->id,
-                'name' => $tendik->name,
-                'photo' => $tendik->photo ?? '',
-                'position' => $tendik->jabatan,
-                'subject' => $tendik->jabatan,
-            ]);
+            ->map(function (SdmTendik $tendik) {
+                $jabatan = strtoupper((string) $tendik->jabatan);
+                $tugasTambahan = strtoupper($tendik->assignments
+                    ->filter(fn ($a) => $a->jenis === \App\Models\SdmAssignment::JENIS_TUGAS_TAMBAHAN)
+                    ->pluck('uraian')
+                    ->implode(' '));
+                $all = $jabatan . ' ' . $tugasTambahan;
+
+                if (preg_match('/KEAMANAN|SATPAM/', $all)) {
+                    $kategori = 'keamanan';
+                } elseif (preg_match('/KEBERSIHAN|PESURUH|PRAMUBAKTI|PRAMUSAJI|PTUGAS KEBERSIHAN/', $all)) {
+                    $kategori = 'pramubakti';
+                } else {
+                    $kategori = 'tendik';
+                }
+
+                return [
+                    'role' => 'tendik',
+                    'slug' => $tendik->id,
+                    'name' => $tendik->name,
+                    'photo' => $tendik->photo ?? '',
+                    'position' => $tendik->jabatan,
+                    'subject' => $tendik->assignments
+                        ->filter(fn ($a) => $a->jenis === \App\Models\SdmAssignment::JENIS_TUGAS_MENGAJAR)
+                        ->pluck('uraian')
+                        ->unique()
+                        ->implode(', '),
+                    'kategori' => $kategori,
+                ];
+            });
 
         return response()->json([
             'data' => [
@@ -300,6 +323,7 @@ class PublicProfileController extends Controller
     private function resolveSdm(string $model, string $identifier): ?object
     {
         return $model::query()
+            ->with(['assignments', 'educations', 'certifications'])
             ->where('is_active', true)
             ->where(function ($q) use ($identifier) {
                 $q->where('id', $identifier)

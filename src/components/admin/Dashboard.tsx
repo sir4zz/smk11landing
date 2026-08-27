@@ -255,7 +255,6 @@ export default function Dashboard({
 
   const verificationRows: { label: string; icon: IconType; tone: Tone; value: number | null; unit: string }[] = [
     { label: 'Verifikasi Data Siswa', icon: UserCog, tone: TONES.indigo, value: verification.students, unit: 'antrian' },
-    { label: 'Verifikasi Data Guru', icon: Users, tone: TONES.lavender, value: verification.gurus, unit: 'antrian' },
     { label: 'Pesan Kontak Belum Dibaca', icon: MessageSquareText, tone: TONES.amber, value: unreadContact, unit: 'pesan' },
     { label: 'Prestasi Tercatat', icon: Trophy, tone: TONES.sage, value: achievements.length, unit: 'prestasi' },
   ];

@@ -16,6 +16,17 @@ interface DisplayMember {
   photo: string;
 }
 
+const DEPT_KEAMANAN = 'Keamanan';
+const DEPT_PRAMUBAKTI = 'Pramubakti & Pramusaji';
+const DEPT_TENDIK = 'Tenaga Kependidikan';
+
+function classifyTendik(entry: PublicDirectoryEntry): string {
+  const k = (entry as Record<string, unknown>).kategori as string | undefined;
+  if (k === 'keamanan') return DEPT_KEAMANAN;
+  if (k === 'pramubakti') return DEPT_PRAMUBAKTI;
+  return DEPT_TENDIK;
+}
+
 const TenagaKependidikan: React.FC = () => {
   const { backgroundImage } = usePageBanner('manajemen_tendik');
   const [gurus, setGurus] = useState<PublicDirectoryEntry[]>([]);
@@ -45,7 +56,7 @@ const TenagaKependidikan: React.FC = () => {
       role: 'tendik',
       name: t.name,
       position: t.position || t.subject || 'Tenaga Kependidikan',
-      department: 'Tenaga Kependidikan',
+      department: classifyTendik(t),
       photo: t.photo,
     }));
 
@@ -57,7 +68,7 @@ const TenagaKependidikan: React.FC = () => {
       map.get(key)!.push(member);
     });
 
-    const order = ['Guru', 'Tenaga Kependidikan'];
+    const order = ['Guru', DEPT_TENDIK, DEPT_PRAMUBAKTI, DEPT_KEAMANAN];
     return Array.from(map.entries()).sort(([a], [b]) => {
       const ia = order.indexOf(a);
       const ib = order.indexOf(b);
