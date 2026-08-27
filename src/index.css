@@ -96,6 +96,23 @@
   }
 }
 
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(100deg, rgba(27, 42, 74, .08) 25%, rgba(200, 169, 81, .18) 50%, rgba(27, 42, 74, .08) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.8s ease-in-out infinite;
+}
+
+.skeleton-shimmer.animate-spin { animation: skeleton-shimmer 1.8s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer { animation: none; background-position: 0 0; }
+}
+
 /* === Scrollbar Styling === */
 ::-webkit-scrollbar {
   width: 8px;

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import PageHero from '../../components/ui/PageHero';
-import { LoadingInline } from '../../components/ui/LoadingScreen';
+import { SkeletonDetail } from '../../components/ui/Skeleton';
 import { usePageBanner } from '../../lib/usePageBanner';
 import { fetchMadingPostById, resolveImageUrl, youtubeEmbedUrl, type MadingPostRow } from '../../lib/api';
 import { AiNote } from '../../components/mading/AIContentAssistant';
@@ -73,7 +73,7 @@ const MadingDetail: React.FC = () => {
     return (
       <div className="min-h-screen bg-[#FAF6F0]">
         <PageHero title="Mading" subtitle="Media Aspirasi Digital SMKN 11 Kabupaten Tangerang" breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Mading', href: '/mading' }]} backgroundImage={backgroundImage} />
-        <div className="py-24"><LoadingInline /></div>
+        <SkeletonDetail />
       </div>
     );
   }

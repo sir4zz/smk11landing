@@ -6,6 +6,7 @@ import type { Program } from '../../lib/content-types';
 import { fetchPublicContentByIdResult, resolveImageUrl } from '../../lib/api';
 import Button from '../../components/ui/Button';
 import Card from '../../components/ui/Card';
+import { SkeletonDetail } from '../../components/ui/Skeleton';
 
 const StudyProgramDetail: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -32,7 +33,7 @@ const StudyProgramDetail: React.FC = () => {
   }, [slug]);
 
   if (loading) {
-    return <div className="min-h-screen bg-[#FAF6F0]" />;
+    return <div className="min-h-screen bg-[#FAF6F0]"><PageHero title="Program Keahlian" /><SkeletonDetail /></div>;
   }
 
   if (error) {

@@ -4,12 +4,16 @@ import PageHero from '../../components/ui/PageHero'
 import { isImportedNews, type NewsItem } from '../../lib/content-types'
 import { fetchPublicContent } from '../../lib/api'
 import { Calendar, User, ArrowRight, Search } from 'lucide-react'
+import { SkeletonList } from '../../components/ui/Skeleton'
 
 const NewsList: React.FC = () => {
   const [items, setItems] = useState<NewsItem[]>([])
   const [filterCat, setFilterCat] = useState<string>('Semua')
   const [search, setSearch] = useState('')
-  useEffect(() => { fetchPublicContent<NewsItem[]>('news').then(setItems) }, [])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
+  const load = () => { setLoading(true); setError(false); fetchPublicContent<NewsItem[]>('news').then(setItems).catch(() => setError(true)).finally(() => setLoading(false)) }
+  useEffect(() => { load() }, [])
 
   const categories = ['Semua', ...new Set(items.map((n) => n.category))]
 
@@ -63,7 +67,9 @@ const NewsList: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+        {loading ? <SkeletonList count={6} className="grid gap-8 md:grid-cols-2 lg:grid-cols-3" /> : error ? (
+          <div className="rounded-2xl bg-white p-12 text-center"><p className="text-[#5B7088]">Berita gagal dimuat.</p><button onClick={load} className="mt-4 rounded-lg bg-[#1B2A4A] px-5 py-2 text-sm font-bold text-white">Coba Lagi</button></div>
+        ) : <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           {filtered.map((item) => (
             <Link
               key={item.id}
@@ -108,9 +114,9 @@ const NewsList: React.FC = () => {
               </div>
             </Link>
           ))}
-        </div>
+        </div>}
 
-        {filtered.length === 0 && (
+        {!loading && !error && filtered.length === 0 && (
           <div className="py-16 text-center">
             <Search className="mx-auto h-12 w-12 text-[#C8A951]/40" />
             <p className="mt-4 text-lg font-medium text-[#23314D]">Tidak ada berita yang ditemukan</p>

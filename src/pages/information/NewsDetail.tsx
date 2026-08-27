@@ -5,17 +5,22 @@ import Button from '../../components/ui/Button'
 import { isImportedNews, type NewsItem } from '../../lib/content-types'
 import { fetchPublicContentById } from '../../lib/api'
 import { Calendar, User, ArrowLeft, Share2 } from 'lucide-react'
+import { SkeletonDetail } from '../../components/ui/Skeleton'
 
 const NewsDetail: React.FC = () => {
   const { slug } = useParams<{ slug: string }>()
   const [item, setItem] = useState<NewsItem | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true); setError(false)
     fetchPublicContentById<NewsItem>('news', slug || '')
       .then((apiItem) => {
-        if (apiItem) setItem(apiItem)
-      })
-  }, [slug])
+        if (apiItem) setItem(apiItem); else setError(true)
+      }).catch(() => setError(true)).finally(() => setLoading(false))
+  }
+  useEffect(() => { load() }, [slug])
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString('id-ID', {
@@ -23,12 +28,14 @@ const NewsDetail: React.FC = () => {
     })
   }
 
-  if (!item) {
+  if (loading) return <div className="min-h-screen bg-[#FAF6F0]"><PageHero title="Berita" /><SkeletonDetail /></div>
+  if (!item || error) {
     return (
       <div className="min-h-screen bg-[#FAF6F0]">
         <PageHero title="Berita Tidak Ditemukan" />
         <div className="mx-auto max-w-7xl px-4 py-16 text-center">
-          <p className="mb-6 text-lg text-[#23314D]">Berita yang Anda cari tidak tersedia.</p>
+          <p className="mb-6 text-lg text-[#23314D]">{error ? 'Berita gagal dimuat.' : 'Berita yang Anda cari tidak tersedia.'}</p>
+          {error && <button onClick={load} className="mb-4 rounded-lg bg-[#1B2A4A] px-5 py-2 text-sm font-bold text-white">Coba Lagi</button>}
           <Link to="/informasi/berita">
             <Button variant="outline">Kembali ke Berita</Button>
           </Link>

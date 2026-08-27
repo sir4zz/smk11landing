@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import PageHero from '../../components/ui/PageHero';
-import { LoadingInline } from '../../components/ui/LoadingScreen';
+import { SkeletonDetail } from '../../components/ui/Skeleton';
 import { usePageBanner } from '../../lib/usePageBanner';
 import { fetchExtracurricularBySlug, resolveImageUrl } from '../../lib/api';
 import type { ExtracurricularRecord } from './Extracurriculars';
@@ -28,7 +28,7 @@ const ExtracurricularDetail: React.FC = () => {
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#FAF6F0] to-white">
         <PageHero title="Ekstrakurikuler" subtitle="Detail kegiatan ekstrakurikuler" breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'OSIS', href: '/osis' }, { label: 'Ekstrakurikuler', href: '/osis/ekstrakurikuler' }]} backgroundImage={backgroundImage} />
-        <div className="py-24"><LoadingInline /></div>
+        <SkeletonDetail />
       </div>
     );
   }

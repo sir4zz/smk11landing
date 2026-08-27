@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import PageHero from '../../components/ui/PageHero';
 import SectionHeading from '../../components/ui/SectionHeading';
-import { LoadingInline } from '../../components/ui/LoadingScreen';
+import { SkeletonList } from '../../components/ui/Skeleton';
 import { usePageBanner } from '../../lib/usePageBanner';
 import { fetchExtracurriculars, resolveImageUrl } from '../../lib/api';
 import { User, Clock, ChevronRight, ImageIcon } from 'lucide-react';
@@ -48,7 +48,7 @@ const Extracurriculars: React.FC = () => {
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#FAF6F0] to-white">
         <PageHero title="Ekstrakurikuler" subtitle="Wadah pengembangan bakat, minat, dan karakter siswa" breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'OSIS', href: '/osis' }, { label: 'Ekstrakurikuler' }]} backgroundImage={backgroundImage} />
-        <div className="py-24"><LoadingInline /></div>
+        <SkeletonList count={6} className="grid gap-6 px-4 py-12 sm:grid-cols-2 lg:grid-cols-3" />
       </div>
     );
   }

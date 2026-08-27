@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import PageHero from '../../components/ui/PageHero';
 import SectionHeading from '../../components/ui/SectionHeading';
-import { LoadingInline } from '../../components/ui/LoadingScreen';
+import { SkeletonDetail } from '../../components/ui/Skeleton';
 import { usePageBanner } from '../../lib/usePageBanner';
 import { fetchOsisProfile, resolveImageUrl } from '../../lib/api';
 import type { OsisProfile } from '../../lib/content-types';
@@ -28,7 +28,7 @@ const Osis: React.FC = () => {
     return (
       <div className="min-h-screen bg-[#FAF6F0]">
         <PageHero title="OSIS" subtitle="Organisasi Siswa Intra Sekolah SMKN 11 Kabupaten Tangerang" breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'OSIS' }]} backgroundImage={backgroundImage} />
-        <div className="py-24"><LoadingInline /></div>
+        <SkeletonDetail />
       </div>
     );
   }

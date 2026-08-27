@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import PageHero from '../../components/ui/PageHero';
 import SectionHeading from '../../components/ui/SectionHeading';
-import { LoadingInline } from '../../components/ui/LoadingScreen';
+import { SkeletonList } from '../../components/ui/Skeleton';
 import { usePageBanner } from '../../lib/usePageBanner';
 import { fetchOsisActivities, resolveImageUrl } from '../../lib/api';
 import type { OsisActivity } from '../../lib/content-types';
@@ -26,7 +26,7 @@ const OsisKegiatan: React.FC = () => {
     return (
       <div className="min-h-screen bg-[#FAF6F0]">
         <PageHero title="Kegiatan OSIS" subtitle="Aktivitas dan program yang dijalankan oleh OSIS SMKN 11" breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'OSIS', href: '/osis' }, { label: 'Kegiatan OSIS' }]} backgroundImage={backgroundImage} />
-        <div className="py-24"><LoadingInline /></div>
+        <SkeletonList count={6} className="grid gap-6 px-4 py-12 sm:grid-cols-2 lg:grid-cols-3" />
       </div>
     );
   }
