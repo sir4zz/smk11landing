@@ -20,6 +20,11 @@ Route::get('/login', function () {
     return redirect('/admin/login');
 })->name('login');
 
+// Health untuk monitoring (aaPanel / uptime) — dipisah dari "/" agar "/" bisa jadi SPA
+Route::get('/health', function () {
+    return response('AMAN', 200)->header('Content-Type', 'text/plain');
+});
+
 // SPA fallback: jika frontend sudah di-build ke backend/public/index.html,
 // semua rute non-API yang tidak match file fisik akan dilayani oleh SPA.
 // Penting untuk hosting single-domain di aaPanel (smkn11kabtang.sch.id)
