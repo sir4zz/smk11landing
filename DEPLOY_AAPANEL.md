@@ -254,3 +254,51 @@ File berikut **sudah dihapus** dari branch prod karena tidak dibutuhkan:
 - `artisan` & `artisan.cmd` di root (gunakan `php backend/artisan`)
 
 Upload user (`backend/storage/app/public/*`) dan Baileys session (`storage/wa-session/`) tetap di-ignore git dan tidak ter-commit.
+
+---
+
+## 7. Sinkron main → prod (perubahan kedepan)
+
+`prod` adalah branch deploy (single-domain) yang **divergen** dari `main`. File prod-only: `vite.config.ts` (outDir `backend/public`), `backend/routes/web.php` (fallback + `/health`), `backend/.env.example` (`smkn11kabtang.sch.id`), `DEPLOY_AAPANEL.md`, `scripts/build-prod.mjs`/`sync-prod.sh`, dan `backend/database/seeders/DatabaseSeeder.php` (`seedProductionAdmin`). Jangan edit file itu di `main` lalu timpa di `prod` tanpa resolve.
+
+### Cara merge (di lokal, BUKAN di server low-RAM)
+
+```bash
+# 1. Update
+git fetch origin
+
+# 2. Sync otomatis (merge + hapus file non-prod + rebuild prod)
+./scripts/sync-prod.sh
+# kalau conflict: ikuti petunjuk di script, resolve pertahankan versi prod untuk file di atas
+
+# 3. Push
+git push origin prod
+
+# 4. Deploy di aaPanel (tanpa npm)
+# SSH ke server:
+cd /www/wwwroot/smkn11kabtang.sch.id
+git pull origin prod
+php backend/artisan migrate --force
+php backend/artisan db:seed --force   # akan buat admin@smkn11kabtang.sch.id jika belum ada (idempotent)
+php backend/artisan optimize:clear; php backend/artisan config:cache; php backend/artisan route:cache
+```
+
+### Manual (tanpa script)
+
+```bash
+git checkout prod
+git merge --no-ff origin/main --no-edit
+# conflict di vite.config.ts / web.php / .gitignore → pilih versi prod (ours)
+# git checkout --ours -- vite.config.ts backend/routes/web.php
+# git add vite.config.ts backend/routes/web.php
+
+# hapus duplikat dari main yang memang tidak ada di prod:
+git rm -f artisan artisan.cmd "DATA GURU, TU 2026-2027 SMT.1.xlsx" "format_penempatan Juli (1).xlsx" guru-akun-login.xlsx akun_test.txt 2>/dev/null || true
+
+npm run build:prod
+git add backend/public/index.html backend/public/assets backend/public/favicon.svg backend/public/icons.svg backend/public/images backend/public/templates
+git commit -m "sync main -> prod + build"
+git push origin prod
+```
+
+> `origin/main` sudah merge ke prod terakhir di commit `5837587` ke belakang. Next sync akan bawa commit `5837587` (fix profil tendik) dan seterusnya. Folder `dist` tidak lagi dipakai — build prod ke `backend/public`.
