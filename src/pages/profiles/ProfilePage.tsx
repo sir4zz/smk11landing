@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Globe, Link2, Mail, Phone, MapPin, Medal, Award, Briefcase, GraduationCap, Users, BookOpen, Compass, ArrowLeft, Loader2, Trophy, Camera, ThumbsUp, MessageCircle, Music2, Video, Contact, Code } from 'lucide-react';
 import PageHero from '../../components/ui/PageHero';
 import { publicProfileApi, resolveImageUrl, type PublicProfile, type PublicProfileType, type PublicSdmProfile } from '../../lib/api';
+import { formatClass } from '../../lib/studentBiodata';
 import { usePageBanner } from '../../lib/usePageBanner';
 
 const ROLE_META: Record<string, { label: string; badge: string }> = {
@@ -123,7 +124,7 @@ function ProfilePage() {
                 </p>
               )}
               {profile.subject && <p className="mt-1 text-sm text-[#5B7088]">{profile.subject}</p>}
-              {profile.class && profile.major && <p className="mt-1 text-sm text-[#5B7088]">{profile.class} · {profile.major}</p>}
+              {profile.class && profile.major && <p className="mt-1 text-sm text-[#5B7088]">{formatClass(profile.class)} · {profile.major}</p>}
 
               {(profile.email || profile.phone || profile.address) && (
                 <div className="mt-5 space-y-2 border-t border-[#1B2A4A]/10 pt-5 text-left text-sm">

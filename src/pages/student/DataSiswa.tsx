@@ -245,7 +245,7 @@ export default function DataSiswa() {
     );
   }
 
-  if (!user) return <Navigate to="/mading/login" replace />;
+  if (!user) return <Navigate to={`/mading/login?returnUrl=${encodeURIComponent('/siswa/data-diri')}`} replace />;
   if (!studentData) {
     return (
       <div className="min-h-screen bg-[#FAF6F0]">
@@ -384,9 +384,9 @@ export default function DataSiswa() {
                               value={form[doc.key] ?? ''}
                               onChange={(url) => setForm((v) => ({ ...v, [doc.key]: url }))}
                               bucket="student/documents"
-                              accept="image/jpeg,image/png,image/webp"
+                              accept="image/jpeg,image/png,image/webp,application/pdf"
                               maxSizeMb={5}
-                              hint="Dokumen baru diterapkan setelah disetujui admin."
+                              hint="JPG/PNG/WEBP/PDF, maks. 5 MB. Dokumen baru diterapkan setelah disetujui admin."
                             />
                           </div>
                         ))

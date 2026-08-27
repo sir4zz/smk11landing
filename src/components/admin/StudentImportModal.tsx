@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { AlertTriangle, CheckCircle2, Download, FileSpreadsheet, Loader2, Upload, X } from 'lucide-react';
 import { accountsApi } from '../../lib/api';
-import { TEMPLATE_SHEETS, TEMPLATE_HEADER_ROWS, DATE_KEYS, isDapodikHeader, parseDapodikSheets, normalizeClass, normalizeGender, toDateString } from '../../lib/studentBiodata';
+import { TEMPLATE_SHEETS, TEMPLATE_HEADER_ROWS, DATE_KEYS, isDapodikHeader, isMultiRowTemplateHeader, parseDapodikSheets, parseMultiRowTemplate, normalizeClass, normalizeGender, toDateString } from '../../lib/studentBiodata';
 
 interface ImportResult {
   imported: number;
+  updated: number;
   skipped: number;
   errors: { row: number; nisn?: string; message: string }[];
 }
@@ -39,15 +40,30 @@ export default function StudentImportModal({ onClose, onImported }: { onClose: (
     setRows(null);
     try {
       const XLSX = await import('xlsx');
-      const wb = XLSX.read(await file.arrayBuffer(), { type: 'array', cellDates: true });
+      const wb = XLSX.read(await file.arrayBuffer(), { type: 'array' });
 
       const sheetGrids = wb.SheetNames.map((name) => ({
         name,
         grid: XLSX.utils.sheet_to_json<unknown[]>(wb.Sheets[name], { header: 1, defval: '' }),
       }));
 
+      // Check multi-row template FIRST (has 'nis' which Dapodik doesn't).
+      const firstGrid = sheetGrids[0]?.grid;
+      if (firstGrid && isMultiRowTemplateHeader(firstGrid)) {
+        const { rows: templateRows, errors: templateErrors } = parseMultiRowTemplate(firstGrid);
+        // If SUMMARY has data, use it. Otherwise fall back to per-jurusan sheets.
+        if (templateRows.length > 0) {
+          if (templateErrors.length > 0) {
+            setError(templateErrors.slice(0, 8).join('\n') + (templateErrors.length > 8 ? `\n...dan ${templateErrors.length - 8} lainnya` : ''));
+          }
+          setRows(templateRows);
+          return;
+        }
+        // SUMMARY empty — try Dapodik per-jurusan sheets.
+      }
+
       // Format DATA MASTER DAPODIK: beberapa sheet per jurusan, baris pertama header.
-      if (sheetGrids.some((s) => isDapodikHeader(s.grid[0]))) {
+      if (sheetGrids.some((s) => s.grid.slice(0, 15).some((row) => isDapodikHeader(row)))) {
         const { rows: dapodikRows, errors: dapodikErrors } = parseDapodikSheets(sheetGrids);
         if (dapodikErrors.length > 0) {
           setError(dapodikErrors.slice(0, 8).join('\n') + (dapodikErrors.length > 8 ? `\n...dan ${dapodikErrors.length - 8} lainnya` : ''));
@@ -129,11 +145,11 @@ export default function StudentImportModal({ onClose, onImported }: { onClose: (
     const { data, error: apiError } = await accountsApi.importStudents(rows);
 
     if (apiError) {
-      setResult({ imported: 0, skipped: rows.length, errors: [{ row: 4, message: apiError.message ?? 'Gagal mengimport siswa.' }] });
+      setResult({ imported: 0, updated: 0, skipped: rows.length, errors: [{ row: 4, message: apiError.message ?? 'Gagal mengimport siswa.' }] });
     } else if (data) {
-      setResult(data);
+      setResult(data as ImportResult);
     } else {
-      setResult({ imported: 0, skipped: rows.length, errors: [{ row: 4, message: 'Gagal mengimport siswa.' }] });
+      setResult({ imported: 0, updated: 0, skipped: rows.length, errors: [{ row: 4, message: 'Gagal mengimport siswa.' }] });
     }
 
     setImporting(false);
@@ -227,6 +243,11 @@ export default function StudentImportModal({ onClose, onImported }: { onClose: (
               <p className="mt-1 flex items-center gap-1.5 font-medium text-green-700">
                 <CheckCircle2 size={16} /> {result.imported} siswa berhasil diimport.
               </p>
+              {result.updated > 0 && (
+                <p className="mt-1 flex items-center gap-1.5 font-medium text-blue-700">
+                  <CheckCircle2 size={16} /> {result.updated} siswa berhasil diupdate.
+                </p>
+              )}
               {result.skipped > 0 && (
                 <p className="mt-1 flex items-center gap-1.5 font-medium text-amber-700">
                   <AlertTriangle size={16} /> {result.skipped} baris gagal / dilewati.

@@ -11,7 +11,7 @@ class Student extends Model
 {
     use HasUuids;
 
-    public const CLASSES = ['X', 'XI', 'XII'];
+    public const CLASSES = ['10', '11', '12', 'X', 'XI', 'XII'];
 
     public static function isValidClass(mixed $value): bool
     {
@@ -20,7 +20,13 @@ class Student extends Model
 
     public static function normalizeClass(mixed $value): string
     {
-        return strtoupper(trim((string) $value));
+        $v = strtoupper(trim((string) $value));
+        return match ($v) {
+            '10', 'X' => '10',
+            '11', 'XI' => '11',
+            '12', 'XII' => '12',
+            default => $v,
+        };
     }
 
     public const BIODATA_KEYS = [

@@ -1,10 +1,10 @@
 import { Component, Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import type { ChangeEvent, FormEvent, KeyboardEvent, ErrorInfo, ReactNode } from 'react';
-import { ChevronRight, Plus, Trash2, X, Loader2, KeyRound, Search, UserRound, Upload, Pencil, Eye, ArrowLeft, Download } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Plus, Trash2, X, Loader2, KeyRound, Search, UserRound, Upload, Pencil, Eye, ArrowLeft, Download } from 'lucide-react';
 import { accountsApi, downloadApiFile, resolveImageUrl } from '../../lib/api';
 import StudentImportModal from './StudentImportModal';
 import ImageField from './ImageField';
-import { BIODATA_FIELDS, BIODATA_SECTIONS, emptyBiodata, formatRupiah, groupFieldsBySubsection, isRupiahField, isValidClass, normalizeClass, normalizeGender } from '../../lib/studentBiodata';
+import { BIODATA_FIELDS, BIODATA_SECTIONS, emptyBiodata, formatClass, formatRupiah, groupFieldsBySubsection, isRupiahField, isValidClass, normalizeClass, normalizeGender } from '../../lib/studentBiodata';
 import type { BiodataFieldDef } from '../../lib/studentBiodata';
 
 interface StudentRow {
@@ -73,7 +73,10 @@ export default function StudentsManagement() {
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
   const formRef = useRef<HTMLFormElement | null>(null);
+
+  const PAGE_SIZE = 50;
 
   const totalSteps = BIODATA_SECTIONS.length;
 
@@ -93,6 +96,10 @@ export default function StudentsManagement() {
   const filtered = students.filter((s) =>
     !search || s.name.toLowerCase().includes(search.toLowerCase()) || String(s.nisn ?? '').toLowerCase().includes(search.toLowerCase()) || (s.nis ?? '').toLowerCase().includes(search.toLowerCase())
   );
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const detailStudent = detailId ? students.find((s) => s.id === detailId) ?? null : null;
 
@@ -346,7 +353,7 @@ export default function StudentsManagement() {
         <>
           <div className="relative max-w-sm">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#23314D]/50" />
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Cari nama / NISN..." className="w-full rounded-lg border border-[#1B2A4A]/20 bg-white py-2 pl-10 pr-4 text-sm" />
+            <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Cari nama / NISN..." className="w-full rounded-lg border border-[#1B2A4A]/20 bg-white py-2 pl-10 pr-4 text-sm" />
           </div>
 
           <div className="overflow-x-auto rounded-xl bg-white shadow-sm">
@@ -360,16 +367,13 @@ export default function StudentsManagement() {
                   <th className="p-4">Kelas</th>
                   <th className="p-4">Jurusan</th>
                   <th className="p-4">Jenis Kelamin</th>
-                  <th className="p-4">Tanggal Lahir</th>
-                  <th className="p-4">Tempat Lahir</th>
-                  <th className="p-4">Agama</th>
                   <th className="p-4">Alamat</th>
                   <th className="p-4">Aksi</th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.length === 0 && <tr><td colSpan={12} className="p-8 text-center text-[#5B7088]">Belum ada siswa terdaftar.</td></tr>}
-                {filtered.map((student) => (
+                {filtered.length === 0 && <tr><td colSpan={9} className="p-8 text-center text-[#5B7088]">Belum ada siswa terdaftar.</td></tr>}
+                {paginated.map((student) => (
                   <tr key={student.id} className="border-t border-[#1B2A4A]/10">
                     <td className="p-4">
                       <div className="flex items-center gap-3">
@@ -384,24 +388,42 @@ export default function StudentsManagement() {
                     <td className="p-4 font-mono text-xs">{student.nisn}</td>
                     <td className="p-4 font-mono text-xs">{student.nis || '-'}</td>
                     <td className="p-4 font-mono text-xs">{student.pin || '-'}</td>
-                    <td className="p-4">{student.class || '-'}</td>
+                    <td className="p-4">{formatClass(student.class)}</td>
                     <td className="p-4">{student.major || '-'}</td>
                     <td className="p-4">{genderLabel(student.gender)}</td>
-                    <td className="p-4 whitespace-nowrap">{formatDate(student.date_of_birth)}</td>
-                    <td className="p-4">{student.place_of_birth || '-'}</td>
-                    <td className="p-4">{student.religion || '-'}</td>
                     <td className="p-4 max-w-[200px] truncate" title={String(student.address ?? '')}>{student.address || '-'}</td>
                     <td className="p-4 whitespace-nowrap">
-                      <button onClick={() => setDetailId(student.id)} className="mr-3 inline-flex items-center gap-1 text-sm font-semibold text-[#866D2C]"><Eye size={15} /> Detail</button>
-                      <button onClick={() => openEdit(student)} className="mr-3 inline-flex items-center gap-1 text-sm font-semibold text-[#866D2C]"><Pencil size={15} /> Edit</button>
-                      <button onClick={() => resetPin(student)} className="mr-3 inline-flex items-center gap-1 text-sm font-semibold text-[#866D2C]"><KeyRound size={15} /> Reset PIN</button>
-                      <button onClick={() => removeStudent(student)} className="text-red-600"><Trash2 size={16} /></button>
+                      <button onClick={() => setDetailId(student.id)} className="mr-3 text-[#866D2C]" title="Detail"><Eye size={16} /></button>
+                      <button onClick={() => openEdit(student)} className="mr-3 text-[#866D2C]" title="Edit"><Pencil size={16} /></button>
+                      <button onClick={() => resetPin(student)} className="mr-3 text-[#866D2C]" title="Reset PIN"><KeyRound size={16} /></button>
+                      <button onClick={() => removeStudent(student)} className="text-red-600" title="Hapus"><Trash2 size={16} /></button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+
+          {filtered.length > PAGE_SIZE && (
+            <div className="mt-4 flex items-center justify-between text-sm text-[#5B7088]">
+              <span>Menampilkan {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filtered.length)} dari {filtered.length} siswa</span>
+              <div className="flex items-center gap-2">
+                <button type="button" disabled={safePage <= 1} onClick={() => setPage((p) => p - 1)} className="inline-flex items-center gap-1 rounded-lg border border-[#1B2A4A]/20 bg-white px-3 py-1.5 text-sm font-semibold text-[#1B2A4A] hover:bg-[#FAF6F0] disabled:opacity-40 disabled:cursor-not-allowed"><ChevronLeft size={14} /> Prev</button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter((p) => p === 1 || p === totalPages || Math.abs(p - safePage) <= 2)
+                  .reduce<(number | 'dots')[]>((acc, p, i, arr) => {
+                    if (i > 0 && p - (arr[i - 1] as number) > 1) acc.push('dots');
+                    acc.push(p);
+                    return acc;
+                  }, [])
+                  .map((item, i) => item === 'dots'
+                    ? <span key={`dots-${i}`} className="px-1">...</span>
+                    : <button key={item} type="button" onClick={() => setPage(item)} className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${item === safePage ? 'bg-[#1B2A4A] text-white' : 'border border-[#1B2A4A]/20 bg-white text-[#1B2A4A] hover:bg-[#FAF6F0]'}`}>{item}</button>
+                  )}
+                <button type="button" disabled={safePage >= totalPages} onClick={() => setPage((p) => p + 1)} className="inline-flex items-center gap-1 rounded-lg border border-[#1B2A4A]/20 bg-white px-3 py-1.5 text-sm font-semibold text-[#1B2A4A] hover:bg-[#FAF6F0] disabled:opacity-40 disabled:cursor-not-allowed">Next <ChevronRight size={14} /></button>
+              </div>
+            </div>
+          )}
         </>
       )}
 
@@ -505,10 +527,10 @@ export default function StudentsManagement() {
                         <div className="mt-4 rounded-xl border border-[#1B2A4A]/10 p-4">
                           <p className="mb-3 font-bold text-[#1B2A4A]">DOKUMEN SISWA</p>
                           <div className="grid gap-4 sm:grid-cols-2">
-                            <ImageField label="KK (Kartu Keluarga) — opsional" value={form.doc_kk ?? ''} onChange={(url) => setForm((v) => ({ ...v, doc_kk: url }))} bucket="student/documents" accept="image/jpeg,image/png,image/webp" maxSizeMb={5} hint="JPG/PNG/WEBP, maks. 5 MB." />
-                            <ImageField label="Akta Kelahiran — opsional" value={form.doc_akta ?? ''} onChange={(url) => setForm((v) => ({ ...v, doc_akta: url }))} bucket="student/documents" accept="image/jpeg,image/png,image/webp" maxSizeMb={5} hint="JPG/PNG/WEBP, maks. 5 MB." />
-                            <ImageField label="Ijazah — opsional" value={form.doc_ijazah ?? ''} onChange={(url) => setForm((v) => ({ ...v, doc_ijazah: url }))} bucket="student/documents" accept="image/jpeg,image/png,image/webp" maxSizeMb={5} hint="JPG/PNG/WEBP, maks. 5 MB." />
-                            <ImageField label="Dokumen Lainnya — opsional" value={form.doc_lainnya ?? ''} onChange={(url) => setForm((v) => ({ ...v, doc_lainnya: url }))} bucket="student/documents" accept="image/jpeg,image/png,image/webp" maxSizeMb={5} hint="JPG/PNG/WEBP, maks. 5 MB." />
+                            <ImageField label="KK (Kartu Keluarga) — opsional" value={form.doc_kk ?? ''} onChange={(url) => setForm((v) => ({ ...v, doc_kk: url }))} bucket="student/documents" accept="image/jpeg,image/png,image/webp,application/pdf" maxSizeMb={5} hint="JPG/PNG/WEBP/PDF, maks. 5 MB." />
+                            <ImageField label="Akta Kelahiran — opsional" value={form.doc_akta ?? ''} onChange={(url) => setForm((v) => ({ ...v, doc_akta: url }))} bucket="student/documents" accept="image/jpeg,image/png,image/webp,application/pdf" maxSizeMb={5} hint="JPG/PNG/WEBP/PDF, maks. 5 MB." />
+                            <ImageField label="Ijazah — opsional" value={form.doc_ijazah ?? ''} onChange={(url) => setForm((v) => ({ ...v, doc_ijazah: url }))} bucket="student/documents" accept="image/jpeg,image/png,image/webp,application/pdf" maxSizeMb={5} hint="JPG/PNG/WEBP/PDF, maks. 5 MB." />
+                            <ImageField label="Dokumen Lainnya — opsional" value={form.doc_lainnya ?? ''} onChange={(url) => setForm((v) => ({ ...v, doc_lainnya: url }))} bucket="student/documents" accept="image/jpeg,image/png,image/webp,application/pdf" maxSizeMb={5} hint="JPG/PNG/WEBP/PDF, maks. 5 MB." />
                           </div>
                         </div>
                       </div>

@@ -3,6 +3,7 @@ import type { ChangeEvent, FormEvent } from 'react';
 import { Plus, Trash2, X, Loader2, KeyRound, Search, Upload, Pencil, Users, ShieldCheck } from 'lucide-react';
 import { accountsApi, type AccountRole, type AccountRow } from '../../lib/api';
 import AccountImportModal from './AccountImportModal';
+import { formatClass } from '../../lib/studentBiodata';
 
 const ROLE_LABELS: Record<AccountRole, string> = { admin: 'Admin', operator_sekolah: 'Operator Sekolah', guru: 'Guru', osis: 'OSIS', bkk: 'BKK', student: 'Siswa' };
 const ROLE_BADGES: Record<AccountRole, string> = {
@@ -294,7 +295,7 @@ export default function AccountsManagement() {
                 <td className="p-4"><span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${ROLE_BADGES[account.role]}`}>{ROLE_LABELS[account.role]}</span></td>
                 <td className="p-4 text-[#23314D]">
                   {account.role === 'student' && (
-                    <div className="font-mono text-xs"><p>NISN {account.nisn || '-'} · PIN {account.pin || '-'}</p><p className="text-[#5B7088]">{account.class || '-'} · {account.major || '-'}</p><p className="text-[#5B7088]">{[account.nis ? `NIS ${account.nis}` : '', account.religion].filter(Boolean).join(' · ')}</p></div>
+                    <div className="font-mono text-xs"><p>NISN {account.nisn || '-'} · PIN {account.pin || '-'}</p><p className="text-[#5B7088]">{formatClass(account.class)} · {account.major || '-'}</p><p className="text-[#5B7088]">{[account.nis ? `NIS ${account.nis}` : '', account.religion].filter(Boolean).join(' · ')}</p></div>
                   )}
                   {account.role === 'guru' && account.guru && (
                     <div className="font-mono text-xs"><p>ID Guru {account.guru.teacher_id || '-'}</p><p className="text-[#5B7088]">{account.guru.nip ? `NIP ${account.guru.nip}` : ''}{account.guru.nip && account.guru.nuptk ? ' · ' : ''}{account.guru.nuptk ? `NUPTK ${account.guru.nuptk}` : ''}</p><p className="text-[#5B7088]">{[account.guru.position, account.guru.subject].filter(Boolean).join(' · ')}</p></div>
