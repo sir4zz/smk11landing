@@ -619,6 +619,8 @@ export function parseMultiRowTemplate(grid: unknown[][]): { rows: Record<string,
         out.class = normalizeClass(value);
       } else if (DATE_KEYS.has(key)) {
         out[key] = toDateString(value);
+      } else if (RUPIAH_KEYS.has(key)) {
+        out[key] = String(value).replace(/[^\d]/g, '');
       } else {
         out[key] = String(value).trim();
       }
@@ -721,6 +723,8 @@ export function parseDapodikSheets(sheets: DapodikSheetGrid[]): { rows: Record<s
           let val = parseFloat(match[0]);
           if (val > 1000) val = Math.round(val / 1000 * 100) / 100;
           record[key] = String(val);
+        } else if (RUPIAH_KEYS.has(key)) {
+          record[key] = raw.replace(/[^\d]/g, '');
         } else {
           record[key] = raw;
         }

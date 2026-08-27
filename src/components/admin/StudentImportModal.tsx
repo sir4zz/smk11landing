@@ -171,11 +171,15 @@ export default function StudentImportModal({ onClose, onImported }: { onClose: (
           <div className="rounded-xl bg-[#FAF6F0] p-4 text-sm text-[#5B7088]">
             <p className="font-semibold text-[#1B2A4A]">Ketentuan</p>
             <ul className="mt-1 list-disc space-y-0.5 pl-5">
-              <li>Gunakan <strong>template DATA MASTER DAPODIK</strong> yang berisi sheet per jurusan (DKV, DPB, TITL, TKJ, TSM, MP) + sheet <strong>KELAS</strong> &amp; <strong>NIS</strong>.</li>
-              <li>Baris ke-1 tiap sheet jurusan adalah judul kolom (otomatis dilewati); isi data siswa mulai <strong>baris ke-2</strong>.</li>
-              <li>Kolom <strong>NISN</strong> wajib diisi dan dianggap sebagai kunci penggabungan akun (NISN + PIN). <strong>Kelas dibiarkan kosong</strong> dan diisi kemudian melalui halaman Data Siswa.</li>
+              <li>File harus berformat <strong>DATA MASTER DAPODIK</strong> (.xls / .xlsx).</li>
+              <li>Sistem membaca <strong>sheet SUMMARY</strong> terlebih dahulu. Jika kosong, otomatis fallback ke <strong>sheet per jurusan</strong> (DKV, DPB, TITL, TKJ, TSM, MP) + sheet <strong>KELAS</strong> &amp; <strong>NIS</strong>.</li>
+              <li><strong>Catat:</strong> Sheet SUMMARY dan sheet per jurusan <strong>tidak bisa digunakan bersamaan</strong> dalam satu file. Gunakan salah satu saja.</li>
+              <li>Baris ke-1 tiap sheet adalah judul kolom (otomatis dilewati); isi data siswa mulai <strong>baris ke-2</strong>.</li>
+              <li>Kolom <strong>NISN</strong> wajib diisi dan dianggap sebagai kunci penggabungan akun (NISN + PIN). <strong>Kelas</strong> bisa diisi dari file (format <code>10</code>/<code>11</code>/<code>12</code> atau <code>X</code>/<code>XI</code>/<code>XII</code>) atau diisi kemudian melalui halaman Data Siswa.</li>
               <li>Pastikan NISN &amp; NIS berformat teks agar angka nol di depan tidak hilang.</li>
               <li><strong>Jenis Kelamin</strong> menerima <code>L</code>/<code>P</code> maupun <code>Laki-laki</code>/<code>Perempuan</code>. <strong>Tanggal</strong> menerima format <code>DD/MM/YYYY</code>, <code>DD-MM-YYYY</code>, atau serial Excel.</li>
+              <li>Nilai <strong>Penghasilan</strong> otomatis di-strip format Rupiah (<code>Rp</code>, kiri) menjadi angka murni.</li>
+              <li><strong>Jarak Sekolah</strong> harus dalam satuan <strong>kilometer (km)</strong>, bukan meter. Jika data asli dalam meter, bagi 1000 terlebih dahulu sebelum diupload.</li>
               <li>PIN login siswa dibuat otomatis (4 digit terakhir NISN). Baris dengan NISN/NIS duplikat atau tidak valid akan dilewati dan dicatat dalam laporan.</li>
             </ul>
           </div>
@@ -183,7 +187,7 @@ export default function StudentImportModal({ onClose, onImported }: { onClose: (
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-[#FAF6F0] p-4">
             <div>
               <p className="font-semibold text-[#1B2A4A]">1. Unduh template</p>
-              <p className="text-sm text-[#5B7088]">Template format DATA MASTER DAPODIK: sheet per jurusan, isi NISN di tiap baris.</p>
+              <p className="text-sm text-[#5B7088]">Format DATA MASTER DAPODIK: sheet SUMMARY atau sheet per jurusan (DKV, DPB, TITL, TKJ, TSM, MP).</p>
             </div>
             <button onClick={downloadTemplate} className="inline-flex items-center gap-2 rounded-lg bg-[#1B2A4A] px-4 py-2 text-sm font-bold text-white">
               <Download size={16} /> Unduh Template
