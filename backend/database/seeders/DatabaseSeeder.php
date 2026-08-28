@@ -596,6 +596,16 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($rows as $row) {
+            $row['slug'] = Str::slug($row['name']);
+            // ensure unique slug (handles duplicate names gracefully)
+            $base = $row['slug'] ?: 'fasilitas';
+            $slug = $base;
+            $i = 2;
+            while (Facility::where('slug', $slug)->where('name', '!=', $row['name'])->exists()) {
+                $slug = $base . '-' . $i;
+                $i++;
+            }
+            $row['slug'] = $slug;
             Facility::updateOrCreate(['name' => $row['name']], $row);
         }
     }

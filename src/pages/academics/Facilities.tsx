@@ -39,11 +39,24 @@ const Facilities: React.FC = () => {
 
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           {filteredFacilities.map((facility: Facility) => (
-            <Card key={facility.id} image={resolveImageUrl(facility.photo)} title={facility.name} description={facility.description} badge={facility.category} className="h-full">
-              <div className="flex flex-col flex-1 p-6">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-[0.3em] text-[#866D2C]">{facility.category}</p>
+            <Card key={facility.id} link={`/akademik/fasilitas/${facility.slug}`} className="h-full">
+              {resolveImageUrl(facility.photo) && (
+                <div className="relative h-48 w-full overflow-hidden">
+                  <img src={resolveImageUrl(facility.photo)!} alt={facility.name} loading="lazy" className="h-full w-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#1B2A4A]/60 to-transparent" />
+                  {facility.category && (
+                    <span className="absolute right-3 top-3 rounded-full bg-[#C8A951] px-3 py-1 text-xs font-semibold text-[#1B2A4A]">
+                      {facility.category}
+                    </span>
+                  )}
+                </div>
+              )}
+              <div className="flex flex-1 flex-col p-6">
+                {!resolveImageUrl(facility.photo) && facility.category && (
+                  <p className="mb-3 text-xs font-semibold uppercase tracking-[0.3em] text-[#866D2C]">{facility.category}</p>
+                )}
                 <h3 className="mb-3 text-xl font-semibold text-[#1B2A4A]">{facility.name}</h3>
-                <p className="text-sm leading-7 text-[#1B2A4A]/70">{facility.description}</p>
+                <p className="text-sm leading-7 text-[#1B2A4A]/70 line-clamp-3">{facility.description}</p>
               </div>
             </Card>
           ))}
