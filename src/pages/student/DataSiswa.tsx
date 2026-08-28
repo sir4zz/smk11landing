@@ -1,7 +1,7 @@
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { UserRound, Loader2, Send, X, Clock, CheckCircle2, XCircle, ChevronRight, FileText, Eye, Download, KeyRound } from 'lucide-react';
+import { UserRound, Loader2, Send, X, Clock, CheckCircle2, XCircle, ChevronRight, FileText, Eye, Download, KeyRound, LogOut } from 'lucide-react';
 import { backendApi, studentDataApi, resolveImageUrl, STUDENT_CHANGE_REQUEST_STATUS_LABELS, type StudentDataPayload, type StudentChangeRequestRow, type StudentChangeRequestStatus } from '../../lib/api';
 import PageHero from '../../components/ui/PageHero';
 import { BIODATA_FIELDS, BIODATA_SECTIONS, STUDENT_READONLY_KEYS, emptyBiodata, groupFieldsBySubsection } from '../../lib/studentBiodata';
@@ -67,6 +67,12 @@ export default function DataSiswa() {
 
   const totalSteps = WIZARD_STEPS.length;
   const pendingRequest = requests.find((r) => r.status === 'menunggu') ?? null;
+
+  const logout = async () => {
+    await backendApi.auth.signOut();
+    localStorage.removeItem(studentSessionKey);
+    navigate('/mading/login');
+  };
 
   const loadData = useCallback(async () => {
     const { data: userData } = await backendApi.auth.getCurrentUser();
@@ -270,20 +276,11 @@ export default function DataSiswa() {
       <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
         {msg && <p className={`mb-4 rounded-lg p-3 text-sm ${msg.type === 'ok' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>{msg.text}</p>}
 
-        {/* Action Bar */}
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-[#5B7088]">Berikut adalah data biodata Anda saat ini. Jika ada data yang perlu diperbarui, silakan ajukan perubahan.</p>
-          {!showForm && (
-            <button
-              onClick={openEditForm}
-              disabled={!!pendingRequest}
-              title={pendingRequest ? 'Tunggu pengajuan yang sedang menunggu verifikasi' : undefined}
-              className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-5 py-2.5 font-bold text-[#1B2A4A] disabled:opacity-50"
-            >
-              <FileText size={18} /> Ajukan Perubahan Data
-            </button>
-          )}
+          <button onClick={logout} className="inline-flex items-center gap-2 text-sm font-bold text-[#866D2C] hover:text-[#C8A951]"><LogOut size={16} /> Keluar</button>
         </div>
+
         {pendingRequest && (
           <p className="mb-6 rounded-lg bg-[#C8A951]/10 p-3 text-sm font-medium text-[#866D2C]">
             Anda memiliki pengajuan yang sedang menunggu verifikasi. Pengajuan baru dapat dibuat setelah pengajuan tersebut selesai.
@@ -325,6 +322,18 @@ export default function DataSiswa() {
               );
             })}
           </div>
+        </div>
+
+        {/* Action buttons (bottom) */}
+        <div className="mt-6 flex justify-end">
+          <button
+            onClick={openEditForm}
+            disabled={!!pendingRequest}
+            title={pendingRequest ? 'Tunggu pengajuan yang sedang menunggu verifikasi' : undefined}
+            className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-6 py-2.5 font-bold text-[#1B2A4A] disabled:opacity-50"
+          >
+            <FileText size={18} /> Ajukan Perubahan Data
+          </button>
         </div>
 
         {/* Change Request Form Modal */}

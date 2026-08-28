@@ -47,3 +47,4 @@ backend/storage/app/public/
 
 # WhatsApp (Baileys) session credentials
 storage/wa-session/
+~$guru-akun-login.xlsx
