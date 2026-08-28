@@ -15,6 +15,7 @@ export const navigationData: NavItem[] = [
             { label: 'Tentang Sekolah', href: '/profil/sejarah' },
             { label: 'Visi & Misi', href: '/profil/visi-misi' },
             { label: 'Struktur Organisasi', href: '/profil/struktur-organisasi' },
+            { label: 'Direktori Profil', href: '/profil/direktori' },
             { label: 'SOP', href: '/sop' },
         ],
     },
