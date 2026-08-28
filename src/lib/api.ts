@@ -587,14 +587,15 @@ export const galleryAdminApi = {
   },
 };
 
-// ---------- SOP (private PDF documents) ----------
+// ---------- SOP (Google Drive documents) ----------
 export interface SopRow {
   id: string;
   title: string;
   slug: string;
   description: string;
   category: string;
-  file_path?: string;
+  drive_url?: string;
+  drive_file_id?: string;
   is_published: boolean;
   sort_order: number;
   created_at?: string;
@@ -606,20 +607,27 @@ export async function fetchPublishedSops(): Promise<SopRow[]> {
   return result.data ?? [];
 }
 
-export async function fetchSopPdf(path: string): Promise<Blob> {
+export async function fetchSopViewer(path: string): Promise<{ title: string; embed_url: string }> {
   const response = await fetch(`${apiBaseUrl}${path}`, {
     credentials: 'include',
     cache: 'no-store',
-    headers: { Accept: 'application/pdf' },
+    headers: { Accept: 'application/json' },
   });
   if (!response.ok) throw new Error(response.status === 404 ? 'Dokumen SOP tidak tersedia.' : 'Dokumen SOP tidak dapat dimuat.');
-  return response.blob();
+  const body = await response.json();
+  if (!body?.data?.embed_url) throw new Error('Link Google Drive SOP tidak tersedia.');
+  return body.data;
 }
 
 export const sopAdminApi = {
   list(): ApiResult<SopRow[]> { return request<SopRow[]>('/admin/sop'); },
   create(payload: FormData): ApiResult<SopRow> { return request<SopRow>('/admin/sop', { method: 'POST', body: payload }); },
-  update(id: string, payload: FormData): ApiResult<SopRow> { return request<SopRow>(`/admin/sop/${encodeURIComponent(id)}`, { method: 'PATCH', body: payload }); },
+  // Laravel/PHP does not reliably populate multipart fields on a native PATCH.
+  // Use Laravel method spoofing so checkbox values such as is_published arrive.
+  update(id: string, payload: FormData): ApiResult<SopRow> {
+    payload.set('_method', 'PATCH');
+    return request<SopRow>(`/admin/sop/${encodeURIComponent(id)}`, { method: 'POST', body: payload });
+  },
   remove(id: string): ApiResult<null> { return request<null>(`/admin/sop/${encodeURIComponent(id)}`, { method: 'DELETE' }); },
   previewPath(id: string): string { return `/admin/sop/${encodeURIComponent(id)}/preview`; },
 };

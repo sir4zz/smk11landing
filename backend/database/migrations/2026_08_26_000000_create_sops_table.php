@@ -15,8 +15,10 @@ return new class extends Migration
             $table->string('slug')->unique();
             $table->text('description')->default('');
             $table->string('category')->default('Umum');
-            // This is a private-disk key, never a public storage URL.
-            $table->string('file_path');
+            // Legacy column retained for safe migration of old records. New SOPs never use it.
+            $table->string('file_path')->nullable();
+            $table->string('drive_url')->nullable();
+            $table->string('drive_file_id')->nullable();
             $table->boolean('is_published')->default(false);
             $table->unsignedInteger('sort_order')->default(0);
             $table->timestamps();

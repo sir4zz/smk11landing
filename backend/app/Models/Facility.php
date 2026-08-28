@@ -14,6 +14,7 @@ class Facility extends Model
 
     protected $fillable = [
         'name',
+        'slug',
         'description',
         'category',
         'photo',
