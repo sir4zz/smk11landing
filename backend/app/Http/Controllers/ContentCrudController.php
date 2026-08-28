@@ -114,6 +114,31 @@ class ContentCrudController extends Controller
         return response()->json($row);
     }
 
+    /**
+     * Ambil satu baris konten publik berdasarkan id (untuk tipe konten yang
+     * tidak memiliki kolom slug, mis. teacher-activities).
+     */
+    public function showById(Request $request, string $id)
+    {
+        $type = (string) $request->route('type');
+        $model = $this->resolveModel($type);
+
+        $version = Cache::get($this->contentCacheVersionKey($type), 1);
+        $cacheKey = 'public:content:'.$type.':'.$version.':showId:'.sha1($id);
+        $row = Cache::remember(
+            $cacheKey,
+            now()->addSeconds(self::PUBLIC_CACHE_TTL),
+            static fn () => $model::query()->select(array_merge(['id'], (new $model)->getFillable()))
+                ->where('id', $id)->first(),
+        );
+
+        if (! $row) {
+            return response()->json(null, 404);
+        }
+
+        return response()->json($row);
+    }
+
     public function store(Request $request, string $type)
     {
         $model = $this->resolveModel($type);
@@ -121,10 +146,10 @@ class ContentCrudController extends Controller
         $payload = $request->all();
         unset($payload['id'], $payload['created_at'], $payload['updated_at']);
 
-        if (in_array($type, ['news', 'programs'], true)) {
+        if (in_array($type, ['news', 'programs', 'facilities'], true)) {
             $name = $type === 'programs'
                 ? ($payload['short_name'] ?? $payload['name'] ?? 'untitled')
-                : ($payload['title'] ?? 'untitled');
+                : ($payload['title'] ?? $payload['name'] ?? 'untitled');
             $payload['slug'] = $this->uniqueSlug($model, $name);
         }
 
@@ -143,10 +168,10 @@ class ContentCrudController extends Controller
         $payload = $request->all();
         unset($payload['id'], $payload['created_at'], $payload['updated_at']);
 
-        if (in_array($type, ['news', 'programs'], true)) {
+        if (in_array($type, ['news', 'programs', 'facilities'], true)) {
             $name = $type === 'programs'
                 ? ($payload['short_name'] ?? $payload['name'] ?? $row->short_name ?? $row->name ?? 'untitled')
-                : ($payload['title'] ?? $row->title ?? 'untitled');
+                : ($payload['title'] ?? $payload['name'] ?? $row->title ?? $row->name ?? 'untitled');
             $payload['slug'] = $this->uniqueSlug($model, $name, $row->id);
         }
 

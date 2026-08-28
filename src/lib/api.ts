@@ -294,6 +294,8 @@ function normalizeContentRows<T>(type: string, rows: unknown[]): T { return (typ
 export async function fetchPublicContent<T>(type: string, options?: { limit?: number }): Promise<T> { const path = contentPath[type]; if (!path) return [] as T; const suffix = options?.limit ? `?limit=${options.limit}` : ''; const result = await request<unknown[]>(`/${path}${suffix}`); return result.data ? normalizeContentRows<T>(type, result.data) : [] as T; }
 export async function fetchPublicContentByIdResult<T extends { slug?: string }>(type: string, slug: string): Promise<{ data: T | null; error: ApiError }> { const path = contentPath[type]; if (!path) return { data: null, error: { message: 'Konten tidak tersedia.' } }; const result = await request<unknown>(`/${path}/${encodeURIComponent(slug)}`); return { data: result.data ? normalizeContentRow<T>(type, result.data) : null, error: result.status === 404 ? null : result.error }; }
 export async function fetchPublicContentById<T extends { slug?: string }>(type: string, slug: string): Promise<T | null> { return (await fetchPublicContentByIdResult<T>(type, slug)).data; }
+/** Ambil satu item publik via endpoint /{type}/{id} untuk konten tanpa kolom slug (mis. teacher activities). */
+export async function fetchContentById<T>(type: string, id: string): Promise<T | null> { const path = contentPath[type]; if (!path) return null; const result = await request<unknown>(`/${path}/${encodeURIComponent(id)}`); return result.data ? (result.data as T) : null; }
 function normalizeSpmbContent(row: Record<string, unknown>): SpmbContent { return { id: row.id as string | undefined, status: (row.status as SpmbContent['status']) || 'ditutup', title: String(row.title ?? ''), description: String(row.description ?? ''), latest_info: String(row.latest_info ?? ''), requirements: Array.isArray(row.requirements) ? row.requirements as string[] : [], schedule: Array.isArray(row.schedule) ? row.schedule as SpmbContent['schedule'] : [], flow_steps: Array.isArray(row.flow_steps) ? row.flow_steps as SpmbContent['flow_steps'] : [], faq: Array.isArray(row.faq) ? row.faq as SpmbContent['faq'] : [], portal_url: String(row.portal_url ?? ''), banner_image: String(row.banner_image ?? ''), banner_title: String(row.banner_title ?? ''), banner_description: String(row.banner_description ?? ''), pdf_attachment: row.pdf_attachment as string | null | undefined, pdf_attachments: Array.isArray(row.pdf_attachments) ? row.pdf_attachments as string[] : [], updated_at: row.updated_at as string | undefined }; }
 export async function fetchSpmbContent(): Promise<SpmbContent | null> { const result = await request<Record<string, unknown>>('/spmb'); return result.data ? normalizeSpmbContent(result.data) : null; }
 
@@ -587,14 +589,15 @@ export const galleryAdminApi = {
   },
 };
 
-// ---------- SOP (private PDF documents) ----------
+// ---------- SOP (Google Drive documents) ----------
 export interface SopRow {
   id: string;
   title: string;
   slug: string;
   description: string;
   category: string;
-  file_path?: string;
+  drive_url?: string;
+  drive_file_id?: string;
   is_published: boolean;
   sort_order: number;
   created_at?: string;
@@ -606,20 +609,27 @@ export async function fetchPublishedSops(): Promise<SopRow[]> {
   return result.data ?? [];
 }
 
-export async function fetchSopPdf(path: string): Promise<Blob> {
+export async function fetchSopViewer(path: string): Promise<{ title: string; embed_url: string }> {
   const response = await fetch(`${apiBaseUrl}${path}`, {
     credentials: 'include',
     cache: 'no-store',
-    headers: { Accept: 'application/pdf' },
+    headers: { Accept: 'application/json' },
   });
   if (!response.ok) throw new Error(response.status === 404 ? 'Dokumen SOP tidak tersedia.' : 'Dokumen SOP tidak dapat dimuat.');
-  return response.blob();
+  const body = await response.json();
+  if (!body?.data?.embed_url) throw new Error('Link Google Drive SOP tidak tersedia.');
+  return body.data;
 }
 
 export const sopAdminApi = {
   list(): ApiResult<SopRow[]> { return request<SopRow[]>('/admin/sop'); },
   create(payload: FormData): ApiResult<SopRow> { return request<SopRow>('/admin/sop', { method: 'POST', body: payload }); },
-  update(id: string, payload: FormData): ApiResult<SopRow> { return request<SopRow>(`/admin/sop/${encodeURIComponent(id)}`, { method: 'PATCH', body: payload }); },
+  // Laravel/PHP does not reliably populate multipart fields on a native PATCH.
+  // Use Laravel method spoofing so checkbox values such as is_published arrive.
+  update(id: string, payload: FormData): ApiResult<SopRow> {
+    payload.set('_method', 'PATCH');
+    return request<SopRow>(`/admin/sop/${encodeURIComponent(id)}`, { method: 'POST', body: payload });
+  },
   remove(id: string): ApiResult<null> { return request<null>(`/admin/sop/${encodeURIComponent(id)}`, { method: 'DELETE' }); },
   previewPath(id: string): string { return `/admin/sop/${encodeURIComponent(id)}/preview`; },
 };

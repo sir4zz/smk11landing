@@ -163,8 +163,8 @@ class PublicProfileController extends Controller
             ->map(fn (Guru $guru) => [
                 'role' => 'guru',
                 'slug' => $guru->teacher_id,
-                'name' => $guru->user->profileRecord?->name ?: $guru->user->name,
-                'photo' => $guru->user->profileRecord?->photo ?? '',
+                'name' => $guru->user?->profileRecord?->name ?: $guru->user?->name ?: $guru->teacher_id,
+                'photo' => $guru->user?->profileRecord?->photo ?? '',
                 'position' => $guru->position,
                 'subject' => $guru->subject,
             ]);
@@ -189,8 +189,8 @@ class PublicProfileController extends Controller
             ->map(fn (OsisAccount $account) => [
                 'role' => 'osis',
                 'slug' => $account->member_id,
-                'name' => $account->user->profileRecord?->name ?: $account->user->name,
-                'photo' => $account->user->profileRecord?->photo ?? '',
+                'name' => $account->user?->profileRecord?->name ?: $account->user?->name ?: $account->member_id,
+                'photo' => $account->user?->profileRecord?->photo ?? '',
                 'position' => $account->position,
                 'division' => $account->division,
             ]);
@@ -205,10 +205,7 @@ class PublicProfileController extends Controller
             ->get()
             ->filter(fn (SdmGuru $guru) => ! $guru->assignments->contains(
                 fn ($a) => $a->jenis === \App\Models\SdmAssignment::JENIS_TUGAS_TAMBAHAN
-                    && (
-                        stripos((string) $a->uraian, 'KEPALA SEKOLAH') !== false
-                        || stripos((string) $a->uraian, 'WAKASEK') !== false
-                    )
+                    && stripos((string) $a->uraian, 'KEPALA SEKOLAH') !== false
             ))
             ->map(fn (SdmGuru $guru) => [
                 'role' => 'guru',
@@ -221,16 +218,39 @@ class PublicProfileController extends Controller
 
         $tendiks = SdmTendik::query()
             ->where('is_active', true)
+            ->with('assignments')
             ->orderBy('name', 'asc')
             ->get()
-            ->map(fn (SdmTendik $tendik) => [
-                'role' => 'tendik',
-                'slug' => $tendik->id,
-                'name' => $tendik->name,
-                'photo' => $tendik->photo ?? '',
-                'position' => $tendik->jabatan,
-                'subject' => $tendik->jabatan,
-            ]);
+            ->map(function (SdmTendik $tendik) {
+                $jabatan = strtoupper((string) $tendik->jabatan);
+                $tugasTambahan = strtoupper($tendik->assignments
+                    ->filter(fn ($a) => $a->jenis === \App\Models\SdmAssignment::JENIS_TUGAS_TAMBAHAN)
+                    ->pluck('uraian')
+                    ->implode(' '));
+                $all = $jabatan . ' ' . $tugasTambahan;
+
+                if (preg_match('/KEAMANAN|SATPAM/', $all)) {
+                    $kategori = 'keamanan';
+                } elseif (preg_match('/KEBERSIHAN|PESURUH|PRAMUBAKTI|PRAMUSAJI|PTUGAS KEBERSIHAN/', $all)) {
+                    $kategori = 'pramubakti';
+                } else {
+                    $kategori = 'tendik';
+                }
+
+                return [
+                    'role' => 'tendik',
+                    'slug' => $tendik->id,
+                    'name' => $tendik->name,
+                    'photo' => $tendik->photo ?? '',
+                    'position' => $tendik->jabatan,
+                    'subject' => $tendik->assignments
+                        ->filter(fn ($a) => $a->jenis === \App\Models\SdmAssignment::JENIS_TUGAS_MENGAJAR)
+                        ->pluck('uraian')
+                        ->unique()
+                        ->implode(', '),
+                    'kategori' => $kategori,
+                ];
+            });
 
         return response()->json([
             'data' => [
@@ -300,6 +320,7 @@ class PublicProfileController extends Controller
     private function resolveSdm(string $model, string $identifier): ?object
     {
         return $model::query()
+            ->with(['assignments', 'educations', 'certifications'])
             ->where('is_active', true)
             ->where(function ($q) use ($identifier) {
                 $q->where('id', $identifier)

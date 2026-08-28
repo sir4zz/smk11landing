@@ -32,7 +32,7 @@ export interface NewsItem {
 export const isImportedNews = (item: Pick<NewsItem, 'source_type' | 'source_url'>): boolean =>
   item.source_type === 'imported' || Boolean(item.source_url);
 
-export interface Facility { id: string; name: string; description: string; category: string; photo: string }
+export interface Facility { id: string; name: string; slug: string; description: string; category: string; photo: string }
 export interface Staff { id: string; name: string; position: string; department: string; photo: string; description?: string }
 export interface EducationStaff { id: string; name: string; position: string; department: string; photo: string }
 export interface TeacherActivity { id: string; title: string; date: string; category: string; description: string; photo: string }

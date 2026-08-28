@@ -11,6 +11,7 @@ const OrganizationStructure = lazy(() => import('./pages/profile/OrganizationStr
 const StudyPrograms = lazy(() => import('./pages/academics/StudyPrograms'))
 const StudyProgramDetail = lazy(() => import('./pages/academics/StudyProgramDetail'))
 const Facilities = lazy(() => import('./pages/academics/Facilities'))
+const FacilityDetail = lazy(() => import('./pages/academics/FacilityDetail'))
 const Admissions = lazy(() => import('./pages/Admissions'))
 const Contact = lazy(() => import('./pages/Contact'))
 const Admin = lazy(() => import('./pages/Admin'))
@@ -24,6 +25,7 @@ const Management = lazy(() => import('./pages/management/Management'))
 const KepalaSekolah = lazy(() => import('./pages/management/KepalaSekolah'))
 const WakilKepalaSekolah = lazy(() => import('./pages/management/WakilKepalaSekolah'))
 const KegiatanGuru = lazy(() => import('./pages/management/KegiatanGuru'))
+const KegiatanGuruDetail = lazy(() => import('./pages/management/KegiatanGuruDetail'))
 const TenagaKependidikan = lazy(() => import('./pages/management/TenagaKependidikan'))
 const NewsList = lazy(() => import('./pages/information/NewsList'))
 const NewsDetail = lazy(() => import('./pages/information/NewsDetail'))
@@ -75,14 +77,13 @@ function App() {
           <Route path="sop" element={suspend(<SopList />)} />
           <Route path="sop/:slug/view" element={suspend(<SopViewer />)} />
           <Route path="profil/direktori" element={suspend(<ProfileDirectory />)} />
-          <Route path="profil/guru/:id" element={suspend(<ProfilePage />)} />
-          <Route path="profil/tendik/:id" element={suspend(<ProfilePage />)} />
-          <Route path="profil/osis/:id" element={suspend(<ProfilePage />)} />
+          <Route path="profil/:role/:id" element={suspend(<ProfilePage />)} />
 
           {/* Academics */}
           <Route path="akademik/program-keahlian" element={suspend(<StudyPrograms />)} />
           <Route path="akademik/program/:slug" element={suspend(<StudyProgramDetail />)} />
           <Route path="akademik/fasilitas" element={suspend(<Facilities />)} />
+          <Route path="akademik/fasilitas/:slug" element={suspend(<FacilityDetail />)} />
 
           {/* Student Affairs */}
           <Route path="kesiswaan/prestasi" element={suspend(<Achievements />)} />
@@ -98,6 +99,7 @@ function App() {
           <Route path="manajemen/kepala-sekolah" element={suspend(<KepalaSekolah />)} />
           <Route path="manajemen/wakil-kepala-sekolah" element={suspend(<WakilKepalaSekolah />)} />
           <Route path="manajemen/kegiatan-guru" element={suspend(<KegiatanGuru />)} />
+          <Route path="manajemen/kegiatan-guru/:id" element={suspend(<KegiatanGuruDetail />)} />
           <Route path="manajemen/tenaga-kependidikan" element={suspend(<TenagaKependidikan />)} />
 
           {/* Information */}
