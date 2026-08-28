@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import type { ChangeEvent, ReactNode } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { Compass, BookMarked, PenLine, UserRound, LogOut, Loader2, Send, Save, CheckCircle2, XCircle, Clock, Eye, X, Sparkles, KeyRound, Trash2, FileText, ChevronRight, Download } from 'lucide-react';
 import { backendApi } from '../../lib/api';
 import { myProfileApi, studentDataApi, STUDENT_CHANGE_REQUEST_STATUS_LABELS, type MyProfilePayload, type StudentChangeRequestRow, type StudentChangeRequestStatus } from '../../lib/api';
@@ -42,10 +42,11 @@ interface StudentProfile {
 
 export default function StudentArea() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null);
   const [profile, setProfile] = useState<StudentProfile | null>(null);
-  const [tab, setTab] = useState<Tab>('explore');
+  const [tab, setTab] = useState<Tab>((searchParams.get('tab') as Tab) || 'explore');
   const [rejectionPopup, setRejectionPopup] = useState<StudentChangeRequestRow | null>(null);
 
   useEffect(() => {
@@ -125,7 +126,7 @@ export default function StudentArea() {
     <div className="min-h-screen bg-[#FAF6F0]">
       <PageHero
         title={`Halo, ${profile?.name ?? 'Siswa'}`}
-        subtitle={profile ? `${formatClass(profile.class)} · ${profile.major}` : 'Area siswa Mading SMKN 11'}
+        subtitle={profile ? [formatClass(profile.class), profile.major].filter(Boolean).join(' · ') : 'Area siswa Mading SMKN 11'}
         breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Mading', href: '/mading' }, { label: 'Area Siswa' }]}
       />
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
@@ -503,7 +504,6 @@ function ProfileTab({ profile }: { profile: StudentProfile | null }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
-  const [values, setValues] = useState<Record<string, string>>({});
   const [showChange, setShowChange] = useState(false);
   const [changeForm, setChangeForm] = useState<Record<string, string>>({});
   const [step, setStep] = useState(1);
@@ -524,18 +524,6 @@ function ProfileTab({ profile }: { profile: StudentProfile | null }) {
 
     if (profileRes.data) {
       setMe(profileRes.data);
-      const social = profileRes.data.social;
-      setValues({
-        bio: profileRes.data.bio ?? '',
-        instagram: social?.instagram ?? '',
-        facebook: social?.facebook ?? '',
-        twitter: social?.twitter ?? '',
-        tiktok: social?.tiktok ?? '',
-        youtube: social?.youtube ?? '',
-        linkedin: social?.linkedin ?? '',
-        website: social?.website ?? '',
-        github: social?.github ?? '',
-      });
     } else if (profileRes.error) {
       setMsg({ type: 'err', text: profileRes.error.message ?? 'Gagal memuat profil.' });
     }
@@ -552,42 +540,6 @@ function ProfileTab({ profile }: { profile: StudentProfile | null }) {
     setMsg({ type, text });
     setTimeout(() => setMsg(null), 5000);
   };
-
-  const set = (key: string) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setValues((v) => ({ ...v, [key]: e.target.value }));
-
-  const saveProfile = async () => {
-    setSaving(true);
-    setMsg(null);
-    const payload: Record<string, unknown> = {
-      bio: (values.bio ?? '').trim(),
-      instagram: (values.instagram ?? '').trim(),
-      facebook: (values.facebook ?? '').trim(),
-      twitter: (values.twitter ?? '').trim(),
-      tiktok: (values.tiktok ?? '').trim(),
-      youtube: (values.youtube ?? '').trim(),
-      linkedin: (values.linkedin ?? '').trim(),
-      website: (values.website ?? '').trim(),
-      github: (values.github ?? '').trim(),
-    };
-    const { error } = await myProfileApi.updateProfile(payload);
-    setSaving(false);
-    if (error) {
-      flash('err', error.message ?? 'Gagal menyimpan profil.');
-      return;
-    }
-    flash('ok', 'Bio & media sosial berhasil diperbarui.');
-  };
-
-  const socials: { key: string; label: string }[] = [
-    { key: 'instagram', label: 'Instagram' },
-    { key: 'facebook', label: 'Facebook' },
-    { key: 'twitter', label: 'X (Twitter)' },
-    { key: 'tiktok', label: 'TikTok' },
-    { key: 'youtube', label: 'YouTube' },
-    { key: 'linkedin', label: 'LinkedIn' },
-    { key: 'website', label: 'Website Pribadi' },
-    { key: 'github', label: 'GitHub' },
-  ];
 
   // ── Change request wizard ─────────────────────────────────────────────
 
@@ -823,24 +775,6 @@ function ProfileTab({ profile }: { profile: StudentProfile | null }) {
                 </div>
               );
             })}
-          </div>
-        </div>
-
-        {/* Bio & socials (profile scope, direct) */}
-        <div className="rounded-2xl bg-white p-6 shadow-sm">
-          <h3 className="mb-4 font-bold text-[#1B2A4A]">Bio &amp; Media Sosial</h3>
-          <div className="grid gap-4">
-            <Field label="Bio / Tentang Saya" multiline value={values.bio ?? ''} onChange={set('bio')} />
-            <div className="grid gap-4 sm:grid-cols-2">
-              {socials.map((s) => (
-                <Field key={s.key} label={s.label} value={values[s.key] ?? ''} onChange={set(s.key)} />
-              ))}
-            </div>
-          </div>
-          <div className="mt-4 flex justify-end">
-            <button onClick={saveProfile} disabled={saving} className="inline-flex items-center gap-2 rounded-lg bg-[#1B2A4A] px-5 py-2 font-bold text-white disabled:opacity-60">
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Simpan Bio &amp; Media Sosial
-            </button>
           </div>
         </div>
 
