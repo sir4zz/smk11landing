@@ -55,13 +55,14 @@ function ProfileDirectory() {
           <div className="flex flex-wrap gap-2">
             {TABS.map((t) => {
               const Icon = t.icon;
+              const count = directory ? directory[TAB_KEY[t.key]].length : 0;
               return (
                 <button
                   key={t.key}
                   onClick={() => setTab(t.key)}
                   className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-bold transition-all ${tab === t.key ? 'bg-[#1B2A4A] text-white' : 'bg-white border border-[#1B2A4A]/20 text-[#1B2A4A] hover:bg-[#FAF6F0]'}`}
                 >
-                  <Icon size={16} /> {t.label} <span className="text-xs opacity-70">({list.length})</span>
+                  <Icon size={16} /> {t.label} <span className="text-xs opacity-70">({count})</span>
                 </button>
               );
             })}

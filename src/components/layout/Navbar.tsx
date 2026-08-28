@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Search, ChevronDown, ChevronUp, ChevronRight } from 'lucide-react';
+import { Menu, X, Search, ChevronDown, ChevronRight } from 'lucide-react';
 import { navItems, type NavItem } from '../../data/navigation';
 import logoSekolah from '../../assets/logo.png';
 
@@ -154,86 +154,102 @@ const Navbar: React.FC<NavbarProps> = ({ onSearchOpen }) => {
             className="text-white hover:text-[#C8A951] transition-colors duration-300 ease-in-out p-1"
             aria-label="Menu"
           >
-            {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
+            <span className="block transition-transform duration-300 ease-in-out" style={{ transform: isMobileMenuOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>
+              {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
+            </span>
           </button>
         </div>
       </div>
 
       {/* Mobile Navigation Drawer */}
-      {isMobileMenuOpen && (
-        <div className="lg:hidden absolute top-[64px] left-0 w-full bg-[#1B2A4A] border-t border-[#2a3f6e] shadow-xl max-h-[calc(100vh-64px)] overflow-y-auto">
-          <div className="flex flex-col py-4 px-4 space-y-2">
-            {visibleNavItems.map((item) => (
-              <div key={item.label} className="border-b border-[#2a3f6e] last:border-0 pb-2">
-                {item.children ? (
-                  <div>
-                    <button
-                      onClick={() => toggleMobileSubmenu(item.label)}
-                      className="w-full flex justify-between items-center py-2 text-white"
-                    >
-                      <span className={`${isItemActive(item) ? 'text-[#C8A951]' : ''}`}>{item.label}</span>
-                      {expandedMobileItem === item.label ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-                    </button>
-                    {expandedMobileItem === item.label && (
-                      <div className="flex flex-col pl-4 mt-2 space-y-3 pb-2">
-                        {item.children.map((child) =>
-                          child.children ? (
-                            <div key={child.label}>
-                              <button
-                                onClick={() => toggleMobileSubmenu(`${item.label}:${child.label}`)}
-                                className={`w-full flex justify-between items-center text-sm ${
-                                  isItemActive(child) ? 'text-[#C8A951]' : 'text-[#F3E8D0]'
-                                }`}
-                              >
-                                <span>{child.label}</span>
-                                {expandedMobileItem === `${item.label}:${child.label}` ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                              </button>
-                              {expandedMobileItem === `${item.label}:${child.label}` && (
-                                <div className="flex flex-col pl-4 mt-2 space-y-3 pb-2">
-                                  {child.children.map((grandchild) => (
-                                    <Link
-                                      key={grandchild.label}
-                                      to={grandchild.href}
-                                      className={`text-sm ${isActive(grandchild.href) ? 'text-[#C8A951]' : 'text-[#F3E8D0]'}`}
-                                    >
-                                      {grandchild.label}
-                                    </Link>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <Link
-                              key={child.label}
-                              to={child.href}
-                              className={`text-sm ${isActive(child.href) ? 'text-[#C8A951]' : 'text-[#F3E8D0]'}`}
-                            >
-                              {child.label}
-                            </Link>
-                          )
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <Link
-                    to={item.href}
-                    className={`block py-2 transition-colors duration-300 ease-in-out ${
-                      item.isHighlighted
-                        ? 'bg-[#C8A951] text-[#1B2A4A] text-center font-medium rounded mt-2'
-                        : isActive(item.href)
-                        ? 'text-[#C8A951]'
-                        : 'text-white'
+      <div
+        className={`lg:hidden absolute top-[64px] left-0 w-full bg-[#1B2A4A] border-t border-[#2a3f6e] shadow-xl transition-all duration-300 ease-in-out ${
+          isMobileMenuOpen ? 'max-h-[calc(100vh-64px)] opacity-100 visible overflow-y-auto' : 'max-h-0 opacity-0 invisible overflow-hidden'
+        }`}
+      >
+        <div className="flex flex-col py-4 px-4 space-y-2">
+          {visibleNavItems.map((item) => (
+            <div key={item.label} className="border-b border-[#2a3f6e] last:border-0 pb-2">
+              {item.children ? (
+                <div>
+                  <button
+                    onClick={() => toggleMobileSubmenu(item.label)}
+                    className="w-full flex justify-between items-center py-2 text-white"
+                  >
+                    <span className={`${isItemActive(item) ? 'text-[#C8A951]' : ''}`}>{item.label}</span>
+                    <span className="transition-transform duration-300 ease-in-out" style={{ transform: expandedMobileItem === item.label ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                      <ChevronDown size={20} />
+                    </span>
+                  </button>
+                  <div
+                    className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                      expandedMobileItem === item.label ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
                     }`}
                   >
-                    {item.label}
-                  </Link>
-                )}
-              </div>
-            ))}
-          </div>
+                    <div className="flex flex-col pl-4 mt-2 space-y-3 pb-2">
+                      {item.children.map((child) =>
+                        child.children ? (
+                          <div key={child.label}>
+                            <button
+                              onClick={() => toggleMobileSubmenu(`${item.label}:${child.label}`)}
+                              className={`w-full flex justify-between items-center text-sm ${
+                                isItemActive(child) ? 'text-[#C8A951]' : 'text-[#F3E8D0]'
+                              }`}
+                            >
+                              <span>{child.label}</span>
+                              <span className="transition-transform duration-300 ease-in-out" style={{ transform: expandedMobileItem === `${item.label}:${child.label}` ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                                <ChevronDown size={18} />
+                              </span>
+                            </button>
+                            <div
+                              className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                                expandedMobileItem === `${item.label}:${child.label}` ? 'max-h-[300px] opacity-100' : 'max-h-0 opacity-0'
+                              }`}
+                            >
+                              <div className="flex flex-col pl-4 mt-2 space-y-3 pb-2">
+                                {child.children.map((grandchild) => (
+                                  <Link
+                                    key={grandchild.label}
+                                    to={grandchild.href}
+                                    className={`text-sm ${isActive(grandchild.href) ? 'text-[#C8A951]' : 'text-[#F3E8D0]'}`}
+                                  >
+                                    {grandchild.label}
+                                  </Link>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <Link
+                            key={child.label}
+                            to={child.href}
+                            className={`text-sm ${isActive(child.href) ? 'text-[#C8A951]' : 'text-[#F3E8D0]'}`}
+                          >
+                            {child.label}
+                          </Link>
+                        )
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <Link
+                  to={item.href}
+                  className={`block py-2 transition-colors duration-300 ease-in-out ${
+                    item.isHighlighted
+                      ? 'bg-[#C8A951] text-[#1B2A4A] text-center font-medium rounded mt-2'
+                      : isActive(item.href)
+                      ? 'text-[#C8A951]'
+                      : 'text-white'
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              )}
+            </div>
+          ))}
         </div>
-      )}
+      </div>
     </nav>
   );
 };

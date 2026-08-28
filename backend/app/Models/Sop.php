@@ -13,7 +13,7 @@ class Sop extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
-        'title', 'slug', 'description', 'category', 'file_path', 'is_published', 'sort_order',
+        'title', 'slug', 'description', 'category', 'drive_url', 'drive_file_id', 'is_published', 'sort_order',
     ];
 
     protected $casts = [

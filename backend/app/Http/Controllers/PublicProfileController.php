@@ -163,8 +163,8 @@ class PublicProfileController extends Controller
             ->map(fn (Guru $guru) => [
                 'role' => 'guru',
                 'slug' => $guru->teacher_id,
-                'name' => $guru->user->profileRecord?->name ?: $guru->user->name,
-                'photo' => $guru->user->profileRecord?->photo ?? '',
+                'name' => $guru->user?->profileRecord?->name ?: $guru->user?->name ?: $guru->teacher_id,
+                'photo' => $guru->user?->profileRecord?->photo ?? '',
                 'position' => $guru->position,
                 'subject' => $guru->subject,
             ]);
@@ -189,8 +189,8 @@ class PublicProfileController extends Controller
             ->map(fn (OsisAccount $account) => [
                 'role' => 'osis',
                 'slug' => $account->member_id,
-                'name' => $account->user->profileRecord?->name ?: $account->user->name,
-                'photo' => $account->user->profileRecord?->photo ?? '',
+                'name' => $account->user?->profileRecord?->name ?: $account->user?->name ?: $account->member_id,
+                'photo' => $account->user?->profileRecord?->photo ?? '',
                 'position' => $account->position,
                 'division' => $account->division,
             ]);
@@ -205,10 +205,7 @@ class PublicProfileController extends Controller
             ->get()
             ->filter(fn (SdmGuru $guru) => ! $guru->assignments->contains(
                 fn ($a) => $a->jenis === \App\Models\SdmAssignment::JENIS_TUGAS_TAMBAHAN
-                    && (
-                        stripos((string) $a->uraian, 'KEPALA SEKOLAH') !== false
-                        || stripos((string) $a->uraian, 'WAKASEK') !== false
-                    )
+                    && stripos((string) $a->uraian, 'KEPALA SEKOLAH') !== false
             ))
             ->map(fn (SdmGuru $guru) => [
                 'role' => 'guru',

@@ -21,7 +21,7 @@ const DEPT_PRAMUBAKTI = 'Pramubakti & Pramusaji';
 const DEPT_TENDIK = 'Tenaga Kependidikan';
 
 function classifyTendik(entry: PublicDirectoryEntry): string {
-  const k = (entry as Record<string, unknown>).kategori as string | undefined;
+  const k = (entry as unknown as Record<string, unknown>).kategori as string | undefined;
   if (k === 'keamanan') return DEPT_KEAMANAN;
   if (k === 'pramubakti') return DEPT_PRAMUBAKTI;
   return DEPT_TENDIK;

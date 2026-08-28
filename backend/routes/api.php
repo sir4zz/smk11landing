@@ -73,6 +73,7 @@ Route::get('/news/{slug}', [ContentCrudController::class, 'show'])->defaults('ty
 Route::get('/programs', [ContentCrudController::class, 'index'])->defaults('type', 'programs');
 Route::get('/programs/{slug}', [ContentCrudController::class, 'show'])->defaults('type', 'programs');
 Route::get('/facilities', [ContentCrudController::class, 'index'])->defaults('type', 'facilities');
+Route::get('/facilities/{slug}', [ContentCrudController::class, 'show'])->defaults('type', 'facilities');
 Route::get('/staff', [ContentCrudController::class, 'index'])->defaults('type', 'staff');
 Route::get('/achievements', [ContentCrudController::class, 'index'])->defaults('type', 'achievements');
 Route::get('/teacher-activities', [ContentCrudController::class, 'index'])->defaults('type', 'teacher-activities');

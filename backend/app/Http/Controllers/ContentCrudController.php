@@ -121,10 +121,10 @@ class ContentCrudController extends Controller
         $payload = $request->all();
         unset($payload['id'], $payload['created_at'], $payload['updated_at']);
 
-        if (in_array($type, ['news', 'programs'], true)) {
+        if (in_array($type, ['news', 'programs', 'facilities'], true)) {
             $name = $type === 'programs'
                 ? ($payload['short_name'] ?? $payload['name'] ?? 'untitled')
-                : ($payload['title'] ?? 'untitled');
+                : ($payload['title'] ?? $payload['name'] ?? 'untitled');
             $payload['slug'] = $this->uniqueSlug($model, $name);
         }
 
@@ -143,10 +143,10 @@ class ContentCrudController extends Controller
         $payload = $request->all();
         unset($payload['id'], $payload['created_at'], $payload['updated_at']);
 
-        if (in_array($type, ['news', 'programs'], true)) {
+        if (in_array($type, ['news', 'programs', 'facilities'], true)) {
             $name = $type === 'programs'
                 ? ($payload['short_name'] ?? $payload['name'] ?? $row->short_name ?? $row->name ?? 'untitled')
-                : ($payload['title'] ?? $row->title ?? 'untitled');
+                : ($payload['title'] ?? $payload['name'] ?? $row->title ?? $row->name ?? 'untitled');
             $payload['slug'] = $this->uniqueSlug($model, $name, $row->id);
         }
 
