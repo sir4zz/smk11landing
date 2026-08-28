@@ -23,9 +23,10 @@ const Fallback: React.FC<{ photo?: string; size?: 'lg' | 'md'; alt: string }> = 
 const OrganizationStructure: React.FC = () => {
   const [leadership, setLeadership] = useState<Leadership | null>(null);
   const [gurus, setGurus] = useState<PublicDirectoryEntry[]>([]);
+  const [tendiks, setTendiks] = useState<PublicDirectoryEntry[]>([]);
   useEffect(() => {
     publicProfileApi.leadership().then(({ data }) => { if (data) setLeadership(data); });
-    publicProfileApi.directory().then(({ data }) => { if (data) setGurus(data.gurus); });
+    publicProfileApi.directory().then(({ data }) => { if (data) { setGurus(data.gurus); setTendiks(data.tendiks); } });
   }, []);
 
   const principal = leadership?.principal ?? null;
@@ -47,6 +48,14 @@ const OrganizationStructure: React.FC = () => {
       department: g.subject || undefined,
       photo: g.photo,
     }));
+
+  const staff: Person[] = tendiks.map((t) => ({
+    slug: t.slug,
+    name: t.name,
+    position: t.position || t.subject || 'Tenaga Kependidikan',
+    department: (t as unknown as { kategori?: string }).kategori || undefined,
+    photo: t.photo,
+  }));
 
   return (
     <div className="min-h-screen bg-[#FAF6F0]">
@@ -121,16 +130,38 @@ const OrganizationStructure: React.FC = () => {
         {/* Teachers / Gurus */}
         <div className="mt-16">
           <h2 className="text-2xl font-bold text-[#1B2A4A] text-center mb-10 pb-4">Guru</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            {teachers.map((head, index) => (
-              <Link key={head.slug || index} to={`/profil/guru/${encodeURIComponent(head.slug)}`} className="bg-white rounded-lg p-6 text-center shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
-                <Fallback photo={head.photo} alt={head.name} />
-                {head.department && <span className="inline-block px-3 py-1 bg-[#FAF6F0] text-[#1B2A4A] text-xs font-bold rounded-full mb-3">{head.department}</span>}
-                <h4 className="font-bold text-[#1B2A4A] text-base mb-1">{head.name}</h4>
-                <p className="text-gray-600 text-xs">{head.position}</p>
-              </Link>
-            ))}
-          </div>
+          {teachers.length === 0 ? (
+            <p className="text-center text-gray-500">Belum ada data guru.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {teachers.map((head, index) => (
+                <Link key={head.slug || index} to={`/profil/guru/${encodeURIComponent(head.slug)}`} className="bg-white rounded-lg p-6 text-center shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
+                  <Fallback photo={head.photo} alt={head.name} />
+                  {head.department && <span className="inline-block px-3 py-1 bg-[#FAF6F0] text-[#1B2A4A] text-xs font-bold rounded-full mb-3">{head.department}</span>}
+                  <h4 className="font-bold text-[#1B2A4A] text-base mb-1">{head.name}</h4>
+                  <p className="text-gray-600 text-xs">{head.position}</p>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Staff / Tenaga Kependidikan */}
+        <div className="mt-16">
+          <h2 className="text-2xl font-bold text-[#1B2A4A] text-center mb-10 pb-4">Tenaga Kependidikan</h2>
+          {staff.length === 0 ? (
+            <p className="text-center text-gray-500">Belum ada data tenaga kependidikan.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {staff.map((member, index) => (
+                <Link key={member.slug || index} to={`/profil/tendik/${encodeURIComponent(member.slug)}`} className="bg-white rounded-lg p-6 text-center shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
+                  <Fallback photo={member.photo} alt={member.name} />
+                  <h4 className="font-bold text-[#1B2A4A] text-base mb-1">{member.name}</h4>
+                  <p className="text-gray-600 text-xs">{member.position}</p>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </section>
     </div>
