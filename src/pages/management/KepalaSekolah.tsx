@@ -48,7 +48,7 @@ const KepalaSekolah: React.FC = () => {
             <PersonAvatar
               photo={principal.photo}
               name={principal.name}
-              className="h-80 w-full object-cover md:h-full"
+              className="h-80 w-full object-cover object-top md:h-full"
               iconClassName="h-20 w-20"
             />
             <div className="p-8 md:col-span-2 md:p-12">

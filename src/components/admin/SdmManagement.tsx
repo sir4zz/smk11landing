@@ -477,7 +477,7 @@ export default function SdmManagement({ type, permissions }: SdmManagementProps)
                     <td className="p-4">
                       <div className="flex items-center gap-3">
                         {person.photo ? (
-                          <img src={resolveImageUrl(person.photo)} alt={person.name} className="h-9 w-9 rounded-full object-cover" />
+                          <img src={resolveImageUrl(person.photo)} alt={person.name} className="h-9 w-9 rounded-full object-cover object-top" />
                         ) : (
                           <span className="grid h-9 w-9 place-items-center rounded-full bg-[#FAF6F0]"><UserRound className="h-4 w-4 text-[#866D2C]" /></span>
                         )}
@@ -800,7 +800,7 @@ function SdmDetail({ person, onBack, onEdit, onDelete, onManageAccount }: { pers
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#1B2A4A]/10 p-6">
         <div className="flex items-center gap-4">
           {person.photo ? (
-            <img src={resolveImageUrl(person.photo)} alt={person.name} className="h-16 w-16 rounded-full object-cover" />
+            <img src={resolveImageUrl(person.photo)} alt={person.name} className="h-16 w-16 rounded-full object-cover object-top" />
           ) : (
             <span className="grid h-16 w-16 place-items-center rounded-full bg-[#FAF6F0]"><UserRound className="h-8 w-8 text-[#866D2C]" /></span>
           )}

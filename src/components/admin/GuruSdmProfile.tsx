@@ -132,7 +132,7 @@ export default function GuruSdmProfile({ data }: { data: SdmGuruProfilePayload }
         <p className="mb-5 text-sm text-[#5B7088]">Data resmi dari SDM sekolah. Perubahan diajukan melalui formulir di bawah dan harus diverifikasi operator.</p>
         <div className="flex items-center gap-4">
           {data.photo ? (
-            <img src={resolveImageUrl(data.photo)} alt={data.name} className="h-16 w-16 rounded-full object-cover" />
+            <img src={resolveImageUrl(data.photo)} alt={data.name} className="h-16 w-16 rounded-full object-cover object-top" />
           ) : (
             <span className="grid h-16 w-16 place-items-center rounded-full bg-[#FAF6F0] text-lg font-bold text-[#866D2C]">{data.name.charAt(0) || 'G'}</span>
           )}

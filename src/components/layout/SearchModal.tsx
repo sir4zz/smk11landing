@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import {
   X, Search, Loader2, Newspaper, GraduationCap, Users, Images,
   Megaphone, Briefcase, FileText, LayoutGrid, CornerDownLeft,
+  Shield, CalendarDays, Trophy, Building2, Star, HelpCircle,
 } from 'lucide-react';
 import {
   fetchPublicContent, fetchExtracurriculars, fetchGalleries,
-  fetchMadingPublished, fetchJobVacancies,
+  fetchMadingPublished, fetchJobVacancies, fetchOsisActivities, fetchFaqs,
+  publicProfileApi, type FaqRow,
 } from '../../lib/api';
-import type { NewsItem, Program } from '../../lib/content-types';
+import type { NewsItem, Program, Facility, TeacherActivity, Achievement, OsisActivity } from '../../lib/content-types';
 
 interface SearchModalProps {
   isOpen: boolean;
@@ -45,19 +47,26 @@ const STATIC_PAGES: SearchResult[] = [
   { id: 'page-kontak', title: 'Kontak', path: '/kontak', type: 'Halaman' },
 ];
 
-const TYPE_ORDER = ['Berita', 'Program Keahlian', 'Ekstrakurikuler', 'Galeri', 'Mading', 'Lowongan Kerja', 'Halaman'];
+const TYPE_ORDER = ['Guru & Staf', 'Pimpinan', 'Kegiatan Guru', 'Kegiatan OSIS', 'Prestasi Siswa', 'Fasilitas', 'Berita', 'Program Keahlian', 'Ekstrakurikuler', 'Galeri', 'Mading', 'Lowongan Kerja', 'FAQ', 'Halaman'];
 
 const TYPE_ICONS: Record<string, React.ReactNode> = {
+  'Guru & Staf': <Users size={16} className="text-[#C8A951]" />,
+  'Pimpinan': <Shield size={16} className="text-[#C8A951]" />,
+  'Kegiatan Guru': <CalendarDays size={16} className="text-[#C8A951]" />,
+  'Kegiatan OSIS': <Star size={16} className="text-[#C8A951]" />,
+  'Prestasi Siswa': <Trophy size={16} className="text-[#C8A951]" />,
+  'Fasilitas': <Building2 size={16} className="text-[#C8A951]" />,
   'Berita': <Newspaper size={16} className="text-[#C8A951]" />,
   'Program Keahlian': <GraduationCap size={16} className="text-[#C8A951]" />,
   'Ekstrakurikuler': <Users size={16} className="text-[#C8A951]" />,
   'Galeri': <Images size={16} className="text-[#C8A951]" />,
   'Mading': <Megaphone size={16} className="text-[#C8A951]" />,
   'Lowongan Kerja': <Briefcase size={16} className="text-[#C8A951]" />,
+  'FAQ': <HelpCircle size={16} className="text-[#C8A951]" />,
   'Halaman': <FileText size={16} className="text-[#C8A951]" />,
 };
 
-const POPULAR_PAGES = ['page-spmb', 'page-berita', 'page-program', 'page-lowongan', 'page-kontak'];
+const POPULAR_PAGES = ['page-direktori', 'page-spmb', 'page-berita', 'page-program', 'page-lowongan', 'page-kontak'];
 
 const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
@@ -75,15 +84,96 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
       items.forEach((item) => results.push({ ...item, type }));
     };
 
-    const [news, programs, extracurriculars, galleries, mading, jobs] = await Promise.all([
+    const [news, programs, extracurriculars, galleries, mading, jobs, directory, leadership, activities, achievements, facilities, osisActivities, faqs] = await Promise.all([
       fetchPublicContent<NewsItem[]>('news').catch(() => [] as NewsItem[]),
       fetchPublicContent<Program[]>('programs').catch(() => [] as Program[]),
       fetchExtracurriculars<{ id?: string; name: string; slug?: string; short_description?: string; description?: string }[]>().catch(() => []),
       fetchGalleries({ limit: 100 }).catch(() => ({ rows: [], meta: { total: 0, page: 1, limit: 0, last_page: 1 } })),
       fetchMadingPublished().catch(() => []),
       fetchJobVacancies({ limit: 100 }).catch(() => ({ rows: [], meta: { total: 0, page: 1, limit: 0, last_page: 1 } })),
+      publicProfileApi.directory().then(({ data }) => data ?? null).catch(() => null),
+      publicProfileApi.leadership().then(({ data }) => data ?? null).catch(() => null),
+      fetchPublicContent<TeacherActivity[]>('teacherActivities').catch(() => []),
+      fetchPublicContent<Achievement[]>('achievements').catch(() => []),
+      fetchPublicContent<Facility[]>('facilities').catch(() => []),
+      fetchOsisActivities<OsisActivity[]>().catch(() => []),
+      fetchFaqs<FaqRow[]>().catch(() => []),
     ]);
 
+    push('Guru & Staf', [
+      ...(directory?.gurus ?? []).map((p) => ({
+        id: `guru-${p.slug}`,
+        title: p.name,
+        description: [p.position, p.subject, 'Guru'].filter(Boolean).join(' · '),
+        path: `/profil/guru/${encodeURIComponent(p.slug)}`,
+        type: '',
+      })),
+      ...(directory?.tendiks ?? []).map((p) => ({
+        id: `tendik-${p.slug}`,
+        title: p.name,
+        description: [p.position, p.subject, 'Tenaga Kependidikan'].filter(Boolean).join(' · '),
+        path: `/profil/tendik/${encodeURIComponent(p.slug)}`,
+        type: '',
+      })),
+    ]);
+    push('Pimpinan', [
+      ...(leadership?.principal ? [{
+        id: `pimpinan-kepsek`,
+        title: leadership.principal.name,
+        description: leadership.principal.title || 'Kepala Sekolah',
+        path: `/profil/guru/${encodeURIComponent(leadership.principal.slug)}`,
+        type: '',
+      }] : []),
+      ...(leadership?.vice_principals ?? []).map((p) => ({
+        id: `pimpinan-${p.slug}`,
+        title: p.name,
+        description: p.title || p.position || 'Wakil Kepala Sekolah',
+        path: `/profil/guru/${encodeURIComponent(p.slug)}`,
+        type: '',
+      })),
+      ...(leadership?.program_heads ?? []).map((p) => ({
+        id: `pimpinan-${p.slug}`,
+        title: p.name,
+        description: p.title || p.position || 'Ketua Program Keahlian',
+        path: `/profil/guru/${encodeURIComponent(p.slug)}`,
+        type: '',
+      })),
+    ]);
+    push('Kegiatan Guru', activities.map((a) => ({
+      id: `activity-${a.id}`,
+      title: a.title,
+      description: [a.category, a.date].filter(Boolean).join(' · '),
+      path: `/manajemen/kegiatan-guru/${encodeURIComponent(a.id)}`,
+      type: '',
+    })));
+    push('Kegiatan OSIS', osisActivities.filter((a) => a.status === 'published').map((a) => ({
+      id: `osis-act-${a.id ?? a.title}`,
+      title: a.title,
+      description: a.description,
+      path: '/osis/kegiatan',
+      type: '',
+    })));
+    push('Prestasi Siswa', achievements.map((a) => ({
+      id: `achievement-${a.id}`,
+      title: a.title,
+      description: [a.event, a.level, a.rank].filter(Boolean).join(' · '),
+      path: '/kesiswaan/prestasi',
+      type: '',
+    })));
+    push('Fasilitas', facilities.map((f) => ({
+      id: `facility-${f.id}`,
+      title: f.name,
+      description: f.description,
+      path: '/akademik/fasilitas',
+      type: '',
+    })));
+    push('FAQ', faqs.map((f) => ({
+      id: `faq-${f.id ?? f.question}`,
+      title: f.question,
+      description: f.answer,
+      path: '/informasi/faq',
+      type: '',
+    })));
     push('Berita', news.map((n) => ({
       id: `news-${n.id}`,
       title: n.title,
@@ -128,7 +218,9 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
     })));
 
     const total = news.length + programs.length + extracurriculars.length
-      + galleries.rows.length + mading.length + jobs.rows.length;
+      + galleries.rows.length + mading.length + jobs.rows.length
+      + (directory?.gurus.length ?? 0) + (directory?.tendiks.length ?? 0) + activities.length
+      + achievements.length + facilities.length + osisActivities.length + faqs.length;
     if (total > 0) loadedRef.current = true;
     setDynamicResults(results);
     setLoading(false);
@@ -219,7 +311,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Cari berita, program, ekstrakurikuler..."
+              placeholder="Cari guru, berita, program, kegiatan..."
               className="w-full rounded border border-gray-300 py-3 pl-10 pr-4 focus:border-[#C8A951] focus:outline-none focus:ring-1 focus:ring-[#C8A951]"
             />
             <Search className="absolute left-3 top-3.5 text-gray-400" size={20} />
@@ -242,7 +334,7 @@ const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
                   ))}
                 </div>
                 <p className="mt-4 text-sm text-[#23314D]/60">
-                  {loading ? 'Memuat indeks pencarian...' : 'Ketik untuk mencari di seluruh konten situs: berita, program keahlian, ekstrakurikuler, galeri, mading, dan lowongan kerja.'}
+                  {loading ? 'Memuat indeks pencarian...' : 'Ketik untuk mencari secara spesifik: nama guru, pimpinan, kegiatan guru, prestasi, berita, program keahlian, ekstrakurikuler, galeri, mading, dan lowongan kerja.'}
                 </p>
               </div>
             ) : filteredGroups.length === 0 ? (

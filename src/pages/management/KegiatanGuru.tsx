@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import PageHero from '../../components/ui/PageHero';
 import SectionHeading from '../../components/ui/SectionHeading';
 import type { TeacherActivity } from '../../lib/content-types';
 import { usePageBanner } from '../../lib/usePageBanner';
 import { fetchPublicContent, resolveImageUrl } from '../../lib/api';
-import { Calendar, CalendarDays } from 'lucide-react';
+import { Calendar, CalendarDays, ZoomIn } from 'lucide-react';
 import { EmptyState, formatDate } from './ManagementShared';
 
 const KegiatanGuru: React.FC = () => {
@@ -58,13 +59,20 @@ const KegiatanGuru: React.FC = () => {
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {filtered.map((activity) => (
-              <div key={activity.id} className="overflow-hidden rounded-2xl border border-[#1B2A4A]/10 bg-white shadow-sm">
+              <Link
+                key={activity.id}
+                to={`/manajemen/kegiatan-guru/${encodeURIComponent(activity.id)}`}
+                className="group flex flex-col overflow-hidden rounded-2xl border border-[#1B2A4A]/10 bg-white shadow-sm transition-all hover:-translate-y-1 hover:border-[#C8A951]/50 hover:shadow-lg"
+              >
                 <div className="relative h-48 w-full overflow-hidden">
-                    {resolveImageUrl(activity.photo) && <img src={resolveImageUrl(activity.photo)!} alt={activity.title} loading="lazy" className="h-full w-full object-cover" />}
+                  {resolveImageUrl(activity.photo) && <img src={resolveImageUrl(activity.photo)!} alt={activity.title} loading="lazy" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />}
                   <div className="absolute inset-0 bg-gradient-to-t from-[#1B2A4A]/70 to-transparent" />
                   <span className="absolute right-3 top-3 rounded-full bg-[#C8A951] px-3 py-1 text-xs font-semibold text-[#1B2A4A]">{activity.category}</span>
+                  <span className="absolute bottom-3 right-3 inline-flex items-center gap-1 rounded-full bg-black/50 px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm">
+                    <ZoomIn className="h-3.5 w-3.5" /> Lihat Detail
+                  </span>
                 </div>
-                <div className="p-6">
+                <div className="flex flex-1 flex-col p-6">
                   <p className="flex items-center gap-1.5 text-xs font-semibold text-[#866D2C]">
                     <Calendar className="h-3.5 w-3.5" />
                     {formatDate(activity.date)}
@@ -72,7 +80,7 @@ const KegiatanGuru: React.FC = () => {
                   <h3 className="mt-2 mb-2 text-lg font-bold text-[#1B2A4A]">{activity.title}</h3>
                   <p className="text-sm font-medium leading-6 text-[#23314D] line-clamp-3">{activity.description}</p>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}

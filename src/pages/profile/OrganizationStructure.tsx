@@ -83,7 +83,7 @@ const OrganizationStructure: React.FC = () => {
                 <PersonAvatar
                   photo={principal.photo}
                   name={principal.name}
-                  className="mx-auto h-28 w-28 rounded-full border-4 border-[#C8A951] object-cover"
+                  className="mx-auto h-28 w-28 rounded-full border-4 border-[#C8A951] object-cover object-top"
                   iconClassName="h-14 w-14"
                 />
                 <h3 className="mt-4 text-xl font-bold">{principal.name}</h3>
@@ -101,7 +101,7 @@ const OrganizationStructure: React.FC = () => {
             <div className="mb-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {vicePrincipals.map((vp) => (
                 <Link key={vp.slug} to={`/profil/guru/${encodeURIComponent(vp.slug)}`} className="rounded-2xl border border-[#1B2A4A]/10 bg-white p-6 text-center shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
-                  <PersonAvatar photo={vp.photo} name={vp.name} className="mx-auto h-24 w-24 rounded-full border-4 border-[#FAF6F0] object-cover shadow-sm" iconClassName="h-12 w-12" />
+                  <PersonAvatar photo={vp.photo} name={vp.name} className="mx-auto h-24 w-24 rounded-full border-4 border-[#FAF6F0] object-cover object-top shadow-sm" iconClassName="h-12 w-12" />
                   <h4 className="mt-4 text-lg font-bold text-[#1B2A4A]">{vp.name}</h4>
                   <p className="mt-1 text-sm font-medium text-[#23314D]">{formatLeadershipTitle(vp.title)}</p>
                 </Link>
@@ -118,7 +118,7 @@ const OrganizationStructure: React.FC = () => {
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {programHeads.map((head) => (
                 <Link key={head.slug} to={`/profil/guru/${encodeURIComponent(head.slug)}`} className="rounded-2xl border border-[#1B2A4A]/10 bg-white p-6 text-center shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
-                  <PersonAvatar photo={head.photo} name={head.name} className="mx-auto h-24 w-24 rounded-full border-4 border-[#FAF6F0] object-cover shadow-sm" iconClassName="h-12 w-12" />
+                  <PersonAvatar photo={head.photo} name={head.name} className="mx-auto h-24 w-24 rounded-full border-4 border-[#FAF6F0] object-cover object-top shadow-sm" iconClassName="h-12 w-12" />
                   <h4 className="mt-3 text-base font-bold text-[#1B2A4A]">{head.name}</h4>
                   <p className="mt-1 text-xs font-medium text-[#23314D]">{formatLeadershipTitle(head.title)}</p>
                 </Link>
