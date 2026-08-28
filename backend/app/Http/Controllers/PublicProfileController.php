@@ -205,10 +205,7 @@ class PublicProfileController extends Controller
             ->get()
             ->filter(fn (SdmGuru $guru) => ! $guru->assignments->contains(
                 fn ($a) => $a->jenis === \App\Models\SdmAssignment::JENIS_TUGAS_TAMBAHAN
-                    && (
-                        stripos((string) $a->uraian, 'KEPALA SEKOLAH') !== false
-                        || stripos((string) $a->uraian, 'WAKASEK') !== false
-                    )
+                    && stripos((string) $a->uraian, 'KEPALA SEKOLAH') !== false
             ))
             ->map(fn (SdmGuru $guru) => [
                 'role' => 'guru',
