@@ -29,7 +29,7 @@ import { StaffAuthProvider, useStaffAuth } from '../lib/staffAuth';
 import { can, STAFF_ROLES } from '../lib/permissions';
 
 type Section = 'dashboard' | 'news' | 'programs' | 'facilities' | 'staff' | 'gurus' | 'achievements' | 'teacherActivities' | 'educationStaff' | 'contentRecords' | 'spmb' | 'contact' | 'contactSettings' | 'permissions' | 'osis' | 'extracurriculars' | 'mading' | 'students' | 'accounts' | 'gallery' | 'sop' | 'bkk' | 'kelulusan' | 'myProfile' | 'studentChangeRequests' | 'sdmGurus' | 'sdmTendiks' | 'backup' | 'whatsapp' | 'profileDirectory';
-type EditableSection = Exclude<Section, 'dashboard' | 'contact' | 'contactSettings' | 'spmb' | 'permissions' | 'osis' | 'extracurriculars' | 'mading' | 'students' | 'accounts' | 'gallery' | 'sop' | 'bkk' | 'kelulusan' | 'myProfile' | 'studentChangeRequests' | 'sdmGurus' | 'sdmTendiks' | 'backup' | 'whatsapp'>;
+type EditableSection = Exclude<Section, 'dashboard' | 'contact' | 'contactSettings' | 'spmb' | 'permissions' | 'osis' | 'extracurriculars' | 'mading' | 'students' | 'accounts' | 'gallery' | 'sop' | 'bkk' | 'kelulusan' | 'myProfile' | 'studentChangeRequests' | 'sdmGurus' | 'sdmTendiks' | 'backup' | 'whatsapp' | 'profileDirectory'>;
 type Item = Record<string, unknown>;
 const ADMIN_SECTION_PATHS: Record<Section, string> = {
   dashboard: '/admin',

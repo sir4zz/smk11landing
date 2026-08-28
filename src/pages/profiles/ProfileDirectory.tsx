@@ -34,7 +34,6 @@ function ProfileDirectory() {
     return () => { active = false; };
   }, []);
 
-  const list: PublicDirectoryEntry[] = directory ? directory[TAB_KEY[tab]] : [];
   const q = search.toLowerCase();
   const filtered = useMemo(() => {
     const rows: PublicDirectoryEntry[] = directory ? directory[TAB_KEY[tab]] : [];
