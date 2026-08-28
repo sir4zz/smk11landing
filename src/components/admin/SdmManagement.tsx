@@ -997,7 +997,7 @@ function SdmFormModal({ type, editing, form, tab, setTab, setField, setListField
           {tab === 'pribadi' && (
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
-                <ImageField label="Foto (opsional)" value={form.photo} onChange={onPhotoChange} accept="image/jpeg,image/png" maxSizeMb={2} hint="JPG/PNG maks. 2 MB, direkomendasikan persegi (1:1)." />
+                <ImageField label="Foto (opsional)" value={form.photo} onChange={onPhotoChange} accept="image/jpeg,image/png,image/webp" maxSizeMb={2} hint="JPG/PNG/WEBP maks. 2 MB, direkomendasikan persegi (1:1)." />
               </div>
               <Field label="Nama Lengkap *"><input className={inputCls} value={form.name} onChange={setField('name')} /></Field>
               <Field label="NIP"><input className={inputCls} value={form.nip} onChange={setField('nip')} placeholder="18 digit" /></Field>

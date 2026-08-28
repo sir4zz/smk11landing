@@ -395,7 +395,7 @@ export default function DataSiswa() {
                         <>
                           {section.id === 'identity' && (
                             <div className="sm:col-span-2">
-                              <ImageField label="Foto Siswa (opsional)" value={form.foto ?? ''} onChange={(url) => setForm((v) => ({ ...v, foto: url }))} accept="image/jpeg,image/png" maxSizeMb={2} hint="JPG/JPEG atau PNG, maks. 2 MB." />
+                              <ImageField label="Foto Siswa (opsional)" value={form.foto ?? ''} onChange={(url) => setForm((v) => ({ ...v, foto: url }))} accept="image/jpeg,image/png,image/webp" maxSizeMb={2} hint="JPG/JPEG, PNG atau WEBP, maks. 2 MB." />
                             </div>
                           )}
                           {groupFieldsBySubsection(fields).map((g, gi) => (

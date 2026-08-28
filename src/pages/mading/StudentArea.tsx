@@ -936,9 +936,9 @@ function ProfileTab({ profile }: { profile: StudentProfile | null }) {
                               label="Foto Siswa (opsional)"
                               value={changeForm.foto ?? ''}
                               onChange={(url) => setChange('foto')(url)}
-                              accept="image/jpeg,image/png"
+                              accept="image/jpeg,image/png,image/webp"
                               maxSizeMb={2}
-                              hint="Foto baru akan diterapkan setelah disetujui admin."
+                              hint="JPG/PNG/WEBP, maks. 2 MB. Foto baru akan diterapkan setelah disetujui admin."
                             />
                           </div>
                         )}
