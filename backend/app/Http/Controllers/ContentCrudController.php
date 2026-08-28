@@ -114,6 +114,31 @@ class ContentCrudController extends Controller
         return response()->json($row);
     }
 
+    /**
+     * Ambil satu baris konten publik berdasarkan id (untuk tipe konten yang
+     * tidak memiliki kolom slug, mis. teacher-activities).
+     */
+    public function showById(Request $request, string $id)
+    {
+        $type = (string) $request->route('type');
+        $model = $this->resolveModel($type);
+
+        $version = Cache::get($this->contentCacheVersionKey($type), 1);
+        $cacheKey = 'public:content:'.$type.':'.$version.':showId:'.sha1($id);
+        $row = Cache::remember(
+            $cacheKey,
+            now()->addSeconds(self::PUBLIC_CACHE_TTL),
+            static fn () => $model::query()->select(array_merge(['id'], (new $model)->getFillable()))
+                ->where('id', $id)->first(),
+        );
+
+        if (! $row) {
+            return response()->json(null, 404);
+        }
+
+        return response()->json($row);
+    }
+
     public function store(Request $request, string $type)
     {
         $model = $this->resolveModel($type);

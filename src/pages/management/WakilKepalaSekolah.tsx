@@ -39,7 +39,7 @@ const WakilKepalaSekolah: React.FC = () => {
                 to={`/profil/guru/${encodeURIComponent(vp.slug)}`}
                 className="overflow-hidden rounded-2xl border border-[#1B2A4A]/10 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg"
               >
-                <PersonAvatar photo={vp.photo} name={vp.name} className="h-52 w-full object-cover" iconClassName="h-14 w-14" />
+                <PersonAvatar photo={vp.photo} name={vp.name} className="aspect-[4/5] w-full object-cover object-top" iconClassName="h-14 w-14" />
                 <div className="p-6 text-center">
                   <span className="inline-block rounded-full bg-[#FAF6F0] px-3 py-1 text-xs font-semibold text-[#866D2C]">{formatLeadershipTitle(vp.title)}</span>
                   <h3 className="mt-3 text-lg font-bold text-[#1B2A4A]">{vp.name}</h3>

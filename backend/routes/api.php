@@ -77,6 +77,7 @@ Route::get('/facilities/{slug}', [ContentCrudController::class, 'show'])->defaul
 Route::get('/staff', [ContentCrudController::class, 'index'])->defaults('type', 'staff');
 Route::get('/achievements', [ContentCrudController::class, 'index'])->defaults('type', 'achievements');
 Route::get('/teacher-activities', [ContentCrudController::class, 'index'])->defaults('type', 'teacher-activities');
+Route::get('/teacher-activities/{id}', [ContentCrudController::class, 'showById'])->defaults('type', 'teacher-activities');
 Route::get('/education-staff', [ContentCrudController::class, 'index'])->defaults('type', 'education-staff');
 
 // ---------- SPMB ----------

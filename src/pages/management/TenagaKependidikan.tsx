@@ -101,7 +101,7 @@ const TenagaKependidikan: React.FC = () => {
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 {members.map((member) => (
                   <Link key={member.id} to={`/profil/${member.role}/${encodeURIComponent(member.slug)}`} className="rounded-2xl border border-[#1B2A4A]/10 bg-white p-6 text-center shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
-                    <PersonAvatar photo={member.photo} name={member.name} className="mx-auto h-24 w-24 rounded-full object-cover" iconClassName="h-12 w-12" />
+                    <PersonAvatar photo={member.photo} name={member.name} className="mx-auto h-24 w-24 rounded-full object-cover object-top" iconClassName="h-12 w-12" />
                     <h4 className="mt-4 font-bold text-[#1B2A4A]">{member.name}</h4>
                     <p className="mt-1 text-sm font-medium text-[#23314D]">{member.position}</p>
                   </Link>

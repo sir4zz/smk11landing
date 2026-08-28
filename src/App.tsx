@@ -25,6 +25,7 @@ const Management = lazy(() => import('./pages/management/Management'))
 const KepalaSekolah = lazy(() => import('./pages/management/KepalaSekolah'))
 const WakilKepalaSekolah = lazy(() => import('./pages/management/WakilKepalaSekolah'))
 const KegiatanGuru = lazy(() => import('./pages/management/KegiatanGuru'))
+const KegiatanGuruDetail = lazy(() => import('./pages/management/KegiatanGuruDetail'))
 const TenagaKependidikan = lazy(() => import('./pages/management/TenagaKependidikan'))
 const NewsList = lazy(() => import('./pages/information/NewsList'))
 const NewsDetail = lazy(() => import('./pages/information/NewsDetail'))
@@ -99,6 +100,7 @@ function App() {
           <Route path="manajemen/kepala-sekolah" element={suspend(<KepalaSekolah />)} />
           <Route path="manajemen/wakil-kepala-sekolah" element={suspend(<WakilKepalaSekolah />)} />
           <Route path="manajemen/kegiatan-guru" element={suspend(<KegiatanGuru />)} />
+          <Route path="manajemen/kegiatan-guru/:id" element={suspend(<KegiatanGuruDetail />)} />
           <Route path="manajemen/tenaga-kependidikan" element={suspend(<TenagaKependidikan />)} />
 
           {/* Information */}
