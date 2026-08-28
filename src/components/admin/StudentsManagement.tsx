@@ -523,7 +523,7 @@ export default function StudentsManagement() {
                     )}
                     {section.id === 'identity' && (
                       <div className="sm:col-span-2">
-                        <ImageField label="Foto Siswa (opsional)" value={form.foto ?? ''} onChange={(url) => { setForm((v) => ({ ...v, foto: url })); if (url) setErrors((p) => { if (!p.foto) return p; const n = { ...p }; delete n.foto; return n; }); }} accept="image/jpeg,image/png" maxSizeMb={2} hint="JPG/JPEG atau PNG, maks. 2 MB, direkomendasikan persegi (1:1)." />
+                        <ImageField label="Foto Siswa (opsional)" value={form.foto ?? ''} onChange={(url) => { setForm((v) => ({ ...v, foto: url })); if (url) setErrors((p) => { if (!p.foto) return p; const n = { ...p }; delete n.foto; return n; }); }} accept="image/jpeg,image/png,image/webp" maxSizeMb={2} hint="JPG/PNG/WEBP, maks. 2 MB, direkomendasikan persegi (1:1)." />
                         <div className="mt-4 rounded-xl border border-[#1B2A4A]/10 p-4">
                           <p className="mb-3 font-bold text-[#1B2A4A]">DOKUMEN SISWA</p>
                           <div className="grid gap-4 sm:grid-cols-2">

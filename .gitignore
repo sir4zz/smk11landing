@@ -47,9 +47,13 @@ backend/storage/app/public/
 
 # WhatsApp (Baileys) session credentials
 storage/wa-session/
+<<<<<<< HEAD
 
 # Prod build output (Laravel public pelayan SPA) — JANGAN ignore index.html & assets
 # agar bisa di-commit ke branch prod kalau deploy tanpa build di server.
 # Kalau mau build di server aaPanel, biarkan baris ini enable lalu jalankan npm run build di server.
 # !backend/public/index.html
 # !backend/public/assets/
+=======
+~$guru-akun-login.xlsx
+>>>>>>> origin/main
