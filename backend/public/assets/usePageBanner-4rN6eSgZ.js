@@ -1,0 +1,1 @@
+import{h as e,p as t}from"./jsx-runtime-Dg6Cweee.js";import{ft as n,q as r}from"./index-CVRUT9jg.js";var i=e(t(),1);function a(e){let[t,a]=(0,i.useState)(null);return(0,i.useEffect)(()=>{let t=!0;return r(e).then(e=>{t&&a(e)}),()=>{t=!1}},[e]),{banner:t,backgroundImage:t?.image?n(t.image):void 0}}export{a as t};
