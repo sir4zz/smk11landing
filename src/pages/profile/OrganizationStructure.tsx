@@ -16,7 +16,7 @@ interface Person {
 
 const Fallback: React.FC<{ photo?: string; size?: 'lg' | 'md'; alt: string }> = ({ photo, size = 'md', alt }) => (
   <div className={`mx-auto mb-4 ${size === 'lg' ? 'h-32 w-32' : 'h-24 w-24'} flex items-center justify-center overflow-hidden rounded-full bg-[#1B2A4A] text-white ${size === 'lg' ? 'border-4 border-[#C8A951]' : 'border-4 border-[#FAF6F0]'} shadow-sm`}>
-    {resolveImageUrl(photo) ? <img src={resolveImageUrl(photo)} alt={alt} className="h-full w-full object-cover" /> : <User size={size === 'lg' ? 56 : 40} />}
+    {resolveImageUrl(photo) ? <img src={resolveImageUrl(photo)} alt={alt} className="h-full w-full object-cover object-top" /> : <User size={size === 'lg' ? 56 : 40} />}
   </div>
 );
 
