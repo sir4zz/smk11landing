@@ -23,7 +23,7 @@ const PREVIEW_KEYS: { key: string; label: string }[] = [
   { key: 'religion', label: 'Agama' },
 ];
 
-const TEMPLATE_URL = `${(import.meta.env.BASE_URL ?? '/').replace(/\/$/, '')}/templates/template_biodata_dapodik.xls`;
+const TEMPLATE_URL = `${(import.meta.env.BASE_URL ?? '/').replace(/\/$/, '')}/templates/template_biodata_dapodik.xlsx`;
 
 export default function StudentImportModal({ onClose, onImported }: { onClose: () => void; onImported: () => void }) {
   const [spreadsheet, setSpreadsheet] = useState<File | null>(null);
