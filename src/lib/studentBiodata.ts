@@ -102,6 +102,9 @@ export const BIODATA_FIELDS: BiodataFieldDef[] = [
 
   // B. Keterangan Tempat Tinggal
   { key: 'address', label: 'Alamat Tempat Tinggal', section: 'residence', type: 'textarea', full: true },
+  { key: 'provinsi', label: 'Provinsi', section: 'residence' },
+  { key: 'kota', label: 'Kabupaten / Kota', section: 'residence' },
+  { key: 'kecamatan', label: 'Kecamatan', section: 'residence' },
   { key: 'phone', label: 'No. Telp / HP', section: 'residence', type: 'number' },
   { key: 'tinggal_dengan', label: 'Tinggal Dengan (Orang Tua/Saudara/Asrama/Kost)', section: 'residence' },
   { key: 'jarak_sekolah', label: 'Jarak Tempat Tinggal ke Sekolah (Km)', section: 'residence', type: 'number' },
