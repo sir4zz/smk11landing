@@ -13,14 +13,25 @@ class StatsController extends Controller
     {
         return response()->json(Cache::remember(self::CACHE_KEY, now()->addSeconds(30), static function () {
             $studentCount = DB::table('students')->count();
-            $staffCount = DB::table('staff')->count();
-            $educationStaffCount = DB::table('education_staff')->count();
+
+            // Hitung tenaga pengajar dari modul SDM (guru + tendik aktif)
+            $sdmGuruCount = DB::table('sdm_gurus')->where('is_active', true)->count();
+            $sdmTendikCount = DB::table('sdm_tendiks')->where('is_active', true)->count();
+            // Fallback ke tabel legacy jika modul SDM kosong
+            if ($sdmGuruCount === 0 && $sdmTendikCount === 0) {
+                $staffCount = DB::table('staff')->count();
+                $educationStaffCount = DB::table('education_staff')->count();
+                $totalStaff = $staffCount + $educationStaffCount;
+            } else {
+                $totalStaff = $sdmGuruCount + $sdmTendikCount;
+            }
+
             $programCount = DB::table('programs')->count();
 
             return [
                 'data' => [
                     ['value' => number_format($studentCount, 0, ',', '.'), 'label' => 'Siswa Aktif'],
-                    ['value' => number_format($staffCount + $educationStaffCount, 0, ',', '.'), 'label' => 'Tenaga Pengajar'],
+                    ['value' => number_format($totalStaff, 0, ',', '.'), 'label' => 'Tenaga Pengajar'],
                     ['value' => (string) $programCount, 'label' => 'Program Keahlian'],
                 ],
             ];

@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\SdmGuru;
 use App\Models\SdmTendik;
+use App\Services\SdmAccountService;
 use App\Services\SdmImportService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -18,7 +20,7 @@ class SdmController extends Controller
 {
     public const TYPES = ['guru', 'tendik'];
 
-    public function __construct(protected SdmImportService $importer)
+    public function __construct(protected SdmImportService $importer, protected SdmAccountService $accountService)
     {
     }
 
@@ -146,10 +148,39 @@ class SdmController extends Controller
 
         $result = $this->importer->importPersons($data['persons'], $type);
 
+        // Otomatis buat akun login untuk semua record yang belum punya akun
+        $accountsCreated = $this->autoCreateAccounts($type);
+
+        // Hapus cache stats agar jumlah tenaga pengajar ter-update
+        Cache::forget(\App\Http\Controllers\StatsController::CACHE_KEY);
+
+        $result['accounts_created'] = $accountsCreated;
+
         return response()->json([
             'data' => $result,
             'error' => null,
         ]);
+    }
+
+    /**
+     * Buat akun login otomatis untuk semua SDM yang belum punya akun.
+     */
+    private function autoCreateAccounts(string $type): int
+    {
+        $model = $this->model($type);
+        $persons = $model::query()->whereNull('user_id')->get();
+        $created = 0;
+
+        foreach ($persons as $person) {
+            try {
+                $this->accountService->createAccount($person, null, null);
+                $created++;
+            } catch (\Throwable) {
+                // Skip record yang gagal (NIP/NUPTK sudah dipakai, dll)
+            }
+        }
+
+        return $created;
     }
 
     public function export(Request $request)
@@ -167,26 +198,30 @@ class SdmController extends Controller
 
         return response()->streamDownload(function () use ($rows, $columns) {
             $handle = fopen('php://output', 'w');
+
+            // UTF-8 BOM agar Excel membaca karakter Indonesia dengan benar
+            fwrite($handle, "\xEF\xBB\xBF");
+
             fputcsv($handle, $columns);
 
             foreach ($rows as $row) {
                 fputcsv($handle, [
-                    $row->name,
+                    $row->name ?? '',
                     $row->nip ?? '',
                     $row->nipppk ?? '',
                     $row->nuptk ?? '',
-                    $row->gender,
-                    $row->religion,
-                    $row->birth_place,
+                    $row->gender ?? '',
+                    $row->religion ?? '',
+                    $row->birth_place ?? '',
                     $row->birth_date?->format('Y-m-d') ?? '',
-                    $row->status_kepegawaian,
-                    $row->pangkat_golongan,
-                    $row->jabatan,
+                    $row->status_kepegawaian ?? '',
+                    $row->pangkat_golongan ?? '',
+                    $row->jabatan ?? '',
                     $row->nik ?? '',
                     $row->address ?? '',
-                    $row->phone,
-                    $row->npwp,
-                    $row->email,
+                    $row->phone ?? '',
+                    $row->npwp ?? '',
+                    $row->email ?? '',
                 ]);
             }
 

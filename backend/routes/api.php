@@ -259,11 +259,21 @@ Route::middleware(['auth:sanctum', 'staff'])->group(function () {
     Route::patch('/admin/sdm/{type}/{id}', [SdmController::class, 'update'])->where('type', 'guru|tendik')->middleware('permission:sdm.edit');
     Route::delete('/admin/sdm/{type}/{id}', [SdmController::class, 'destroy'])->where('type', 'guru|tendik')->middleware('permission:sdm.delete');
 
-    // SDM guru login accounts (create / reset / enable-disable / unlink)
+    // SDM login accounts (create / reset / enable-disable / unlink / bulk)
+    // Bulk route MUST come before {id} routes to avoid conflict
+    Route::post('/admin/sdm/guru/bulk-create-accounts', [SdmAccountController::class, 'bulkCreate'])->middleware('permission:sdm.edit');
+
+    // Guru account routes
     Route::get('/admin/sdm/guru/{id}/account', [SdmAccountController::class, 'show'])->middleware('permission:sdm.view');
     Route::post('/admin/sdm/guru/{id}/account', [SdmAccountController::class, 'store'])->middleware('permission:sdm.edit');
     Route::patch('/admin/sdm/guru/{id}/account', [SdmAccountController::class, 'update'])->middleware('permission:sdm.edit');
     Route::delete('/admin/sdm/guru/{id}/account', [SdmAccountController::class, 'destroy'])->middleware('permission:sdm.edit');
+
+    // Tendik account routes
+    Route::get('/admin/sdm/tendik/{id}/account', [SdmAccountController::class, 'show'])->middleware('permission:sdm.view');
+    Route::post('/admin/sdm/tendik/{id}/account', [SdmAccountController::class, 'store'])->middleware('permission:sdm.edit');
+    Route::patch('/admin/sdm/tendik/{id}/account', [SdmAccountController::class, 'update'])->middleware('permission:sdm.edit');
+    Route::delete('/admin/sdm/tendik/{id}/account', [SdmAccountController::class, 'destroy'])->middleware('permission:sdm.edit');
 
     // Guru data change request verification (operator_sekolah)
     Route::get('/admin/guru-change-requests', [GuruDataChangeRequestController::class, 'adminIndex'])->middleware('permission:sdm.view');
