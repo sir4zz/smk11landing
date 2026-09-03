@@ -31,10 +31,11 @@ class Student extends Model
 
     public const BIODATA_KEYS = [
         // Section 1
-        'nickname', 'kewarganegaraan', 'anak_ke', 'jml_saudara_kandung', 'jml_saudara_tiri',
+        'nickname', 'asal_sekolah', 'nik', 'email', 'kewarganegaraan', 'anak_ke', 'jml_saudara_kandung', 'jml_saudara_tiri',
         'anak_yatim_piatu', 'bahasa_sehari_hari',
         // Section 2
-        'provinsi', 'kota', 'kecamatan', 'phone', 'tinggal_dengan', 'jarak_sekolah',
+        'provinsi', 'kota', 'kecamatan', 'desa', 'kode_pos', 'phone', 'tinggal_dengan', 'jenis_tempat_tinggal', 'jarak_sekolah', 'jarak_tempuh', 'transportasi',
+        'no_kk', 'kepala_keluarga', 'no_kip', 'cita_cita', 'hobi', 'pernah_paud', 'pernah_tk', 'status_afirmasi',
         // Section 3
         'golongan_darah', 'penyakit', 'kelainan_jasmani', 'tinggi_cm', 'berat_kg',
         // Section 4
@@ -49,7 +50,7 @@ class Student extends Model
         'wali_pendidikan', 'wali_pekerjaan', 'wali_penghasilan', 'wali_alamat', 'wali_no_telp', 'wali_status_hidup',
         // Sections 8-9
         'gemar_kesenian', 'gemar_olahraga', 'gemar_kemasyarakatan', 'gemar_lain',
-        'siswa_status', 'siswa_tanggal',
+        'siswa_status', 'siswa_tanggal', 'beasiswa_status', 'beasiswa_tk', 'beasiswa_dari',
     ];
 
     public $incrementing = false;
