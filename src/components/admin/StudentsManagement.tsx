@@ -73,6 +73,11 @@ export default function StudentsManagement() {
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [classFilter, setClassFilter] = useState('');
+  const [majorFilter, setMajorFilter] = useState('');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [selectionMode, setSelectionMode] = useState(false);
   const [page, setPage] = useState(1);
   const formRef = useRef<HTMLFormElement | null>(null);
 
@@ -93,13 +98,54 @@ export default function StudentsManagement() {
     setTimeout(() => setMsg(null), 5000);
   };
 
-  const filtered = students.filter((s) =>
-    !search || s.name.toLowerCase().includes(search.toLowerCase()) || String(s.nisn ?? '').toLowerCase().includes(search.toLowerCase()) || (s.nis ?? '').toLowerCase().includes(search.toLowerCase())
-  );
+  const classOptions = Array.from(new Set(students.map((s) => normalizeClass(s.class)).filter(Boolean)))
+    .sort((a, b) => a.localeCompare(b, 'id', { numeric: true }));
+  const majorOptions = Array.from(new Set(students.map((s) => s.major?.trim()).filter(Boolean) as string[]))
+    .sort((a, b) => a.localeCompare(b, 'id'));
+  const filtered = students.filter((s) => {
+    const matchesSearch = !search || s.name.toLowerCase().includes(search.toLowerCase()) || String(s.nisn ?? '').toLowerCase().includes(search.toLowerCase()) || (s.nis ?? '').toLowerCase().includes(search.toLowerCase());
+    return matchesSearch && (!classFilter || normalizeClass(s.class) === classFilter) && (!majorFilter || s.major?.trim() === majorFilter);
+  });
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
   const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const selectedVisibleCount = filtered.filter((student) => selectedIds.has(student.id)).length;
+  const allVisibleSelected = filtered.length > 0 && selectedVisibleCount === filtered.length;
+
+  const toggleSelected = (id: string) => {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAllVisible = () => {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (allVisibleSelected) filtered.forEach((student) => next.delete(student.id));
+      else filtered.forEach((student) => next.add(student.id));
+      return next;
+    });
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const removeSelected = async () => {
+    const targets = students.filter((student) => selectedIds.has(student.id));
+    if (targets.length === 0) return;
+    if (!confirm(`Hapus ${targets.length} akun siswa terpilih? Data login dan biodata akan ikut terhapus.`)) return;
+
+    setBulkDeleting(true);
+    const results = await Promise.all(targets.map((student) => accountsApi.remove(student.id)));
+    const failed = results.filter((result) => result.error).length;
+    setSelectedIds(new Set());
+    await load();
+    setBulkDeleting(false);
+    flash(failed === 0 ? 'ok' : 'err', failed === 0 ? `${targets.length} akun siswa berhasil dihapus.` : `${targets.length - failed} berhasil dihapus, ${failed} gagal dihapus.`);
+  };
 
   const detailStudent = detailId ? students.find((s) => s.id === detailId) ?? null : null;
 
@@ -326,6 +372,11 @@ export default function StudentsManagement() {
           <div className="flex flex-wrap gap-2">
             <button onClick={() => void exportExcel()} className="inline-flex items-center gap-2 rounded-lg border-2 border-[#1B2A4A] px-4 py-2 font-bold text-[#1B2A4A] hover:bg-[#1B2A4A]/5"><Download size={18} /> Export Excel</button>
             <button onClick={() => setImportOpen(true)} className="inline-flex items-center gap-2 rounded-lg border-2 border-[#1B2A4A] px-4 py-2 font-bold text-[#1B2A4A] hover:bg-[#1B2A4A]/5"><Upload size={18} /> Import Excel</button>
+            <button onClick={() => { setSelectionMode((value) => !value); clearSelection(); }} className={`inline-flex items-center gap-2 rounded-lg border-2 px-4 py-2 font-bold ${selectionMode ? 'border-[#C8A951] bg-[#C8A951]/15 text-[#866D2C]' : 'border-[#1B2A4A] text-[#1B2A4A] hover:bg-[#1B2A4A]/5'}`}>{selectionMode ? 'Batal Pilih' : 'Pilih Data'}</button>
+            {selectionMode && selectedIds.size > 0 && <>
+              <button onClick={clearSelection} className="inline-flex items-center gap-2 rounded-lg border-2 border-[#1B2A4A] px-4 py-2 font-bold text-[#1B2A4A] hover:bg-[#1B2A4A]/5">Deselect ({selectedIds.size})</button>
+              <button onClick={() => void removeSelected()} disabled={bulkDeleting} className="inline-flex items-center gap-2 rounded-lg border-2 border-red-600 px-4 py-2 font-bold text-red-600 hover:bg-red-50 disabled:opacity-50"><Trash2 size={18} /> {bulkDeleting ? 'Menghapus...' : `Hapus (${selectedIds.size})`}</button>
+            </>}
             <button onClick={openCreate} className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-4 py-2 font-bold text-[#1B2A4A]"><Plus size={18} /> Tambah Siswa</button>
           </div>
         )}
@@ -351,15 +402,26 @@ export default function StudentsManagement() {
         )
       ) : (
         <>
-          <div className="relative max-w-sm">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#23314D]/50" />
-            <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Cari nama / NISN..." className="w-full rounded-lg border border-[#1B2A4A]/20 bg-white py-2 pl-10 pr-4 text-sm" />
+          <div className="flex flex-wrap gap-3">
+            <div className="relative max-w-sm">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#23314D]/50" />
+              <input value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder="Cari nama / NISN..." className="w-full rounded-lg border border-[#1B2A4A]/20 bg-white py-2 pl-10 pr-4 text-sm" />
+            </div>
+            <select value={majorFilter} onChange={(e) => { setMajorFilter(e.target.value); setPage(1); }} className="min-w-44 rounded-lg border border-[#1B2A4A]/20 bg-white px-3 py-2 text-sm text-[#23314D]" aria-label="Filter jurusan">
+              <option value="">Semua Jurusan</option>
+              {majorOptions.map((major) => <option key={major} value={major}>{major}</option>)}
+            </select>
+            <select value={classFilter} onChange={(e) => { setClassFilter(e.target.value); setPage(1); }} className="min-w-36 rounded-lg border border-[#1B2A4A]/20 bg-white px-3 py-2 text-sm text-[#23314D]" aria-label="Filter kelas">
+              <option value="">Semua Kelas</option>
+              {classOptions.map((className) => <option key={className} value={className}>Kelas {formatClass(className)}</option>)}
+            </select>
           </div>
 
           <div className="overflow-x-auto rounded-xl bg-white shadow-sm">
             <table className="w-full text-left text-sm">
               <thead className="bg-[#FAF6F0] text-[#1B2A4A]">
                 <tr>
+                  {selectionMode && <th className="p-4"><input type="checkbox" checked={allVisibleSelected} onChange={toggleAllVisible} aria-label="Pilih semua siswa yang tampil" /></th>}
                   <th className="p-4">Siswa</th>
                   <th className="p-4">NISN</th>
                   <th className="p-4">NIS</th>
@@ -368,13 +430,20 @@ export default function StudentsManagement() {
                   <th className="p-4">Jurusan</th>
                   <th className="p-4">Jenis Kelamin</th>
                   <th className="p-4">Alamat</th>
-                  <th className="p-4">Aksi</th>
+                  <th className="p-4">{selectionMode ? 'Pilih' : 'Aksi'}</th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.length === 0 && <tr><td colSpan={9} className="p-8 text-center text-[#5B7088]">Belum ada siswa terdaftar.</td></tr>}
+                  {filtered.length === 0 && <tr><td colSpan={selectionMode ? 10 : 9} className="p-8 text-center text-[#5B7088]">Belum ada siswa terdaftar.</td></tr>}
                 {paginated.map((student) => (
-                  <tr key={student.id} className="border-t border-[#1B2A4A]/10">
+                  <tr
+                    key={student.id}
+                    onClick={() => { if (selectionMode) toggleSelected(student.id); }}
+                    onKeyDown={(event) => { if (selectionMode && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); toggleSelected(student.id); } }}
+                    tabIndex={selectionMode ? 0 : undefined}
+                    className={`border-t border-[#1B2A4A]/10 ${selectionMode ? 'cursor-pointer hover:bg-[#FAF6F0]' : ''} ${selectedIds.has(student.id) ? 'bg-[#C8A951]/10' : ''}`}
+                  >
+                    {selectionMode && <td className="p-4" onClick={(event) => event.stopPropagation()}><input type="checkbox" checked={selectedIds.has(student.id)} onChange={() => toggleSelected(student.id)} aria-label={`Pilih ${student.name}`} /></td>}
                     <td className="p-4">
                       <div className="flex items-center gap-3">
                         {student.foto ? (
@@ -392,11 +461,13 @@ export default function StudentsManagement() {
                     <td className="p-4">{student.major || '-'}</td>
                     <td className="p-4">{genderLabel(student.gender)}</td>
                     <td className="p-4 max-w-[200px] truncate" title={String(student.address ?? '')}>{student.address || '-'}</td>
-                    <td className="p-4 whitespace-nowrap">
-                      <button onClick={() => setDetailId(student.id)} className="mr-3 text-[#866D2C]" title="Detail"><Eye size={16} /></button>
-                      <button onClick={() => openEdit(student)} className="mr-3 text-[#866D2C]" title="Edit"><Pencil size={16} /></button>
-                      <button onClick={() => resetPin(student)} className="mr-3 text-[#866D2C]" title="Reset PIN"><KeyRound size={16} /></button>
-                      <button onClick={() => removeStudent(student)} className="text-red-600" title="Hapus"><Trash2 size={16} /></button>
+                    <td className="p-4 whitespace-nowrap" onClick={(event) => event.stopPropagation()}>
+                      {selectionMode ? <span className="text-xs text-[#5B7088]">Klik baris untuk memilih</span> : <>
+                        <button onClick={() => setDetailId(student.id)} className="mr-3 text-[#866D2C]" title="Detail"><Eye size={16} /></button>
+                        <button onClick={() => openEdit(student)} className="mr-3 text-[#866D2C]" title="Edit"><Pencil size={16} /></button>
+                        <button onClick={() => resetPin(student)} className="mr-3 text-[#866D2C]" title="Reset PIN"><KeyRound size={16} /></button>
+                        <button onClick={() => removeStudent(student)} className="text-red-600" title="Hapus"><Trash2 size={16} /></button>
+                      </>}
                     </td>
                   </tr>
                 ))}
