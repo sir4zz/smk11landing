@@ -5,17 +5,20 @@ namespace App\Services;
 use App\Models\Guru;
 use App\Models\Profile;
 use App\Models\SdmGuru;
+use App\Models\SdmTendik;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
- * Links imported SDM guru records (sdm_gurus) to the existing login account
- * system (users + profiles + legacy gurus). One account per guru is enforced
- * by the unique index on sdm_gurus.user_id.
+ * Links imported SDM records (sdm_gurus / sdm_tendiks) to the existing login
+ * account system (users + profiles + legacy gurus). One account per SDM record
+ * is enforced by the unique index on user_id.
  */
 class SdmAccountService
 {
@@ -64,18 +67,20 @@ class SdmAccountService
 
     /**
      * Account summary used by the admin/operator account panel.
+     * Accepts both SdmGuru and SdmTendik.
      *
+     * @param  SdmGuru|SdmTendik  $person
      * @return array<string, mixed>
      */
-    public function accountSummary(SdmGuru $guru): array
+    public function accountSummary(Model $person): array
     {
-        $user = $guru->user;
+        $user = $person->user;
 
         if (! $user) {
             return [
                 'linked' => false,
                 'user' => null,
-                'identifier' => $guru->nip ?: $guru->nipppk ?: $guru->nuptk ?: '',
+                'identifier' => $person->nip ?: $person->nipppk ?: $person->nuptk ?: '',
             ];
         }
 
@@ -97,30 +102,36 @@ class SdmAccountService
                     'teacher_id' => $user->guru->teacher_id ?? '',
                 ] : null,
             ],
-            'identifier' => $guru->nip ?: $guru->nipppk ?: $guru->nuptk ?: '',
+            'identifier' => $person->nip ?: $person->nipppk ?: $person->nuptk ?: '',
         ];
     }
 
     /**
-     * Create the login account for an sdm guru. Returns the generated password
-     * (when auto-generated) so the operator can share it once.
+     * Create the login account for an SDM person (guru or tendik).
+     * Returns the generated password (when auto-generated).
      *
+     * @param  SdmGuru|SdmTendik  $person
      * @return array{user: User, password: string}
      */
-    public function createAccount(SdmGuru $guru, ?string $email, ?string $password): array
+    public function createAccount(Model $person, ?string $email, ?string $password): array
     {
-        if ($guru->user_id) {
-            throw $this->httpFail('Guru ini sudah memiliki akun login.');
+        if ($person->user_id) {
+            $label = $person instanceof SdmTendik ? 'Tendik ini' : 'Guru ini';
+            throw $this->httpFail($label.' sudah memiliki akun login.');
         }
 
-        $email = $this->resolveEmail($guru, $email);
+        $isTendik = $person instanceof SdmTendik;
+        $role = $isTendik ? 'guru' : 'guru'; // Keduanya role guru (akun staff)
+        $defaultName = $isTendik ? 'Tendik' : 'Guru';
+
+        $email = $this->resolveEmail($person, $email);
         $password = $this->resolvePassword($password);
         $id = (string) Str::uuid();
-        $name = $guru->name ?: 'Guru';
+        $name = $person->name ?: $defaultName;
 
         try {
-            DB::transaction(function () use ($id, $guru, $email, $password, $name) {
-                $this->assertIdentifiersFree($guru);
+            DB::transaction(function () use ($id, $person, $email, $password, $name, $role) {
+                $this->assertIdentifiersFree($person);
 
                 User::create([
                     'id' => $id,
@@ -133,7 +144,7 @@ class SdmAccountService
 
                 Profile::create([
                     'id' => $id,
-                    'role' => 'guru',
+                    'role' => $role,
                     'name' => $name,
                     'email' => $email,
                     'status' => 'active',
@@ -143,9 +154,9 @@ class SdmAccountService
 
                 Guru::create([
                     'id' => $id,
-                    'nip' => $guru->nip ?: null,
-                    'nipppk' => $guru->nipppk ?: null,
-                    'nuptk' => $guru->nuptk ?: null,
+                    'nip' => $person->nip ?: null,
+                    'nipppk' => $person->nipppk ?: null,
+                    'nuptk' => $person->nuptk ?: null,
                     'teacher_id' => $this->accounts->generateTeacherId(),
                     'subject' => '',
                     'position' => '',
@@ -153,7 +164,7 @@ class SdmAccountService
                     'certifications' => [],
                 ]);
 
-                $guru->update(['user_id' => $id]);
+                $person->update(['user_id' => $id]);
             });
         } catch (HttpException $e) {
             throw $e;
@@ -168,15 +179,16 @@ class SdmAccountService
     }
 
     /**
-     * Update an existing guru account: email, status (active/inactive) and/or
-     * password reset. Contact email is mirrored to sdm_gurus.
+     * Update an existing SDM account: email, status and/or password reset.
+     *
+     * @param  SdmGuru|SdmTendik  $person
      */
-    public function updateAccount(SdmGuru $guru, Request $request): User
+    public function updateAccount(Model $person, Request $request): User
     {
-        $user = $guru->user;
+        $user = $person->user;
 
         if (! $user) {
-            throw $this->httpFail('Guru ini belum memiliki akun login.');
+            throw $this->httpFail('Data ini belum memiliki akun login.');
         }
 
         $email = null;
@@ -196,7 +208,7 @@ class SdmAccountService
             throw $this->httpFail('Password minimal 6 karakter.');
         }
 
-        DB::transaction(function () use ($user, $guru, $request, $email, $password) {
+        DB::transaction(function () use ($user, $person, $request, $email, $password) {
             $userUpdates = [];
             $profileUpdates = [];
             $sdmUpdates = [];
@@ -223,7 +235,7 @@ class SdmAccountService
                 $user->profileRecord?->update($profileUpdates);
             }
             if ($sdmUpdates) {
-                $guru->update($sdmUpdates);
+                $person->update($sdmUpdates);
             }
         });
 
@@ -231,47 +243,90 @@ class SdmAccountService
     }
 
     /**
-     * Remove the account from an sdm guru (deletes the login account, keeps
-     * the imported guru record). sdm_gurus.user_id resets via FK set null.
+     * Remove the account from an SDM record (deletes the login account, keeps
+     * the imported SDM record). user_id resets via FK set null.
+     *
+     * @param  SdmGuru|SdmTendik  $person
      */
-    public function unlinkAccount(SdmGuru $guru): void
+    public function unlinkAccount(Model $person): void
     {
-        $user = $guru->user;
+        $user = $person->user;
 
         if (! $user) {
             return;
         }
 
-        DB::transaction(function () use ($guru, $user) {
-            $guru->update(['user_id' => null]);
+        DB::transaction(function () use ($person, $user) {
+            $person->update(['user_id' => null]);
             $user->delete();
         });
+    }
+
+    /**
+     * Bulk-create login accounts for ALL SDM persons (guru + tendik) that
+     * don't have linked accounts yet.
+     */
+    public function bulkCreateAccounts(): array
+    {
+        $persons = collect();
+        $persons = $persons->concat(SdmGuru::query()->whereNull('user_id')->get());
+        $persons = $persons->concat(SdmTendik::query()->whereNull('user_id')->get());
+
+        $created = 0;
+        $skipped = 0;
+        $errors = [];
+
+        foreach ($persons as $person) {
+            try {
+                $this->createAccount($person, null, null);
+                $created++;
+            } catch (\Throwable $e) {
+                $skipped++;
+                $errors[] = [
+                    'name' => $person->name,
+                    'type' => $person instanceof SdmTendik ? 'tendik' : 'guru',
+                    'message' => $e->getMessage(),
+                ];
+            }
+        }
+
+        // Hapus cache stats agar jumlah tenaga pengajar ter-update
+        Cache::forget(\App\Http\Controllers\StatsController::CACHE_KEY);
+
+        return [
+            'summary' => [
+                'total' => $persons->count(),
+                'created' => $created,
+                'skipped' => $skipped,
+            ],
+            'errors' => $errors,
+        ];
     }
 
     // ------------------------------------------------------------------
     // Helpers
     // ------------------------------------------------------------------
 
-    private function resolveEmail(SdmGuru $guru, ?string $email): string
+    private function resolveEmail(Model $person, ?string $email): string
     {
         $email = strtolower(trim((string) $email));
 
         if ($email === '' || ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $email = strtolower(trim((string) $guru->email));
+            $email = strtolower(trim((string) $person->email));
         }
 
         if ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) && ! User::query()->where('email', $email)->exists()) {
             return $email;
         }
 
-        return $this->generateEmail($guru);
+        return $this->generateEmail($person);
     }
 
-    private function generateEmail(SdmGuru $guru): string
+    private function generateEmail(Model $person): string
     {
-        $base = $guru->nip ?: $guru->nipppk ?: $guru->nuptk;
+        $base = $person->nip ?: $person->nipppk ?: $person->nuptk;
         $digits = $base ? preg_replace('/[^0-9]/', '', $base) : '';
-        $prefix = $digits !== '' ? 'nip-'.$digits : 'guru';
+        $prefix = $digits !== '' ? 'nip-'.$digits : ($person instanceof SdmTendik ? 'tendik' : 'guru');
 
         $candidate = strtolower($prefix).'@'.self::EMAIL_DOMAIN;
         $email = $candidate;
@@ -292,13 +347,16 @@ class SdmAccountService
         return mb_strlen($password) >= 6 ? $password : Str::random(10);
     }
 
-    private function assertIdentifiersFree(SdmGuru $guru): void
+    /**
+     * @param  SdmGuru|SdmTendik  $person
+     */
+    private function assertIdentifiersFree(Model $person): void
     {
-        if ($guru->nip && Guru::query()->where('nip', $guru->nip)->exists()) {
-            throw $this->httpFail('NIP sudah terdaftar di akun guru lain.');
+        if ($person->nip && Guru::query()->where('nip', $person->nip)->exists()) {
+            throw $this->httpFail('NIP sudah terdaftar di akun lain.');
         }
-        if ($guru->nuptk && Guru::query()->where('nuptk', $guru->nuptk)->exists()) {
-            throw $this->httpFail('NUPTK sudah terdaftar di akun guru lain.');
+        if ($person->nuptk && Guru::query()->where('nuptk', $person->nuptk)->exists()) {
+            throw $this->httpFail('NUPTK sudah terdaftar di akun lain.');
         }
     }
 

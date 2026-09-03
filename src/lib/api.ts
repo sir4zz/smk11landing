@@ -1381,6 +1381,7 @@ export interface SdmPreviewResult {
 export interface SdmImportResult {
   summary: { total: number; imported: number; updated: number; skipped: number };
   errors: { row: number; name: string; message: string }[];
+  accounts_created?: number;
 }
 
 export const sdmApi = {
@@ -1415,6 +1416,31 @@ export const sdmApi = {
   exportUrl(type: SdmType): string {
     return `${apiBaseUrl}/admin/sdm/${type}/export`;
   },
+  async exportCsv(type: SdmType): Promise<void> {
+    const url = `${apiBaseUrl}/admin/sdm/${type}/export`;
+    const token = getAuthToken();
+    const response = await fetch(url, {
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    });
+    if (!response.ok) {
+      const body = await response.json().catch(() => null);
+      throw new Error(body?.message ?? body?.error?.message ?? 'Gagal mengunduh CSV.');
+    }
+    const blob = await response.blob();
+    const disposition = response.headers.get('Content-Disposition') ?? '';
+    const filenameMatch = disposition.match(/filename="?([^";\n]+)"?/);
+    const filename = filenameMatch ? filenameMatch[1] : `data-${type}-${new Date().toISOString().slice(0, 10)}.csv`;
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(blobUrl);
+  },
 };
 
 // ---------- GURU LOGIN ACCOUNT MANAGEMENT (SDM) ----------
@@ -1441,25 +1467,33 @@ export interface GuruAccountResult {
 }
 
 export const sdmAccountApi = {
-  get(guruId: string): ApiResult<GuruAccountSummary> {
-    return request<GuruAccountSummary>(`/admin/sdm/guru/${encodeURIComponent(guruId)}/account`);
+  get(personId: string, type: SdmType = 'guru'): ApiResult<GuruAccountSummary> {
+    return request<GuruAccountSummary>(`/admin/sdm/${type}/${encodeURIComponent(personId)}/account`);
   },
-  create(guruId: string, payload: { email?: string; password?: string }): ApiResult<GuruAccountResult> {
-    return request<GuruAccountResult>(`/admin/sdm/guru/${encodeURIComponent(guruId)}/account`, {
+  create(personId: string, payload: { email?: string; password?: string }, type: SdmType = 'guru'): ApiResult<GuruAccountResult> {
+    return request<GuruAccountResult>(`/admin/sdm/${type}/${encodeURIComponent(personId)}/account`, {
       method: 'POST',
       body: JSON.stringify(payload),
     });
   },
-  update(guruId: string, payload: { email?: string; password?: string; status?: 'active' | 'inactive' }): ApiResult<GuruAccountSummary> {
-    return request<GuruAccountSummary>(`/admin/sdm/guru/${encodeURIComponent(guruId)}/account`, {
+  update(personId: string, payload: { email?: string; password?: string; status?: 'active' | 'inactive' }, type: SdmType = 'guru'): ApiResult<GuruAccountSummary> {
+    return request<GuruAccountSummary>(`/admin/sdm/${type}/${encodeURIComponent(personId)}/account`, {
       method: 'PATCH',
       body: JSON.stringify(payload),
     });
   },
-  remove(guruId: string): ApiResult<null> {
-    return request<null>(`/admin/sdm/guru/${encodeURIComponent(guruId)}/account`, { method: 'DELETE' });
+  remove(personId: string, type: SdmType = 'guru'): ApiResult<null> {
+    return request<null>(`/admin/sdm/${type}/${encodeURIComponent(personId)}/account`, { method: 'DELETE' });
+  },
+  bulkCreate(): ApiResult<BulkCreateResult> {
+    return request<BulkCreateResult>('/admin/sdm/guru/bulk-create-accounts', { method: 'POST' });
   },
 };
+
+export interface BulkCreateResult {
+  summary: { total: number; created: number; skipped: number };
+  errors: { name: string; type: string; message: string }[];
+}
 
 export interface PublicSdmProfile {
   role: 'guru' | 'tendik';

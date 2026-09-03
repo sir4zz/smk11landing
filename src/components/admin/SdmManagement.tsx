@@ -281,6 +281,8 @@ export default function SdmManagement({ type, permissions }: SdmManagementProps)
   const [saving, setSaving] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [accountGuruId, setAccountGuruId] = useState<string | null>(null);
+  const [bulkCreating, setBulkCreating] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const canEdit = can(permissions, 'sdm.edit') || can(permissions, 'sdm.create');
   const canDelete = can(permissions, 'sdm.delete');
@@ -414,6 +416,34 @@ export default function SdmManagement({ type, permissions }: SdmManagementProps)
     await load();
   };
 
+  const bulkCreateAccounts = async () => {
+    if (!confirm('Buatkan akun login untuk semua guru & tenaga kependidikan yang belum memiliki akun? Password akan di-generate otomatis.')) return;
+    setBulkCreating(true);
+    const { data, error } = await sdmAccountApi.bulkCreate();
+    setBulkCreating(false);
+    if (error) {
+      flash('err', error.message ?? 'Gagal membuat akun secara massal.');
+      return;
+    }
+    if (data) {
+      const { summary, errors } = data;
+      const msg = `Berhasil membuat ${summary.created} akun dari ${summary.total} data. ${summary.skipped > 0 ? `${summary.skipped} dilewati.` : ''}`;
+      flash(summary.created > 0 ? 'ok' : 'err', errors.length > 0 ? `${msg} (${errors.map((e) => `${e.name} [${e.type}]`).join(', ')})` : msg);
+    }
+    await load();
+  };
+
+  const handleExportCsv = async () => {
+    setExporting(true);
+    try {
+      await sdmApi.exportCsv(type);
+    } catch (e: any) {
+      flash('err', e.message ?? 'Gagal mengunduh CSV.');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const detailPerson = detailId ? items.find((i) => i.id === detailId) ?? null : null;
   const detailPersonId = detailPerson?.id ?? null;
   const totalPages = Math.max(1, Math.ceil(total / perPage));
@@ -428,7 +458,14 @@ export default function SdmManagement({ type, permissions }: SdmManagementProps)
               <button onClick={() => setImportOpen(true)} className="inline-flex items-center gap-2 rounded-lg border-2 border-[#1B2A4A] px-4 py-2 font-bold text-[#1B2A4A] hover:bg-[#1B2A4A]/5"><Upload size={18} /> Import Excel</button>
             )}
             {canExport && (
-              <a href={sdmApi.exportUrl(type)} className="inline-flex items-center gap-2 rounded-lg border-2 border-[#1B2A4A]/30 px-4 py-2 font-bold text-[#1B2A4A] hover:bg-[#1B2A4A]/5"><Download size={18} /> Export CSV</a>
+              <button onClick={handleExportCsv} disabled={exporting} className="inline-flex items-center gap-2 rounded-lg border-2 border-[#1B2A4A]/30 px-4 py-2 font-bold text-[#1B2A4A] hover:bg-[#1B2A4A]/5 disabled:opacity-50">
+                {exporting ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />} Export CSV
+              </button>
+            )}
+            {canEditAccount && (
+              <button onClick={bulkCreateAccounts} disabled={bulkCreating} className="inline-flex items-center gap-2 rounded-lg border-2 border-[#C8A951]/60 px-4 py-2 font-bold text-[#866D2C] hover:bg-[#C8A951]/10 disabled:opacity-50">
+                {bulkCreating ? <Loader2 size={18} className="animate-spin" /> : <KeyRound size={18} />} Buat Akun Semua
+              </button>
             )}
             {canEdit && (
               <button onClick={openCreate} className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-4 py-2 font-bold text-[#1B2A4A]"><Plus size={18} /> Tambah</button>
@@ -441,7 +478,7 @@ export default function SdmManagement({ type, permissions }: SdmManagementProps)
 
       {detailId ? (
         detailPerson ? (
-          <SdmDetail person={detailPerson} onBack={() => setDetailId(null)} onEdit={canEdit ? () => openEdit(detailPerson) : undefined} onDelete={canDelete ? () => remove(detailPerson) : undefined} onManageAccount={type === 'guru' && canViewAccount && detailPersonId ? () => setAccountGuruId(detailPersonId!) : undefined} />
+          <SdmDetail person={detailPerson} onBack={() => setDetailId(null)} onEdit={canEdit ? () => openEdit(detailPerson) : undefined} onDelete={canDelete ? () => remove(detailPerson) : undefined} onManageAccount={canViewAccount && detailPersonId ? () => setAccountGuruId(detailPersonId!) : undefined} />
         ) : (
           <div className="rounded-xl bg-white p-8 text-center text-[#5B7088] shadow-sm">
             Data tidak ditemukan.{' '}
@@ -466,12 +503,12 @@ export default function SdmManagement({ type, permissions }: SdmManagementProps)
                   <th className="p-4">Pangkat / Gol</th>
                   <th className="p-4">Jabatan</th>
                   <th className="p-4">Aktif</th>
-                  {type === 'guru' && canViewAccount && <th className="p-4">Akun Login</th>}
+                  {canViewAccount && <th className="p-4">Akun Login</th>}
                   <th className="p-4">Aksi</th>
                 </tr>
               </thead>
               <tbody>
-                {!loading && items.length === 0 && <tr><td colSpan={type === 'guru' && canViewAccount ? 9 : 8} className="p-8 text-center text-[#5B7088]">Belum ada data {SDM_TYPE_LABELS[type].toLowerCase()}.</td></tr>}
+                {!loading && items.length === 0 && <tr><td colSpan={canViewAccount ? 9 : 8} className="p-8 text-center text-[#5B7088]">Belum ada data {SDM_TYPE_LABELS[type].toLowerCase()}.</td></tr>}
                 {items.map((person) => (
                   <tr key={person.id} className="border-t border-[#1B2A4A]/10">
                     <td className="p-4">
@@ -497,7 +534,7 @@ export default function SdmManagement({ type, permissions }: SdmManagementProps)
                         {person.is_active !== false ? 'Aktif' : 'Nonaktif'}
                       </span>
                     </td>
-                    {type === 'guru' && canViewAccount && (
+                    {canViewAccount && (
                       <td className="p-4">
                         {person.linked_account ? (
                           <span className="inline-flex rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700">Terhubung</span>
@@ -508,7 +545,7 @@ export default function SdmManagement({ type, permissions }: SdmManagementProps)
                     )}
                     <td className="p-4 whitespace-nowrap">
                       <button onClick={() => { if (person.id) setDetailId(person.id); }} className="mr-3 inline-flex items-center gap-1 text-sm font-semibold text-[#866D2C]"><Eye size={15} /> Detail</button>
-                      {type === 'guru' && canViewAccount && (
+                      {canViewAccount && (
                         <button onClick={() => { if (person.id) setAccountGuruId(person.id); }} className="mr-3 inline-flex items-center gap-1 text-sm font-semibold text-[#866D2C]"><KeyRound size={15} /> Akun</button>
                       )}
                       {canEdit && (
@@ -561,6 +598,7 @@ export default function SdmManagement({ type, permissions }: SdmManagementProps)
       {accountGuruId && (
         <GuruAccountModal
           person={items.find((i) => i.id === accountGuruId) ?? null}
+          type={type}
           canEdit={canEditAccount}
           onClose={() => setAccountGuruId(null)}
           onChanged={() => { void load(); }}
@@ -570,7 +608,7 @@ export default function SdmManagement({ type, permissions }: SdmManagementProps)
   );
 }
 
-function GuruAccountModal({ person, canEdit, onClose, onChanged }: { person: SdmPersonRow | null; canEdit: boolean; onClose: () => void; onChanged: () => void }) {
+function GuruAccountModal({ person, type, canEdit, onClose, onChanged }: { person: SdmPersonRow | null; type: SdmType; canEdit: boolean; onClose: () => void; onChanged: () => void }) {
   const [account, setAccount] = useState<GuruAccountSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState('');
@@ -582,20 +620,20 @@ function GuruAccountModal({ person, canEdit, onClose, onChanged }: { person: Sdm
   const load = useCallback(async () => {
     if (!person?.id) return;
     setLoading(true);
-    const { data, error } = await sdmAccountApi.get(person.id);
+    const { data, error } = await sdmAccountApi.get(person.id, type);
     if (!error && data) {
       setAccount(data);
       setEmail(data.user?.email ?? '');
     }
     setLoading(false);
-  }, [person?.id]);
+  }, [person?.id, type]);
 
   useEffect(() => { void load(); }, [load]);
 
   if (!person) {
     return (
       <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4">
-        <div className="w-full max-w-lg rounded-xl bg-white p-6 text-center text-[#5B7088] shadow-xl">Data guru tidak ditemukan.</div>
+        <div className="w-full max-w-lg rounded-xl bg-white p-6 text-center text-[#5B7088] shadow-xl">Data tidak ditemukan.</div>
       </div>
     );
   }
@@ -613,7 +651,7 @@ function GuruAccountModal({ person, canEdit, onClose, onChanged }: { person: Sdm
     const { data, error } = await sdmAccountApi.create(person.id!, {
       email: email.trim() || undefined,
       password: password || undefined,
-    });
+    }, type);
     setBusy(false);
     if (error) {
       flash('err', error.message ?? 'Gagal membuat akun.');
@@ -633,7 +671,7 @@ function GuruAccountModal({ person, canEdit, onClose, onChanged }: { person: Sdm
     }
     setBusy(true);
     setMsg(null);
-    const { error } = await sdmAccountApi.update(person.id!, { password });
+    const { error } = await sdmAccountApi.update(person.id!, { password }, type);
     setBusy(false);
     if (error) {
       flash('err', error.message ?? 'Gagal mereset password.');
@@ -650,7 +688,7 @@ function GuruAccountModal({ person, canEdit, onClose, onChanged }: { person: Sdm
     const next = account?.user?.status === 'active' ? 'inactive' : 'active';
     setBusy(true);
     setMsg(null);
-    const { error } = await sdmAccountApi.update(person.id!, { status: next });
+    const { error } = await sdmAccountApi.update(person.id!, { status: next }, type);
     setBusy(false);
     if (error) {
       flash('err', error.message ?? 'Gagal mengubah status akun.');
@@ -666,7 +704,7 @@ function GuruAccountModal({ person, canEdit, onClose, onChanged }: { person: Sdm
     if (!confirm(`Lepaskan akun login dari ${person.name}? Akun login beserta profil publiknya akan dihapus permanen. Data SDM tetap tersimpan dan dapat dibuatkan akun baru.`)) return;
     setBusy(true);
     setMsg(null);
-    const { error } = await sdmAccountApi.remove(person.id!);
+    const { error } = await sdmAccountApi.remove(person.id!, type);
     setBusy(false);
     if (error) {
       flash('err', error.message ?? 'Gagal melepas akun.');
@@ -743,7 +781,7 @@ function GuruAccountModal({ person, canEdit, onClose, onChanged }: { person: Sdm
         ) : (
           <div className="space-y-4">
             <div className="rounded-lg bg-[#FAF6F0] p-3 text-sm text-[#5B7088]">
-              Guru ini belum memiliki akun login. Setelah dibuat, guru dapat login menggunakan NIP / NUPTK / ID Guru dan email di bawah.
+              Data ini belum memiliki akun login. Setelah dibuat, dapat login menggunakan NIP / NUPTK / ID Guru dan email di bawah.
             </div>
             {canEdit ? (
               <>

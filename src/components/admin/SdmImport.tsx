@@ -213,6 +213,11 @@ export default function SdmImport({ type, onClose, onImported }: SdmImportProps)
                   <CheckCircle2 size={16} /> {result.summary.updated} data diperbarui.
                 </p>
               )}
+              {result.accounts_created != null && result.accounts_created > 0 && (
+                <p className="mt-1 flex items-center gap-1.5 font-medium text-purple-700">
+                  <CheckCircle2 size={16} /> {result.accounts_created} akun login otomatis dibuat.
+                </p>
+              )}
               {result.summary.skipped > 0 && (
                 <p className="mt-1 flex items-center gap-1.5 font-medium text-amber-700">
                   <AlertTriangle size={16} /> {result.summary.skipped} data dilewati.
