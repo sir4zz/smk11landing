@@ -188,7 +188,8 @@ $guru = Guru::query()
 
         $limits = [
             'nickname' => 100, 'kewarganegaraan' => 50, 'anak_yatim_piatu' => 30,
-            'bahasa_sehari_hari' => 50, 'phone' => 30, 'tinggal_dengan' => 60,
+            'bahasa_sehari_hari' => 50, 'provinsi' => 100, 'kota' => 100, 'kecamatan' => 100,
+            'phone' => 30, 'tinggal_dengan' => 60,
             'golongan_darah' => 5, 'lulusan_dari' => 255, 'nomor_sttb' => 100,
             'lama_belajar' => 20, 'pindahan_dari' => 255, 'alasan_pindah' => 255,
             'diangkat' => 100, 'kompetensi_keahlian' => 255, 'gemar_kesenian' => 100,
@@ -379,6 +380,9 @@ $guru = Guru::query()
             'place_of_birth' => $student->place_of_birth ?? '',
             'religion' => $student->religion ?? '',
             'address' => $student->address ?? '',
+            'provinsi' => $student->provinsi ?? '',
+            'kota' => $student->kota ?? '',
+            'kecamatan' => $student->kecamatan ?? '',
             'achievements' => $student->achievements ?? [],
             'doc_kk' => $student->doc_kk ?? '',
             'doc_akta' => $student->doc_akta ?? '',

@@ -34,7 +34,7 @@ class Student extends Model
         'nickname', 'kewarganegaraan', 'anak_ke', 'jml_saudara_kandung', 'jml_saudara_tiri',
         'anak_yatim_piatu', 'bahasa_sehari_hari',
         // Section 2
-        'phone', 'tinggal_dengan', 'jarak_sekolah',
+        'provinsi', 'kota', 'kecamatan', 'phone', 'tinggal_dengan', 'jarak_sekolah',
         // Section 3
         'golongan_darah', 'penyakit', 'kelainan_jasmani', 'tinggi_cm', 'berat_kg',
         // Section 4
