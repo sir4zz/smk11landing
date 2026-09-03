@@ -334,6 +334,9 @@ class StudentDataChangeRequestController extends Controller
             'bahasa_sehari_hari',
             // B. Keterangan Tempat Tinggal (address dikecualikan)
             'phone', 'tinggal_dengan', 'jarak_sekolah',
+            'desa', 'kode_pos', 'jenis_tempat_tinggal', 'jarak_tempuh', 'transportasi',
+            'asal_sekolah', 'nik', 'email', 'no_kk', 'kepala_keluarga', 'no_kip',
+            'cita_cita', 'hobi', 'pernah_paud', 'pernah_tk', 'status_afirmasi',
             // C. Keterangan Kesehatan
             'golongan_darah', 'penyakit', 'kelainan_jasmani', 'tinggi_cm', 'berat_kg',
             // D. Keterangan Pendidikan — seluruhnya dikecualikan
@@ -341,6 +344,7 @@ class StudentDataChangeRequestController extends Controller
             'gemar_kesenian', 'gemar_olahraga', 'gemar_kemasyarakatan', 'gemar_lain',
             // I. Keterangan Siswa
             'siswa_status', 'siswa_tanggal',
+            'beasiswa_status', 'beasiswa_tk', 'beasiswa_dari',
             // Dokumen siswa (opsional, bucket student/documents sama seperti Admin)
             'doc_kk', 'doc_akta', 'doc_ijazah', 'doc_lainnya',
             'foto',

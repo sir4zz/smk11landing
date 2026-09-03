@@ -14,7 +14,7 @@ class StudentBiodataContractTest extends TestCase
 
         $this->assertSame($keys, (new AccountService())->biodataKeys());
         $this->assertSame([], array_diff($keys, (new Student())->getFillable()));
-        $this->assertNotContains('beasiswa_tk', $keys);
-        $this->assertNotContains('beasiswa_dari', $keys);
+        $this->assertContains('beasiswa_tk', $keys);
+        $this->assertContains('beasiswa_dari', $keys);
     }
 }
