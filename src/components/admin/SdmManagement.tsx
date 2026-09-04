@@ -281,6 +281,9 @@ export default function SdmManagement({ type, permissions }: SdmManagementProps)
   const [saving, setSaving] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [accountGuruId, setAccountGuruId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [selectionMode, setSelectionMode] = useState(false);
   const [bulkCreating, setBulkCreating] = useState(false);
   const [exporting, setExporting] = useState(false);
 
@@ -290,6 +293,43 @@ export default function SdmManagement({ type, permissions }: SdmManagementProps)
   const canExport = can(permissions, 'sdm.export');
   const canViewAccount = can(permissions, 'sdm.view');
   const canEditAccount = can(permissions, 'sdm.edit');
+
+  const selectedVisibleCount = items.filter((p) => selectedIds.has(p.id!)).length;
+  const allVisibleSelected = items.length > 0 && selectedVisibleCount === items.length;
+
+  const toggleSelected = (id: string) => {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAllVisible = () => {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (allVisibleSelected) items.forEach((p) => { if (p.id) next.delete(p.id); });
+      else items.forEach((p) => { if (p.id) next.add(p.id); });
+      return next;
+    });
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const removeSelected = async () => {
+    const targets = items.filter((p) => p.id && selectedIds.has(p.id));
+    if (targets.length === 0) return;
+    if (!confirm(`Hapus ${targets.length} data ${SDM_TYPE_LABELS[type].toLowerCase()} terpilih? Semua data pendidikan, tugas, sertifikasi, KGB dan SK ikut terhapus.`)) return;
+
+    setBulkDeleting(true);
+    const results = await Promise.all(targets.map((p) => sdmApi.remove(type, p.id!)));
+    const failed = results.filter((r) => r.error).length;
+    setSelectedIds(new Set());
+    await load();
+    setBulkDeleting(false);
+    flash(failed === 0 ? 'ok' : 'err', failed === 0 ? `${targets.length} data berhasil dihapus.` : `${targets.length - failed} berhasil dihapus, ${failed} gagal dihapus.`);
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -457,6 +497,15 @@ export default function SdmManagement({ type, permissions }: SdmManagementProps)
             {canImport && (
               <button onClick={() => setImportOpen(true)} className="inline-flex items-center gap-2 rounded-lg border-2 border-[#1B2A4A] px-4 py-2 font-bold text-[#1B2A4A] hover:bg-[#1B2A4A]/5"><Upload size={18} /> Import Excel</button>
             )}
+            {canDelete && (
+              <button onClick={() => { setSelectionMode((value) => !value); clearSelection(); }} className={`inline-flex items-center gap-2 rounded-lg border-2 px-4 py-2 font-bold ${selectionMode ? 'border-[#C8A951] bg-[#C8A951]/15 text-[#866D2C]' : 'border-[#1B2A4A] text-[#1B2A4A] hover:bg-[#1B2A4A]/5'}`}>{selectionMode ? 'Batal Pilih' : 'Pilih Data'}</button>
+            )}
+            {selectionMode && selectedIds.size > 0 && (
+              <>
+                <button onClick={clearSelection} className="inline-flex items-center gap-2 rounded-lg border-2 border-[#1B2A4A] px-4 py-2 font-bold text-[#1B2A4A] hover:bg-[#1B2A4A]/5">Deselect ({selectedIds.size})</button>
+                <button onClick={() => void removeSelected()} disabled={bulkDeleting} className="inline-flex items-center gap-2 rounded-lg border-2 border-red-600 px-4 py-2 font-bold text-red-600 hover:bg-red-50 disabled:opacity-50"><Trash2 size={18} /> {bulkDeleting ? 'Menghapus...' : `Hapus (${selectedIds.size})`}</button>
+              </>
+            )}
             {canExport && (
               <button onClick={handleExportCsv} disabled={exporting} className="inline-flex items-center gap-2 rounded-lg border-2 border-[#1B2A4A]/30 px-4 py-2 font-bold text-[#1B2A4A] hover:bg-[#1B2A4A]/5 disabled:opacity-50">
                 {exporting ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />} Export CSV
@@ -496,6 +545,7 @@ export default function SdmManagement({ type, permissions }: SdmManagementProps)
             <table className="w-full text-left text-sm">
               <thead className="bg-[#FAF6F0] text-[#1B2A4A]">
                 <tr>
+                  {selectionMode && canDelete && <th className="p-4"><input type="checkbox" checked={allVisibleSelected} onChange={toggleAllVisible} aria-label="Pilih semua" /></th>}
                   <th className="p-4">{SDM_TYPE_LABELS[type]}</th>
                   <th className="p-4">NIP / NIPPPK</th>
                   <th className="p-4">NUPTK</th>
@@ -504,13 +554,20 @@ export default function SdmManagement({ type, permissions }: SdmManagementProps)
                   <th className="p-4">Jabatan</th>
                   <th className="p-4">Aktif</th>
                   {canViewAccount && <th className="p-4">Akun Login</th>}
-                  <th className="p-4">Aksi</th>
+                  <th className="p-4">{selectionMode ? 'Pilih' : 'Aksi'}</th>
                 </tr>
               </thead>
               <tbody>
-                {!loading && items.length === 0 && <tr><td colSpan={canViewAccount ? 9 : 8} className="p-8 text-center text-[#5B7088]">Belum ada data {SDM_TYPE_LABELS[type].toLowerCase()}.</td></tr>}
+                {!loading && items.length === 0 && <tr><td colSpan={(selectionMode && canDelete ? 1 : 0) + (canViewAccount ? 9 : 8)} className="p-8 text-center text-[#5B7088]">Belum ada data {SDM_TYPE_LABELS[type].toLowerCase()}.</td></tr>}
                 {items.map((person) => (
-                  <tr key={person.id} className="border-t border-[#1B2A4A]/10">
+                  <tr
+                    key={person.id}
+                    onClick={() => { if (selectionMode && canDelete && person.id) toggleSelected(person.id); }}
+                    onKeyDown={(event) => { if (selectionMode && canDelete && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); if (person.id) toggleSelected(person.id); } }}
+                    tabIndex={selectionMode ? 0 : undefined}
+                    className={`border-t border-[#1B2A4A]/10 ${selectionMode ? 'cursor-pointer hover:bg-[#FAF6F0]' : ''} ${selectedIds.has(person.id!) ? 'bg-[#C8A951]/10' : ''}`}
+                  >
+                    {selectionMode && canDelete && <td className="p-4" onClick={(event) => event.stopPropagation()}><input type="checkbox" checked={selectedIds.has(person.id!)} onChange={() => { if (person.id) toggleSelected(person.id); }} aria-label={`Pilih ${person.name}`} /></td>}
                     <td className="p-4">
                       <div className="flex items-center gap-3">
                         {person.photo ? (
@@ -543,15 +600,21 @@ export default function SdmManagement({ type, permissions }: SdmManagementProps)
                         )}
                       </td>
                     )}
-                    <td className="p-4 whitespace-nowrap">
-                      <button onClick={() => { if (person.id) setDetailId(person.id); }} className="mr-3 inline-flex items-center gap-1 text-sm font-semibold text-[#866D2C]"><Eye size={15} /> Detail</button>
-                      {canViewAccount && (
-                        <button onClick={() => { if (person.id) setAccountGuruId(person.id); }} className="mr-3 inline-flex items-center gap-1 text-sm font-semibold text-[#866D2C]"><KeyRound size={15} /> Akun</button>
+                    <td className="p-4 whitespace-nowrap" onClick={(event) => event.stopPropagation()}>
+                      {selectionMode ? (
+                        <span className="text-xs text-[#5B7088]">Klik baris untuk memilih</span>
+                      ) : (
+                        <>
+                          <button onClick={() => { if (person.id) setDetailId(person.id); }} className="mr-3 inline-flex items-center gap-1 text-sm font-semibold text-[#866D2C]"><Eye size={15} /> Detail</button>
+                          {canViewAccount && (
+                            <button onClick={() => { if (person.id) setAccountGuruId(person.id); }} className="mr-3 inline-flex items-center gap-1 text-sm font-semibold text-[#866D2C]"><KeyRound size={15} /> Akun</button>
+                          )}
+                          {canEdit && (
+                            <button onClick={() => openEdit(person)} className="mr-3 inline-flex items-center gap-1 text-sm font-semibold text-[#866D2C]"><Pencil size={15} /> Edit</button>
+                          )}
+                          {canDelete && <button onClick={() => remove(person)} className="text-red-600"><Trash2 size={16} /></button>}
+                        </>
                       )}
-                      {canEdit && (
-                        <button onClick={() => openEdit(person)} className="mr-3 inline-flex items-center gap-1 text-sm font-semibold text-[#866D2C]"><Pencil size={15} /> Edit</button>
-                      )}
-                      {canDelete && <button onClick={() => remove(person)} className="text-red-600"><Trash2 size={16} /></button>}
                     </td>
                   </tr>
                 ))}
