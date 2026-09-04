@@ -101,6 +101,7 @@ export const BIODATA_FIELDS: BiodataFieldDef[] = [
   { key: 'jml_saudara_tiri', label: 'Jumlah Saudara Tiri', section: 'identity', type: 'number' },
   { key: 'anak_yatim_piatu', label: 'Anak Yatim / Piatu', section: 'identity', type: 'select', options: YATIM_OPTIONS },
   { key: 'bahasa_sehari_hari', label: 'Bahasa Sehari-hari', section: 'identity', placeholder: 'cth. Indonesia' },
+  { key: 'phone', label: 'No. Telp / HP', section: 'identity', type: 'number' },
 
   // B. Keterangan Tempat Tinggal
   { key: 'address', label: 'Alamat Tempat Tinggal', section: 'residence', type: 'textarea', full: true },
@@ -109,7 +110,6 @@ export const BIODATA_FIELDS: BiodataFieldDef[] = [
   { key: 'kecamatan', label: 'Kecamatan', section: 'residence' },
   { key: 'desa', label: 'Desa/Kelurahan', section: 'residence' },
   { key: 'kode_pos', label: 'Kode Pos', section: 'residence', type: 'number' },
-  { key: 'phone', label: 'No. Telp / HP', section: 'residence', type: 'number' },
   { key: 'tinggal_dengan', label: 'Tinggal Dengan (Orang Tua/Saudara/Asrama/Kost)', section: 'residence' },
   { key: 'jarak_sekolah', label: 'Jarak Tempat Tinggal ke Sekolah (Km)', section: 'residence', type: 'number' },
   { key: 'jenis_tempat_tinggal', label: 'Jenis Tempat Tinggal', section: 'residence' },
@@ -157,13 +157,13 @@ export const BIODATA_FIELDS: BiodataFieldDef[] = [
   { key: 'siswa_status', label: 'Status', section: 'student' },
   { key: 'siswa_tanggal', label: 'Tanggal', section: 'student', type: 'date' },
   { key: 'email', label: 'Email', section: 'student' },
-  { key: 'no_kk', label: 'No. KK', section: 'identity', type: 'number' },
-  { key: 'kepala_keluarga', label: 'Kepala Keluarga', section: 'identity' },
-  { key: 'no_kip', label: 'No. KIP', section: 'identity', type: 'number' },
+  { key: 'no_kk', label: 'No. KK', section: 'student', type: 'number' },
+  { key: 'kepala_keluarga', label: 'Kepala Keluarga', section: 'student' },
+  { key: 'no_kip', label: 'No. KIP', section: 'student', type: 'number' },
   { key: 'cita_cita', label: 'Cita-cita', section: 'hobby' },
   { key: 'hobi', label: 'Hobi', section: 'hobby' },
-  { key: 'pernah_paud', label: 'Pernah PAUD', section: 'identity' },
-  { key: 'pernah_tk', label: 'Pernah TK', section: 'identity' },
+  { key: 'pernah_paud', label: 'Pernah PAUD', section: 'student' },
+  { key: 'pernah_tk', label: 'Pernah TK', section: 'student' },
   { key: 'status_afirmasi', label: 'Status Afirmasi', section: 'student' },
 ];
 
