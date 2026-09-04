@@ -86,6 +86,8 @@ export const BIODATA_FIELDS: BiodataFieldDef[] = [
   { key: 'nisn', label: 'NISN', section: 'identity', placeholder: 'cth. 0061234567', type: 'number' },
   { key: 'nis', label: 'NIS', section: 'identity', placeholder: 'cth. 12345', type: 'number' },
   { key: 'name', label: 'Nama Lengkap', section: 'identity', full: true },
+  { key: 'asal_sekolah', label: 'Asal Sekolah', section: 'identity' },
+  { key: 'nik', label: 'NIK', section: 'identity', type: 'number' },
   { key: 'nickname', label: 'Nama Panggilan', section: 'identity' },
   { key: 'class', label: 'Kelas', section: 'identity', type: 'select', options: CLASS_OPTIONS },
   { key: 'major', label: 'Jurusan', section: 'identity', placeholder: 'cth. Teknik Komputer dan Jaringan' },
@@ -105,9 +107,14 @@ export const BIODATA_FIELDS: BiodataFieldDef[] = [
   { key: 'provinsi', label: 'Provinsi', section: 'residence' },
   { key: 'kota', label: 'Kabupaten / Kota', section: 'residence' },
   { key: 'kecamatan', label: 'Kecamatan', section: 'residence' },
+  { key: 'desa', label: 'Desa/Kelurahan', section: 'residence' },
+  { key: 'kode_pos', label: 'Kode Pos', section: 'residence', type: 'number' },
   { key: 'phone', label: 'No. Telp / HP', section: 'residence', type: 'number' },
   { key: 'tinggal_dengan', label: 'Tinggal Dengan (Orang Tua/Saudara/Asrama/Kost)', section: 'residence' },
   { key: 'jarak_sekolah', label: 'Jarak Tempat Tinggal ke Sekolah (Km)', section: 'residence', type: 'number' },
+  { key: 'jenis_tempat_tinggal', label: 'Jenis Tempat Tinggal', section: 'residence' },
+  { key: 'jarak_tempuh', label: 'Jarak Tempuh', section: 'residence' },
+  { key: 'transportasi', label: 'Transportasi', section: 'residence' },
 
   // C. Keterangan Kesehatan
   { key: 'golongan_darah', label: 'Golongan Darah', section: 'health', type: 'select', options: BLOOD_OPTIONS },
@@ -129,6 +136,9 @@ export const BIODATA_FIELDS: BiodataFieldDef[] = [
   { key: 'diangkat', label: 'Diangkat', section: 'education', subsection: 'Diterima di Sekolah Ini' },
   { key: 'kompetensi_keahlian', label: 'Kompetensi/Keahlian', section: 'education', subsection: 'Diterima di Sekolah Ini' },
   { key: 'tanggal_diterima', label: 'Tanggal Diterima', section: 'education', subsection: 'Diterima di Sekolah Ini', type: 'date' },
+  { key: 'beasiswa_status', label: 'Menerima Beasiswa', section: 'education', subsection: 'Beasiswa' },
+  { key: 'beasiswa_tk', label: 'Tingkat Beasiswa', section: 'education', subsection: 'Beasiswa' },
+  { key: 'beasiswa_dari', label: 'Beasiswa Dari', section: 'education', subsection: 'Beasiswa' },
 
   // E. Ayah
   ...parentFields('ayah', 'father'),
@@ -146,6 +156,15 @@ export const BIODATA_FIELDS: BiodataFieldDef[] = [
   // I. Keterangan Siswa
   { key: 'siswa_status', label: 'Status', section: 'student' },
   { key: 'siswa_tanggal', label: 'Tanggal', section: 'student', type: 'date' },
+  { key: 'email', label: 'Email', section: 'student' },
+  { key: 'no_kk', label: 'No. KK', section: 'identity', type: 'number' },
+  { key: 'kepala_keluarga', label: 'Kepala Keluarga', section: 'identity' },
+  { key: 'no_kip', label: 'No. KIP', section: 'identity', type: 'number' },
+  { key: 'cita_cita', label: 'Cita-cita', section: 'hobby' },
+  { key: 'hobi', label: 'Hobi', section: 'hobby' },
+  { key: 'pernah_paud', label: 'Pernah PAUD', section: 'identity' },
+  { key: 'pernah_tk', label: 'Pernah TK', section: 'identity' },
+  { key: 'status_afirmasi', label: 'Status Afirmasi', section: 'student' },
 ];
 
 export interface FieldGroup {
@@ -371,6 +390,9 @@ export function formatRupiah(raw: unknown): string {
 // ==== DATA MASTER DAPODIK ====
 // Nama kolom header DATA MASTER DAPODIK (huruf kecil) -> key baris hasil import.
 const DAPODIK_COLUMN_MAP: Record<string, string> = {
+  'asal sekolah': 'asal_sekolah',
+  nik: 'nik',
+  email: 'email',
   nisn: 'nisn',
   nis: 'nis',
   kelas: 'class',
@@ -393,6 +415,17 @@ const DAPODIK_COLUMN_MAP: Record<string, string> = {
   'kewarganegaraan': 'kewarganegaraan',
   'jurusan': 'major',
   'no hp': 'phone',
+  'no kk': 'no_kk',
+  'no kip': 'no_kip',
+  'kepala keluarga': 'kepala_keluarga',
+  'jenis tempat tinggal': 'jenis_tempat_tinggal',
+  'jarak tempuh': 'jarak_tempuh',
+  transport: 'transportasi',
+  'pernah paud': 'pernah_paud',
+  'pernah tk': 'pernah_tk',
+  'cita cita': 'cita_cita',
+  hobi: 'hobi',
+  'status afirmasi': 'status_afirmasi',
   'jarak sekolah (km)': 'jarak_sekolah',
   'jarak sekolah (m)': 'jarak_sekolah',
   'jarak sekolah (meter)': 'jarak_sekolah',
@@ -518,7 +551,11 @@ const HEADER_TEXT_TO_FIELD: Record<string, string> = {
   'penyakit': 'penyakit',
   'kelainan': 'kelainan_jasmani',
   'tinggi': 'tinggi_cm',
+  'tinggi(cm)': 'tinggi_cm',
+  'tinggi (cm)': 'tinggi_cm',
   'berat': 'berat_kg',
+  'berat(kg)': 'berat_kg',
+  'berat (kg)': 'berat_kg',
   'lulusan dari': 'lulusan_dari',
   'nomor sttb': 'nomor_sttb',
   'tanggal sttb': 'tanggal_sttb',
@@ -529,15 +566,31 @@ const HEADER_TEXT_TO_FIELD: Record<string, string> = {
   'kompetensi': 'kompetensi_keahlian',
   'tanggal diterima': 'tanggal_diterima',
   'no hp': 'phone',
+  'no telp/hp': 'phone',
+  'no telp': 'phone',
   'email': 'email',
   'no kk': 'no_kk',
   'kepala keluarga': 'kepala_keluarga',
   'alamat': 'address',
+  'asal sekolah': 'asal_sekolah',
+  'nik': 'nik',
   'provinsi': 'provinsi',
   'kota': 'kota',
   'kecamatan': 'kecamatan',
   'desa': 'desa',
   'kode pos': 'kode_pos',
+  'no kip': 'no_kip',
+  'jenis tempat tinggal': 'jenis_tempat_tinggal',
+  'jarak tempuh': 'jarak_tempuh',
+  'transport': 'transportasi',
+  'pernah paud': 'pernah_paud',
+  'pernah tk': 'pernah_tk',
+  'status afirmasi': 'status_afirmasi',
+  'cita cita': 'cita_cita',
+  'hobi': 'hobi',
+  'menerima bea siswa': 'beasiswa_status',
+  'tk': 'beasiswa_tk',
+  'dari': 'beasiswa_dari',
   'nama ayah': 'ayah_nama',
   'nama ibu': 'ibu_nama',
   'nama wali': 'wali_nama',
@@ -587,8 +640,132 @@ export function parseMultiRowTemplate(grid: unknown[][]): { rows: Record<string,
   }
   if (headerIdx < 0) return { rows, errors };
 
-  // Build dynamic column map from the header row.
+  // Build dynamic column map from the first sub-header row (headerIdx).
   const dynamicColumns = buildDynamicColumnMap(grid[headerIdx] ?? []);
+
+  // Detect group headers row (one row above headerIdx) for parent sections.
+  const groupRow = grid[headerIdx - 1] ?? [];
+  const parentGroupMap: Record<number, string> = {};
+  for (let c = 0; c < groupRow.length; c++) {
+    const g = String(groupRow[c] ?? '').trim().toLowerCase();
+    if (g.includes('ayah')) parentGroupMap[c] = 'ayah';
+    else if (g.includes('ibu')) parentGroupMap[c] = 'ibu';
+    else if (g.includes('wali')) parentGroupMap[c] = 'wali';
+  }
+
+  // Parent sub-header field mapping (lowercase header text → field suffix).
+  const PARENT_SUB_MAP: Record<string, string> = {
+    'nama': '_nama',
+    'tempat': '_tempat',
+    'tanggal lahir': '_tanggal_lahir',
+    'agama': '_agama',
+    'kewarganegaraan': '_kewarganegaraan',
+    'pendidikan': '_pendidikan',
+    'pekerjaan': '_pekerjaan',
+    'penghasilan per bulan': '_penghasilan',
+    'penghasilan': '_penghasilan',
+    'alamat rumah': '_alamat',
+    'alamat': '_alamat',
+    'no. hp/telp': '_no_telp',
+    'no.telp/hp': '_no_telp',
+    'no hp': '_no_telp',
+    'masih hidup/meninggal dunia tahun': '_status_hidup',
+    'masih hidup/meninggal': '_status_hidup',
+  };
+
+  // Also scan the row below headerIdx for parent sub-headers.
+  const subHeaderRow = grid[headerIdx + 1] ?? [];
+  // Determine which group each column belongs to using parentGroupMap.
+  // Cover all columns up to the last group header, not just those in dynamicColumns.
+  const colToGroup: Record<number, string> = {};
+  const groupKeys = Object.keys(parentGroupMap).map(Number).sort((a, b) => a - b);
+  for (let col = 0; col < 200; col++) {
+    for (let gi = 0; gi < groupKeys.length; gi++) {
+      const start = groupKeys[gi];
+      const end = gi < groupKeys.length - 1 ? groupKeys[gi + 1] : 999;
+      if (col >= start && col < end) {
+        colToGroup[col] = parentGroupMap[start]!;
+        break;
+      }
+    }
+  }
+
+  // Resolve parent sub-headers from the second header row.
+  const sortedSubKeys = Object.keys(PARENT_SUB_MAP).sort((a, b) => b.length - a.length);
+  for (let c = 0; c < subHeaderRow.length; c++) {
+    const h = String(subHeaderRow[c] ?? '').trim().toLowerCase();
+    if (!h) continue;
+    const parent = colToGroup[c];
+    if (!parent) continue;
+    for (const subKey of sortedSubKeys) {
+      if (h === subKey || h.includes(subKey)) {
+        dynamicColumns[c] = parent + PARENT_SUB_MAP[subKey];
+        break;
+      }
+    }
+  }
+
+  // Also scan row below that (headerIdx + 2) for additional sub-headers.
+  const subHeaderRow2 = grid[headerIdx + 2] ?? [];
+  for (let c = 0; c < subHeaderRow2.length; c++) {
+    const h = String(subHeaderRow2[c] ?? '').trim().toLowerCase();
+    if (!h) continue;
+    const parent = colToGroup[c];
+    if (!parent) continue;
+    if (dynamicColumns[c]) continue; // already mapped
+    for (const subKey of sortedSubKeys) {
+      if (h === subKey || h.includes(subKey)) {
+        dynamicColumns[c] = parent + PARENT_SUB_MAP[subKey];
+        break;
+      }
+    }
+  }
+
+  // SUMMARY menyimpan pendidikan dalam kolom gabungan sehingga nama field
+  // sebenarnya berada di baris sub-header berikutnya. Gunakan anchor agar
+  // dua kolom tanggal STTB dan tanggal diterima tidak tertukar.
+  const educationAnchor = (grid[headerIdx] ?? []).findIndex((value) =>
+    String(value ?? '').trim().toLowerCase() === 'pendidikan sebelumnya',
+  );
+  if (educationAnchor >= 0) {
+    const educationFields = [
+      'lulusan_dari', 'tanggal_sttb', 'nomor_sttb', 'lama_belajar',
+      'pindahan_dari', 'alasan_pindah', 'diangkat', 'kompetensi_keahlian',
+      'tanggal_diterima',
+    ];
+    educationFields.forEach((field, offset) => {
+      dynamicColumns[educationAnchor + offset] = field;
+    });
+  }
+
+  // Field setelah section orang tua berada di baris sub-header yang sama.
+  // Map berdasarkan label dan posisi section, bukan berdasarkan nama global
+  // karena beberapa label (misalnya "Tanggal") muncul lebih dari sekali.
+  const mapLabeledColumns = (row: unknown[], start: number, end: number, labels: Record<string, string>) => {
+    for (let c = start; c < Math.min(end, row.length); c++) {
+      const label = String(row[c] ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+      const field = labels[label];
+      if (field) dynamicColumns[c] = field;
+    }
+  };
+  const summaryLabels: Record<string, string> = {
+    kesenian: 'gemar_kesenian',
+    'olah raga': 'gemar_olahraga',
+    olahraga: 'gemar_olahraga',
+    kemasyarakatan: 'gemar_kemasyarakatan',
+    'lain-lain': 'gemar_lain',
+    'menerima bea siswa': 'beasiswa_status',
+    tk: 'beasiswa_tk',
+    dari: 'beasiswa_dari',
+    status: 'siswa_status',
+    tanggal: 'siswa_tanggal',
+  };
+  const hobbyStart = groupRow.findIndex((value) => String(value ?? '').trim().toLowerCase().includes('kegemaran siswa'));
+  const studentStart = groupRow.findIndex((value) => String(value ?? '').trim().toLowerCase() === 'keterangan siswa');
+  if (hobbyStart >= 0) {
+    mapLabeledColumns(subHeaderRow, hobbyStart, studentStart >= 0 ? studentStart : hobbyStart + 4, summaryLabels);
+  }
+  if (studentStart >= 0) mapLabeledColumns(subHeaderRow, studentStart, studentStart + 2, summaryLabels);
 
   // If dynamic detection found at least NISN + NAMA + KELAMIN, use it.
   // Otherwise fall back to fixed MULTI_ROW_TEMPLATE_COLUMNS.

@@ -430,6 +430,14 @@ $guru = Guru::query()
             }
         }
 
+        // Keep newly added Dapodik fields visible without having to duplicate
+        // the payload list every time a spreadsheet column is added.
+        foreach ($this->biodataKeys() as $key) {
+            if (array_key_exists($key, $payload)) continue;
+            $value = $student->{$key};
+            $payload[$key] = $value instanceof \DateTimeInterface ? $value->toDateString() : $value;
+        }
+
         return $payload;
     }
 }
