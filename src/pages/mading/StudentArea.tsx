@@ -613,7 +613,8 @@ function ProfileTab({ profile }: { profile: StudentProfile | null }) {
     const proposed: Record<string, unknown> = {};
     for (const field of BIODATA_FIELDS) {
       if (STUDENT_READONLY_KEYS.has(field.key)) continue;
-      const newVal = String(changeForm[field.key] ?? '').trim();
+      const rawVal = String(changeForm[field.key] ?? '').trim();
+      const newVal = rawVal === '__custom__' ? '' : rawVal;
       const oldVal = String(std?.[field.key] ?? '').trim();
       if (newVal !== oldVal) {
         proposed[field.key] = field.type === 'number' || field.type === 'decimal'
@@ -1175,6 +1176,28 @@ function BioField({ field, value, onChange, disabled }: { field: BiodataFieldDef
             <option key={opt} value={opt}>{opt === '' ? 'Pilih' : selectLabel(field.key, opt)}</option>
           ))}
         </select>
+      </label>
+    );
+  }
+  if (field.type === 'select-or-text') {
+    return (
+      <label className="block text-sm font-semibold">{field.label}{lockLabel}
+        <div className="space-y-1">
+          <select
+            value={field.options?.includes(value) ? value : '__custom__'}
+            onChange={(e) => onChange(e.target.value === '__custom__' ? '__custom__' : e.target.value)}
+            className={inputCls}
+            disabled={disabled}
+          >
+            {field.options?.map((opt) => (
+              <option key={opt} value={opt}>{opt === '' ? 'Pilih' : selectLabel(field.key, opt)}</option>
+            ))}
+            <option value="__custom__">Lainnya (ketik sendiri)</option>
+          </select>
+          {(!field.options?.includes(value) && value !== '') && (
+            <input value={value === '__custom__' ? '' : value} onChange={(e) => onChange(e.target.value)} className={inputCls} placeholder="Ketik penghasilan..." disabled={disabled} autoFocus />
+          )}
+        </div>
       </label>
     );
   }

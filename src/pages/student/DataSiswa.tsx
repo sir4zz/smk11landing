@@ -204,11 +204,12 @@ export default function DataSiswa() {
     for (const field of BIODATA_FIELDS) {
       if (STUDENT_READONLY_KEYS.has(field.key)) continue;
       const newVal = form[field.key] ?? '';
+      const cleanVal = newVal === '__custom__' ? '' : newVal;
       const oldVal = String((studentData as Record<string, unknown>)[field.key] ?? '');
-      if (newVal !== oldVal) {
+      if (cleanVal !== oldVal) {
         proposedData[field.key] = field.type === 'number' || field.type === 'decimal'
-          ? (newVal === '' ? null : Number(newVal))
-          : newVal;
+          ? (cleanVal === '' ? null : Number(cleanVal))
+          : cleanVal;
       }
     }
 
@@ -720,6 +721,36 @@ function BiodataField({ field, value, onChange, error, disabled }: { field: Biod
             <option key={opt} value={opt}>{opt === '' ? 'Pilih' : opt}</option>
           ))}
         </select>
+      ) : field.type === 'select-or-text' ? (
+        <div className="space-y-1">
+          <select
+            value={field.options?.includes(value) ? value : '__custom__'}
+            onChange={(e) => {
+              if (e.target.value === '__custom__') {
+                onChange({ target: { value: '' } } as React.ChangeEvent<HTMLInputElement>);
+              } else {
+                onChange({ target: { value: e.target.value } } as React.ChangeEvent<HTMLInputElement>);
+              }
+            }}
+            className={inputCls}
+            disabled={disabled}
+          >
+            {field.options?.map((opt) => (
+              <option key={opt} value={opt}>{opt === '' ? 'Pilih' : opt}</option>
+            ))}
+            <option value="__custom__">Lainnya (ketik sendiri)</option>
+          </select>
+          {(!field.options?.includes(value) && value !== '') && (
+            <input
+              value={value === '__custom__' ? '' : value}
+              onChange={(e) => onChange({ target: { value: e.target.value || '__custom__' } } as React.ChangeEvent<HTMLInputElement>)}
+              className={inputCls}
+              placeholder="Ketik penghasilan..."
+              disabled={disabled}
+              autoFocus
+            />
+          )}
+        </div>
       ) : field.type === 'textarea' ? (
         <textarea value={value} onChange={onChange} rows={2} className={inputCls} placeholder={field.placeholder} disabled={disabled} />
       ) : (

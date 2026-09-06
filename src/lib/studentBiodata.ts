@@ -6,7 +6,7 @@ export interface BiodataFieldDef {
   label: string;
   section: string;
   subsection?: string;
-  type?: 'text' | 'number' | 'decimal' | 'date' | 'select' | 'textarea';
+  type?: 'text' | 'number' | 'decimal' | 'date' | 'select' | 'textarea' | 'select-or-text';
   options?: string[];
   placeholder?: string;
   full?: boolean;
@@ -34,6 +34,7 @@ const RELIGION_OPTIONS = ['', 'Islam', 'Kristen Protestan', 'Kristen Katolik', '
 const BLOOD_OPTIONS = ['', 'A', 'B', 'AB', 'O'];
 const YATIM_OPTIONS = ['', 'Yatim', 'Piatu', 'Yatim-Piatu'];
 const ALIVE_OPTIONS = ['', 'Masih Hidup', 'Meninggal'];
+const PENGHASILAN_OPTIONS = ['', 'Tanpa Penghasilan', '< 1.000.000', '1.000.000 - 2.000.000', '2.000.000 - 3.000.000', '3.000.000 - 5.000.000', '5.000.000 - 10.000.000', '10.000.000 - 20.000.000', '> 20.000.000'];
 
 export const VALID_CLASSES = ['10', '11', '12'];
 export const CLASS_OPTIONS = ['', ...VALID_CLASSES];
@@ -74,7 +75,7 @@ function parentFields(prefix: string, section: string): BiodataFieldDef[] {
     { key: `${prefix}_kewarganegaraan`, label: 'Kewarganegaraan', section },
     { key: `${prefix}_pendidikan`, label: 'Pendidikan', section },
     { key: `${prefix}_pekerjaan`, label: 'Pekerjaan', section },
-    { key: `${prefix}_penghasilan`, label: 'Penghasilan per Bulan', section, type: 'number' },
+    { key: `${prefix}_penghasilan`, label: 'Penghasilan per Bulan', section, type: 'select-or-text', options: PENGHASILAN_OPTIONS },
     { key: `${prefix}_alamat`, label: 'Alamat Rumah', section, type: 'textarea', full: true },
     { key: `${prefix}_no_telp`, label: 'No. HP/Telp', section, type: 'number' },
     { key: `${prefix}_status_hidup`, label: 'Masih Hidup/Meninggal', section, type: 'select', options: ALIVE_OPTIONS },

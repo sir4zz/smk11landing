@@ -270,6 +270,7 @@ export default function StudentsManagement() {
     for (const field of BIODATA_FIELDS) {
       if (field.key === 'nisn' || field.key === 'name') continue;
       let value = (form[field.key] ?? '').trim();
+      if (value === '__custom__') value = '';
       if (field.key === 'gender') value = normalizeGender(value) || form.gender;
       payload[field.key] = value;
     }
@@ -667,6 +668,28 @@ function BiodataField({ field, value, onChange, placeholder, error }: { field: B
             </option>
           ))}
         </select>
+      ) : field.type === 'select-or-text' ? (
+        <div className="space-y-1">
+          <select
+            value={field.options?.includes(value) ? value : '__custom__'}
+            onChange={(e) => {
+              if (e.target.value === '__custom__') {
+                onChange({ target: { value: '__custom__' } } as React.ChangeEvent<HTMLInputElement>);
+              } else {
+                onChange({ target: { value: e.target.value } } as React.ChangeEvent<HTMLInputElement>);
+              }
+            }}
+            className={inputCls}
+          >
+            {field.options?.map((opt) => (
+              <option key={opt} value={opt}>{opt === '' ? 'Pilih' : selectLabel(field.key, opt)}</option>
+            ))}
+            <option value="__custom__">Lainnya (ketik sendiri)</option>
+          </select>
+          {(!field.options?.includes(value) && value !== '') && (
+            <input value={value === '__custom__' ? '' : value} onChange={onChange} className={inputCls} placeholder="Ketik penghasilan..." autoFocus />
+          )}
+        </div>
       ) : field.type === 'textarea' ? (
         <textarea value={value} onChange={onChange} rows={2} className={inputCls} placeholder={placeholder ?? field.placeholder} />
       ) : (
