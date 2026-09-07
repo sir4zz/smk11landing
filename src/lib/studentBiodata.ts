@@ -69,6 +69,7 @@ export function isValidClass(value: unknown): boolean {
 function parentFields(prefix: string, section: string): BiodataFieldDef[] {
   return [
     { key: `${prefix}_nama`, label: 'Nama', section },
+    { key: `${prefix}_nik`, label: 'NIK', section, type: 'number' },
     { key: `${prefix}_tempat`, label: 'Tempat Lahir', section },
     { key: `${prefix}_tanggal_lahir`, label: 'Tanggal Lahir', section, type: 'date' },
     { key: `${prefix}_agama`, label: 'Agama', section, type: 'select', options: RELIGION_OPTIONS },
@@ -388,6 +389,32 @@ export function formatRupiah(raw: unknown): string {
   return `Rp${num.toLocaleString('id-ID')}`;
 }
 
+export function normalizePenghasilan(raw: unknown): string {
+  if (raw === null || raw === undefined) return '';
+  const str = String(raw).trim();
+  if (!str) return '';
+
+  const lower = str.toLowerCase().replace(/[_\s]+/g, ' ').trim();
+  if (lower === 'tanpa penghasilan' || lower === '0' || lower === '-') return 'Tanpa Penghasilan';
+
+  const isLess = lower.startsWith('<');
+  const isMore = lower.startsWith('>');
+  const cleaned = lower.replace(/[^0-9]/g, '');
+  const num = parseInt(cleaned, 10);
+  if (Number.isNaN(num)) return str;
+
+  if (isLess) return '< 1.000.000';
+  if (isMore) return '> 20.000.000';
+
+  if (num < 1000000) return '< 1.000.000';
+  if (num < 2000000) return '1.000.000 - 2.000.000';
+  if (num < 3000000) return '2.000.000 - 3.000.000';
+  if (num < 5000000) return '3.000.000 - 5.000.000';
+  if (num < 10000000) return '5.000.000 - 10.000.000';
+  if (num < 20000000) return '10.000.000 - 20.000.000';
+  return '> 20.000.000';
+}
+
 // ==== DATA MASTER DAPODIK ====
 // Nama kolom header DATA MASTER DAPODIK (huruf kecil) -> key baris hasil import.
 const DAPODIK_COLUMN_MAP: Record<string, string> = {
@@ -433,6 +460,7 @@ const DAPODIK_COLUMN_MAP: Record<string, string> = {
   'jarak sekolah': 'jarak_sekolah',
   'pilihan jurusan 1': 'major',
   'status ayah': 'ayah_status_hidup',
+  'nik ayah': 'ayah_nik',
   'nama ayah': 'ayah_nama',
   'tanggal lahir ayah': 'ayah_tanggal_lahir',
   'pendidikan ayah': 'ayah_pendidikan',
@@ -440,6 +468,7 @@ const DAPODIK_COLUMN_MAP: Record<string, string> = {
   'penghasilan ayah': 'ayah_penghasilan',
   'no hp ayah': 'ayah_no_telp',
   'status ibu': 'ibu_status_hidup',
+  'nik ibu': 'ibu_nik',
   'nama ibu': 'ibu_nama',
   'tanggal lahir ibu': 'ibu_tanggal_lahir',
   'pendidikan ibu': 'ibu_pendidikan',
@@ -593,7 +622,9 @@ const HEADER_TEXT_TO_FIELD: Record<string, string> = {
   'tk': 'beasiswa_tk',
   'dari': 'beasiswa_dari',
   'nama ayah': 'ayah_nama',
+  'nik ayah': 'ayah_nik',
   'nama ibu': 'ibu_nama',
+  'nik ibu': 'ibu_nik',
   'nama wali': 'wali_nama',
 };
 
@@ -801,7 +832,7 @@ export function parseMultiRowTemplate(grid: unknown[][]): { rows: Record<string,
       } else if (DATE_KEYS.has(key)) {
         out[key] = toDateString(value);
       } else if (RUPIAH_KEYS.has(key)) {
-        out[key] = String(value).replace(/[^\d]/g, '');
+        out[key] = normalizePenghasilan(value);
       } else {
         out[key] = String(value).trim();
       }
@@ -905,7 +936,7 @@ export function parseDapodikSheets(sheets: DapodikSheetGrid[]): { rows: Record<s
           if (val > 1000) val = Math.round(val / 1000 * 100) / 100;
           record[key] = String(val);
         } else if (RUPIAH_KEYS.has(key)) {
-          record[key] = raw.replace(/[^\d]/g, '');
+          record[key] = normalizePenghasilan(raw);
         } else {
           record[key] = raw;
         }

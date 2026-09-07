@@ -437,40 +437,7 @@ export default function StudentsManagement() {
               <tbody>
                   {filtered.length === 0 && <tr><td colSpan={selectionMode ? 10 : 9} className="p-8 text-center text-[#5B7088]">Belum ada siswa terdaftar.</td></tr>}
                 {paginated.map((student) => (
-                  <tr
-                    key={student.id}
-                    onClick={() => { if (selectionMode) toggleSelected(student.id); }}
-                    onKeyDown={(event) => { if (selectionMode && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); toggleSelected(student.id); } }}
-                    tabIndex={selectionMode ? 0 : undefined}
-                    className={`border-t border-[#1B2A4A]/10 ${selectionMode ? 'cursor-pointer hover:bg-[#FAF6F0]' : ''} ${selectedIds.has(student.id) ? 'bg-[#C8A951]/10' : ''}`}
-                  >
-                    {selectionMode && <td className="p-4" onClick={(event) => event.stopPropagation()}><input type="checkbox" checked={selectedIds.has(student.id)} onChange={() => toggleSelected(student.id)} aria-label={`Pilih ${student.name}`} /></td>}
-                    <td className="p-4">
-                      <div className="flex items-center gap-3">
-                        {student.foto ? (
-                          <img src={resolveImageUrl(student.foto)} alt={student.name} className="h-9 w-9 rounded-full object-cover" />
-                        ) : (
-                          <span className="grid h-9 w-9 place-items-center rounded-full bg-[#FAF6F0]"><UserRound className="h-4 w-4 text-[#866D2C]" /></span>
-                        )}
-                        <span className="font-semibold">{student.name}</span>
-                      </div>
-                    </td>
-                    <td className="p-4 font-mono text-xs">{student.nisn}</td>
-                    <td className="p-4 font-mono text-xs">{student.nis || '-'}</td>
-                    <td className="p-4 font-mono text-xs">{student.pin || '-'}</td>
-                    <td className="p-4">{formatClass(student.class)}</td>
-                    <td className="p-4">{student.major || '-'}</td>
-                    <td className="p-4">{genderLabel(student.gender)}</td>
-                    <td className="p-4 max-w-[200px] truncate" title={String(student.address ?? '')}>{student.address || '-'}</td>
-                    <td className="p-4 whitespace-nowrap" onClick={(event) => event.stopPropagation()}>
-                      {selectionMode ? <span className="text-xs text-[#5B7088]">Klik baris untuk memilih</span> : <>
-                        <button onClick={() => setDetailId(student.id)} className="mr-3 text-[#866D2C]" title="Detail"><Eye size={16} /></button>
-                        <button onClick={() => openEdit(student)} className="mr-3 text-[#866D2C]" title="Edit"><Pencil size={16} /></button>
-                        <button onClick={() => resetPin(student)} className="mr-3 text-[#866D2C]" title="Reset PIN"><KeyRound size={16} /></button>
-                        <button onClick={() => removeStudent(student)} className="text-red-600" title="Hapus"><Trash2 size={16} /></button>
-                      </>}
-                    </td>
-                  </tr>
+                  <StudentRow key={student.id} student={student} selectionMode={selectionMode} selectedIds={selectedIds} toggleSelected={toggleSelected} setDetailId={setDetailId} openEdit={openEdit} resetPin={resetPin} removeStudent={removeStudent} />
                 ))}
               </tbody>
             </table>
@@ -938,4 +905,51 @@ function docFileName(doc: { key: string }, student: StudentRow): string {
 
 function studentPhotoFileName(student: StudentRow): string {
   return fileBase('Foto', student.name, String(student.nisn ?? ''), extFromUrl(String(student.foto ?? '')));
+}
+
+function StudentRow({ student, selectionMode, selectedIds, toggleSelected, setDetailId, openEdit, resetPin, removeStudent }: {
+  student: StudentRow;
+  selectionMode: boolean;
+  selectedIds: Set<string>;
+  toggleSelected: (id: string) => void;
+  setDetailId: (id: string) => void;
+  openEdit: (student: StudentRow) => void;
+  resetPin: (student: StudentRow) => void;
+  removeStudent: (student: StudentRow) => void;
+}) {
+  return (
+    <tr
+      onClick={() => { if (selectionMode) toggleSelected(student.id); }}
+      onKeyDown={(event) => { if (selectionMode && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); toggleSelected(student.id); } }}
+      tabIndex={selectionMode ? 0 : undefined}
+      className={`border-t border-[#1B2A4A]/10 ${selectionMode ? 'cursor-pointer hover:bg-[#FAF6F0]' : ''} ${selectedIds.has(student.id) ? 'bg-[#C8A951]/10' : ''}`}
+    >
+      {selectionMode && <td className="p-4" onClick={(event) => event.stopPropagation()}><input type="checkbox" checked={selectedIds.has(student.id)} onChange={() => toggleSelected(student.id)} aria-label={`Pilih ${student.name}`} /></td>}
+      <td className="p-4">
+        <div className="flex items-center gap-3">
+          {student.foto ? (
+            <img src={resolveImageUrl(student.foto)} alt={student.name} className="h-9 w-9 rounded-full object-cover" />
+          ) : (
+            <span className="grid h-9 w-9 place-items-center rounded-full bg-[#FAF6F0]"><UserRound className="h-4 w-4 text-[#866D2C]" /></span>
+          )}
+          <span className="font-semibold">{student.name}</span>
+        </div>
+      </td>
+      <td className="p-4 font-mono text-xs">{student.nisn}</td>
+      <td className="p-4 font-mono text-xs">{student.nis || '-'}</td>
+      <td className="p-4 font-mono text-xs">{student.pin || '-'}</td>
+      <td className="p-4">{formatClass(student.class)}</td>
+      <td className="p-4">{student.major || '-'}</td>
+      <td className="p-4">{genderLabel(student.gender)}</td>
+      <td className="p-4 max-w-[200px] truncate" title={String(student.address ?? '')}>{student.address || '-'}</td>
+      <td className="p-4 whitespace-nowrap" onClick={(event) => event.stopPropagation()}>
+        {selectionMode ? <span className="text-xs text-[#5B7088]">Klik baris untuk memilih</span> : <>
+          <button onClick={() => setDetailId(student.id)} className="mr-3 text-[#866D2C]" title="Detail"><Eye size={16} /></button>
+          <button onClick={() => openEdit(student)} className="mr-3 text-[#866D2C]" title="Edit"><Pencil size={16} /></button>
+          <button onClick={() => resetPin(student)} className="mr-3 text-[#866D2C]" title="Reset PIN"><KeyRound size={16} /></button>
+          <button onClick={() => removeStudent(student)} className="text-red-600" title="Hapus"><Trash2 size={16} /></button>
+        </>}
+      </td>
+    </tr>
+  );
 }
