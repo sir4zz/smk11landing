@@ -4,7 +4,7 @@ import { ChevronRight, ChevronLeft, Plus, Trash2, X, Loader2, KeyRound, Search, 
 import { accountsApi, downloadApiFile, resolveImageUrl } from '../../lib/api';
 import StudentImportModal from './StudentImportModal';
 import ImageField from './ImageField';
-import { BIODATA_FIELDS, BIODATA_SECTIONS, emptyBiodata, formatClass, formatRupiah, groupFieldsBySubsection, isRupiahField, isValidClass, normalizeClass, normalizeGender } from '../../lib/studentBiodata';
+import { BIODATA_FIELDS, BIODATA_SECTIONS, emptyBiodata, formatClass, formatRupiah, groupFieldsBySubsection, isFieldHidden, isRupiahField, isValidClass, normalizeClass, normalizeGender } from '../../lib/studentBiodata';
 import type { BiodataFieldDef } from '../../lib/studentBiodata';
 
 interface StudentRow {
@@ -184,7 +184,7 @@ export default function StudentsManagement() {
   const validateStep = (current: Record<string, string>, stepIdx: number): Record<string, string> => {
     const fieldErrors: Record<string, string> = {};
     const section = BIODATA_SECTIONS[stepIdx - 1];
-    const fields = BIODATA_FIELDS.filter((f) => f.section === section.id);
+    const fields = BIODATA_FIELDS.filter((f) => f.section === section.id && !isFieldHidden(f, current));
 
     if (stepIdx === 1) {
       const nisn = current.nisn.trim();
@@ -507,7 +507,7 @@ export default function StudentsManagement() {
 
             {(() => {
               const section = BIODATA_SECTIONS[step - 1];
-              const fields = BIODATA_FIELDS.filter((f) => f.section === section.id);
+              const fields = BIODATA_FIELDS.filter((f) => f.section === section.id && !isFieldHidden(f, form));
               return (
                 <div key={section.id} className="rounded-xl border border-[#1B2A4A]/10 p-4">
                   <p className="mb-3 font-bold text-[#1B2A4A]">{section.title}</p>
@@ -712,6 +712,7 @@ class DetailErrorBoundary extends Component<{ children: ReactNode; onBack: () =>
 
 function StudentDetailView({ student, onBack, onEdit, flash }: { student: StudentRow; onBack: () => void; onEdit: () => void; flash: (type: 'ok' | 'err', text: string) => void }) {
   const achievements = Array.isArray(student.achievements) ? (student.achievements as unknown[]).filter(Boolean) : [];
+  const studentRecord = student as unknown as Record<string, string>;
   const achievementsText = achievements.map(String).join(', ');
   const fotoSrc = resolveImageUrl(student.foto);
 
@@ -730,7 +731,7 @@ function StudentDetailView({ student, onBack, onEdit, flash }: { student: Studen
 
       <div className="space-y-6 p-6">
         {BIODATA_SECTIONS.map((section) => {
-          const fields = BIODATA_FIELDS.filter((f) => f.section === section.id);
+          const fields = BIODATA_FIELDS.filter((f) => f.section === section.id && !isFieldHidden(f, studentRecord));
           const isIdentity = section.id === 'identity';
           return (
             <div key={section.id} className="rounded-xl border border-[#1B2A4A]/10 p-4">

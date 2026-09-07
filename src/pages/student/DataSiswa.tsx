@@ -4,7 +4,7 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { UserRound, Loader2, Send, X, Clock, CheckCircle2, XCircle, ChevronRight, FileText, Eye, Download, KeyRound, LogOut } from 'lucide-react';
 import { backendApi, studentDataApi, resolveImageUrl, STUDENT_CHANGE_REQUEST_STATUS_LABELS, type StudentDataPayload, type StudentChangeRequestRow, type StudentChangeRequestStatus } from '../../lib/api';
 import PageHero from '../../components/ui/PageHero';
-import { BIODATA_FIELDS, BIODATA_SECTIONS, STUDENT_READONLY_KEYS, emptyBiodata, groupFieldsBySubsection } from '../../lib/studentBiodata';
+import { BIODATA_FIELDS, BIODATA_SECTIONS, STUDENT_READONLY_KEYS, emptyBiodata, groupFieldsBySubsection, isFieldHidden } from '../../lib/studentBiodata';
 import type { BiodataFieldDef } from '../../lib/studentBiodata';
 import ImageField from '../../components/admin/ImageField';
 import { SkeletonDetail } from '../../components/ui/Skeleton';
@@ -151,7 +151,7 @@ export default function DataSiswa() {
     const fieldErrors: Record<string, string> = {};
     const section = WIZARD_STEPS[stepIdx - 1];
     if (section.id === 'docs') return fieldErrors;
-    const fields = BIODATA_FIELDS.filter((f) => f.section === section.id);
+    const fields = BIODATA_FIELDS.filter((f) => f.section === section.id && !isFieldHidden(f, current));
 
     for (const f of fields) {
       const value = (current[f.key] ?? '').trim();
@@ -382,7 +382,7 @@ export default function DataSiswa() {
               {/* Step Content */}
               {(() => {
                 const section = WIZARD_STEPS[step - 1];
-                const fields = BIODATA_FIELDS.filter((f) => f.section === section.id);
+                const fields = BIODATA_FIELDS.filter((f) => f.section === section.id && !isFieldHidden(f, form));
                 return (
                   <div key={section.id} className="rounded-xl border border-[#1B2A4A]/10 p-4">
                     <p className="mb-3 font-bold text-[#1B2A4A]">{section.title}</p>
@@ -576,10 +576,11 @@ function ChangePinCard({ pending }: { pending: StudentChangeRequestRow | null })
 }
 
 function StudentDataView({ student }: { student: StudentDataPayload }) {
+  const studentRecord = student as unknown as Record<string, string>;
   return (
     <div className="space-y-6">
       {BIODATA_SECTIONS.map((section) => {
-        const fields = BIODATA_FIELDS.filter((f) => f.section === section.id);
+        const fields = BIODATA_FIELDS.filter((f) => f.section === section.id && !isFieldHidden(f, studentRecord));
         const isIdentity = section.id === 'identity';
         return (
           <div key={section.id} className="rounded-2xl bg-white p-6 shadow-sm">

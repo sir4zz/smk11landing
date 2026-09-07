@@ -10,6 +10,7 @@ export interface BiodataFieldDef {
   options?: string[];
   placeholder?: string;
   full?: boolean;
+  hideWhen?: { key: string; value: string };
 }
 
 export interface BiodataSectionDef {
@@ -75,10 +76,10 @@ function parentFields(prefix: string, section: string): BiodataFieldDef[] {
     { key: `${prefix}_agama`, label: 'Agama', section, type: 'select', options: RELIGION_OPTIONS },
     { key: `${prefix}_kewarganegaraan`, label: 'Kewarganegaraan', section },
     { key: `${prefix}_pendidikan`, label: 'Pendidikan', section },
-    { key: `${prefix}_pekerjaan`, label: 'Pekerjaan', section },
-    { key: `${prefix}_penghasilan`, label: 'Penghasilan per Bulan', section, type: 'select-or-text', options: PENGHASILAN_OPTIONS },
+    { key: `${prefix}_pekerjaan`, label: 'Pekerjaan', section, hideWhen: { key: `${prefix}_status_hidup`, value: 'Meninggal' } },
+    { key: `${prefix}_penghasilan`, label: 'Penghasilan per Bulan', section, type: 'select-or-text', options: PENGHASILAN_OPTIONS, hideWhen: { key: `${prefix}_status_hidup`, value: 'Meninggal' } },
     { key: `${prefix}_alamat`, label: 'Alamat Rumah', section, type: 'textarea', full: true },
-    { key: `${prefix}_no_telp`, label: 'No. HP/Telp', section, type: 'number' },
+    { key: `${prefix}_no_telp`, label: 'No. HP/Telp', section, type: 'number', hideWhen: { key: `${prefix}_status_hidup`, value: 'Meninggal' } },
     { key: `${prefix}_status_hidup`, label: 'Masih Hidup/Meninggal', section, type: 'select', options: ALIVE_OPTIONS },
   ];
 }
@@ -379,6 +380,11 @@ const RUPIAH_KEYS = new Set(['ayah_penghasilan', 'ibu_penghasilan', 'wali_pengha
 
 export function isRupiahField(key: string): boolean {
   return RUPIAH_KEYS.has(key);
+}
+
+export function isFieldHidden(field: BiodataFieldDef, form: Record<string, string>): boolean {
+  if (!field.hideWhen) return false;
+  return form[field.hideWhen.key] === field.hideWhen.value;
 }
 
 export function formatRupiah(raw: unknown): string {

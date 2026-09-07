@@ -13,7 +13,7 @@ import ImageField from '../../components/admin/ImageField';
 import { SkeletonList, SkeletonProfile } from '../../components/ui/Skeleton';
 import { GalleryUpload, VideoUrlsField } from '../../components/mading/MediaEditor';
 import { MADING_STATUSES } from '../../lib/ui-constants';
-import { BIODATA_FIELDS, BIODATA_SECTIONS, STUDENT_READONLY_KEYS, formatClass, groupFieldsBySubsection } from '../../lib/studentBiodata';
+import { BIODATA_FIELDS, BIODATA_SECTIONS, STUDENT_READONLY_KEYS, formatClass, groupFieldsBySubsection, isFieldHidden } from '../../lib/studentBiodata';
 import type { BiodataFieldDef } from '../../lib/studentBiodata';
 
 const studentSessionKey = 'smkn11-student-session';
@@ -577,7 +577,7 @@ function ProfileTab({ profile }: { profile: StudentProfile | null }) {
   const validateSection = (sectionId: string, form: Record<string, string>): Record<string, string> => {
     const errs: Record<string, string> = {};
     if (sectionId === 'docs') return errs;
-    for (const f of BIODATA_FIELDS.filter((x) => x.section === sectionId)) {
+    for (const f of BIODATA_FIELDS.filter((x) => x.section === sectionId && !isFieldHidden(x, form))) {
       const value = (form[f.key] ?? '').trim();
       if (!value) continue;
       if (f.type === 'number' && !/^\d+(\.\d+)?$/.test(value)) errs[f.key] = 'Harus berupa angka.';
@@ -711,7 +711,7 @@ function ProfileTab({ profile }: { profile: StudentProfile | null }) {
 
         {/* Approved biodata (read-only) */}
         {BIODATA_SECTIONS.map((section) => {
-          const fields = BIODATA_FIELDS.filter((f) => f.section === section.id);
+          const fields = BIODATA_FIELDS.filter((f) => f.section === section.id && !isFieldHidden(f, std as Record<string, string>));
           const isIdentity = section.id === 'identity';
           return (
             <div key={section.id} className="rounded-2xl bg-white p-6 shadow-sm">
@@ -844,7 +844,7 @@ function ProfileTab({ profile }: { profile: StudentProfile | null }) {
 
             {(() => {
               const section = WIZARD_STEPS[step - 1];
-              const fields = BIODATA_FIELDS.filter((f) => f.section === section.id);
+              const fields = BIODATA_FIELDS.filter((f) => f.section === section.id && !isFieldHidden(f, changeForm));
               return (
                 <div key={section.id} className="rounded-xl border border-[#1B2A4A]/10 p-4">
                   <p className="mb-3 font-bold text-[#1B2A4A]">{section.title}</p>
