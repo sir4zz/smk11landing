@@ -4,7 +4,7 @@ import { ChevronRight, ChevronLeft, Plus, Trash2, X, Loader2, KeyRound, Search, 
 import { accountsApi, downloadApiFile, resolveImageUrl } from '../../lib/api';
 import StudentImportModal from './StudentImportModal';
 import ImageField from './ImageField';
-import { BIODATA_FIELDS, BIODATA_SECTIONS, emptyBiodata, formatClass, formatRupiah, groupFieldsBySubsection, isRupiahField, isValidClass, normalizeClass, normalizeGender } from '../../lib/studentBiodata';
+import { BIODATA_FIELDS, BIODATA_SECTIONS, emptyBiodata, formatClass, formatRupiah, groupFieldsBySubsection, isFieldHidden, isRupiahField, isValidClass, normalizeClass, normalizeGender } from '../../lib/studentBiodata';
 import type { BiodataFieldDef } from '../../lib/studentBiodata';
 
 interface StudentRow {
@@ -184,7 +184,7 @@ export default function StudentsManagement() {
   const validateStep = (current: Record<string, string>, stepIdx: number): Record<string, string> => {
     const fieldErrors: Record<string, string> = {};
     const section = BIODATA_SECTIONS[stepIdx - 1];
-    const fields = BIODATA_FIELDS.filter((f) => f.section === section.id);
+    const fields = BIODATA_FIELDS.filter((f) => f.section === section.id && !isFieldHidden(f, current));
 
     if (stepIdx === 1) {
       const nisn = current.nisn.trim();
@@ -270,6 +270,7 @@ export default function StudentsManagement() {
     for (const field of BIODATA_FIELDS) {
       if (field.key === 'nisn' || field.key === 'name') continue;
       let value = (form[field.key] ?? '').trim();
+      if (value === '__custom__') value = '';
       if (field.key === 'gender') value = normalizeGender(value) || form.gender;
       payload[field.key] = value;
     }
@@ -436,40 +437,7 @@ export default function StudentsManagement() {
               <tbody>
                   {filtered.length === 0 && <tr><td colSpan={selectionMode ? 10 : 9} className="p-8 text-center text-[#5B7088]">Belum ada siswa terdaftar.</td></tr>}
                 {paginated.map((student) => (
-                  <tr
-                    key={student.id}
-                    onClick={() => { if (selectionMode) toggleSelected(student.id); }}
-                    onKeyDown={(event) => { if (selectionMode && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); toggleSelected(student.id); } }}
-                    tabIndex={selectionMode ? 0 : undefined}
-                    className={`border-t border-[#1B2A4A]/10 ${selectionMode ? 'cursor-pointer hover:bg-[#FAF6F0]' : ''} ${selectedIds.has(student.id) ? 'bg-[#C8A951]/10' : ''}`}
-                  >
-                    {selectionMode && <td className="p-4" onClick={(event) => event.stopPropagation()}><input type="checkbox" checked={selectedIds.has(student.id)} onChange={() => toggleSelected(student.id)} aria-label={`Pilih ${student.name}`} /></td>}
-                    <td className="p-4">
-                      <div className="flex items-center gap-3">
-                        {student.foto ? (
-                          <img src={resolveImageUrl(student.foto)} alt={student.name} className="h-9 w-9 rounded-full object-cover" />
-                        ) : (
-                          <span className="grid h-9 w-9 place-items-center rounded-full bg-[#FAF6F0]"><UserRound className="h-4 w-4 text-[#866D2C]" /></span>
-                        )}
-                        <span className="font-semibold">{student.name}</span>
-                      </div>
-                    </td>
-                    <td className="p-4 font-mono text-xs">{student.nisn}</td>
-                    <td className="p-4 font-mono text-xs">{student.nis || '-'}</td>
-                    <td className="p-4 font-mono text-xs">{student.pin || '-'}</td>
-                    <td className="p-4">{formatClass(student.class)}</td>
-                    <td className="p-4">{student.major || '-'}</td>
-                    <td className="p-4">{genderLabel(student.gender)}</td>
-                    <td className="p-4 max-w-[200px] truncate" title={String(student.address ?? '')}>{student.address || '-'}</td>
-                    <td className="p-4 whitespace-nowrap" onClick={(event) => event.stopPropagation()}>
-                      {selectionMode ? <span className="text-xs text-[#5B7088]">Klik baris untuk memilih</span> : <>
-                        <button onClick={() => setDetailId(student.id)} className="mr-3 text-[#866D2C]" title="Detail"><Eye size={16} /></button>
-                        <button onClick={() => openEdit(student)} className="mr-3 text-[#866D2C]" title="Edit"><Pencil size={16} /></button>
-                        <button onClick={() => resetPin(student)} className="mr-3 text-[#866D2C]" title="Reset PIN"><KeyRound size={16} /></button>
-                        <button onClick={() => removeStudent(student)} className="text-red-600" title="Hapus"><Trash2 size={16} /></button>
-                      </>}
-                    </td>
-                  </tr>
+                  <StudentRow key={student.id} student={student} selectionMode={selectionMode} selectedIds={selectedIds} toggleSelected={toggleSelected} setDetailId={setDetailId} openEdit={openEdit} resetPin={resetPin} removeStudent={removeStudent} />
                 ))}
               </tbody>
             </table>
@@ -539,7 +507,7 @@ export default function StudentsManagement() {
 
             {(() => {
               const section = BIODATA_SECTIONS[step - 1];
-              const fields = BIODATA_FIELDS.filter((f) => f.section === section.id);
+              const fields = BIODATA_FIELDS.filter((f) => f.section === section.id && !isFieldHidden(f, form));
               return (
                 <div key={section.id} className="rounded-xl border border-[#1B2A4A]/10 p-4">
                   <p className="mb-3 font-bold text-[#1B2A4A]">{section.title}</p>
@@ -667,6 +635,28 @@ function BiodataField({ field, value, onChange, placeholder, error }: { field: B
             </option>
           ))}
         </select>
+      ) : field.type === 'select-or-text' ? (
+        <div className="space-y-1">
+          <select
+            value={field.options?.includes(value) ? value : '__custom__'}
+            onChange={(e) => {
+              if (e.target.value === '__custom__') {
+                onChange({ target: { value: '__custom__' } } as React.ChangeEvent<HTMLInputElement>);
+              } else {
+                onChange({ target: { value: e.target.value } } as React.ChangeEvent<HTMLInputElement>);
+              }
+            }}
+            className={inputCls}
+          >
+            {field.options?.map((opt) => (
+              <option key={opt} value={opt}>{opt === '' ? 'Pilih' : selectLabel(field.key, opt)}</option>
+            ))}
+            <option value="__custom__">Lainnya (ketik sendiri)</option>
+          </select>
+          {(!field.options?.includes(value) && value !== '') && (
+            <input value={value === '__custom__' ? '' : value} onChange={onChange} className={inputCls} placeholder="Ketik penghasilan..." autoFocus />
+          )}
+        </div>
       ) : field.type === 'textarea' ? (
         <textarea value={value} onChange={onChange} rows={2} className={inputCls} placeholder={placeholder ?? field.placeholder} />
       ) : (
@@ -722,6 +712,7 @@ class DetailErrorBoundary extends Component<{ children: ReactNode; onBack: () =>
 
 function StudentDetailView({ student, onBack, onEdit, flash }: { student: StudentRow; onBack: () => void; onEdit: () => void; flash: (type: 'ok' | 'err', text: string) => void }) {
   const achievements = Array.isArray(student.achievements) ? (student.achievements as unknown[]).filter(Boolean) : [];
+  const studentRecord = student as unknown as Record<string, string>;
   const achievementsText = achievements.map(String).join(', ');
   const fotoSrc = resolveImageUrl(student.foto);
 
@@ -740,7 +731,7 @@ function StudentDetailView({ student, onBack, onEdit, flash }: { student: Studen
 
       <div className="space-y-6 p-6">
         {BIODATA_SECTIONS.map((section) => {
-          const fields = BIODATA_FIELDS.filter((f) => f.section === section.id);
+          const fields = BIODATA_FIELDS.filter((f) => f.section === section.id && !isFieldHidden(f, studentRecord));
           const isIdentity = section.id === 'identity';
           return (
             <div key={section.id} className="rounded-xl border border-[#1B2A4A]/10 p-4">
@@ -915,4 +906,51 @@ function docFileName(doc: { key: string }, student: StudentRow): string {
 
 function studentPhotoFileName(student: StudentRow): string {
   return fileBase('Foto', student.name, String(student.nisn ?? ''), extFromUrl(String(student.foto ?? '')));
+}
+
+function StudentRow({ student, selectionMode, selectedIds, toggleSelected, setDetailId, openEdit, resetPin, removeStudent }: {
+  student: StudentRow;
+  selectionMode: boolean;
+  selectedIds: Set<string>;
+  toggleSelected: (id: string) => void;
+  setDetailId: (id: string) => void;
+  openEdit: (student: StudentRow) => void;
+  resetPin: (student: StudentRow) => void;
+  removeStudent: (student: StudentRow) => void;
+}) {
+  return (
+    <tr
+      onClick={() => { if (selectionMode) toggleSelected(student.id); }}
+      onKeyDown={(event) => { if (selectionMode && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); toggleSelected(student.id); } }}
+      tabIndex={selectionMode ? 0 : undefined}
+      className={`border-t border-[#1B2A4A]/10 ${selectionMode ? 'cursor-pointer hover:bg-[#FAF6F0]' : ''} ${selectedIds.has(student.id) ? 'bg-[#C8A951]/10' : ''}`}
+    >
+      {selectionMode && <td className="p-4" onClick={(event) => event.stopPropagation()}><input type="checkbox" checked={selectedIds.has(student.id)} onChange={() => toggleSelected(student.id)} aria-label={`Pilih ${student.name}`} /></td>}
+      <td className="p-4">
+        <div className="flex items-center gap-3">
+          {student.foto ? (
+            <img src={resolveImageUrl(student.foto)} alt={student.name} className="h-9 w-9 rounded-full object-cover" />
+          ) : (
+            <span className="grid h-9 w-9 place-items-center rounded-full bg-[#FAF6F0]"><UserRound className="h-4 w-4 text-[#866D2C]" /></span>
+          )}
+          <span className="font-semibold">{student.name}</span>
+        </div>
+      </td>
+      <td className="p-4 font-mono text-xs">{student.nisn}</td>
+      <td className="p-4 font-mono text-xs">{student.nis || '-'}</td>
+      <td className="p-4 font-mono text-xs">{student.pin || '-'}</td>
+      <td className="p-4">{formatClass(student.class)}</td>
+      <td className="p-4">{student.major || '-'}</td>
+      <td className="p-4">{genderLabel(student.gender)}</td>
+      <td className="p-4 max-w-[200px] truncate" title={String(student.address ?? '')}>{student.address || '-'}</td>
+      <td className="p-4 whitespace-nowrap" onClick={(event) => event.stopPropagation()}>
+        {selectionMode ? <span className="text-xs text-[#5B7088]">Klik baris untuk memilih</span> : <>
+          <button onClick={() => setDetailId(student.id)} className="mr-3 text-[#866D2C]" title="Detail"><Eye size={16} /></button>
+          <button onClick={() => openEdit(student)} className="mr-3 text-[#866D2C]" title="Edit"><Pencil size={16} /></button>
+          <button onClick={() => resetPin(student)} className="mr-3 text-[#866D2C]" title="Reset PIN"><KeyRound size={16} /></button>
+          <button onClick={() => removeStudent(student)} className="text-red-600" title="Hapus"><Trash2 size={16} /></button>
+        </>}
+      </td>
+    </tr>
+  );
 }

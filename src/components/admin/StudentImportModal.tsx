@@ -130,7 +130,7 @@ export default function StudentImportModal({ onClose, onImported }: { onClose: (
   const downloadTemplate = () => {
     const a = document.createElement('a');
     a.href = TEMPLATE_URL;
-    a.download = 'DATA MASTER DAPODIK_2026.xls';
+    a.download = 'DATA MASTER DAPODIK_2026.xlsx';
     document.body.appendChild(a);
     a.click();
     a.remove();

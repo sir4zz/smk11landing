@@ -13,7 +13,7 @@ import ImageField from '../../components/admin/ImageField';
 import { SkeletonList, SkeletonProfile } from '../../components/ui/Skeleton';
 import { GalleryUpload, VideoUrlsField } from '../../components/mading/MediaEditor';
 import { MADING_STATUSES } from '../../lib/ui-constants';
-import { BIODATA_FIELDS, BIODATA_SECTIONS, STUDENT_READONLY_KEYS, formatClass, groupFieldsBySubsection } from '../../lib/studentBiodata';
+import { BIODATA_FIELDS, BIODATA_SECTIONS, STUDENT_READONLY_KEYS, formatClass, groupFieldsBySubsection, isFieldHidden } from '../../lib/studentBiodata';
 import type { BiodataFieldDef } from '../../lib/studentBiodata';
 
 const studentSessionKey = 'smkn11-student-session';
@@ -577,7 +577,7 @@ function ProfileTab({ profile }: { profile: StudentProfile | null }) {
   const validateSection = (sectionId: string, form: Record<string, string>): Record<string, string> => {
     const errs: Record<string, string> = {};
     if (sectionId === 'docs') return errs;
-    for (const f of BIODATA_FIELDS.filter((x) => x.section === sectionId)) {
+    for (const f of BIODATA_FIELDS.filter((x) => x.section === sectionId && !isFieldHidden(x, form))) {
       const value = (form[f.key] ?? '').trim();
       if (!value) continue;
       if (f.type === 'number' && !/^\d+(\.\d+)?$/.test(value)) errs[f.key] = 'Harus berupa angka.';
@@ -613,7 +613,8 @@ function ProfileTab({ profile }: { profile: StudentProfile | null }) {
     const proposed: Record<string, unknown> = {};
     for (const field of BIODATA_FIELDS) {
       if (STUDENT_READONLY_KEYS.has(field.key)) continue;
-      const newVal = String(changeForm[field.key] ?? '').trim();
+      const rawVal = String(changeForm[field.key] ?? '').trim();
+      const newVal = rawVal === '__custom__' ? '' : rawVal;
       const oldVal = String(std?.[field.key] ?? '').trim();
       if (newVal !== oldVal) {
         proposed[field.key] = field.type === 'number' || field.type === 'decimal'
@@ -710,7 +711,7 @@ function ProfileTab({ profile }: { profile: StudentProfile | null }) {
 
         {/* Approved biodata (read-only) */}
         {BIODATA_SECTIONS.map((section) => {
-          const fields = BIODATA_FIELDS.filter((f) => f.section === section.id);
+          const fields = BIODATA_FIELDS.filter((f) => f.section === section.id && !isFieldHidden(f, std as Record<string, string>));
           const isIdentity = section.id === 'identity';
           return (
             <div key={section.id} className="rounded-2xl bg-white p-6 shadow-sm">
@@ -843,7 +844,7 @@ function ProfileTab({ profile }: { profile: StudentProfile | null }) {
 
             {(() => {
               const section = WIZARD_STEPS[step - 1];
-              const fields = BIODATA_FIELDS.filter((f) => f.section === section.id);
+              const fields = BIODATA_FIELDS.filter((f) => f.section === section.id && !isFieldHidden(f, changeForm));
               return (
                 <div key={section.id} className="rounded-xl border border-[#1B2A4A]/10 p-4">
                   <p className="mb-3 font-bold text-[#1B2A4A]">{section.title}</p>
@@ -1175,6 +1176,28 @@ function BioField({ field, value, onChange, disabled }: { field: BiodataFieldDef
             <option key={opt} value={opt}>{opt === '' ? 'Pilih' : selectLabel(field.key, opt)}</option>
           ))}
         </select>
+      </label>
+    );
+  }
+  if (field.type === 'select-or-text') {
+    return (
+      <label className="block text-sm font-semibold">{field.label}{lockLabel}
+        <div className="space-y-1">
+          <select
+            value={field.options?.includes(value) ? value : '__custom__'}
+            onChange={(e) => onChange(e.target.value === '__custom__' ? '__custom__' : e.target.value)}
+            className={inputCls}
+            disabled={disabled}
+          >
+            {field.options?.map((opt) => (
+              <option key={opt} value={opt}>{opt === '' ? 'Pilih' : selectLabel(field.key, opt)}</option>
+            ))}
+            <option value="__custom__">Lainnya (ketik sendiri)</option>
+          </select>
+          {(!field.options?.includes(value) && value !== '') && (
+            <input value={value === '__custom__' ? '' : value} onChange={(e) => onChange(e.target.value)} className={inputCls} placeholder="Ketik penghasilan..." disabled={disabled} autoFocus />
+          )}
+        </div>
       </label>
     );
   }
