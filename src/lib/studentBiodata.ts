@@ -6,10 +6,11 @@ export interface BiodataFieldDef {
   label: string;
   section: string;
   subsection?: string;
-  type?: 'text' | 'number' | 'decimal' | 'date' | 'select' | 'textarea';
+  type?: 'text' | 'number' | 'decimal' | 'date' | 'select' | 'textarea' | 'select-or-text';
   options?: string[];
   placeholder?: string;
   full?: boolean;
+  hideWhen?: { key: string; value: string };
 }
 
 export interface BiodataSectionDef {
@@ -34,6 +35,7 @@ const RELIGION_OPTIONS = ['', 'Islam', 'Kristen Protestan', 'Kristen Katolik', '
 const BLOOD_OPTIONS = ['', 'A', 'B', 'AB', 'O'];
 const YATIM_OPTIONS = ['', 'Yatim', 'Piatu', 'Yatim-Piatu'];
 const ALIVE_OPTIONS = ['', 'Masih Hidup', 'Meninggal'];
+const PENGHASILAN_OPTIONS = ['', 'Tanpa Penghasilan', '< 1.000.000', '1.000.000 - 2.000.000', '2.000.000 - 3.000.000', '3.000.000 - 5.000.000', '5.000.000 - 10.000.000', '10.000.000 - 20.000.000', '> 20.000.000'];
 
 export const VALID_CLASSES = ['10', '11', '12'];
 export const CLASS_OPTIONS = ['', ...VALID_CLASSES];
@@ -68,15 +70,16 @@ export function isValidClass(value: unknown): boolean {
 function parentFields(prefix: string, section: string): BiodataFieldDef[] {
   return [
     { key: `${prefix}_nama`, label: 'Nama', section },
+    { key: `${prefix}_nik`, label: 'NIK', section, type: 'number' },
     { key: `${prefix}_tempat`, label: 'Tempat Lahir', section },
     { key: `${prefix}_tanggal_lahir`, label: 'Tanggal Lahir', section, type: 'date' },
     { key: `${prefix}_agama`, label: 'Agama', section, type: 'select', options: RELIGION_OPTIONS },
     { key: `${prefix}_kewarganegaraan`, label: 'Kewarganegaraan', section },
     { key: `${prefix}_pendidikan`, label: 'Pendidikan', section },
-    { key: `${prefix}_pekerjaan`, label: 'Pekerjaan', section },
-    { key: `${prefix}_penghasilan`, label: 'Penghasilan per Bulan', section, type: 'number' },
-    { key: `${prefix}_alamat`, label: 'Alamat Rumah', section, type: 'textarea', full: true },
-    { key: `${prefix}_no_telp`, label: 'No. HP/Telp', section, type: 'number' },
+    { key: `${prefix}_pekerjaan`, label: 'Pekerjaan', section, hideWhen: { key: `${prefix}_status_hidup`, value: 'Meninggal' } },
+    { key: `${prefix}_penghasilan`, label: 'Penghasilan per Bulan', section, type: 'select-or-text', options: PENGHASILAN_OPTIONS, hideWhen: { key: `${prefix}_status_hidup`, value: 'Meninggal' } },
+    { key: `${prefix}_alamat`, label: 'Alamat Rumah', section, type: 'textarea', full: true, hideWhen: { key: `${prefix}_status_hidup`, value: 'Meninggal' } },
+    { key: `${prefix}_no_telp`, label: 'No. HP/Telp', section, type: 'number', hideWhen: { key: `${prefix}_status_hidup`, value: 'Meninggal' } },
     { key: `${prefix}_status_hidup`, label: 'Masih Hidup/Meninggal', section, type: 'select', options: ALIVE_OPTIONS },
   ];
 }
@@ -101,6 +104,7 @@ export const BIODATA_FIELDS: BiodataFieldDef[] = [
   { key: 'jml_saudara_tiri', label: 'Jumlah Saudara Tiri', section: 'identity', type: 'number' },
   { key: 'anak_yatim_piatu', label: 'Anak Yatim / Piatu', section: 'identity', type: 'select', options: YATIM_OPTIONS },
   { key: 'bahasa_sehari_hari', label: 'Bahasa Sehari-hari', section: 'identity', placeholder: 'cth. Indonesia' },
+  { key: 'phone', label: 'No. Telp / HP', section: 'identity', type: 'number' },
 
   // B. Keterangan Tempat Tinggal
   { key: 'address', label: 'Alamat Tempat Tinggal', section: 'residence', type: 'textarea', full: true },
@@ -109,7 +113,6 @@ export const BIODATA_FIELDS: BiodataFieldDef[] = [
   { key: 'kecamatan', label: 'Kecamatan', section: 'residence' },
   { key: 'desa', label: 'Desa/Kelurahan', section: 'residence' },
   { key: 'kode_pos', label: 'Kode Pos', section: 'residence', type: 'number' },
-  { key: 'phone', label: 'No. Telp / HP', section: 'residence', type: 'number' },
   { key: 'tinggal_dengan', label: 'Tinggal Dengan (Orang Tua/Saudara/Asrama/Kost)', section: 'residence' },
   { key: 'jarak_sekolah', label: 'Jarak Tempat Tinggal ke Sekolah (Km)', section: 'residence', type: 'number' },
   { key: 'jenis_tempat_tinggal', label: 'Jenis Tempat Tinggal', section: 'residence' },
@@ -133,7 +136,7 @@ export const BIODATA_FIELDS: BiodataFieldDef[] = [
   { key: 'pindahan_dari', label: 'Dari Sekolah', section: 'education', subsection: 'Pindahan' },
   { key: 'alasan_pindah', label: 'Alasan', section: 'education', subsection: 'Pindahan' },
   // ── Diterima di Sekolah Ini ──
-  { key: 'diangkat', label: 'Diangkat', section: 'education', subsection: 'Diterima di Sekolah Ini' },
+  { key: 'diangkat', label: 'Diterima di Kelas 10', section: 'education', subsection: 'Diterima di Sekolah Ini' },
   { key: 'kompetensi_keahlian', label: 'Kompetensi/Keahlian', section: 'education', subsection: 'Diterima di Sekolah Ini' },
   { key: 'tanggal_diterima', label: 'Tanggal Diterima', section: 'education', subsection: 'Diterima di Sekolah Ini', type: 'date' },
   { key: 'beasiswa_status', label: 'Menerima Beasiswa', section: 'education', subsection: 'Beasiswa' },
@@ -157,13 +160,13 @@ export const BIODATA_FIELDS: BiodataFieldDef[] = [
   { key: 'siswa_status', label: 'Status', section: 'student' },
   { key: 'siswa_tanggal', label: 'Tanggal', section: 'student', type: 'date' },
   { key: 'email', label: 'Email', section: 'student' },
-  { key: 'no_kk', label: 'No. KK', section: 'identity', type: 'number' },
-  { key: 'kepala_keluarga', label: 'Kepala Keluarga', section: 'identity' },
-  { key: 'no_kip', label: 'No. KIP', section: 'identity', type: 'number' },
+  { key: 'no_kk', label: 'No. KK', section: 'student', type: 'number' },
+  { key: 'kepala_keluarga', label: 'Kepala Keluarga', section: 'student' },
+  { key: 'no_kip', label: 'No. KIP', section: 'student', type: 'number' },
   { key: 'cita_cita', label: 'Cita-cita', section: 'hobby' },
   { key: 'hobi', label: 'Hobi', section: 'hobby' },
-  { key: 'pernah_paud', label: 'Pernah PAUD', section: 'identity' },
-  { key: 'pernah_tk', label: 'Pernah TK', section: 'identity' },
+  { key: 'pernah_paud', label: 'Pernah PAUD', section: 'student' },
+  { key: 'pernah_tk', label: 'Pernah TK', section: 'student' },
   { key: 'status_afirmasi', label: 'Status Afirmasi', section: 'student' },
 ];
 
@@ -379,12 +382,43 @@ export function isRupiahField(key: string): boolean {
   return RUPIAH_KEYS.has(key);
 }
 
+export function isFieldHidden(field: BiodataFieldDef, form: Record<string, string>): boolean {
+  if (!field.hideWhen) return false;
+  return form[field.hideWhen.key] === field.hideWhen.value;
+}
+
 export function formatRupiah(raw: unknown): string {
   if (raw === null || raw === undefined || String(raw).trim() === '') return '-';
   const str = String(raw).trim();
   const num = Number(str.replace(/[^\d.-]/g, ''));
   if (Number.isNaN(num)) return str;
   return `Rp${num.toLocaleString('id-ID')}`;
+}
+
+export function normalizePenghasilan(raw: unknown): string {
+  if (raw === null || raw === undefined) return '';
+  const str = String(raw).trim();
+  if (!str) return '';
+
+  const lower = str.toLowerCase().replace(/[_\s]+/g, ' ').trim();
+  if (lower === 'tanpa penghasilan' || lower === '0' || lower === '-') return 'Tanpa Penghasilan';
+
+  const isLess = lower.startsWith('<');
+  const isMore = lower.startsWith('>');
+  const cleaned = lower.replace(/[^0-9]/g, '');
+  const num = parseInt(cleaned, 10);
+  if (Number.isNaN(num)) return str;
+
+  if (isLess) return '< 1.000.000';
+  if (isMore) return '> 20.000.000';
+
+  if (num < 1000000) return '< 1.000.000';
+  if (num < 2000000) return '1.000.000 - 2.000.000';
+  if (num < 3000000) return '2.000.000 - 3.000.000';
+  if (num < 5000000) return '3.000.000 - 5.000.000';
+  if (num < 10000000) return '5.000.000 - 10.000.000';
+  if (num < 20000000) return '10.000.000 - 20.000.000';
+  return '> 20.000.000';
 }
 
 // ==== DATA MASTER DAPODIK ====
@@ -432,6 +466,7 @@ const DAPODIK_COLUMN_MAP: Record<string, string> = {
   'jarak sekolah': 'jarak_sekolah',
   'pilihan jurusan 1': 'major',
   'status ayah': 'ayah_status_hidup',
+  'nik ayah': 'ayah_nik',
   'nama ayah': 'ayah_nama',
   'tanggal lahir ayah': 'ayah_tanggal_lahir',
   'pendidikan ayah': 'ayah_pendidikan',
@@ -439,6 +474,7 @@ const DAPODIK_COLUMN_MAP: Record<string, string> = {
   'penghasilan ayah': 'ayah_penghasilan',
   'no hp ayah': 'ayah_no_telp',
   'status ibu': 'ibu_status_hidup',
+  'nik ibu': 'ibu_nik',
   'nama ibu': 'ibu_nama',
   'tanggal lahir ibu': 'ibu_tanggal_lahir',
   'pendidikan ibu': 'ibu_pendidikan',
@@ -592,7 +628,9 @@ const HEADER_TEXT_TO_FIELD: Record<string, string> = {
   'tk': 'beasiswa_tk',
   'dari': 'beasiswa_dari',
   'nama ayah': 'ayah_nama',
+  'nik ayah': 'ayah_nik',
   'nama ibu': 'ibu_nama',
+  'nik ibu': 'ibu_nik',
   'nama wali': 'wali_nama',
 };
 
@@ -800,7 +838,7 @@ export function parseMultiRowTemplate(grid: unknown[][]): { rows: Record<string,
       } else if (DATE_KEYS.has(key)) {
         out[key] = toDateString(value);
       } else if (RUPIAH_KEYS.has(key)) {
-        out[key] = String(value).replace(/[^\d]/g, '');
+        out[key] = normalizePenghasilan(value);
       } else {
         out[key] = String(value).trim();
       }
@@ -904,7 +942,7 @@ export function parseDapodikSheets(sheets: DapodikSheetGrid[]): { rows: Record<s
           if (val > 1000) val = Math.round(val / 1000 * 100) / 100;
           record[key] = String(val);
         } else if (RUPIAH_KEYS.has(key)) {
-          record[key] = raw.replace(/[^\d]/g, '');
+          record[key] = normalizePenghasilan(raw);
         } else {
           record[key] = raw;
         }

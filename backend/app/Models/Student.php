@@ -43,9 +43,9 @@ class Student extends Model
         'alasan_pindah', 'diangkat', 'kompetensi_keahlian', 'tanggal_diterima',
         // Sections 5-7
         'ayah_nama', 'ayah_tempat', 'ayah_tanggal_lahir', 'ayah_agama', 'ayah_kewarganegaraan',
-        'ayah_pendidikan', 'ayah_pekerjaan', 'ayah_penghasilan', 'ayah_alamat', 'ayah_no_telp', 'ayah_status_hidup',
+        'ayah_pendidikan', 'ayah_pekerjaan', 'ayah_penghasilan', 'ayah_alamat', 'ayah_no_telp', 'ayah_status_hidup', 'ayah_nik',
         'ibu_nama', 'ibu_tempat', 'ibu_tanggal_lahir', 'ibu_agama', 'ibu_kewarganegaraan',
-        'ibu_pendidikan', 'ibu_pekerjaan', 'ibu_penghasilan', 'ibu_alamat', 'ibu_no_telp', 'ibu_status_hidup',
+        'ibu_pendidikan', 'ibu_pekerjaan', 'ibu_penghasilan', 'ibu_alamat', 'ibu_no_telp', 'ibu_status_hidup', 'ibu_nik',
         'wali_nama', 'wali_tempat', 'wali_tanggal_lahir', 'wali_agama', 'wali_kewarganegaraan',
         'wali_pendidikan', 'wali_pekerjaan', 'wali_penghasilan', 'wali_alamat', 'wali_no_telp', 'wali_status_hidup',
         // Sections 8-9
