@@ -78,7 +78,7 @@ function parentFields(prefix: string, section: string): BiodataFieldDef[] {
     { key: `${prefix}_pendidikan`, label: 'Pendidikan', section },
     { key: `${prefix}_pekerjaan`, label: 'Pekerjaan', section, hideWhen: { key: `${prefix}_status_hidup`, value: 'Meninggal' } },
     { key: `${prefix}_penghasilan`, label: 'Penghasilan per Bulan', section, type: 'select-or-text', options: PENGHASILAN_OPTIONS, hideWhen: { key: `${prefix}_status_hidup`, value: 'Meninggal' } },
-    { key: `${prefix}_alamat`, label: 'Alamat Rumah', section, type: 'textarea', full: true },
+    { key: `${prefix}_alamat`, label: 'Alamat Rumah', section, type: 'textarea', full: true, hideWhen: { key: `${prefix}_status_hidup`, value: 'Meninggal' } },
     { key: `${prefix}_no_telp`, label: 'No. HP/Telp', section, type: 'number', hideWhen: { key: `${prefix}_status_hidup`, value: 'Meninggal' } },
     { key: `${prefix}_status_hidup`, label: 'Masih Hidup/Meninggal', section, type: 'select', options: ALIVE_OPTIONS },
   ];
@@ -136,7 +136,7 @@ export const BIODATA_FIELDS: BiodataFieldDef[] = [
   { key: 'pindahan_dari', label: 'Dari Sekolah', section: 'education', subsection: 'Pindahan' },
   { key: 'alasan_pindah', label: 'Alasan', section: 'education', subsection: 'Pindahan' },
   // ── Diterima di Sekolah Ini ──
-  { key: 'diangkat', label: 'Diangkat', section: 'education', subsection: 'Diterima di Sekolah Ini' },
+  { key: 'diangkat', label: 'Diterima di Kelas 10', section: 'education', subsection: 'Diterima di Sekolah Ini' },
   { key: 'kompetensi_keahlian', label: 'Kompetensi/Keahlian', section: 'education', subsection: 'Diterima di Sekolah Ini' },
   { key: 'tanggal_diterima', label: 'Tanggal Diterima', section: 'education', subsection: 'Diterima di Sekolah Ini', type: 'date' },
   { key: 'beasiswa_status', label: 'Menerima Beasiswa', section: 'education', subsection: 'Beasiswa' },
