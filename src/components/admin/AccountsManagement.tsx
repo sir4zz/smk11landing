@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
-import { Plus, Trash2, X, Loader2, KeyRound, Search, Upload, Pencil, Users, ShieldCheck } from 'lucide-react';
+import { Plus, Trash2, X, Loader2, KeyRound, Search, Upload, Pencil, Users, ShieldCheck, ChevronLeft, ChevronRight } from 'lucide-react';
 import { accountsApi, type AccountRole, type AccountRow } from '../../lib/api';
 import AccountImportModal from './AccountImportModal';
 import { formatClass } from '../../lib/studentBiodata';
@@ -86,6 +86,11 @@ export default function AccountsManagement() {
     setTimeout(() => setMsg(null), 5000);
   };
 
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 50;
+
+  useEffect(() => { setPage(1); }, [search, roleFilter]);
+
   const filtered = useMemo(() => accounts.filter((acc) => {
     const matchesRole = !roleFilter || acc.role === roleFilter;
     const q = search.toLowerCase();
@@ -95,9 +100,13 @@ export default function AccountsManagement() {
       acc.guru?.nip ?? '', acc.guru?.nuptk ?? '', acc.guru?.teacher_id ?? '',
       acc.osis?.member_id ?? '', acc.osis?.nisn ?? '',
     ].join(' ').toLowerCase();
-    const matchesSearch = !q || acc.name.toLowerCase().includes(q) || acc.email.toLowerCase().includes(q) || ids.includes(q);
+    const matchesSearch = !q || (acc.name ?? '').toLowerCase().includes(q) || (acc.email ?? '').toLowerCase().includes(q) || ids.includes(q);
     return matchesRole && matchesSearch;
   }), [accounts, roleFilter, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const openCreate = () => {
     setEditing(null);
@@ -279,7 +288,7 @@ export default function AccountsManagement() {
           </thead>
           <tbody>
             {filtered.length === 0 && <tr><td colSpan={6} className="p-8 text-center text-[#5B7088]">Tidak ada akun yang cocok.</td></tr>}
-            {filtered.map((account) => (
+            {paginated.map((account) => (
               <tr key={account.id} className="border-t border-[#1B2A4A]/10">
                 <td className="p-4">
                   <div className="flex items-center gap-3">
@@ -324,6 +333,27 @@ export default function AccountsManagement() {
           </tbody>
         </table>
       </div>
+
+      {filtered.length > PAGE_SIZE && (
+        <div className="mt-4 flex items-center justify-between text-sm text-[#5B7088]">
+          <span>Menampilkan {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filtered.length)} dari {filtered.length} akun</span>
+          <div className="flex items-center gap-2">
+            <button type="button" disabled={safePage <= 1} onClick={() => setPage((p) => p - 1)} className="inline-flex items-center gap-1 rounded-lg border border-[#1B2A4A]/20 bg-white px-3 py-1.5 text-sm font-semibold text-[#1B2A4A] hover:bg-[#FAF6F0] disabled:opacity-40 disabled:cursor-not-allowed"><ChevronLeft size={14} /> Prev</button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter((p) => p === 1 || p === totalPages || Math.abs(p - safePage) <= 2)
+              .reduce<(number | 'dots')[]>((acc, p, i, arr) => {
+                if (i > 0 && p - (arr[i - 1] as number) > 1) acc.push('dots');
+                acc.push(p);
+                return acc;
+              }, [])
+              .map((item, i) => item === 'dots'
+                ? <span key={`dots-${i}`} className="px-1">...</span>
+                : <button key={item} type="button" onClick={() => setPage(item)} className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${item === safePage ? 'bg-[#1B2A4A] text-white' : 'border border-[#1B2A4A]/20 bg-white text-[#1B2A4A] hover:bg-[#FAF6F0]'}`}>{item}</button>
+              )}
+            <button type="button" disabled={safePage >= totalPages} onClick={() => setPage((p) => p + 1)} className="inline-flex items-center gap-1 rounded-lg border border-[#1B2A4A]/20 bg-white px-3 py-1.5 text-sm font-semibold text-[#1B2A4A] hover:bg-[#FAF6F0] disabled:opacity-40 disabled:cursor-not-allowed">Next <ChevronRight size={14} /></button>
+          </div>
+        </div>
+      )}
 
       {creating && (
         <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-black/50 p-4">
