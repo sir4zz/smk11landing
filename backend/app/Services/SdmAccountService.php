@@ -90,7 +90,8 @@ class SdmAccountService
             'linked' => true,
             'user' => [
                 'id' => $user->id,
-                'email' => $user->email,
+                'username' => $user->username ?? '',
+                'email' => $user->email ?? '',
                 'name' => $user->name,
                 'role' => $profile?->role,
                 'status' => $profile?->status ?? 'active',
@@ -133,9 +134,12 @@ class SdmAccountService
             DB::transaction(function () use ($id, $person, $email, $password, $name, $role) {
                 $this->assertIdentifiersFree($person);
 
+                $username = $this->generateUsername($person);
+
                 User::create([
                     'id' => $id,
                     'email' => $email,
+                    'username' => $username,
                     'password' => Hash::make($password),
                     'name' => $name,
                     'profile' => ['name' => $name],
@@ -320,6 +324,24 @@ class SdmAccountService
         }
 
         return $this->generateEmail($person);
+    }
+
+    private function generateUsername(Model $person): string
+    {
+        $base = $person->nip ?: $person->nipppk ?: $person->nuptk;
+        $digits = $base ? preg_replace('/[^0-9]/', '', $base) : '';
+        $prefix = $digits !== '' ? 'nip-'.$digits : ($person instanceof SdmTendik ? 'tendik' : 'guru');
+
+        $candidate = $prefix;
+        $username = $candidate;
+        $i = 1;
+
+        while (User::query()->where('username', $username)->exists()) {
+            $username = $prefix.'-'.$i;
+            $i++;
+        }
+
+        return $username;
     }
 
     private function generateEmail(Model $person): string

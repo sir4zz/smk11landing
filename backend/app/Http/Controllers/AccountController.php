@@ -40,6 +40,7 @@ class AccountController extends Controller
             $term = '%'.trim((string) $request->query('search')).'%';
             $query->where(function ($q) use ($term) {
                 $q->where('email', 'like', $term)
+                    ->orWhere('username', 'like', $term)
                     ->orWhere('name', 'like', $term)
                     ->orWhereHas('guru', fn ($g) => $g->where('nip', 'like', $term)->orWhere('nuptk', 'like', $term)->orWhere('teacher_id', 'like', $term))
                     ->orWhereHas('osisAccount', fn ($o) => $o->where('member_id', 'like', $term)->orWhere('nisn', 'like', $term))
@@ -156,36 +157,50 @@ class AccountController extends Controller
 
     private function createStaff(string $id, Request $request, string $role, string $name): void
     {
+        $username = strtolower(trim((string) $request->input('username', '')));
         $email = strtolower(trim((string) $request->input('email', '')));
         $password = (string) $request->input('password', '');
 
-        if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            throw $this->httpFail('Email wajib diisi dengan benar.');
+        if (mb_strlen($username) < 3) {
+            throw $this->httpFail('Username wajib diisi (minimal 3 karakter).');
         }
         if (mb_strlen($password) < 6) {
             throw $this->httpFail('Password minimal 6 karakter.');
         }
-        if (User::query()->where('email', $email)->exists()) {
+        if (User::query()->where('username', $username)->exists()) {
+            throw $this->httpFail('Username sudah terdaftar.');
+        }
+        if ($email !== '' && ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw $this->httpFail('Email tidak valid.');
+        }
+        if ($email !== '' && User::query()->where('email', $email)->exists()) {
             throw $this->httpFail('Email sudah terdaftar.');
         }
 
-        $this->createUserWithProfile($id, $name, $email, $password, $role, $request);
+        $this->createUserWithProfile($id, $name, $username, $email, $password, $role, $request);
     }
 
     private function createGuru(string $id, Request $request, string $name): void
     {
+        $username = strtolower(trim((string) $request->input('username', '')));
         $email = strtolower(trim((string) $request->input('email', '')));
         $password = (string) $request->input('password', '');
         $nip = trim((string) $request->input('nip', ''));
         $nuptk = trim((string) $request->input('nuptk', ''));
 
-        if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            throw $this->httpFail('Email wajib diisi dengan benar.');
+        if (mb_strlen($username) < 3) {
+            throw $this->httpFail('Username wajib diisi (minimal 3 karakter).');
         }
         if (mb_strlen($password) < 6) {
             throw $this->httpFail('Password minimal 6 karakter.');
         }
-        if (User::query()->where('email', $email)->exists()) {
+        if (User::query()->where('username', $username)->exists()) {
+            throw $this->httpFail('Username sudah terdaftar.');
+        }
+        if ($email !== '' && ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw $this->httpFail('Email tidak valid.');
+        }
+        if ($email !== '' && User::query()->where('email', $email)->exists()) {
             throw $this->httpFail('Email sudah terdaftar.');
         }
         if ($nip !== '' && Guru::query()->where('nip', $nip)->exists()) {
@@ -195,7 +210,7 @@ class AccountController extends Controller
             throw $this->httpFail('NUPTK sudah terdaftar.');
         }
 
-        $this->createUserWithProfile($id, $name, $email, $password, 'guru', $request);
+        $this->createUserWithProfile($id, $name, $username, $email, $password, 'guru', $request);
         Guru::create([
             'id' => $id,
             'nip' => $nip ?: null,
@@ -210,24 +225,31 @@ class AccountController extends Controller
 
     private function createOsis(string $id, Request $request, string $name): void
     {
+        $username = strtolower(trim((string) $request->input('username', '')));
         $email = strtolower(trim((string) $request->input('email', '')));
         $password = (string) $request->input('password', '');
         $nisn = trim((string) $request->input('nisn', ''));
 
-        if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            throw $this->httpFail('Email wajib diisi dengan benar.');
+        if (mb_strlen($username) < 3) {
+            throw $this->httpFail('Username wajib diisi (minimal 3 karakter).');
         }
         if (mb_strlen($password) < 6) {
             throw $this->httpFail('Password minimal 6 karakter.');
         }
-        if (User::query()->where('email', $email)->exists()) {
+        if (User::query()->where('username', $username)->exists()) {
+            throw $this->httpFail('Username sudah terdaftar.');
+        }
+        if ($email !== '' && ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw $this->httpFail('Email tidak valid.');
+        }
+        if ($email !== '' && User::query()->where('email', $email)->exists()) {
             throw $this->httpFail('Email sudah terdaftar.');
         }
         if ($nisn !== '' && OsisAccount::query()->where('nisn', $nisn)->exists()) {
             throw $this->httpFail('NISN sudah terdaftar.');
         }
 
-        $this->createUserWithProfile($id, $name, $email, $password, 'osis', $request);
+        $this->createUserWithProfile($id, $name, $username, $email, $password, 'osis', $request);
         OsisAccount::create([
             'id' => $id,
             'member_id' => $this->accounts->generateMemberId(),
@@ -271,13 +293,20 @@ class AccountController extends Controller
 
     private function studentToStaff(User $user, Request $request, string $targetRole): void
     {
+        $username = strtolower(trim((string) $request->input('username', '')));
         $email = strtolower(trim((string) $request->input('email', '')));
         $password = (string) $request->input('password', '');
 
-        if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            throw $this->httpFail('Email wajib diisi dengan benar.');
+        if (mb_strlen($username) < 3) {
+            throw $this->httpFail('Username wajib diisi (minimal 3 karakter).');
         }
-        if ($email !== $user->email && User::query()->where('email', $email)->exists()) {
+        if ($username !== $user->username && User::query()->where('username', $username)->exists()) {
+            throw $this->httpFail('Username sudah terdaftar.');
+        }
+        if ($email !== '' && ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw $this->httpFail('Email tidak valid.');
+        }
+        if ($email !== '' && $email !== $user->email && User::query()->where('email', $email)->exists()) {
             throw $this->httpFail('Email sudah terdaftar.');
         }
         if ($password !== '' && mb_strlen($password) < 6) {
@@ -293,7 +322,7 @@ class AccountController extends Controller
         StudentAccount::query()->where('student_id', $user->id)->delete();
         Student::query()->where('id', $user->id)->delete();
 
-        $this->applyStaffChanges($user, $email, $password, $targetRole, $request);
+        $this->applyStaffChanges($user, $username, $email, $password, $targetRole, $request);
     }
 
     private function staffToStudent(User $user, Request $request): void
@@ -415,13 +444,20 @@ class AccountController extends Controller
 
     private function updateStaff(User $user, Request $request, string $targetRole): void
     {
-        $email = strtolower(trim((string) $request->input('email', $user->email)));
+        $username = strtolower(trim((string) $request->input('username', $user->username ?? '')));
+        $email = strtolower(trim((string) $request->input('email', $user->email ?? '')));
         $password = (string) $request->input('password', '');
 
-        if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            throw $this->httpFail('Email wajib diisi dengan benar.');
+        if (mb_strlen($username) < 3) {
+            throw $this->httpFail('Username wajib diisi (minimal 3 karakter).');
         }
-        if ($email !== $user->email && User::query()->where('email', $email)->exists()) {
+        if ($username !== ($user->username ?? '') && User::query()->where('username', $username)->exists()) {
+            throw $this->httpFail('Username sudah terdaftar.');
+        }
+        if ($email !== '' && ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw $this->httpFail('Email tidak valid.');
+        }
+        if ($email !== '' && $email !== ($user->email ?? '') && User::query()->where('email', $email)->exists()) {
             throw $this->httpFail('Email sudah terdaftar.');
         }
         if ($password !== '' && mb_strlen($password) < 6) {
@@ -434,7 +470,7 @@ class AccountController extends Controller
             $this->updateOsisData($user, $request);
         }
 
-        $this->applyStaffChanges($user, $email, $password, $targetRole, $request);
+        $this->applyStaffChanges($user, $username, $email, $password, $targetRole, $request);
     }
 
     private function updateGuruData(User $user, Request $request): void
@@ -511,11 +547,11 @@ class AccountController extends Controller
         ]);
     }
 
-    private function applyStaffChanges(User $user, string $email, string $password, string $role, Request $request): void
+    private function applyStaffChanges(User $user, string $username, string $email, string $password, string $role, Request $request): void
     {
         $name = trim((string) $request->input('name', $user->name));
 
-        $updates = ['name' => $name, 'email' => $email];
+        $updates = ['name' => $name, 'username' => $username, 'email' => $email ?: null];
         if ($password !== '') {
             $updates['password'] = $password;
         }
@@ -523,7 +559,7 @@ class AccountController extends Controller
         $user->profileRecord?->update($this->profileStatusUpdates($request) + [
             'role' => $role,
             'name' => $name,
-            'email' => $email,
+            'email' => $email ?: null,
         ]);
     }
 
@@ -531,11 +567,12 @@ class AccountController extends Controller
     // Shared helpers
     // ------------------------------------------------------------------
 
-    private function createUserWithProfile(string $id, string $name, string $email, string $password, string $role, Request $request): void
+    private function createUserWithProfile(string $id, string $name, string $username, string $email, string $password, string $role, Request $request): void
     {
         User::create([
             'id' => $id,
-            'email' => $email,
+            'email' => $email ?: null,
+            'username' => $username,
             'password' => Hash::make($password),
             'name' => $name,
             'profile' => ['name' => $name],
@@ -546,7 +583,7 @@ class AccountController extends Controller
             'id' => $id,
             'role' => $role,
             'name' => $name,
-            'email' => $email,
+            'email' => $email ?: null,
             'status' => $request->input('status', 'active') === 'inactive' ? 'inactive' : 'active',
             'must_change_password' => $request->boolean('must_change_password'),
             'updated_at' => now(),
@@ -648,7 +685,8 @@ class AccountController extends Controller
 
         $payload = [
             'id' => $user->id,
-            'email' => $user->email,
+            'username' => $user->username ?? '',
+            'email' => $user->email ?? '',
             'name' => $user->student?->name ?? $user->name,
             'role' => $profile?->role ?? 'applicant',
             'phone' => $user->student?->phone ?? $profile?->phone ?? '',

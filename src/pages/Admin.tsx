@@ -180,13 +180,13 @@ export function AdminLogin() {
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-[#FAF6F0] p-2"><img src={logoSekolah} alt="Logo SMKN 11" className="h-full w-full object-contain" /></div>
           <h1 className="text-2xl font-bold text-[#1B2A4A]">Login Panel SMKN 11</h1>
-          <p className="mt-2 text-sm text-[#23314D]">Masuk menggunakan email (admin), NIP/NUPTK/ID Guru, atau ID Anggota OSIS.</p>
+          <p className="mt-2 text-sm text-[#23314D]">Masuk menggunakan username, email, NIP/NUPTK/ID Guru, atau ID Anggota OSIS.</p>
         </div>
 
         {error && <p className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
 
         <form onSubmit={submit}>
-          <label className="mb-4 block text-sm font-semibold text-[#1B2A4A]">Email / NIP / ID Anggota<input name="identifier" required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2" placeholder="email@smkn11.sch.id, NIP, atau ID Anggota" /></label>
+          <label className="mb-4 block text-sm font-semibold text-[#1B2A4A]">Username<input name="identifier" required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2" placeholder="Masukkan username" /></label>
           <label className="mb-6 block text-sm font-semibold text-[#1B2A4A]">Kata sandi<input name="password" type="password" required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2" /></label>
           <button disabled={loading} className="w-full rounded-lg bg-[#1B2A4A] py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-70">{loading ? 'Memeriksa...' : 'Masuk ke Panel'}</button>
         </form>

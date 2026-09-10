@@ -147,7 +147,8 @@ class AuthController extends Controller
     {
         return [
             'id' => $user->id,
-            'email' => $user->email,
+            'username' => $user->username ?? '',
+            'email' => $user->email ?? '',
             'name' => $user->name,
         ];
     }
