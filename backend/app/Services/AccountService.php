@@ -18,8 +18,9 @@ use Illuminate\Support\Str;
 class AccountService
 {
     /**
-     * Resolve a login identifier (email, NIP, NUPTK, teacher_id, NIS, NISN or
-     * member_id) to a user account, or null when not found.
+     * Resolve a login identifier (username, email, NIS, NISN) to a user account.
+     * Staff/admin/guru/osis/bkk: username or email.
+     * Student: NISN or NIS.
      */
     public function resolveUser(string $identifier): ?User
     {
@@ -29,30 +30,21 @@ class AccountService
             return null;
         }
 
+        // Try username lookup (non-student accounts).
+        $user = User::query()->where('username', $term)->first();
+        if ($user && $user->profileRecord?->role !== 'student') {
+            return $user;
+        }
+
+        // Try email lookup (all accounts).
         if (str_contains($term, '@')) {
-            return User::query()->where('email', strtolower($term))->first();
+            $user = User::query()->where('email', strtolower($term))->first();
+            if ($user) {
+                return $user;
+            }
         }
 
-$guru = Guru::query()
-              ->where('nip', $term)
-              ->orWhere('nipppk', $term)
-              ->orWhere('nuptk', $term)
-              ->orWhere('teacher_id', $term)
-              ->first();
-
-        if ($guru) {
-            return User::query()->find($guru->id);
-        }
-
-        $osis = OsisAccount::query()
-            ->where('member_id', $term)
-            ->orWhere('nisn', $term)
-            ->first();
-
-        if ($osis) {
-            return User::query()->find($osis->id);
-        }
-
+        // Student login: NISN or NIS.
         $student = Student::query()
             ->where('nisn', $term)
             ->orWhere('nis', $term)
@@ -279,7 +271,8 @@ $guru = Guru::query()
             'status' => $profile?->status ?? 'active',
             'must_change_password' => (bool) ($profile?->must_change_password ?? false),
             'name' => $student?->name ?? $user->name,
-            'email' => $user->email,
+            'username' => $user->username ?? '',
+            'email' => $user->email ?? '',
             'phone' => $student?->phone ?? $profile?->phone ?? '',
             'photo' => $student?->foto ?? $profile?->photo ?? '',
             'bio' => $profile?->bio ?? '',

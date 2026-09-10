@@ -16,11 +16,11 @@ const ROLE_BADGES: Record<AccountRole, string> = {
 };
 
 const ROLE_HINTS: Record<AccountRole, string> = {
-  admin: 'Login menggunakan email + password.',
-  operator_sekolah: 'Login menggunakan email + password. Mengelola data operasional sekolah.',
-  guru: 'Login menggunakan NIP, NUPTK, atau ID Guru yang dibuat sistem.',
-  osis: 'Login menggunakan ID Anggota yang dibuat sistem atau NISN.',
-  bkk: 'Login menggunakan email + password. Mengelola data BKK.',
+  admin: 'Login menggunakan username + password.',
+  operator_sekolah: 'Login menggunakan username + password. Mengelola data operasional sekolah.',
+  guru: 'Login menggunakan username + password.',
+  osis: 'Login menggunakan username + password.',
+  bkk: 'Login menggunakan username + password. Mengelola data BKK.',
   student: 'Login ke Mading menggunakan NISN + PIN.',
 };
 
@@ -29,6 +29,7 @@ const RELIGION_OPTIONS = ['', 'Islam', 'Kristen Protestan', 'Kristen Katolik', '
 interface FormValues {
   role: AccountRole;
   name: string;
+  username: string;
   email: string;
   password: string;
   nip: string;
@@ -54,7 +55,7 @@ interface FormValues {
 }
 
 const emptyForm = (role: AccountRole = 'guru'): FormValues => ({
-  role, name: '', email: '', password: '',
+  role, name: '', username: '', email: '', password: '',
   nip: '', nuptk: '', subject: '', position: '', division: '',
   nisn: '', nis: '', class: '', major: '', gender: '', date_of_birth: '', place_of_birth: '', religion: '', address: '', pin: '',
   status: 'active', must_change_password: false,
@@ -100,7 +101,7 @@ export default function AccountsManagement() {
       acc.guru?.nip ?? '', acc.guru?.nuptk ?? '', acc.guru?.teacher_id ?? '',
       acc.osis?.member_id ?? '', acc.osis?.nisn ?? '',
     ].join(' ').toLowerCase();
-    const matchesSearch = !q || (acc.name ?? '').toLowerCase().includes(q) || (acc.email ?? '').toLowerCase().includes(q) || ids.includes(q);
+    const matchesSearch = !q || (acc.name ?? '').toLowerCase().includes(q) || (acc.username ?? '').toLowerCase().includes(q) || (acc.email ?? '').toLowerCase().includes(q) || ids.includes(q);
     return matchesRole && matchesSearch;
   }), [accounts, roleFilter, search]);
 
@@ -119,7 +120,8 @@ export default function AccountsManagement() {
     setForm({
       role: account.role,
       name: account.name,
-      email: account.email,
+      username: account.username ?? '',
+      email: account.email ?? '',
       password: '',
       nip: account.guru?.nip ?? '',
       nuptk: account.guru?.nuptk ?? '',
@@ -185,12 +187,14 @@ export default function AccountsManagement() {
         const result = editing ? await accountsApi.update(editing.id, payload) : await accountsApi.create(payload);
         error = result.error;
       } else {
+        const username = form.username.trim().toLowerCase();
         const email = form.email.trim().toLowerCase();
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Email wajib diisi dengan benar.');
+        if (username.length < 3) throw new Error('Username wajib diisi (minimal 3 karakter).');
+        if (email !== '' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Email tidak valid.');
         const needsPassword = form.password.length < 6 && !editing;
         if (needsPassword) throw new Error('Password minimal 6 karakter.');
         payload = {
-          role: form.role, name, email,
+          role: form.role, name, username, email,
           status: form.status, must_change_password: form.must_change_password,
         };
         if (form.password) payload.password = form.password;
@@ -297,7 +301,7 @@ export default function AccountsManagement() {
                     </span>
                     <div>
                       <p className="font-semibold">{account.name}</p>
-                      <p className="text-xs text-[#5B7088]">{account.email}</p>
+                      <p className="text-xs text-[#5B7088]">{account.role === 'student' ? account.email : account.username}</p>
                     </div>
                   </div>
                 </td>
@@ -433,7 +437,8 @@ export default function AccountsManagement() {
 
               {(form.role === 'admin' || form.role === 'operator_sekolah' || form.role === 'guru' || form.role === 'osis' || form.role === 'bkk') && (
                 <>
-                  <div className="sm:col-span-2"><Field label="Email" type="email" value={form.email} onChange={setField('email')} placeholder="cth. nama@smkn11.sch.id" /></div>
+                  <div className="sm:col-span-2"><Field label="Username" value={form.username} onChange={setField('username')} placeholder="cth. admin1, guru_budi" /></div>
+                  <div className="sm:col-span-2"><Field label="Email (Opsional)" type="email" value={form.email} onChange={setField('email')} placeholder="cth. nama@smkn11.sch.id" /></div>
                   <div className="sm:col-span-2">
                     <label className="block text-sm font-semibold">{editing ? 'Password Baru (opsional)' : 'Password (min. 6 karakter)'}
                       <input value={form.password} type="password" onChange={setField('password')} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" placeholder="Kosongkan jika tidak diubah" />

@@ -426,7 +426,8 @@ export type AccountRole = 'admin' | 'operator_sekolah' | 'guru' | 'osis' | 'bkk'
 
 export interface AccountRow {
   id: string;
-  email: string;
+  username: string;
+  email?: string;
   name: string;
   role: AccountRole;
   phone?: string;
