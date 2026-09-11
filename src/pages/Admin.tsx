@@ -186,7 +186,7 @@ export function AdminLogin() {
         {error && <p className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
 
         <form onSubmit={submit}>
-          <label className="mb-4 block text-sm font-semibold text-[#1B2A4A]">Username<input name="identifier" required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2" placeholder="Masukkan username" /></label>
+          <label className="mb-4 block text-sm font-semibold text-[#1B2A4A]">Username / Email / NIP / ID Anggota<input name="identifier" required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2" placeholder="username, email@smkn11.sch.id, NIP, atau ID Anggota" /></label>
           <label className="mb-6 block text-sm font-semibold text-[#1B2A4A]">Kata sandi<input name="password" type="password" required className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2" /></label>
           <button disabled={loading} className="w-full rounded-lg bg-[#1B2A4A] py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-70">{loading ? 'Memeriksa...' : 'Masuk ke Panel'}</button>
         </form>
