@@ -67,6 +67,7 @@ function ProfilePage() {
   }, [role, id]);
 
   const meta = ROLE_META[role ?? ''] ?? ROLE_META.guru;
+  const showContact = role !== 'guru' && role !== 'tendik';
 
   if (loading) {
     return (
@@ -127,12 +128,12 @@ function ProfilePage() {
               {profile.subject && <p className="mt-1 text-sm text-[#5B7088]">{profile.subject}</p>}
               {profile.class && profile.major && <p className="mt-1 text-sm text-[#5B7088]">{formatClass(profile.class)} · {profile.major}</p>}
 
-              {(profile.email || profile.phone || profile.address) && (
+              {(showContact && (profile.email || profile.phone) || profile.address) && (
                 <div className="mt-5 space-y-2 border-t border-[#1B2A4A]/10 pt-5 text-left text-sm">
-                  {profile.email && (
+                  {showContact && profile.email && (
                     <a href={`mailto:${profile.email}`} className="flex items-center gap-2 text-[#23314D] hover:text-[#866D2C]"><Mail size={15} className="shrink-0 text-[#866D2C]" /> <span className="break-all">{profile.email}</span></a>
                   )}
-                  {profile.phone && (
+                  {showContact && profile.phone && (
                     <a href={`tel:${profile.phone}`} className="flex items-center gap-2 text-[#23314D] hover:text-[#866D2C]"><Phone size={15} className="shrink-0 text-[#866D2C]" /> {profile.phone}</a>
                   )}
                   {profile.address && (
@@ -260,17 +261,6 @@ function SdmProfileView({ profile, meta }: { profile: PublicSdmProfile; meta: { 
                 <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
                   <Award size={13} /> Sertifikasi Pendidik
                 </p>
-              )}
-
-              {(profile.email || profile.phone) && (
-                <div className="mt-5 space-y-2 border-t border-[#1B2A4A]/10 pt-5 text-left text-sm">
-                  {profile.email && (
-                    <a href={`mailto:${profile.email}`} className="flex items-center gap-2 text-[#23314D] hover:text-[#866D2C]"><Mail size={15} className="shrink-0 text-[#866D2C]" /> <span className="break-all">{profile.email}</span></a>
-                  )}
-                  {profile.phone && (
-                    <a href={`tel:${profile.phone}`} className="flex items-center gap-2 text-[#23314D] hover:text-[#866D2C]"><Phone size={15} className="shrink-0 text-[#866D2C]" /> {profile.phone}</a>
-                  )}
-                </div>
               )}
 
               {socials.length > 0 && (
