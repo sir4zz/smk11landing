@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { BarChart3, BookOpen, Briefcase, Building2, CalendarDays, ChevronDown, ChevronRight, DatabaseBackup as DatabaseBackupIcon, FileText, GraduationCap, LogOut, Mail, MapPin, Menu, MessageCircle, Pencil, Plus, Trophy, Trash2, Upload, Users, X, Save, ShieldCheck, UsersRound, Dumbbell, Newspaper, UserCog, Camera, UserRound, Loader2, ArrowLeft, FileCheck2 } from 'lucide-react';
+import { BarChart3, BookOpen, Briefcase, Building2, CalendarDays, ChevronDown, ChevronRight, DatabaseBackup as DatabaseBackupIcon, FileText, GraduationCap, LogOut, Mail, MapPin, Menu, MessageCircle, Pencil, Plus, Trophy, Trash2, Upload, Users, X, Save, ShieldCheck, UsersRound, Dumbbell, Newspaper, UserCog, Camera, UserRound, Loader2, ArrowLeft, FileCheck2, Heart, Star, Target, Zap, Globe, Handshake, Sparkles, TrendingUp, Compass, Shield, CheckCircle, Rocket, Lightbulb, Award, ImagePlus } from 'lucide-react';
 import logoSekolah from '../assets/logo.png';
 import { backendApi, apiBaseUrl, resolveImageUrl, fetchStats, getAuthToken } from '../lib/api';
 import { LoadingInline } from '../components/ui/LoadingScreen';
@@ -12,6 +12,7 @@ import OsisManagement from '../components/admin/OsisManagement';
 import ExtracurricularManagement from '../components/admin/ExtracurricularManagement';
 import MadingManagement from '../components/admin/MadingManagement';
 import GalleryManagement from '../components/admin/GalleryManagement';
+import { FacilityPhotosUpload } from '../components/admin/FacilityPhotosUpload';
 import BkkManagement from '../components/admin/BkkManagement';
 import SdmManagement from '../components/admin/SdmManagement';
 import KelulusanSiswaManagement from '../components/admin/KelulusanSiswaManagement';
@@ -87,7 +88,7 @@ const seed = {
 const configs: Record<EditableSection, { title: string; icon: typeof FileText; fields: { key: string; label: string; type?: string; multiline?: boolean; bucket?: string }[] }> = {
   news: { title: 'Berita', icon: FileText, fields: [{ key: 'title', label: 'Judul' }, { key: 'category', label: 'Kategori', type: 'select' }, { key: 'author', label: 'Penulis', type: 'select' }, { key: 'date', label: 'Tanggal', type: 'date' }, { key: 'excerpt', label: 'Ringkasan', multiline: true }, { key: 'content', label: 'Isi Berita', multiline: true }, { key: 'thumbnail', label: 'Gambar Sampul', type: 'image' }, { key: 'source_label', label: 'Jenis / Sumber', type: 'select' }, { key: 'source_note', label: 'Deskripsi Sumber', multiline: true }] },
   programs: { title: 'Program Keahlian', icon: BookOpen, fields: [{ key: 'name', label: 'Nama Program' }, { key: 'short_name', label: 'Singkatan' }, { key: 'logo', label: 'Logo', type: 'image', bucket: 'program-keahlian' }, { key: 'short_description', label: 'Deskripsi Singkat', multiline: true }, { key: 'description', label: 'Deskripsi Lengkap', multiline: true }, { key: 'competencies', label: 'Kompetensi', type: 'list' }, { key: 'career_prospects', label: 'Prospek Karir', type: 'list' }, { key: 'facilities', label: 'Fasilitas Pendukung', type: 'list' }, { key: 'image', label: 'Gambar', type: 'image' }] },
-  facilities: { title: 'Fasilitas', icon: Building2, fields: [{ key: 'name', label: 'Nama Fasilitas' }, { key: 'category', label: 'Kategori', type: 'select' }, { key: 'description', label: 'Deskripsi', multiline: true }, { key: 'photo', label: 'Foto', type: 'image' }] },
+  facilities: { title: 'Fasilitas', icon: Building2, fields: [{ key: 'name', label: 'Nama Fasilitas' }, { key: 'category', label: 'Kategori', type: 'select' }, { key: 'description', label: 'Deskripsi', multiline: true }, { key: 'photo', label: 'Foto Utama', type: 'image' }, { key: 'photos', label: 'Foto Tambahan', type: 'images' }] },
   staff: { title: 'Staf & Guru', icon: Users, fields: [{ key: 'name', label: 'Nama' }, { key: 'position', label: 'Jabatan', type: 'select' }, { key: 'department', label: 'Unit / Departemen', type: 'select' }, { key: 'photo', label: 'Foto', type: 'image' }, { key: 'description', label: 'Deskripsi Singkat', multiline: true }] },
   gurus: { title: 'Guru', icon: Users, fields: [{ key: 'name', label: 'Nama' }, { key: 'subject', label: 'Mata Pelajaran' }, { key: 'position', label: 'Jabatan', type: 'select' }, { key: 'photo', label: 'Foto', type: 'image' }] },
   achievements: { title: 'Prestasi Siswa', icon: Trophy, fields: [{ key: 'title', label: 'Judul Prestasi' }, { key: 'event', label: 'Acara' }, { key: 'level', label: 'Tingkat', type: 'select' }, { key: 'rank', label: 'Peringkat', type: 'select' }, { key: 'year', label: 'Tahun', type: 'number' }, { key: 'students', label: 'Siswa Peraih Prestasi (satu per baris)', type: 'list' }, { key: 'photo', label: 'Foto', type: 'image' }] },
@@ -526,12 +527,20 @@ function AdminPanel() {
                   <button onClick={() => { setEditing(null); setOpen(true); }} className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-4 py-2 font-bold text-[#1B2A4A]"><Plus size={18} /> Tambah</button>
                 </div>
               </div>
-              <Table
-                items={data[section]}
-                config={active!}
-                onEdit={item => { setEditing(item); setOpen(true); }}
-                onDelete={id => remove(id)}
-              />
+              {section === 'facilities' ? (
+                <FacilitiesTable
+                  items={data[section]}
+                  onEdit={item => { setEditing(item); setOpen(true); }}
+                  onDelete={id => remove(id)}
+                />
+              ) : (
+                <Table
+                  items={data[section]}
+                  config={active!}
+                  onEdit={item => { setEditing(item); setOpen(true); }}
+                  onDelete={id => remove(id)}
+                />
+              )}
               {section === 'achievements' && <div className="mt-8"><BannerTab pageKey="kesiswaan_prestasi" label="Banner Prestasi Siswa" /></div>}
               {section === 'facilities' && <div className="mt-8"><BannerTab pageKey="akademik_fasilitas" label="Banner Fasilitas" /></div>}
               {section === 'teacherActivities' && <div className="mt-8"><BannerTab pageKey="manajemen_kegiatan_guru" label="Banner Kegiatan Guru" /></div>}
@@ -603,6 +612,115 @@ function ContactMessages({ items, onMarkRead, onDelete }: { items: Item[]; onMar
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function FacilitiesTable({ items, onEdit, onDelete }: { items: Item[]; onEdit: (item: Item) => void; onDelete?: (id: unknown) => void }) {
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [localItems, setLocalItems] = useState<Item[]>(items);
+  const [saving, setSaving] = useState<string | null>(null);
+
+  useEffect(() => { setLocalItems(items); }, [items]);
+
+  const getExtraPhotos = (item: Item): string[] => {
+    const p = item.photos;
+    if (Array.isArray(p)) return p.map(String);
+    if (typeof p === 'string' && p) { try { const arr = JSON.parse(p); return Array.isArray(arr) ? arr.map(String) : []; } catch { return []; } }
+    return [];
+  };
+
+  const getAllPhotos = (item: Item): string[] => {
+    const main = item.photo ? [String(item.photo)] : [];
+    return [...main, ...getExtraPhotos(item)];
+  };
+
+  const setAllPhotos = (id: string, urls: string[]) => {
+    setLocalItems(prev => prev.map(i => {
+      if (i.id !== id) return i;
+      const [main, ...rest] = urls;
+      return { ...i, photo: main ?? '', photos: rest };
+    }));
+  };
+
+  const savePhotos = async (id: string) => {
+    const item = localItems.find(i => i.id === id);
+    if (!item) return;
+    setSaving(id);
+    const { error } = await backendApi.database
+      .from('facilities')
+      .update({ photo: item.photo ?? '', photos: getExtraPhotos(item) })
+      .eq('id', id);
+    if (error) alert('Gagal menyimpan: ' + error.message);
+    setSaving(null);
+  };
+
+  return (
+    <div className="overflow-x-auto rounded-xl bg-white shadow-sm">
+      <table className="w-full text-left text-sm">
+        <thead className="bg-[#FAF6F0] text-[#1B2A4A]">
+          <tr>
+            <th className="p-4">Nama Fasilitas</th>
+            <th className="p-4">Kategori</th>
+            <th className="p-4">Deskripsi</th>
+            <th className="p-4">Foto</th>
+            <th className="p-4">Aksi</th>
+          </tr>
+        </thead>
+        <tbody>
+          {localItems.map(item => {
+            const isExpanded = expanded === item.id;
+            const allPhotos = getAllPhotos(item);
+            return (
+              <Fragment key={String(item.id)}>
+                <tr className="border-t border-[#1B2A4A]/10 hover:bg-[#FAF6F0]/50">
+                  <td className="p-4 font-semibold max-w-[200px] truncate">{String(item.name ?? '-')}</td>
+                  <td className="p-4 text-[#23314D]">{String(item.category ?? '-')}</td>
+                  <td className="p-4 max-w-[300px]"><div className="line-clamp-2 break-words" title={String(item.description ?? '')}>{String(item.description ?? '-')}</div></td>
+                  <td className="p-4">
+                    {allPhotos.length > 0 ? (
+                      <button onClick={() => setExpanded(isExpanded ? null : String(item.id))} className="inline-flex items-center gap-1 text-[#866D2C] font-semibold hover:underline">
+                        {allPhotos.length} foto
+                      </button>
+                    ) : (
+                      <button onClick={() => setExpanded(isExpanded ? null : String(item.id))} className="inline-flex items-center gap-1 text-[#5B7088] hover:text-[#866D2C]">
+                        <ImagePlus size={14} /> Upload
+                      </button>
+                    )}
+                  </td>
+                  <td className="p-4">
+                    <button onClick={() => onEdit(item)} className="mr-3 text-[#866D2C]"><Pencil size={17} /></button>
+                    {onDelete && <button onClick={() => onDelete(item.id)} className="text-red-600"><Trash2 size={17} /></button>}
+                  </td>
+                </tr>
+                {isExpanded && (
+                  <tr className="border-t border-[#1B2A4A]/10 bg-[#FAF6F0]/30">
+                    <td colSpan={5} className="p-4">
+                      <div className="space-y-4 rounded-lg border border-[#1B2A4A]/10 bg-white p-4">
+                        <p className="text-xs font-semibold text-[#5B7088] uppercase tracking-wider">Foto — {String(item.name)}</p>
+
+                        <FacilityPhotosUpload
+                          value={allPhotos}
+                          onChange={(urls) => setAllPhotos(String(item.id), urls)}
+                          bucket="photos"
+                          maxPhotos={20}
+                        />
+
+                        <div className="flex justify-end border-t border-[#1B2A4A]/10 pt-3">
+                          <button onClick={() => savePhotos(String(item.id))} disabled={saving === item.id} className="inline-flex items-center gap-2 rounded-lg bg-[#1B2A4A] px-4 py-2 text-sm font-bold text-white hover:bg-[#15203a] disabled:opacity-60">
+                            {saving === item.id ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                            {saving === item.id ? 'Menyimpan...' : 'Simpan Foto'}
+                          </button>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -1447,14 +1565,173 @@ function HomeContentFields({ data, onChange }: { data: Record<string, any>; onCh
         </label>
       </div>)}
     </fieldset>
-    <fieldset className="space-y-4 rounded-lg border border-[#1B2A4A]/10 p-4">
+      <fieldset className="space-y-4 rounded-lg border border-[#1B2A4A]/10 p-4">
       <legend className="px-1 font-bold">Sosial Media (Tampil di Footer)</legend>
       {input('Instagram', 'social', 'instagram')}
       {input('TikTok', 'social', 'tiktok')}
       {input('Email Sekolah', 'social', 'email')}
       <p className="text-xs font-normal text-[#5B7088]">Isi URL atau email lengkap. Kosongkan untuk menyembunyikan tautan di footer.</p>
     </fieldset>
+    <VisiMisiField data={data} onChange={onChange} />
   </div>;
+}
+
+function VisiMisiField({ data, onChange }: { data: Record<string, any>; onChange: (data: Record<string, any>) => void }) {
+  const visiMisi = data.visi_misi ?? {};
+  const visi = String(visiMisi.visi ?? '');
+  const misi = Array.isArray(visiMisi.misi) ? visiMisi.misi : (visiMisi.misi ? [visiMisi.misi] : []);
+  const nilaiIntiRaw = Array.isArray(visiMisi.nilai_inti) ? visiMisi.nilai_inti : [];
+  const nilaiInti = nilaiIntiRaw.length === 0
+    ? [
+        { title: 'Integritas', description: 'Menjunjung tinggi kejujuran, tanggung jawab, dan akhlakul karimah dalam setiap tindakan.', icon: 'ShieldCheck', icon_image: '' },
+        { title: 'Inovasi', description: 'Terus berkreasi dan beradaptasi dengan perkembangan teknologi dan industri.', icon: 'Lightbulb', icon_image: '' },
+        { title: 'Kolaborasi', description: 'Membangun kemitraan dengan dunia usaha, industri, dan masyarakat.', icon: 'Users', icon_image: '' },
+        { title: 'Keunggulan', description: 'Berorientasi pada mutu dan kualitas layanan pendidikan yang unggul.', icon: 'Award', icon_image: '' },
+      ]
+    : nilaiIntiRaw;
+
+  const updateVisi = (value: string) => {
+    onChange({ ...data, visi_misi: { ...visiMisi, visi: value } });
+  };
+
+  const updateMisi = (index: number, value: string) => {
+    const next = [...misi];
+    next[index] = value;
+    onChange({ ...data, visi_misi: { ...visiMisi, misi: next } });
+  };
+
+  const addMisi = () => {
+    onChange({ ...data, visi_misi: { ...visiMisi, misi: [...misi, ''] } });
+  };
+
+  const removeMisi = (index: number) => {
+    onChange({ ...data, visi_misi: { ...visiMisi, misi: misi.filter((_: string, i: number) => i !== index) } });
+  };
+
+  const updateNilaiInti = (index: number, field: string, value: string) => {
+    const next = [...nilaiInti];
+    while (next.length <= index) next.push({ title: '', description: '', icon: '', icon_image: '' });
+    next[index] = { ...next[index], [field]: value };
+    onChange({ ...data, visi_misi: { ...visiMisi, nilai_inti: next.filter(n => n.title || n.description || n.icon || n.icon_image) } });
+  };
+
+  const addNilaiInti = () => {
+    const next = [...nilaiInti, { title: '', description: '', icon: '', icon_image: '' }];
+    onChange({ ...data, visi_misi: { ...visiMisi, nilai_inti: next } });
+  };
+
+  const removeNilaiInti = (index: number) => {
+    const next = nilaiInti.filter((_: any, i: number) => i !== index);
+    onChange({ ...data, visi_misi: { ...visiMisi, nilai_inti: next } });
+  };
+
+  const ICON_LIST: { value: string; icon: React.FC<{ size?: number }>; label: string }[] = [
+    { value: 'ShieldCheck', icon: ShieldCheck, label: 'Shield' },
+    { value: 'Lightbulb', icon: Lightbulb, label: 'Lampu' },
+    { value: 'Users', icon: Users, label: 'Users' },
+    { value: 'Award', icon: Award, label: 'Award' },
+    { value: 'Heart', icon: Heart, label: 'Hati' },
+    { value: 'Star', icon: Star, label: 'Bintang' },
+    { value: 'Target', icon: Target, label: 'Target' },
+    { value: 'Zap', icon: Zap, label: 'Kilat' },
+    { value: 'BookOpen', icon: BookOpen, label: 'Buku' },
+    { value: 'Globe', icon: Globe, label: 'Dunia' },
+    { value: 'Handshake', icon: Handshake, label: 'Jabat Tangan' },
+    { value: 'Sparkles', icon: Sparkles, label: 'Sparkles' },
+    { value: 'TrendingUp', icon: TrendingUp, label: 'Naik' },
+    { value: 'Compass', icon: Compass, label: 'Kompas' },
+    { value: 'Shield', icon: Shield, label: 'Perisai' },
+    { value: 'CheckCircle', icon: CheckCircle, label: 'Centang' },
+    { value: 'Rocket', icon: Rocket, label: 'Roket' },
+  ];
+
+  return (
+    <fieldset className="space-y-4 rounded-lg border border-[#1B2A4A]/10 p-4">
+      <legend className="px-1 font-bold">Visi & Misi</legend>
+      <p className="text-xs font-normal text-[#5B7088]">Konten yang ditampilkan di halaman /profil/visi-misi.</p>
+      <label className="block text-sm font-semibold">
+        Visi
+        <textarea rows={4} value={visi} onChange={e => updateVisi(e.target.value)} className="mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" placeholder="Tuliskan visi sekolah..." />
+      </label>
+      <div>
+        <p className="mb-2 text-sm font-semibold">Misi</p>
+        {misi.map((item: string, index: number) => (
+          <div key={index} className="mb-2 flex gap-2">
+            <span className="flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-full bg-[#C8A951] text-white text-xs font-bold">{index + 1}</span>
+            <input value={item} onChange={e => updateMisi(index, e.target.value)} className="flex-1 rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" placeholder={`Misi ${index + 1}`} />
+            <button type="button" onClick={() => removeMisi(index)} className="text-red-500 hover:text-red-700"><Trash2 size={16} /></button>
+          </div>
+        ))}
+        <button type="button" onClick={addMisi} className="mt-1 inline-flex items-center gap-1 rounded-lg border border-[#1B2A4A]/20 px-3 py-1.5 text-xs font-semibold hover:bg-[#FAF6F0]"><Plus size={14} /> Tambah Misi</button>
+      </div>
+      <div>
+        <p className="mb-2 text-sm font-semibold">Nilai Inti</p>
+        {nilaiInti.map((item: any, index: number) => (
+          <div key={index} className="mb-4 rounded-lg border border-[#1B2A4A]/10 p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-xs font-semibold text-[#5B7088]">Nilai Inti {index + 1}</span>
+              <button type="button" onClick={() => removeNilaiInti(index)} className="text-red-500 hover:text-red-700"><Trash2 size={14} /></button>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              <input value={item.title} onChange={e => updateNilaiInti(index, 'title', e.target.value)} className="rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" placeholder="Judul" />
+              <input value={item.description} onChange={e => updateNilaiInti(index, 'description', e.target.value)} className="rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal" placeholder="Deskripsi" />
+            </div>
+            <div className="mt-2">
+              <label className="mb-1 block text-xs font-semibold text-[#5B7088]">Ikon</label>
+              <div className="grid grid-cols-6 gap-1.5">
+                {ICON_LIST.map(({ value, icon: Icon, label }) => {
+                  const isActive = item.icon === value && !item.icon_image;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      title={label}
+                      onClick={() => { const next = [...nilaiInti]; while (next.length <= index) next.push({ title: '', description: '', icon: '', icon_image: '' }); next[index] = { ...next[index], icon: value, icon_image: '' }; onChange({ ...data, visi_misi: { ...visiMisi, nilai_inti: next.filter(n => n.title || n.description || n.icon || n.icon_image) } }); }}
+                      className={`relative flex flex-col items-center gap-0.5 rounded-lg border-2 p-1.5 text-[10px] transition-all ${isActive ? 'border-[#C8A951] bg-[#C8A951] text-white shadow-md scale-105' : 'border-[#1B2A4A]/10 bg-white text-[#5B7088] hover:border-[#C8A951]/50 hover:bg-[#FAF6F0]'}`}
+                    >
+                      {isActive && <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#C8A951] text-[8px] text-white shadow"><CheckCircle size={10} /></span>}
+                      <Icon size={18} />
+                      <span className="leading-none">{label}</span>
+                    </button>
+                  );
+                })}
+                <button
+                  type="button"
+                  title="Upload gambar sendiri"
+                  onClick={() => updateNilaiInti(index, 'icon', 'custom')}
+                  className={`relative flex flex-col items-center gap-0.5 rounded-lg border-2 p-1.5 text-[10px] transition-all ${item.icon_image ? 'border-[#C8A951] bg-[#C8A951] text-white shadow-md' : 'border-dashed border-[#1B2A4A]/30 bg-white text-[#5B7088] hover:border-[#C8A951]'}`}
+                >
+                  {item.icon_image && <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#C8A951] text-[8px] text-white shadow"><CheckCircle size={10} /></span>}
+                  <Upload size={18} />
+                  <span className="leading-none">Upload</span>
+                </button>
+              </div>
+              {item.icon_image && (
+                <div className="mt-2 flex items-center gap-2">
+                  <img src={resolveImageUrl(item.icon_image)} alt="" className="h-8 w-8 rounded object-contain" />
+                  <span className="text-xs text-[#5B7088]">Custom icon</span>
+                  <button type="button" onClick={() => updateNilaiInti(index, 'icon_image', '')} className="text-xs text-red-500 hover:text-red-700">Hapus</button>
+                </div>
+              )}
+              {item.icon === 'custom' && !item.icon_image && (
+                <div className="mt-2">
+                  <ImageField
+                    label="Upload Ikon"
+                    value={item.icon_image ?? ''}
+                    bucket="photos"
+                    onChange={(url) => updateNilaiInti(index, 'icon_image', url)}
+                    hint="PNG/SVG dengan background transparan, 128x128px"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+        <button type="button" onClick={addNilaiInti} className="mt-1 inline-flex items-center gap-1 rounded-lg border border-[#1B2A4A]/20 px-3 py-1.5 text-xs font-semibold hover:bg-[#FAF6F0]"><Plus size={14} /> Tambah Nilai Inti</button>
+      </div>
+      <input type="hidden" name="visi_misi_data" value={JSON.stringify(visiMisi)} />
+    </fieldset>
+  );
 }
 
 function Editor({ config, item, onClose, onSave, section, options }: { config: { title: string; fields: { key: string; label: string; type?: string; multiline?: boolean; bucket?: string }[] }; item: Item | null; onClose: () => void; onSave: (item: Item) => void; section?: string; options?: Record<string, string[]> }) {
@@ -1465,12 +1742,20 @@ function Editor({ config, item, onClose, onSave, section, options }: { config: {
   const fieldRefs = useRef<Record<string, HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null>>({});
   const imageFields = useMemo(() => config.fields.filter(field => field.type === 'image'), [config]);
   const [imageValues, setImageValues] = useState<Record<string, string>>({});
+  const multiImageFields = useMemo(() => config.fields.filter(field => field.type === 'images'), [config]);
+  const [multiImageValues, setMultiImageValues] = useState<Record<string, string[]>>({});
 
   useEffect(() => {
     const init: Record<string, string> = {};
     for (const field of imageFields) init[field.key] = String(item?.[field.key] ?? '');
     setImageValues(init);
-  }, [item, imageFields]);
+    const initMulti: Record<string, string[]> = {};
+    for (const field of multiImageFields) {
+      const val = item?.[field.key];
+      initMulti[field.key] = Array.isArray(val) ? val.map(String) : typeof val === 'string' && val ? JSON.parse(val) : [];
+    }
+    setMultiImageValues(initMulti);
+  }, [item, imageFields, multiImageFields]);
 
   useEffect(() => {
     if (section !== 'news') return;
@@ -1556,6 +1841,8 @@ function Editor({ config, item, onClose, onSave, section, options }: { config: {
     if (section === 'contentRecords') {
       const value = (name: string) => formValues[name] ?? '';
       const lines = (name: string, limit?: number) => value(name).split('\n').map(line => line.trim()).filter(Boolean).slice(0, limit);
+      let visiMisiData = {};
+      try { visiMisiData = JSON.parse(formValues.visi_misi_data || '{}'); } catch {}
       onSave({
         ...(item ?? {}),
         content_type: 'home',
@@ -1588,6 +1875,7 @@ function Editor({ config, item, onClose, onSave, section, options }: { config: {
             tiktok: value('social_tiktok'),
             email: value('social_email'),
           },
+          visi_misi: visiMisiData,
         },
       });
       return;
@@ -1624,6 +1912,7 @@ function Editor({ config, item, onClose, onSave, section, options }: { config: {
       ...formValues,
       ...(slugValue !== undefined ? { slug: slugValue } : {}),
       ...imageValues,
+      ...multiImageValues,
       ...Object.fromEntries(listFields.map((key) => [key, String(formValues[key] ?? '').split('\n').map((value) => value.trim()).filter(Boolean)])),
     });
   };
@@ -1662,6 +1951,16 @@ function Editor({ config, item, onClose, onSave, section, options }: { config: {
               ? <div key={field.key}>
                   <ImageField label={field.label} value={imageValues[field.key] ?? ''} bucket={field.bucket} onChange={(url) => setImageValues(current => ({ ...current, [field.key]: url }))} />
                   <input type="hidden" name={field.key} value={imageValues[field.key] ?? ''} />
+                </div>
+              : field.type === 'images'
+              ? <div key={field.key} className="space-y-2">
+                  <FacilityPhotosUpload
+                    value={multiImageValues[field.key] ?? []}
+                    onChange={(urls) => setMultiImageValues(current => ({ ...current, [field.key]: urls }))}
+                    bucket={field.bucket ?? 'photos'}
+                    maxPhotos={20}
+                  />
+                  <input type="hidden" name={field.key} value={JSON.stringify(multiImageValues[field.key] ?? [])} />
                 </div>
               : <label key={field.key} className="block text-sm font-semibold">
               {field.label}

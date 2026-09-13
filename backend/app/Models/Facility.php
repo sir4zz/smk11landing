@@ -19,6 +19,11 @@ class Facility extends Model
         'description',
         'category',
         'photo',
+        'photos',
+    ];
+
+    protected $casts = [
+        'photos' => 'array',
     ];
 
     protected static function booted(): void

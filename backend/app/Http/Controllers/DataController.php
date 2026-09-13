@@ -45,7 +45,7 @@ class DataController extends Controller
     private const MEDIA_COLUMNS = [
         'news' => ['thumbnail'],
         'programs' => ['logo', 'image'],
-        'facilities' => ['photo'],
+        'facilities' => ['photo', 'photos'],
         'staff' => ['photo'],
         'achievements' => ['photo'],
         'teacher_activities' => ['photo'],
@@ -199,8 +199,8 @@ class DataController extends Controller
         if ($value === null || $value === '') {
             return [];
         }
-        // images: JSON array of string URLs / objects with image/url
-        if ($field === 'images') {
+        // images/photos: JSON array of string URLs / objects with image/url
+        if ($field === 'images' || $field === 'photos') {
             $arr = is_string($value) ? json_decode($value, true) : $value;
             if (! is_array($arr)) {
                 return is_string($value) && str_starts_with($value, '/storage/') ? [$value] : [];
