@@ -30,7 +30,7 @@ class ContentCrudController extends Controller
     protected array $mediaFields = [
         'news' => ['thumbnail'],
         'programs' => ['logo', 'image'],
-        'facilities' => ['photo'],
+        'facilities' => ['photo', 'photos'],
         'staff' => ['photo'],
         'achievements' => ['photo'],
         'teacher-activities' => ['photo'],

@@ -8,13 +8,17 @@ import { fetchPublicContent, resolveImageUrl } from '../../lib/api';
 const Facilities: React.FC = () => {
   const { backgroundImage } = usePageBanner('akademik_fasilitas');
   const [filter, setFilter] = useState<string>('Semua');
-  const [items, setItems] = useState<Facility[]>([]);
-  useEffect(() => { fetchPublicContent<Facility[]>('facilities').then(setItems); }, []);
+  const [items, setItems] = useState<(Facility & { photos?: string[] })[]>([]);
+  useEffect(() => { fetchPublicContent<(Facility & { photos?: string[] })[]>('facilities').then(setItems); }, []);
   const categories = ['Semua', ...new Set(items.map((facility) => facility.category).filter(Boolean))];
 
   const filteredFacilities = filter === 'Semua'
     ? items
     : items.filter((f: Facility) => f.category === filter);
+
+  const getFacilityPhoto = (facility: Facility & { photos?: string[] }): string | undefined => {
+    return resolveImageUrl(facility.photo) ?? resolveImageUrl(facility.photos?.[0] ?? '');
+  };
 
   return (
     <div className="min-h-screen bg-[#FAF6F0]">
@@ -38,28 +42,36 @@ const Facilities: React.FC = () => {
         </div>
 
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-          {filteredFacilities.map((facility: Facility) => (
-            <Card key={facility.id} link={`/akademik/fasilitas/${facility.slug}`} className="h-full">
-              {resolveImageUrl(facility.photo) && (
-                <div className="relative h-48 w-full overflow-hidden">
-                  <img src={resolveImageUrl(facility.photo)!} alt={facility.name} loading="lazy" className="h-full w-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#1B2A4A]/60 to-transparent" />
-                  {facility.category && (
-                    <span className="absolute right-3 top-3 rounded-full bg-[#C8A951] px-3 py-1 text-xs font-semibold text-[#1B2A4A]">
-                      {facility.category}
-                    </span>
-                  )}
-                </div>
-              )}
-              <div className="flex flex-1 flex-col p-6">
-                {!resolveImageUrl(facility.photo) && facility.category && (
-                  <p className="mb-3 text-xs font-semibold uppercase tracking-[0.3em] text-[#866D2C]">{facility.category}</p>
+          {filteredFacilities.map((facility) => {
+            const photo = getFacilityPhoto(facility);
+            return (
+              <Card key={facility.id} link={`/akademik/fasilitas/${facility.slug}`} className="h-full">
+                {photo && (
+                  <div className="relative h-48 w-full overflow-hidden">
+                    <img src={photo} alt={facility.name} loading="lazy" className="h-full w-full object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#1B2A4A]/60 to-transparent" />
+                    {facility.category && (
+                      <span className="absolute right-3 top-3 rounded-full bg-[#C8A951] px-3 py-1 text-xs font-semibold text-[#1B2A4A]">
+                        {facility.category}
+                      </span>
+                    )}
+                    {facility.photos && facility.photos.length > 1 && (
+                      <span className="absolute left-3 top-3 rounded-full bg-black/50 px-2.5 py-1 text-xs font-semibold text-white">
+                        +{facility.photos.length} foto
+                      </span>
+                    )}
+                  </div>
                 )}
-                <h3 className="mb-3 text-xl font-semibold text-[#1B2A4A]">{facility.name}</h3>
-                <p className="text-sm leading-7 text-[#1B2A4A]/70 line-clamp-3">{facility.description}</p>
-              </div>
-            </Card>
-          ))}
+                <div className="flex flex-1 flex-col p-6">
+                  {!photo && facility.category && (
+                    <p className="mb-3 text-xs font-semibold uppercase tracking-[0.3em] text-[#866D2C]">{facility.category}</p>
+                  )}
+                  <h3 className="mb-3 text-xl font-semibold text-[#1B2A4A]">{facility.name}</h3>
+                  <p className="text-sm leading-7 text-[#1B2A4A]/70 line-clamp-3">{facility.description}</p>
+                </div>
+              </Card>
+            );
+          })}
         </div>
       </div>
     </div>

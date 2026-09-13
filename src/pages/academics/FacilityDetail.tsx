@@ -4,18 +4,19 @@ import PageHero from '../../components/ui/PageHero'
 import Button from '../../components/ui/Button'
 import type { Facility } from '../../lib/content-types'
 import { fetchPublicContentById, resolveImageUrl } from '../../lib/api'
-import { ArrowLeft, Building2 } from 'lucide-react'
+import { ArrowLeft, Building2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { SkeletonDetail } from '../../components/ui/Skeleton'
 
 const FacilityDetail: React.FC = () => {
   const { slug } = useParams<{ slug: string }>()
-  const [item, setItem] = useState<Facility | null>(null)
+  const [item, setItem] = useState<Facility & { photos?: string[] } | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  const [activePhoto, setActivePhoto] = useState(0)
 
   const load = () => {
     setLoading(true); setError(false)
-    fetchPublicContentById<Facility>('facilities', slug || '')
+    fetchPublicContentById<Facility & { photos?: string[] }>('facilities', slug || '')
       .then((apiItem) => {
         if (apiItem) setItem(apiItem); else setError(true)
       }).catch(() => setError(true)).finally(() => setLoading(false))
@@ -38,7 +39,11 @@ const FacilityDetail: React.FC = () => {
     )
   }
 
-  const photoUrl = resolveImageUrl(item.photo)
+  const allPhotos: string[] = [
+    ...(item.photo ? [item.photo] : []),
+    ...((item.photos ?? []).filter(Boolean)),
+  ]
+  const hasMultiplePhotos = allPhotos.length > 1
 
   return (
     <div className="min-h-screen bg-[#FAF6F0]">
@@ -61,13 +66,58 @@ const FacilityDetail: React.FC = () => {
           </div>
         )}
 
-        {photoUrl && (
+        {allPhotos.length > 0 && (
           <div className="mb-10 overflow-hidden rounded-[1.25rem] shadow-lg">
-            <img
-              src={photoUrl}
-              alt={item.name}
-              className="h-auto w-full object-cover"
-            />
+            <div className="relative">
+              <img
+                src={resolveImageUrl(allPhotos[activePhoto])!}
+                alt={`${item.name} - Foto ${activePhoto + 1}`}
+                className="h-auto w-full object-cover"
+              />
+              {hasMultiplePhotos && (
+                <>
+                  <button
+                    onClick={() => setActivePhoto(p => p === 0 ? allPhotos.length - 1 : p - 1)}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors"
+                  >
+                    <ChevronLeft size={20} />
+                  </button>
+                  <button
+                    onClick={() => setActivePhoto(p => p === allPhotos.length - 1 ? 0 : p + 1)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70 transition-colors"
+                  >
+                    <ChevronRight size={20} />
+                  </button>
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2">
+                    {allPhotos.map((_, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setActivePhoto(idx)}
+                        className={`h-2.5 w-2.5 rounded-full transition-colors ${idx === activePhoto ? 'bg-white' : 'bg-white/50 hover:bg-white/75'}`}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {hasMultiplePhotos && (
+          <div className="mb-10 grid grid-cols-4 sm:grid-cols-6 gap-3">
+            {allPhotos.map((photo, idx) => (
+              <button
+                key={idx}
+                onClick={() => setActivePhoto(idx)}
+                className={`overflow-hidden rounded-lg border-2 transition-all ${idx === activePhoto ? 'border-[#C8A951] shadow-md' : 'border-transparent hover:border-[#1B2A4A]/20'}`}
+              >
+                <img
+                  src={resolveImageUrl(photo)!}
+                  alt={`Thumbnail ${idx + 1}`}
+                  className="h-20 w-full object-cover"
+                />
+              </button>
+            ))}
           </div>
         )}
 

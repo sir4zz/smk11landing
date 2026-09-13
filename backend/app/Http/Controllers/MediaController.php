@@ -131,6 +131,20 @@ class MediaController extends Controller
         } catch (\Throwable) {
         }
 
+        // Check facilities.photos (JSON array)
+        try {
+            $facilities = DB::table('facilities')->where('photos', 'like', '%' . $url . '%')->select('id', 'name')->get();
+            foreach ($facilities as $facility) {
+                $usages[] = [
+                    'table' => 'facilities',
+                    'label' => 'Fasilitas (Gallery)',
+                    'recordId' => $facility->id,
+                    'recordName' => $facility->name ?? null,
+                ];
+            }
+        } catch (\Throwable) {
+        }
+
         // Check content_records (home content, etc.)
         try {
             $records = DB::table('content_records')->where('data', 'like', '%' . $url . '%')->select('id', 'content_type')->get();
