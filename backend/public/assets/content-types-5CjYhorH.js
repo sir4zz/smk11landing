@@ -1,0 +1,1 @@
+var e=e=>e.source_type===`imported`||!!e.source_url;export{e as t};
