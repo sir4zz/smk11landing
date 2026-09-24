@@ -147,9 +147,9 @@ const Footer: React.FC = () => {
 
         {/* Bottom Bar */}
         <div className="pt-6 border-t border-[#2a3f6e] text-center">
-          <a href='a' className="text-[#E8DCC7] text-sm">
+          <Link to="/credits" className="text-[#E8DCC7] text-sm hover:text-white transition-colors">
             &copy; Tim IT TKJ 2025-2026.
-          </a>
+          </Link>
         </div>
       </div>
     </footer>

@@ -47,6 +47,7 @@ const BkkKelulusan = lazy(() => import('./pages/bkk/BkkKelulusan'))
 const MustChangePassword = lazy(() => import('./pages/admin/MustChangePassword'))
 const ProfileDirectory = lazy(() => import('./pages/profiles/ProfileDirectory'))
 const ProfilePage = lazy(() => import('./pages/profiles/ProfilePage'))
+const Credits = lazy(() => import('./pages/Credits'))
 const SopList = lazy(() => import('./pages/sop/SopList'))
 const SopViewer = lazy(() => import('./pages/sop/SopViewer'))
 
@@ -132,6 +133,7 @@ function App() {
           {/* Public information portal */}
           <Route path="spmb" element={suspend(<Admissions />)} />
           <Route path="kontak" element={suspend(<Contact />)} />
+          <Route path="credits" element={suspend(<Credits />)} />
 
           {/* 404 Not Found */}
           <Route path="*" element={<NotFound />} />
