@@ -692,6 +692,9 @@ import type {
 
 // ---------- PEMILIHAN OSIS ----------
 export const electionApi = {
+  publicStatus(): ApiResult<OsisElectionStudentStateType> {
+    return request<OsisElectionStudentStateType>('/pemilihan-osis');
+  },
   studentStatus(): ApiResult<OsisElectionStudentStateType> {
     return request<OsisElectionStudentStateType>('/student/pemilihan-osis');
   },

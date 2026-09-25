@@ -1,23 +1,23 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, ShieldCheck, Vote } from 'lucide-react';
 import { backendApi, electionApi, resolveImageUrl } from '../../lib/api';
 import type { OsisElectionStudentState } from '../../lib/content-types';
 import PageHero from '../../components/ui/PageHero';
 import { SkeletonProfile } from '../../components/ui/Skeleton';
 
-const studentSessionKey = 'smkn11-student-session';
-
 export default function PemilihanOsisDetail() {
   const { candidateId } = useParams<{ candidateId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<{ id: string } | null>(null);
+  const [isStudent, setIsStudent] = useState(false);
   const [state, setState] = useState<OsisElectionStudentState | null>(null);
 
-  const loadStatus = useCallback(async () => {
-    const { data } = await electionApi.studentStatus();
+  const loadStatus = useCallback(async (asStudent: boolean) => {
+    const { data } = asStudent
+      ? await electionApi.studentStatus()
+      : await electionApi.publicStatus();
     if (data) setState(data);
   }, []);
 
@@ -26,24 +26,19 @@ export default function PemilihanOsisDetail() {
     (async () => {
       const { data } = await backendApi.auth.getCurrentUser();
       if (cancelled) return;
-      if (!data?.user) {
-        setLoading(false);
-        return;
+      let student = false;
+      if (data?.user) {
+        const { data: prof } = await backendApi.database.from('profiles').select('role').eq('id', data.user.id).single();
+        if (cancelled) return;
+        student = prof?.role === 'student';
       }
-      setUser({ id: data.user.id });
-      const { data: prof } = await backendApi.database.from('profiles').select('role').eq('id', data.user.id).single();
       if (cancelled) return;
-      if (prof?.role !== 'student') {
-        await backendApi.auth.signOut();
-        localStorage.removeItem(studentSessionKey);
-        navigate('/mading/login', { replace: true });
-        return;
-      }
-      await loadStatus();
+      setIsStudent(student);
+      await loadStatus(student);
       if (!cancelled) setLoading(false);
     })();
     return () => { cancelled = true; };
-  }, [navigate, loadStatus]);
+  }, [loadStatus]);
 
   if (loading) {
     return (
@@ -54,11 +49,6 @@ export default function PemilihanOsisDetail() {
         </div>
       </div>
     );
-  }
-
-  if (!user) {
-    const returnUrl = encodeURIComponent(location.pathname);
-    return <Navigate to={`/mading/login?returnUrl=${returnUrl}`} replace />;
   }
 
   const election = state?.election ?? null;
@@ -105,8 +95,9 @@ export default function PemilihanOsisDetail() {
           <Link to={backTo} className="inline-flex items-center gap-2 text-sm font-bold text-[#866D2C] hover:text-[#C8A951]">
             <ArrowLeft size={16} /> Kembali ke daftar kandidat
           </Link>
-          <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-bold text-[#1B2A4A] shadow-sm">
-            <ShieldCheck className="h-4 w-4 text-[#C8A951]" /> Masuk sebagai siswa
+          <span className={`inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-bold shadow-sm ${isStudent ? 'text-[#1B2A4A]' : 'text-[#5B7088]'}`}>
+            <ShieldCheck className={`h-4 w-4 ${isStudent ? 'text-[#C8A951]' : 'text-[#5B7088]'}`} />
+            {isStudent ? 'Masuk sebagai siswa' : 'Anda melihat sebagai tamu'}
           </span>
         </div>
 
@@ -158,7 +149,7 @@ export default function PemilihanOsisDetail() {
               <p className="mt-6 rounded-xl bg-[#FAF6F0] p-5 text-sm text-[#5B7088]">Visi &amp; misi belum tersedia.</p>
             )}
 
-            {hasVoted && typeof candidate.votes === 'number' && (
+            {typeof candidate.votes === 'number' && (
               <p className="mt-5 text-sm font-bold text-[#866D2C]">{candidate.votes} suara</p>
             )}
           </div>
@@ -166,11 +157,23 @@ export default function PemilihanOsisDetail() {
 
         <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[#1B2A4A]/10 bg-white p-6 shadow-sm">
           <p className="text-sm text-[#5B7088]">
-            {hasVoted
-              ? isMine ? 'Ini adalah pasangan pilihan Anda.' : 'Anda sudah memberikan suara.'
-              : election.is_active ? 'Puas dengan visi & misi ini? Pilih pasangan ini.' : 'Pemilihan sedang ditutup.'}
+            {!isStudent
+              ? election.is_active
+                ? 'Login sebagai siswa untuk memilih pasangan ini.'
+                : 'Pemilihan sedang ditutup.'
+              : hasVoted
+                ? isMine ? 'Ini adalah pasangan pilihan Anda.' : 'Anda sudah memberikan suara.'
+                : election.is_active ? 'Puas dengan visi & misi ini? Pilih pasangan ini.' : 'Pemilihan sedang ditutup.'}
           </p>
-          {canVote ? (
+          {!isStudent ? (
+            <button
+              onClick={() => navigate(`/mading/login?returnUrl=${encodeURIComponent(location.pathname)}`)}
+              disabled={!election.is_active}
+              className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-6 py-2.5 font-bold text-[#1B2A4A] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <ShieldCheck className="h-4 w-4" /> Login untuk Memilih
+            </button>
+          ) : canVote ? (
             <button
               onClick={pick}
               className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-6 py-2.5 font-bold text-[#1B2A4A] transition hover:brightness-105"

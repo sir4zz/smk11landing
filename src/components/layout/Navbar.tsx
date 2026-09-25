@@ -19,28 +19,18 @@ const Navbar: React.FC<NavbarProps> = ({ onSearchOpen }) => {
   const location = useLocation();
 
   useEffect(() => {
-    const loggedIn = localStorage.getItem(studentSessionKey) === 'true';
-    setIsStudentLoggedIn(loggedIn);
-    if (loggedIn) {
-      electionApi.studentStatus().then(({ data }) => {
-        setElectionVisible(!!data?.election);
-      }).catch(() => setElectionVisible(false));
-    } else {
-      setElectionVisible(false);
-    }
+    setIsStudentLoggedIn(localStorage.getItem(studentSessionKey) === 'true');
+    electionApi.publicStatus().then(({ data }) => {
+      setElectionVisible(!!data?.election);
+    }).catch(() => setElectionVisible(false));
   }, [location.pathname]);
 
   useEffect(() => {
     const handleStorage = () => {
-      const loggedIn = localStorage.getItem(studentSessionKey) === 'true';
-      setIsStudentLoggedIn(loggedIn);
-      if (loggedIn) {
-        electionApi.studentStatus().then(({ data }) => {
-          setElectionVisible(!!data?.election);
-        }).catch(() => setElectionVisible(false));
-      } else {
-        setElectionVisible(false);
-      }
+      setIsStudentLoggedIn(localStorage.getItem(studentSessionKey) === 'true');
+      electionApi.publicStatus().then(({ data }) => {
+        setElectionVisible(!!data?.election);
+      }).catch(() => setElectionVisible(false));
     };
     window.addEventListener('storage', handleStorage);
     return () => window.removeEventListener('storage', handleStorage);
