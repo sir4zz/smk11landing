@@ -24,11 +24,26 @@ for (const p of toClean) {
 }
 
 console.log('[build:prod] Menjalankan tsc + vite build...')
-const result = spawnSync('npx', ['tsc', '-b'], { stdio: 'inherit', cwd: root })
-if (result.status !== 0) process.exit(result.status ?? 1)
 
-const viteResult = spawnSync('npx', ['vite', 'build'], { stdio: 'inherit', cwd: root })
-if (viteResult.status !== 0) process.exit(viteResult.status ?? 1)
+// VITE_API_URL di-embed saat build. Default '/' (same-origin) agar prod tidak
+// ke-build dengan fallback localhost di src/lib/api.ts.
+const buildEnv = { ...process.env, VITE_API_URL: process.env.VITE_API_URL ?? '/' }
+console.log(`[build:prod] VITE_API_URL=${buildEnv.VITE_API_URL}`)
+
+function run(command) {
+  // Windows: npx = npx.cmd, harus lewat shell. Tanpa shell:true -> ENOENT
+  // dengan status null, script exit(1) diam-diam persis seperti laporan.
+  const result = spawnSync(command, { stdio: 'inherit', cwd: root, shell: true, env: buildEnv })
+  if (result.error) {
+    console.error(`[build:prod] Gagal menjalankan "${command}": ${result.error.message}`)
+    process.exit(1)
+  }
+  if (result.status !== 0) process.exit(result.status ?? 1)
+  return result
+}
+
+run('npx tsc -b')
+run('npx vite build --mode production')
 
 console.log('\n[build:prod] Selesai.')
 console.log(`  Frontend -> ${path.relative(root, publicDir)}/`)
