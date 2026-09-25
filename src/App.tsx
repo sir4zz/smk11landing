@@ -39,6 +39,8 @@ const Mading = lazy(() => import('./pages/mading/Mading'))
 const MadingDetail = lazy(() => import('./pages/mading/MadingDetail'))
 const StudentLogin = lazy(() => import('./pages/mading/StudentLogin'))
 const StudentArea = lazy(() => import('./pages/mading/StudentArea'))
+const PemilihanOsis = lazy(() => import('./pages/student/PemilihanOsis'))
+const PemilihanOsisDetail = lazy(() => import('./pages/student/PemilihanOsisDetail'))
 const BkkList = lazy(() => import('./pages/bkk/BkkList'))
 const BkkDetail = lazy(() => import('./pages/bkk/BkkDetail'))
 const BkkHome = lazy(() => import('./pages/bkk/BkkHome'))
@@ -119,6 +121,8 @@ function App() {
           <Route element={<StudentRouteGuard />}>
             <Route path="mading/area" element={suspend(<StudentArea />)} />
             <Route path="siswa/data-diri" element={<Navigate to="/mading/area?tab=profile" replace />} />
+            <Route path="siswa/pemilihan-osis" element={suspend(<PemilihanOsis />)} />
+            <Route path="siswa/pemilihan-osis/:candidateId" element={suspend(<PemilihanOsisDetail />)} />
           </Route>
           <Route path="mading/:id" element={suspend(<MadingDetail />)} />
 

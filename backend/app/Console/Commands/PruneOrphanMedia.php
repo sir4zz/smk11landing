@@ -32,6 +32,7 @@ class PruneOrphanMedia extends Command
         'osis' => ['logo'],
         'osis_members' => ['photo'],
         'osis_activities' => ['photo', 'documentation'],
+        'osis_candidates' => ['photo', 'wakil_photo', 'banner_photo'],
         'extracurriculars' => ['logo', 'photo', 'documentation', 'gallery'],
         'galleries' => ['cover_image'],
         'gallery_images' => ['image'],

@@ -13,7 +13,7 @@ import ImageField from '../../components/admin/ImageField';
 import { SkeletonList, SkeletonProfile } from '../../components/ui/Skeleton';
 import { GalleryUpload, VideoUrlsField } from '../../components/mading/MediaEditor';
 import { MADING_STATUSES } from '../../lib/ui-constants';
-import { BIODATA_FIELDS, BIODATA_SECTIONS, STUDENT_READONLY_KEYS, formatClass, groupFieldsBySubsection, isFieldHidden } from '../../lib/studentBiodata';
+import { BIODATA_FIELDS, BIODATA_SECTIONS, REQUIRED_LEGEND, STUDENT_READONLY_KEYS, formatClass, groupFieldsBySubsection, isFieldHidden, isFieldRequired } from '../../lib/studentBiodata';
 import type { BiodataFieldDef } from '../../lib/studentBiodata';
 
 const studentSessionKey = 'smkn11-student-session';
@@ -847,7 +847,10 @@ function ProfileTab({ profile }: { profile: StudentProfile | null }) {
               const fields = BIODATA_FIELDS.filter((f) => f.section === section.id && !isFieldHidden(f, changeForm));
               return (
                 <div key={section.id} className="rounded-xl border border-[#1B2A4A]/10 p-4">
-                  <p className="mb-3 font-bold text-[#1B2A4A]">{section.title}</p>
+                  <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+                    <p className="font-bold text-[#1B2A4A]">{section.title}</p>
+                    <p className="text-xs text-[#5B7088]"><span className="text-red-500" aria-hidden="true">*</span> {REQUIRED_LEGEND}</p>
+                  </div>
                   <div className="grid gap-4 sm:grid-cols-2">
                     {section.id === 'docs' ? (
                       STUDENT_DOCS.map((doc) => (
@@ -1168,9 +1171,16 @@ function selectLabel(key: string, value: string): string {
 function BioField({ field, value, onChange, disabled }: { field: BiodataFieldDef; value: string; onChange: (value: string) => void; disabled?: boolean }) {
   const inputCls = `mt-1 w-full rounded-lg border border-[#1B2A4A]/20 px-3 py-2 font-normal text-[#1B2A4A] outline-none ${disabled ? 'cursor-not-allowed bg-gray-100 opacity-60' : 'focus:border-[#C8A951]'}`;
   const lockLabel = disabled ? <span className="ml-1 text-xs font-normal text-[#5B7088]">🔒 Dikelola admin</span> : null;
+  const requiredMark = isFieldRequired(field.key) ? (
+    <>
+      {' '}
+      <span className="text-red-500" aria-hidden="true">*</span>
+      <span className="sr-only"> (wajib diisi)</span>
+    </>
+  ) : null;
   if (field.type === 'select') {
     return (
-      <label className="block text-sm font-semibold">{field.label}{lockLabel}
+      <label className="block text-sm font-semibold">{field.label}{requiredMark}{lockLabel}
         <select value={value} onChange={(e) => onChange(e.target.value)} className={inputCls} disabled={disabled}>
           {field.options?.map((opt) => (
             <option key={opt} value={opt}>{opt === '' ? 'Pilih' : selectLabel(field.key, opt)}</option>
@@ -1181,7 +1191,7 @@ function BioField({ field, value, onChange, disabled }: { field: BiodataFieldDef
   }
   if (field.type === 'select-or-text') {
     return (
-      <label className="block text-sm font-semibold">{field.label}{lockLabel}
+      <label className="block text-sm font-semibold">{field.label}{requiredMark}{lockLabel}
         <div className="space-y-1">
           <select
             value={field.options?.includes(value) ? value : '__custom__'}
@@ -1203,13 +1213,13 @@ function BioField({ field, value, onChange, disabled }: { field: BiodataFieldDef
   }
   if (field.type === 'textarea') {
     return (
-      <label className="block text-sm font-semibold">{field.label}{lockLabel}
+      <label className="block text-sm font-semibold">{field.label}{requiredMark}{lockLabel}
         <textarea value={value} rows={2} onChange={(e) => onChange(e.target.value)} className={inputCls} disabled={disabled} />
       </label>
     );
   }
   return (
-    <label className="block text-sm font-semibold">{field.label}{lockLabel}
+    <label className="block text-sm font-semibold">{field.label}{requiredMark}{lockLabel}
       <input
         value={value}
         type={field.type === 'date' ? 'date' : 'text'}

@@ -42,6 +42,45 @@ export interface OsisProfile { id?: string; name: string; description: string; p
 export interface OsisMember { id?: string; osis_id?: string; name: string; position: string; division: string; photo: string; sort_order: number }
 export interface OsisActivity { id?: string; title: string; description: string; photo: string; activity_date?: string | null; status: string }
 
+export interface OsisElection {
+  id?: string;
+  title: string;
+  description: string;
+  is_active: boolean;
+  is_visible: boolean;
+}
+
+export interface OsisCandidate {
+  id?: string;
+  election_id?: string;
+  number: number;
+  name: string;
+  class: string;
+  wakil_name: string;
+  wakil_class: string;
+  vision: string;
+  mission: string;
+  photo: string;
+  wakil_photo: string;
+  banner_photo: string;
+  sort_order: number;
+  is_active: boolean;
+  votes?: number;
+}
+
+export interface OsisElectionStudentState {
+  election: OsisElection | null;
+  candidates: OsisCandidate[];
+  has_voted: boolean;
+  my_candidate_id: string | null;
+}
+
+export interface OsisElectionAdminState {
+  election: OsisElection | null;
+  candidates: OsisCandidate[];
+  total_votes: number;
+}
+
 export interface MadingCategory { id?: string; slug: string; name: string; sort_order: number }
 export type MadingPostStatus = 'draft' | 'pending_review' | 'approved' | 'rejected' | 'published';
 export interface MadingVideo { url: string; title?: string }

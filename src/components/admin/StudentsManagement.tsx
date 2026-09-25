@@ -4,7 +4,7 @@ import { ChevronRight, ChevronLeft, Plus, Trash2, X, Loader2, KeyRound, Search, 
 import { accountsApi, downloadApiFile, resolveImageUrl } from '../../lib/api';
 import StudentImportModal from './StudentImportModal';
 import ImageField from './ImageField';
-import { BIODATA_FIELDS, BIODATA_SECTIONS, emptyBiodata, formatClass, formatRupiah, groupFieldsBySubsection, isFieldHidden, isRupiahField, isValidClass, normalizeClass, normalizeGender } from '../../lib/studentBiodata';
+import { BIODATA_FIELDS, BIODATA_SECTIONS, REQUIRED_LEGEND, emptyBiodata, formatClass, formatRupiah, groupFieldsBySubsection, isFieldHidden, isFieldRequired, isRupiahField, isValidClass, normalizeClass, normalizeGender } from '../../lib/studentBiodata';
 import type { BiodataFieldDef } from '../../lib/studentBiodata';
 
 interface StudentRow {
@@ -510,7 +510,10 @@ export default function StudentsManagement() {
               const fields = BIODATA_FIELDS.filter((f) => f.section === section.id && !isFieldHidden(f, form));
               return (
                 <div key={section.id} className="rounded-xl border border-[#1B2A4A]/10 p-4">
-                  <p className="mb-3 font-bold text-[#1B2A4A]">{section.title}</p>
+                  <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+                    <p className="font-bold text-[#1B2A4A]">{section.title}</p>
+                    <p className="text-xs text-[#5B7088]"><span className="text-red-500" aria-hidden="true">*</span> {REQUIRED_LEGEND}</p>
+                  </div>
                   <div
                     className="grid gap-4 sm:grid-cols-2"
                     onKeyDown={(e) => {
@@ -529,7 +532,7 @@ export default function StudentsManagement() {
                     {section.id === 'identity' && (
                       <div className="sm:col-span-2">
                         <label className="block text-sm font-semibold">
-                          {editing ? 'PIN Baru (opsional, min. 4 karakter)' : 'PIN Siswa (min. 4 karakter)'}
+                          {editing ? 'PIN Baru (opsional, min. 4 karakter)' : <>PIN Siswa <span className="text-red-500" aria-hidden="true">*</span><span className="sr-only"> (wajib diisi)</span> (min. 4 karakter)</>}
                         </label>
                         <div className="mt-1 flex gap-2">
                           <input
@@ -614,6 +617,14 @@ export default function StudentsManagement() {
 function BiodataField({ field, value, onChange, placeholder, error }: { field: BiodataFieldDef; value: string; onChange: (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void; placeholder?: string; error?: string }) {
   const cls = field.full ? 'sm:col-span-2' : '';
   const inputCls = `mt-1 w-full rounded-lg border bg-white px-3 py-2 font-normal ${error ? 'border-red-400' : 'border-[#1B2A4A]/20'}`;
+  const required = isFieldRequired(field.key);
+  const requiredMark = required ? (
+    <>
+      {' '}
+      <span className="text-red-500" aria-hidden="true">*</span>
+      <span className="sr-only"> (wajib diisi)</span>
+    </>
+  ) : null;
 
   const isNumeric = field.type === 'number';
   const isDecimal = field.type === 'decimal';
@@ -626,7 +637,7 @@ function BiodataField({ field, value, onChange, placeholder, error }: { field: B
 
   return (
     <label className={`block text-sm font-semibold ${cls}`}>
-      {field.label}
+      {field.label}{requiredMark}
       {field.type === 'select' ? (
         <select value={value} onChange={onChange} className={inputCls}>
           {field.options?.map((opt) => (

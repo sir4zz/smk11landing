@@ -192,6 +192,12 @@ export function groupFieldsBySubsection(fields: BiodataFieldDef[]): FieldGroup[]
 // Field yang wajib dalam bentuk apa pun.
 export const REQUIRED_KEYS = ['nisn', 'name'];
 
+export function isFieldRequired(key: string): boolean {
+  return REQUIRED_KEYS.includes(key);
+}
+
+export const REQUIRED_LEGEND = 'Kolom bertanda * wajib diisi.';
+
 // Struktur template BIODATA: satu workbook, satu sheet per seksi.
 // Tiap sheet: baris index 0 judul, index 1 nama kolom, index 2 contoh,
 // data dimulai dari index 3 (TEMPLATE_HEADER_ROWS).
