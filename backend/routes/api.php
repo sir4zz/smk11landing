@@ -16,6 +16,7 @@ use App\Http\Controllers\MadingAiController;
 use App\Http\Controllers\MadingController;
 use App\Http\Controllers\MyProfileController;
 use App\Http\Controllers\OsisController;
+use App\Http\Controllers\OsisElectionController;
 use App\Http\Controllers\PpdbController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\GalleryController;
@@ -173,6 +174,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/student/data-siswa/change-requests', [StudentDataChangeRequestController::class, 'myRequests']);
     Route::post('/student/data-siswa/change-requests', [StudentDataChangeRequestController::class, 'store']);
     Route::delete('/student/data-siswa/change-requests/{id}', [StudentDataChangeRequestController::class, 'cancel']);
+
+    // Pemilihan OSIS (siswa wajib login; role dicek di controller)
+    Route::get('/student/pemilihan-osis', [OsisElectionController::class, 'studentStatus']);
+    Route::post('/student/pemilihan-osis/vote', [OsisElectionController::class, 'vote']);
 
     // Guru: own SDM data & change requests
     Route::get('/guru/data-saya', [GuruDataChangeRequestController::class, 'myData']);
@@ -344,6 +349,14 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::post('/osis/activities', [OsisController::class, 'storeActivity']);
     Route::patch('/osis/activities/{id}', [OsisController::class, 'updateActivity']);
     Route::delete('/osis/activities/{id}', [OsisController::class, 'destroyActivity']);
+
+    // Pemilihan OSIS (kelola pemilihan + kandidat)
+    Route::get('/osis/elections', [OsisElectionController::class, 'adminIndex']);
+    Route::post('/osis/elections', [OsisElectionController::class, 'storeElection']);
+    Route::patch('/osis/elections/{id}', [OsisElectionController::class, 'updateElection']);
+    Route::post('/osis/elections/{id}/candidates', [OsisElectionController::class, 'storeCandidate']);
+    Route::patch('/osis/elections/{id}/candidates/{candidateId}', [OsisElectionController::class, 'updateCandidate']);
+    Route::delete('/osis/elections/{id}/candidates/{candidateId}', [OsisElectionController::class, 'destroyCandidate']);
 
     // Extracurricular
     Route::post('/extracurriculars', [ExtracurricularController::class, 'store']);
