@@ -121,9 +121,9 @@ function App() {
           <Route element={<StudentRouteGuard />}>
             <Route path="mading/area" element={suspend(<StudentArea />)} />
             <Route path="siswa/data-diri" element={<Navigate to="/mading/area?tab=profile" replace />} />
-            <Route path="siswa/pemilihan-osis" element={suspend(<PemilihanOsis />)} />
-            <Route path="siswa/pemilihan-osis/:candidateId" element={suspend(<PemilihanOsisDetail />)} />
           </Route>
+          <Route path="siswa/pemilihan-osis" element={suspend(<PemilihanOsis />)} />
+          <Route path="siswa/pemilihan-osis/:candidateId" element={suspend(<PemilihanOsisDetail />)} />
           <Route path="mading/:id" element={suspend(<MadingDetail />)} />
 
           {/* BKK (Bursa Kerja Khusus) */}

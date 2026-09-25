@@ -94,6 +94,9 @@ Route::get('/osis', [OsisController::class, 'profile']);
 Route::get('/osis/members', [OsisController::class, 'members']);
 Route::get('/osis/activities', [OsisController::class, 'activities']);
 
+// ---------- PEMILIHAN OSIS (publik: boleh dilihat tanpa login) ----------
+Route::get('/pemilihan-osis', [OsisElectionController::class, 'publicStatus']);
+
 // ---------- EXTRACURRICULARS ----------
 Route::get('/extracurriculars', [ExtracurricularController::class, 'index']);
 Route::get('/extracurriculars/{slug}', [ExtracurricularController::class, 'show']);

@@ -20,6 +20,51 @@ class OsisElectionController extends Controller
 
     // ── STUDENT ───────────────────────────────────────────────────────────
 
+    /**
+     * Status pemilihan untuk publik (tamu / belum login).
+     * Menampilkan kandidat + perolehan suara tanpa info pribadi pemilih.
+     */
+    public function publicStatus(): JsonResponse
+    {
+        $election = OsisElection::query()
+            ->where('is_visible', true)
+            ->with(['candidates' => fn ($q) => $q->orderBy('sort_order')->orderBy('number')])
+            ->orderByDesc('updated_at')
+            ->first();
+
+        if (! $election) {
+            return response()->json([
+                'data' => [
+                    'election' => null,
+                    'candidates' => [],
+                    'has_voted' => false,
+                    'my_candidate_id' => null,
+                ],
+                'error' => null,
+            ]);
+        }
+
+        $tallies = $this->tallies($election->id);
+        $candidates = $election->candidates
+            ->map(function (OsisCandidate $c) use ($tallies) {
+                $payload = $c->toArray();
+                $payload['votes'] = $tallies[$c->id] ?? 0;
+
+                return $payload;
+            })
+            ->values();
+
+        return response()->json([
+            'data' => [
+                'election' => $election->only(['id', 'title', 'description', 'is_active', 'is_visible']),
+                'candidates' => $candidates,
+                'has_voted' => false,
+                'my_candidate_id' => null,
+            ],
+            'error' => null,
+        ]);
+    }
+
     public function studentStatus(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -52,21 +97,20 @@ class OsisElectionController extends Controller
             ->first();
 
         $hasVoted = $vote !== null;
-        $candidates = $election->candidates->map(fn (OsisCandidate $c) => $c->toArray());
+        $tallies = $this->tallies($election->id);
+        $candidates = $election->candidates
+            ->map(function (OsisCandidate $c) use ($tallies) {
+                $payload = $c->toArray();
+                $payload['votes'] = $tallies[$c->id] ?? 0;
 
-        if ($hasVoted) {
-            $tallies = $this->tallies($election->id);
-            $candidates = $candidates->map(function (array $c) use ($tallies) {
-                $c['votes'] = $tallies[$c['id']] ?? 0;
-
-                return $c;
-            });
-        }
+                return $payload;
+            })
+            ->values();
 
         return response()->json([
             'data' => [
                 'election' => $election->only(['id', 'title', 'description', 'is_active', 'is_visible']),
-                'candidates' => $candidates->values(),
+                'candidates' => $candidates,
                 'has_voted' => $hasVoted,
                 'my_candidate_id' => $vote?->candidate_id,
             ],

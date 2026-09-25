@@ -53,7 +53,7 @@ export const navigationData: NavItem[] = [
         href: '/osis',
         children: [
             { label: 'Data Diri', href: '/siswa/data-diri' },
-            { label: 'Pemilihan OSIS', href: '/siswa/pemilihan-osis', studentOnly: true },
+            { label: 'Pemilihan OSIS', href: '/siswa/pemilihan-osis' },
             {
                 label: 'OSIS',
                 href: '/osis',
