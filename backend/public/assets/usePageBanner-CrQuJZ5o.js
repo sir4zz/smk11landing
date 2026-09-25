@@ -1,1 +1,0 @@
-import{f as e,m as t}from"./chunk-OB3PAWPO-BC12Y6Fm.js";import{X as n,ht as r}from"./index-DP8ij0fa.js";var i=t(e(),1);function a(e){let[t,a]=(0,i.useState)(null);return(0,i.useEffect)(()=>{let t=!0;return n(e).then(e=>{t&&a(e)}),()=>{t=!1}},[e]),{banner:t,backgroundImage:t?.image?r(t.image):void 0}}export{a as t};
