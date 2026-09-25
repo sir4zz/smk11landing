@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, Search, ChevronDown, ChevronRight } from 'lucide-react';
 import { navItems, type NavItem } from '../../data/navigation';
+import { electionApi } from '../../lib/api';
 import logoSekolah from '../../assets/logo.png';
 
 const studentSessionKey = 'smkn11-student-session';
@@ -14,15 +15,32 @@ const Navbar: React.FC<NavbarProps> = ({ onSearchOpen }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [expandedMobileItem, setExpandedMobileItem] = useState<string | null>(null);
   const [isStudentLoggedIn, setIsStudentLoggedIn] = useState(false);
+  const [electionVisible, setElectionVisible] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
-    setIsStudentLoggedIn(localStorage.getItem(studentSessionKey) === 'true');
+    const loggedIn = localStorage.getItem(studentSessionKey) === 'true';
+    setIsStudentLoggedIn(loggedIn);
+    if (loggedIn) {
+      electionApi.studentStatus().then(({ data }) => {
+        setElectionVisible(!!data?.election);
+      }).catch(() => setElectionVisible(false));
+    } else {
+      setElectionVisible(false);
+    }
   }, [location.pathname]);
 
   useEffect(() => {
     const handleStorage = () => {
-      setIsStudentLoggedIn(localStorage.getItem(studentSessionKey) === 'true');
+      const loggedIn = localStorage.getItem(studentSessionKey) === 'true';
+      setIsStudentLoggedIn(loggedIn);
+      if (loggedIn) {
+        electionApi.studentStatus().then(({ data }) => {
+          setElectionVisible(!!data?.election);
+        }).catch(() => setElectionVisible(false));
+      } else {
+        setElectionVisible(false);
+      }
     };
     window.addEventListener('storage', handleStorage);
     return () => window.removeEventListener('storage', handleStorage);
@@ -30,7 +48,17 @@ const Navbar: React.FC<NavbarProps> = ({ onSearchOpen }) => {
 
   const visibleNavItems = navItems.map((item) => ({
     ...item,
-    children: item.children?.filter((child) => !child.studentOnly || isStudentLoggedIn),
+    children: item.children?.filter((child) =>
+      (!child.studentOnly || isStudentLoggedIn) &&
+      (child.href !== '/siswa/pemilihan-osis' || electionVisible)
+    ).filter((child) => {
+      if (!child.children) return true;
+      const gc = child.children.filter((g) =>
+        (!g.studentOnly || isStudentLoggedIn) &&
+        (g.href !== '/siswa/pemilihan-osis' || electionVisible)
+      );
+      return gc.length > 0;
+    }),
   })).filter((item) => !item.studentOnly || isStudentLoggedIn);
 
   // Close mobile menu on route change

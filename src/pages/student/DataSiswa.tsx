@@ -4,7 +4,7 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { UserRound, Loader2, Send, X, Clock, CheckCircle2, XCircle, ChevronRight, FileText, Eye, Download, KeyRound, LogOut } from 'lucide-react';
 import { backendApi, studentDataApi, resolveImageUrl, STUDENT_CHANGE_REQUEST_STATUS_LABELS, type StudentDataPayload, type StudentChangeRequestRow, type StudentChangeRequestStatus } from '../../lib/api';
 import PageHero from '../../components/ui/PageHero';
-import { BIODATA_FIELDS, BIODATA_SECTIONS, STUDENT_READONLY_KEYS, emptyBiodata, groupFieldsBySubsection, isFieldHidden } from '../../lib/studentBiodata';
+import { BIODATA_FIELDS, BIODATA_SECTIONS, REQUIRED_LEGEND, STUDENT_READONLY_KEYS, emptyBiodata, groupFieldsBySubsection, isFieldHidden, isFieldRequired } from '../../lib/studentBiodata';
 import type { BiodataFieldDef } from '../../lib/studentBiodata';
 import ImageField from '../../components/admin/ImageField';
 import { SkeletonDetail } from '../../components/ui/Skeleton';
@@ -385,7 +385,10 @@ export default function DataSiswa() {
                 const fields = BIODATA_FIELDS.filter((f) => f.section === section.id && !isFieldHidden(f, form));
                 return (
                   <div key={section.id} className="rounded-xl border border-[#1B2A4A]/10 p-4">
-                    <p className="mb-3 font-bold text-[#1B2A4A]">{section.title}</p>
+                    <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+                      <p className="font-bold text-[#1B2A4A]">{section.title}</p>
+                      <p className="text-xs text-[#5B7088]"><span className="text-red-500" aria-hidden="true">*</span> {REQUIRED_LEGEND}</p>
+                    </div>
                     <div className="grid gap-4 sm:grid-cols-2">
                       {section.id === 'docs' ? (
                         STUDENT_DOCS.map((doc) => (
@@ -712,10 +715,17 @@ function BiodataField({ field, value, onChange, error, disabled }: { field: Biod
   const cls = field.full ? 'sm:col-span-2' : '';
   const inputCls = `mt-1 w-full rounded-lg border bg-white px-3 py-2 font-normal ${error ? 'border-red-400' : 'border-[#1B2A4A]/20'} ${disabled ? 'cursor-not-allowed bg-gray-100 opacity-60' : ''}`;
   const lockLabel = disabled ? <span className="ml-1 text-xs font-normal text-[#5B7088]">🔒 Dikelola admin</span> : null;
+  const requiredMark = isFieldRequired(field.key) ? (
+    <>
+      {' '}
+      <span className="text-red-500" aria-hidden="true">*</span>
+      <span className="sr-only"> (wajib diisi)</span>
+    </>
+  ) : null;
 
   return (
     <label className={`block text-sm font-semibold ${cls}`}>
-      {field.label}{lockLabel}
+      {field.label}{requiredMark}{lockLabel}
       {field.type === 'select' ? (
         <select value={value} onChange={onChange} className={inputCls} disabled={disabled}>
           {field.options?.map((opt) => (

@@ -18,6 +18,8 @@ use App\Models\MadingPost;
 use App\Models\News;
 use App\Models\Osis;
 use App\Models\OsisActivity;
+use App\Models\OsisCandidate;
+use App\Models\OsisElection;
 use App\Models\OsisMember;
 use App\Models\Permission;
 use App\Models\Profile;
@@ -368,6 +370,7 @@ class DatabaseSeeder extends Seeder
         $this->seedSpmb();
         $this->seedSpmbPosters();
         $this->seedOsis();
+        $this->seedOsisElection();
         $this->seedExtracurriculars();
         $this->seedMading();
         $this->seedGalleries();
@@ -732,6 +735,69 @@ class DatabaseSeeder extends Seeder
 
         foreach ($activities as $activity) {
             OsisActivity::updateOrCreate(['title' => $activity['title']], $activity);
+        }
+    }
+
+    protected function seedOsisElection(): void
+    {
+        $election = OsisElection::query()->orderByDesc('updated_at')->first();
+
+        if (! $election) {
+            $election = OsisElection::create([
+                'title' => 'Pemilihan Ketua OSIS 2026/2027',
+                'description' => 'Pilih satu pasangan calon ketua dan wakil ketua OSIS SMKN 11 Kabupaten Tangerang periode 2026/2027. Setiap siswa hanya boleh memberikan satu suara.',
+                'is_active' => true,
+                'is_visible' => true,
+            ]);
+        }
+
+        $candidates = [
+            [
+                'number' => 1,
+                'name' => 'Ahmad Fauzi',
+                'class' => 'XII TJKT 1',
+                'wakil_name' => 'Sinta Lestari',
+                'wakil_class' => 'XII DKV 2',
+                'vision' => 'Mewujudkan OSIS yang inklusif, transparan, dan berprestasi.',
+                'mission' => 'Mengadakan program kerja terbuka, memperkuat ekstrakurikuler, dan meningkatkan literasi digital siswa.',
+                'photo' => 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80',
+                'wakil_photo' => 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=800&q=80',
+                'banner_photo' => 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1200&q=80',
+                'sort_order' => 1,
+            ],
+            [
+                'number' => 2,
+                'name' => 'Rizky Ramadhan',
+                'class' => 'XII TO 1',
+                'wakil_name' => 'Nabila Putri',
+                'wakil_class' => 'XII AKL 1',
+                'vision' => 'OSIS sebagai rumah bagi setiap siswa untuk berkarya dan berkontribusi.',
+                'mission' => 'Membuka kanal aspirasi rutin, menggagas festival kreatif, dan mempererat solidaritas antarsekolah.',
+                'photo' => 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80',
+                'wakil_photo' => 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=800&q=80',
+                'banner_photo' => 'https://images.unsplash.com/photo-1543269865-cbf427effbad?auto=format&fit=crop&w=1200&q=80',
+                'sort_order' => 2,
+            ],
+            [
+                'number' => 3,
+                'name' => 'Bagus Prakoso',
+                'class' => 'XII RPL 2',
+                'wakil_name' => '',
+                'wakil_class' => '',
+                'vision' => 'Leadership yang disiplin, jujur, dan berdampak nyata bagi warga sekolah.',
+                'mission' => 'Menegakkan program kedisiplinan berbasis kemitraan, memperkuat OSIS peduli lingkungan, dan mendorong prestasi akademik/nonakademik.',
+                'photo' => 'https://images.unsplash.com/photo-1519345182560-3f2917c472ef?auto=format&fit=crop&w=800&q=80',
+                'wakil_photo' => '',
+                'banner_photo' => 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1200&q=80',
+                'sort_order' => 3,
+            ],
+        ];
+
+        foreach ($candidates as $candidate) {
+            OsisCandidate::updateOrCreate(
+                ['election_id' => $election->id, 'number' => $candidate['number']],
+                $candidate + ['is_active' => true]
+            );
         }
     }
 

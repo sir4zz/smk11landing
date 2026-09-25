@@ -135,7 +135,9 @@ function canCache(path: string, method: string): boolean {
     && !path.startsWith('/upload')
     && !path.startsWith('/uploads')
     // SOP should reflect a new publication immediately after an admin save.
-    && !path.startsWith('/sop');
+    && !path.startsWith('/sop')
+    // Status suara pemilihan OSIS harus selalu segar (jangan cache).
+    && !path.includes('pemilihan');
 }
 
 function clearCache(): void {
@@ -678,6 +680,58 @@ export const myProfileApi = {
   },
   updatePassword(payload: { current_password: string; new_password: string }): ApiResult<{ must_change_password: boolean }> {
     return request<{ must_change_password: boolean }>('/me/password', { method: 'PATCH', body: JSON.stringify(payload) });
+  },
+};
+
+import type {
+  OsisCandidate as OsisCandidateType,
+  OsisElection as OsisElectionType,
+  OsisElectionAdminState as OsisElectionAdminStateType,
+  OsisElectionStudentState as OsisElectionStudentStateType,
+} from './content-types';
+
+// ---------- PEMILIHAN OSIS ----------
+export const electionApi = {
+  studentStatus(): ApiResult<OsisElectionStudentStateType> {
+    return request<OsisElectionStudentStateType>('/student/pemilihan-osis');
+  },
+  vote(candidateId: string): ApiResult<OsisElectionStudentStateType> {
+    return request<OsisElectionStudentStateType>('/student/pemilihan-osis/vote', {
+      method: 'POST',
+      body: JSON.stringify({ candidate_id: candidateId }),
+    });
+  },
+  adminList(): ApiResult<OsisElectionAdminStateType> {
+    return request<OsisElectionAdminStateType>('/admin/osis/elections');
+  },
+  adminSaveElection(payload: { title: string; description?: string; is_active?: boolean; is_visible?: boolean }): ApiResult<OsisElectionType> {
+    return request<OsisElectionType>('/admin/osis/elections', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+  adminUpdateElection(id: string, payload: { title?: string; description?: string; is_active?: boolean; is_visible?: boolean }): ApiResult<OsisElectionType> {
+    return request<OsisElectionType>(`/admin/osis/elections/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    });
+  },
+  adminSaveCandidate(
+    electionId: string,
+    payload: Partial<OsisCandidateType> & { name: string; number: number },
+    candidateId?: string,
+  ): ApiResult<OsisCandidateType> {
+    const base = `/admin/osis/elections/${encodeURIComponent(electionId)}/candidates`;
+    const path = candidateId ? `${base}/${encodeURIComponent(candidateId)}` : base;
+    return request<OsisCandidateType>(path, {
+      method: candidateId ? 'PATCH' : 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+  adminDeleteCandidate(electionId: string, candidateId: string): ApiResult<null> {
+    return request<null>(`/admin/osis/elections/${encodeURIComponent(electionId)}/candidates/${encodeURIComponent(candidateId)}`, {
+      method: 'DELETE',
+    });
   },
 };
 
