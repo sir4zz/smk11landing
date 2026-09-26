@@ -23,10 +23,11 @@ import Button from '../components/ui/Button';
 import SectionHeading from '../components/ui/SectionHeading';
 import StatsBar from '../components/ui/StatsBar';
 import Card from '../components/ui/Card';
+import ElectionCandidateCarousel from '../components/ui/ElectionCandidateCarousel';
 import { isImportedNews } from '../lib/content-types';
 import { formatLeadershipTitle } from './management/ManagementShared';
-import { fetchPublicContent, fetchGalleries, fetchHomeContent, fetchSpmbContent, fetchStats, publicProfileApi, resolveImageUrl, type GalleryRow, type HomeContent, type LeadershipEntry } from '../lib/api';
-import type { SpmbContent } from '../lib/content-types';
+import { electionApi, fetchPublicContent, fetchGalleries, fetchHomeContent, fetchSpmbContent, fetchStats, publicProfileApi, resolveImageUrl, type GalleryRow, type HomeContent, type LeadershipEntry } from '../lib/api';
+import type { OsisElectionStudentState, SpmbContent } from '../lib/content-types';
 
 const getProgramIcon = (slug: string) => {
   switch (slug) {
@@ -59,6 +60,7 @@ const Home: React.FC = () => {
   const [principal, setPrincipal] = useState<LeadershipEntry | null>(null);
   const [spmb, setSpmb] = useState<SpmbContent | null>(null);
   const [stats, setStats] = useState<{ value: string; label: string }[]>([]);
+  const [electionState, setElectionState] = useState<OsisElectionStudentState | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -69,6 +71,7 @@ const Home: React.FC = () => {
     publicProfileApi.leadership().then(({ data }) => { if (active && data) setPrincipal(data.principal); });
     fetchSpmbContent().then((data) => { if (active) setSpmb(data); });
     fetchStats().then((data) => { if (active) setStats(data); });
+    electionApi.publicStatus().then(({ data }) => { if (active && data) setElectionState(data); });
     fetchGalleries({ page: 1, limit: 8 })
       .then(({ rows }) => { if (active) setGallery(rows); })
       .catch(() => {})
@@ -83,6 +86,7 @@ const Home: React.FC = () => {
   const principalPhoto = resolveImageUrl(principal?.photo);
   const statIcons = [Users, GraduationCap, BookOpen];
   const statsWithIcons = (stats ?? []).map((stat, index) => ({ ...stat, icon: React.createElement(statIcons[index] ?? Users, { className: 'h-6 w-6' }) }));
+  const activeCandidates = (electionState?.candidates ?? []).filter((candidate) => candidate.is_active !== false);
 
   useEffect(() => {
     if (heroImages.length < 2) return;
@@ -405,6 +409,10 @@ const Home: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {electionState?.election && activeCandidates.length > 0 && (
+        <ElectionCandidateCarousel election={electionState.election} candidates={activeCandidates} />
+      )}
 
       <section className="bg-[#FAF6F0] py-16 md:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

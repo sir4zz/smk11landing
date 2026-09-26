@@ -358,11 +358,11 @@ function CandidateCard({
           : 'border-transparent hover:border-[#C8A951]/40 hover:shadow-md'
       } ${canSelect ? 'cursor-pointer' : 'cursor-default'}`}
     >
-      <div className="relative h-52 w-full bg-[#FAF6F0]">
+      <div className="relative w-full bg-[#FAF6F0]">
         {photo ? (
-          <img src={photo} alt={candidate.name} className="h-full w-full object-cover object-top" />
+          <img src={photo} alt={candidate.name} className="h-auto max-h-[480px] w-full object-contain object-center" />
         ) : (
-          <div className="grid h-full place-items-center text-5xl font-bold text-[#C8A951]">{candidate.number}</div>
+          <div className="grid h-64 place-items-center text-5xl font-bold text-[#C8A951]">{candidate.number}</div>
         )}
         <span className="absolute left-3 top-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#C8A951] text-sm font-bold text-[#1B2A4A] shadow">
           {candidate.number}
