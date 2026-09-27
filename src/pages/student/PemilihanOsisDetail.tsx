@@ -102,11 +102,11 @@ export default function PemilihanOsisDetail() {
         </div>
 
         <div className="overflow-hidden rounded-2xl bg-white shadow-sm">
-          <div className="relative h-64 w-full bg-[#FAF6F0] sm:h-80">
+          <div className="relative w-full bg-[#FAF6F0]">
             {photo ? (
-              <img src={photo} alt={candidate.name} className="h-full w-full object-cover object-top" />
+              <img src={photo} alt={candidate.name} className="h-auto max-h-[560px] w-full object-contain object-center" />
             ) : (
-              <div className="grid h-full place-items-center text-6xl font-bold text-[#C8A951]">{candidate.number}</div>
+              <div className="grid h-72 place-items-center text-6xl font-bold text-[#C8A951] sm:h-96">{candidate.number}</div>
             )}
             <span className="absolute left-4 top-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#C8A951] text-lg font-bold text-[#1B2A4A] shadow">
               {candidate.number}
