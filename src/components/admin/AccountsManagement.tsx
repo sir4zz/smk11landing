@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
-import { Plus, Trash2, X, Loader2, KeyRound, Search, Upload, Pencil, Users, ShieldCheck, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Trash2, X, Loader2, KeyRound, Search, Upload, Pencil, Users, ShieldCheck, ChevronLeft, ChevronRight, Power } from 'lucide-react';
 import { accountsApi, type AccountRole, type AccountRow } from '../../lib/api';
 import AccountImportModal from './AccountImportModal';
-import { formatClass } from '../../lib/studentBiodata';
+import { formatClass, normalizeClass } from '../../lib/studentBiodata';
 
 const ROLE_LABELS: Record<AccountRole, string> = { admin: 'Admin', operator_sekolah: 'Operator Sekolah', guru: 'Guru', osis: 'OSIS', bkk: 'BKK', student: 'Siswa' };
 const ROLE_BADGES: Record<AccountRole, string> = {
@@ -73,6 +73,12 @@ export default function AccountsManagement() {
   const [form, setForm] = useState<FormValues>(emptyForm());
   const [saving, setSaving] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<'' | 'active' | 'inactive'>('');
+  const [classFilter, setClassFilter] = useState('');
+  const [majorFilter, setMajorFilter] = useState('');
 
   const load = useCallback(async () => {
     const { data, error } = await accountsApi.list();
@@ -90,10 +96,22 @@ export default function AccountsManagement() {
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 50;
 
-  useEffect(() => { setPage(1); }, [search, roleFilter]);
+  useEffect(() => { setPage(1); }, [search, roleFilter, statusFilter, classFilter, majorFilter]);
+
+  const classOptions = useMemo(
+    () => Array.from(new Set(accounts.map((acc) => normalizeClass(acc.class)).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'id', { numeric: true })),
+    [accounts],
+  );
+  const majorOptions = useMemo(
+    () => Array.from(new Set(accounts.map((acc) => acc.major?.trim()).filter(Boolean) as string[])).sort((a, b) => a.localeCompare(b, 'id')),
+    [accounts],
+  );
 
   const filtered = useMemo(() => accounts.filter((acc) => {
     const matchesRole = !roleFilter || acc.role === roleFilter;
+    const matchesStatus = !statusFilter || (acc.status ?? 'active') === statusFilter;
+    const matchesClass = !classFilter || normalizeClass(acc.class) === classFilter;
+    const matchesMajor = !majorFilter || (acc.major?.trim() ?? '') === majorFilter;
     const q = search.toLowerCase();
     const ids = [
       acc.nisn ?? '',
@@ -102,12 +120,36 @@ export default function AccountsManagement() {
       acc.osis?.member_id ?? '', acc.osis?.nisn ?? '',
     ].join(' ').toLowerCase();
     const matchesSearch = !q || (acc.name ?? '').toLowerCase().includes(q) || (acc.username ?? '').toLowerCase().includes(q) || (acc.email ?? '').toLowerCase().includes(q) || ids.includes(q);
-    return matchesRole && matchesSearch;
-  }), [accounts, roleFilter, search]);
+    return matchesRole && matchesStatus && matchesClass && matchesMajor && matchesSearch;
+  }), [accounts, roleFilter, statusFilter, classFilter, majorFilter, search]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
   const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const selectedAccounts = useMemo(() => accounts.filter((acc) => selectedIds.has(acc.id)), [accounts, selectedIds]);
+  const selectedVisibleCount = filtered.filter((acc) => selectedIds.has(acc.id)).length;
+  const allVisibleSelected = filtered.length > 0 && selectedVisibleCount === filtered.length;
+  const selectedHasActive = selectedAccounts.some((acc) => (acc.status ?? 'active') !== 'inactive');
+  const selectedHasInactive = selectedAccounts.some((acc) => acc.status === 'inactive');
+
+  const toggleSelected = (id: string) => {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAllVisible = () => {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (allVisibleSelected) filtered.forEach((acc) => next.delete(acc.id));
+      else filtered.forEach((acc) => next.add(acc.id));
+      return next;
+    });
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
 
   const openCreate = () => {
     setEditing(null);
@@ -246,11 +288,56 @@ export default function AccountsManagement() {
   };
 
   const removeAccount = async (account: AccountRow) => {
-    if (!confirm(`Hapus akun ${account.name} (${ROLE_LABELS[account.role]})?\nAkun login akan terhapus permanen.`)) return;
+    if (!confirm(`Hapus PERMANEN akun ${account.name} (${ROLE_LABELS[account.role]})?\n\nSemua data ikut terhapus (biodata, file, riwayat) dan TIDAK BISA dibatalkan.\n\nKalau hanya ingin mematikan login, pakai "Nonaktifkan".`)) return;
     const { error } = await accountsApi.remove(account.id);
     if (error) { flash('err', error.message ?? 'Gagal menghapus akun.'); return; }
     await load();
-    flash('ok', 'Akun dihapus.');
+    flash('ok', 'Akun dihapus permanen.');
+  };
+
+  const setStatusFor = async (account: AccountRow, status: 'active' | 'inactive') => {
+    if (status === 'inactive') {
+      const ok = confirm(`Nonaktifkan akun ${account.name} (${ROLE_LABELS[account.role]})?\n\nAkun tidak bisa login, tapi DATA TETAP AMAN dan bisa diaktifkan lagi.`);
+      if (!ok) return;
+    }
+    const { error } = await accountsApi.update(account.id, { status });
+    if (error) { flash('err', error.message ?? 'Gagal mengubah status akun.'); return; }
+    await load();
+    flash('ok', status === 'inactive' ? `Akun ${account.name} dinonaktifkan. Login dicabut, data aman.` : `Akun ${account.name} diaktifkan kembali.`);
+  };
+
+  const setStatusForSelected = async (status: 'active' | 'inactive') => {
+    const targets = selectedAccounts.filter((acc) => (acc.status ?? 'active') === (status === 'inactive' ? 'active' : 'inactive'));
+    if (targets.length === 0) return;
+    if (status === 'inactive') {
+      const ok = confirm(`Nonaktifkan ${targets.length} akun terpilih?\n\nAkun tidak bisa login, tapi DATA TETAP AMAN dan bisa diaktifkan lagi.`);
+      if (!ok) return;
+    }
+    setBulkBusy(true);
+    const results = await Promise.all(targets.map((acc) => accountsApi.update(acc.id, { status })));
+    const failed = results.filter((r) => r.error).length;
+    setBulkBusy(false);
+    await load();
+    clearSelection();
+    flash(failed > 0 ? 'err' : 'ok', failed > 0
+      ? `${failed} akun gagal diubah, ${targets.length - failed} berhasil.`
+      : `${targets.length} akun ${status === 'inactive' ? 'dinonaktifkan' : 'diaktifkan'}.`);
+  };
+
+  const removeSelected = async () => {
+    const targets = selectedAccounts;
+    if (targets.length === 0) return;
+    const ok = confirm(`Hapus PERMANEN ${targets.length} akun terpilih?\n\nSemua data ikut terhapus (biodata, file, riwayat) dan TIDAK BISA dibatalkan.\n\nKalau hanya ingin mematikan login, pakai "Nonaktifkan".`);
+    if (!ok) return;
+    setBulkBusy(true);
+    const results = await Promise.all(targets.map((acc) => accountsApi.remove(acc.id)));
+    const failed = results.filter((r) => r.error).length;
+    setBulkBusy(false);
+    await load();
+    clearSelection();
+    flash(failed > 0 ? 'err' : 'ok', failed > 0
+      ? `${failed} akun gagal dihapus, ${targets.length - failed} berhasil dihapus.`
+      : `${targets.length} akun dihapus permanen.`);
   };
 
   if (loading) return <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-[#C8A951]" /></div>;
@@ -261,6 +348,15 @@ export default function AccountsManagement() {
         <p className="text-[#23314D]">Kelola semua akun login: admin, operator sekolah, guru, OSIS, BKK, dan siswa. Staff dapat login memakai email + password.</p>
         <div className="flex flex-wrap gap-2">
           <button onClick={() => setImportOpen(true)} className="inline-flex items-center gap-2 rounded-lg border-2 border-[#1B2A4A] px-4 py-2 font-bold text-[#1B2A4A] hover:bg-[#1B2A4A]/5"><Upload size={18} /> Import Excel/CSV</button>
+          <button onClick={() => { setSelectionMode((value) => !value); clearSelection(); }} className={`inline-flex items-center gap-2 rounded-lg border-2 px-4 py-2 font-bold ${selectionMode ? 'border-[#C8A951] bg-[#C8A951]/15 text-[#866D2C]' : 'border-[#1B2A4A] text-[#1B2A4A] hover:bg-[#1B2A4A]/5'}`}>{selectionMode ? 'Batal Pilih' : 'Pilih Data'}</button>
+          {selectionMode && (
+            <>
+              <button onClick={clearSelection} disabled={selectedIds.size === 0} className="inline-flex items-center gap-2 rounded-lg border-2 border-[#1B2A4A] px-4 py-2 font-bold text-[#1B2A4A] hover:bg-[#1B2A4A]/5 disabled:opacity-40">Deselect ({selectedIds.size})</button>
+              <button onClick={() => void setStatusForSelected('inactive')} disabled={bulkBusy || !selectedHasActive} title="Nonaktifkan akun terpilih (data tetap aman, bisa diaktifkan lagi)" className="inline-flex items-center gap-2 rounded-lg border-2 border-amber-500 px-4 py-2 font-bold text-amber-700 hover:bg-amber-50 disabled:opacity-40"><Power size={17} /> Nonaktifkan ({selectedHasActive ? selectedAccounts.filter((a) => (a.status ?? 'active') !== 'inactive').length : 0})</button>
+              <button onClick={() => void setStatusForSelected('active')} disabled={bulkBusy || !selectedHasInactive} title="Aktifkan kembali akun terpilih" className="inline-flex items-center gap-2 rounded-lg border-2 border-green-600 px-4 py-2 font-bold text-green-700 hover:bg-green-50 disabled:opacity-40"><Power size={17} /> Aktifkan ({selectedHasInactive ? selectedAccounts.filter((a) => a.status === 'inactive').length : 0})</button>
+              <button onClick={() => void removeSelected()} disabled={bulkBusy || selectedIds.size === 0} title="Hapus permanen akun terpilih" className="inline-flex items-center gap-2 rounded-lg border-2 border-red-600 px-4 py-2 font-bold text-red-600 hover:bg-red-50 disabled:opacity-40"><Trash2 size={17} /> {bulkBusy ? 'Memproses...' : `Hapus (${selectedIds.size})`}</button>
+            </>
+          )}
           <button onClick={openCreate} className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-4 py-2 font-bold text-[#1B2A4A]"><Plus size={18} /> Tambah Akun</button>
         </div>
       </div>
@@ -276,12 +372,26 @@ export default function AccountsManagement() {
           <option value="">Semua Role</option>
           {(Object.keys(ROLE_LABELS) as AccountRole[]).map((role) => <option key={role} value={role}>{ROLE_LABELS[role]}</option>)}
         </select>
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as '' | 'active' | 'inactive')} className="rounded-lg border border-[#1B2A4A]/20 bg-white px-4 py-2 text-sm" aria-label="Filter status">
+          <option value="">Semua Status</option>
+          <option value="active">Aktif</option>
+          <option value="inactive">Nonaktif</option>
+        </select>
+        <select value={classFilter} onChange={(e) => setClassFilter(e.target.value)} className="rounded-lg border border-[#1B2A4A]/20 bg-white px-4 py-2 text-sm" aria-label="Filter kelas">
+          <option value="">Semua Kelas</option>
+          {classOptions.map((value) => <option key={value} value={value}>Kelas {formatClass(value)}</option>)}
+        </select>
+        <select value={majorFilter} onChange={(e) => setMajorFilter(e.target.value)} className="rounded-lg border border-[#1B2A4A]/20 bg-white px-4 py-2 text-sm" aria-label="Filter jurusan">
+          <option value="">Semua Jurusan</option>
+          {majorOptions.map((value) => <option key={value} value={value}>{value}</option>)}
+        </select>
       </div>
 
       <div className="overflow-x-auto rounded-xl bg-white shadow-sm">
         <table className="w-full text-left text-sm">
           <thead className="bg-[#FAF6F0] text-[#1B2A4A]">
             <tr>
+              {selectionMode && <th className="p-4"><input type="checkbox" checked={allVisibleSelected} onChange={toggleAllVisible} aria-label="Pilih semua akun yang tampil" className="h-4 w-4 accent-[#C8A951]" /></th>}
               <th className="p-4">Akun</th>
               <th className="p-4">Role</th>
               <th className="p-4">Detail</th>
@@ -291,9 +401,14 @@ export default function AccountsManagement() {
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 && <tr><td colSpan={6} className="p-8 text-center text-[#5B7088]">Tidak ada akun yang cocok.</td></tr>}
+            {filtered.length === 0 && <tr><td colSpan={selectionMode ? 7 : 6} className="p-8 text-center text-[#5B7088]">Tidak ada akun yang cocok.</td></tr>}
             {paginated.map((account) => (
-              <tr key={account.id} className="border-t border-[#1B2A4A]/10">
+              <tr key={account.id} className={`border-t border-[#1B2A4A]/10 ${selectionMode && selectedIds.has(account.id) ? 'bg-[#C8A951]/10' : account.status === 'inactive' ? 'bg-red-50/60' : ''}`}>
+                {selectionMode && (
+                  <td className="p-4">
+                    <input type="checkbox" checked={selectedIds.has(account.id)} onChange={() => toggleSelected(account.id)} aria-label={`Pilih akun ${account.name}`} className="h-4 w-4 accent-[#C8A951]" />
+                  </td>
+                )}
                 <td className="p-4">
                   <div className="flex items-center gap-3">
                     <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${account.role === 'student' ? 'bg-green-50' : 'bg-[#FAF6F0]'}`}>
@@ -329,8 +444,9 @@ export default function AccountsManagement() {
                 <td className="p-4 text-[#23314D]/70">{account.created_at ? new Date(account.created_at).toLocaleDateString('id-ID') : '-'}</td>
                 <td className="p-4 whitespace-nowrap">
                   <button onClick={() => resetPassword(account)} className="mr-3 inline-flex items-center gap-1 text-sm font-semibold text-[#866D2C]"><KeyRound size={15} /> {account.role === 'student' ? 'Reset PIN' : 'Reset PW'}</button>
-                  <button onClick={() => openEdit(account)} className="mr-3 text-[#866D2C]"><Pencil size={17} /></button>
-                  <button onClick={() => removeAccount(account)} className="text-red-600"><Trash2 size={17} /></button>
+                  <button onClick={() => openEdit(account)} className="mr-3 text-[#866D2C]" title="Edit akun"><Pencil size={17} /></button>
+                  <button onClick={() => void setStatusFor(account, account.status === 'inactive' ? 'active' : 'inactive')} title={account.status === 'inactive' ? 'Aktifkan akun' : 'Nonaktifkan akun'} className={`mr-3 inline-flex items-center gap-1 text-sm font-semibold ${account.status === 'inactive' ? 'text-green-700' : 'text-amber-600'}`}><Power size={15} /> {account.status === 'inactive' ? 'Aktifkan' : 'Nonaktifkan'}</button>
+                  <button onClick={() => removeAccount(account)} className="text-red-600" title="Hapus permanen (data ikut terhapus)"><Trash2 size={17} /></button>
                 </td>
               </tr>
             ))}

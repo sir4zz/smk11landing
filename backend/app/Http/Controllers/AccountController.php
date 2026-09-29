@@ -126,6 +126,10 @@ class AccountController extends Controller
             return $this->fail('Gagal memperbarui akun. Silakan coba lagi.');
         }
 
+        if ($user->profileRecord()->first()?->status === 'inactive') {
+            $user->tokens()->delete();
+        }
+
         return response()->json($this->payload($this->loadAccount($id)));
     }
 
@@ -146,6 +150,7 @@ class AccountController extends Controller
             }
         }
 
+        $user->tokens()->delete();
         $user->delete();
 
         return response()->json(['data' => null, 'error' => null]);
@@ -283,7 +288,7 @@ class AccountController extends Controller
             throw $this->httpFail('NIS sudah terdaftar.');
         }
 
-        $this->createUserWithProfile($id, $name, $email, $pin, 'student', $request);
+        $this->createUserWithProfile($id, $name, null, $email, $pin, 'student', $request);
         $this->createStudentRecords($id, $nisn, $name, $email, $request);
     }
 
@@ -365,6 +370,9 @@ class AccountController extends Controller
         $pin = (string) $request->input('pin', '');
         $name = trim((string) $request->input('name', $user->name));
         $class = Student::normalizeClass($request->input('class', $student?->class ?? ''));
+        if ($class === '' && $student) {
+            $class = $student->class ?? '';
+        }
 
         if (mb_strlen($nisn) < 4) {
             throw $this->httpFail('NISN tidak valid (minimal 4 karakter).');
@@ -567,12 +575,12 @@ class AccountController extends Controller
     // Shared helpers
     // ------------------------------------------------------------------
 
-    private function createUserWithProfile(string $id, string $name, string $username, string $email, string $password, string $role, Request $request): void
+    private function createUserWithProfile(string $id, string $name, ?string $username, string $email, string $password, string $role, Request $request): void
     {
         User::create([
             'id' => $id,
             'email' => $email ?: null,
-            'username' => $username,
+            'username' => $username ?: null,
             'password' => Hash::make($password),
             'name' => $name,
             'profile' => ['name' => $name],

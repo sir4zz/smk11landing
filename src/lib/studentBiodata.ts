@@ -64,7 +64,10 @@ export function normalizeClass(value: unknown): string {
 }
 
 export function isValidClass(value: unknown): boolean {
-  return VALID_CLASSES.includes(normalizeClass(value));
+  const v = normalizeClass(value);
+  if (VALID_CLASSES.includes(v)) return true;
+  // Format legacy: "XII TJKT 1", "10 TKJ 2", dst — tingkat kelas + suffix bebas.
+  return /^(10|11|12|XII|XI|X)(\s+\S.*)?$/.test(v);
 }
 
 function parentFields(prefix: string, section: string): BiodataFieldDef[] {

@@ -157,9 +157,7 @@ class DatabaseSeeder extends Seeder
             'extracurricular.view', 'extracurricular.create', 'extracurricular.edit', 'extracurricular.delete',
             'mading.view', 'mading.create', 'mading.edit_own', 'mading.submit_review',
             'mading.review', 'mading.publish',
-            'spmb.view',
             'gallery.view', 'gallery.create', 'gallery.edit', 'gallery.publish',
-            'job.view', 'job.create', 'job.edit', 'job.publish',
         ];
 
         $operatorSekolahSlugs = [

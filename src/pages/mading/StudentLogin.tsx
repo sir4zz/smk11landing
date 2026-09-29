@@ -46,7 +46,11 @@ export default function StudentLogin() {
       if (!emailData) throw new Error('NISN tidak terdaftar. Hubungi admin sekolah.');
 
       const { data, error: signInError } = await backendApi.auth.signInWithPassword({ email: String(emailData), password: pin });
-      if (signInError) throw new Error('NISN atau PIN salah.');
+      if (signInError) {
+        const message = String(signInError.message ?? '').toLowerCase();
+        if (message.includes('dinonaktifkan')) throw new Error('Akun ini sudah dinonaktifkan. Hubungi admin sekolah.');
+        throw new Error('NISN atau PIN salah.');
+      }
       if (!data?.user) throw new Error('Sesi siswa tidak dapat dibuat.');
 
       if (data.role !== 'student') {
