@@ -302,6 +302,14 @@ Route::middleware(['auth:sanctum', 'staff'])->group(function () {
     Route::put('/admin/page-banners/{id}', [PageBannerController::class, 'update']);
     Route::delete('/admin/page-banners/{id}', [PageBannerController::class, 'destroy']);
 
+    // Pemilihan OSIS (kelola pemilihan + kandidat) — admin & role osis
+    Route::get('/admin/osis/elections', [OsisElectionController::class, 'adminIndex'])->middleware('permission:osis.view');
+    Route::post('/admin/osis/elections', [OsisElectionController::class, 'storeElection'])->middleware('permission:osis.create');
+    Route::patch('/admin/osis/elections/{id}', [OsisElectionController::class, 'updateElection'])->middleware('permission:osis.edit');
+    Route::post('/admin/osis/elections/{id}/candidates', [OsisElectionController::class, 'storeCandidate'])->middleware('permission:osis.create');
+    Route::patch('/admin/osis/elections/{id}/candidates/{candidateId}', [OsisElectionController::class, 'updateCandidate'])->middleware('permission:osis.edit');
+    Route::delete('/admin/osis/elections/{id}/candidates/{candidateId}', [OsisElectionController::class, 'destroyCandidate'])->middleware('permission:osis.delete');
+
     // AI Content Upload
     Route::post('/admin/ai-content-upload/analyze', [AIContentUploadController::class, 'analyze'])->middleware('throttle:mading-ai');
     Route::post('/admin/ai-content-upload/save', [AIContentUploadController::class, 'save']);
@@ -352,14 +360,6 @@ Route::middleware(['auth:sanctum', 'admin'])->prefix('admin')->group(function ()
     Route::post('/osis/activities', [OsisController::class, 'storeActivity']);
     Route::patch('/osis/activities/{id}', [OsisController::class, 'updateActivity']);
     Route::delete('/osis/activities/{id}', [OsisController::class, 'destroyActivity']);
-
-    // Pemilihan OSIS (kelola pemilihan + kandidat)
-    Route::get('/osis/elections', [OsisElectionController::class, 'adminIndex']);
-    Route::post('/osis/elections', [OsisElectionController::class, 'storeElection']);
-    Route::patch('/osis/elections/{id}', [OsisElectionController::class, 'updateElection']);
-    Route::post('/osis/elections/{id}/candidates', [OsisElectionController::class, 'storeCandidate']);
-    Route::patch('/osis/elections/{id}/candidates/{candidateId}', [OsisElectionController::class, 'updateCandidate']);
-    Route::delete('/osis/elections/{id}/candidates/{candidateId}', [OsisElectionController::class, 'destroyCandidate']);
 
     // Extracurricular
     Route::post('/extracurriculars', [ExtracurricularController::class, 'store']);
