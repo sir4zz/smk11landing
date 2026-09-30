@@ -396,6 +396,117 @@ class SdmAccountService
         ];
     }
 
+    /**
+     * Link SDM records that don't have accounts yet to PRE-EXISTING legacy
+     * login accounts (matched by NIP, then NIPPPK, then NUPTK). No password is
+     * created or returned — teachers keep logging in with their existing
+     * password (or NIP/NUPTK identifier thanks to the tolerant resolver).
+     * Empty legacy usernames are backfilled to bare NIP digits when free.
+     */
+    public function bulkLinkAccounts(): array
+    {
+        $persons = collect();
+        $persons = $persons->concat(SdmGuru::query()->whereNull('user_id')->get());
+        $persons = $persons->concat(SdmTendik::query()->whereNull('user_id')->get());
+
+        $linked = 0;
+        $skipped = 0;
+        $errors = [];
+        $linkedRows = [];
+
+        foreach ($persons as $person) {
+            $type = $person instanceof SdmTendik ? 'tendik' : 'guru';
+
+            try {
+                $legacy = null;
+                foreach (['nip', 'nipppk', 'nuptk'] as $field) {
+                    $value = $person->{$field} ?? null;
+                    if ($value === null || $value === '') {
+                        continue;
+                    }
+                    $legacy = Guru::query()->where($field, $value)->first();
+                    if ($legacy) {
+                        break;
+                    }
+                }
+
+                if (! $legacy) {
+                    $skipped++;
+                    $errors[] = [
+                        'name' => $person->name,
+                        'type' => $type,
+                        'message' => 'Tidak ada akun lama yang cocok (NIP/NIPPPK/NUPTK tidak ditemukan). Buatkan akun baru.',
+                    ];
+                    continue;
+                }
+
+                $alreadyLinked = SdmGuru::query()->where('user_id', $legacy->id)->exists()
+                    || SdmTendik::query()->where('user_id', $legacy->id)->exists();
+                if ($alreadyLinked) {
+                    $skipped++;
+                    $errors[] = [
+                        'name' => $person->name,
+                        'type' => $type,
+                        'message' => 'Akun lama sudah terhubung ke data lain.',
+                    ];
+                    continue;
+                }
+
+                $user = User::query()->find($legacy->id);
+                if (! $user) {
+                    $skipped++;
+                    $errors[] = [
+                        'name' => $person->name,
+                        'type' => $type,
+                        'message' => 'Data akun lama rusak (user tidak ditemukan).',
+                    ];
+                    continue;
+                }
+
+                DB::transaction(function () use ($person, $user) {
+                    // Backfill empty legacy username to bare NIP digits when free.
+                    if (($user->username ?? '') === '') {
+                        $base = $person->nip ?: $person->nipppk ?: $person->nuptk;
+                        $digits = $base ? preg_replace('/[^0-9]/', '', $base) : '';
+                        if ($digits !== '' && ! User::query()->where('username', $digits)->exists()) {
+                            $user->update(['username' => $digits]);
+                        }
+                    }
+                    $person->update(['user_id' => $user->id]);
+                });
+
+                $linked++;
+                $linkedRows[] = [
+                    'name' => $person->name,
+                    'type' => $type,
+                    'identifier' => $person->nip ?: $person->nipppk ?: $person->nuptk ?: '',
+                    'username' => $user->fresh()->username ?? '',
+                    'email' => $user->email ?? '',
+                ];
+            } catch (\Throwable $e) {
+                report($e);
+                $skipped++;
+                $errors[] = [
+                    'name' => $person->name,
+                    'type' => $type,
+                    'message' => 'Gagal menghubungkan akun.',
+                ];
+            }
+        }
+
+        Cache::forget(\App\Http\Controllers\StatsController::CACHE_KEY);
+
+        return [
+            'summary' => [
+                'total' => $persons->count(),
+                'linked' => $linked,
+                'skipped' => $skipped,
+            ],
+            'errors' => $errors,
+            'linked' => $linkedRows,
+        ];
+    }
+
     // ------------------------------------------------------------------
     // Helpers
     // ------------------------------------------------------------------

@@ -84,6 +84,16 @@ class SdmAccountController extends Controller
         ]);
     }
 
+    public function bulkLink()
+    {
+        $result = $this->service->bulkLinkAccounts();
+
+        return response()->json([
+            'data' => $result,
+            'error' => null,
+        ]);
+    }
+
     /**
      * Resolve SDM person from either guru or tendik table.
      */
