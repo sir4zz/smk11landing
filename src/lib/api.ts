@@ -107,8 +107,13 @@ export function getAuthToken(): string | null {
     if (path.startsWith('/admin') || path.startsWith('/guru')) {
       return localStorage.getItem(STAFF_TOKEN_KEY);
     }
-    if (path.startsWith('/mading/area') || path.startsWith('/mading/login') || path.startsWith('/student') || path.startsWith('/siswa')) {
+    if (path.startsWith('/mading/area') || path.startsWith('/mading/login') || path.startsWith('/student')) {
       return localStorage.getItem(STUDENT_TOKEN_KEY);
+    }
+    // Halaman /siswa/* (mis. pemilihan OSIS) juga bisa dibuka staf (guru/tendik):
+    // pakai token siswa jika ada, fallback ke token staf.
+    if (path.startsWith('/siswa')) {
+      return localStorage.getItem(STUDENT_TOKEN_KEY) || localStorage.getItem(STAFF_TOKEN_KEY);
     }
     return localStorage.getItem(STAFF_TOKEN_KEY) || localStorage.getItem(STUDENT_TOKEN_KEY);
   } catch { return null; }

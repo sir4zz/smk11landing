@@ -6,16 +6,21 @@ import type { OsisElectionStudentState } from '../../lib/content-types';
 import PageHero from '../../components/ui/PageHero';
 import { SkeletonProfile } from '../../components/ui/Skeleton';
 
+const isVoterRole = (role: string | null): boolean => role === 'student' || role === 'guru';
+const roleLabel = (role: string | null): string => ({ student: 'siswa', guru: 'guru/tendik', admin: 'admin', operator_sekolah: 'operator', osis: 'OSIS', bkk: 'BKK' }[role ?? ''] ?? role ?? '');
+
 export default function PemilihanOsisDetail() {
   const { candidateId } = useParams<{ candidateId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
   const [loading, setLoading] = useState(true);
-  const [isStudent, setIsStudent] = useState(false);
+  const [role, setRole] = useState<string | null>(null);
   const [state, setState] = useState<OsisElectionStudentState | null>(null);
 
-  const loadStatus = useCallback(async (asStudent: boolean) => {
-    const { data } = asStudent
+  const isVoter = isVoterRole(role);
+
+  const loadStatus = useCallback(async (asVoter: boolean) => {
+    const { data } = asVoter
       ? await electionApi.studentStatus()
       : await electionApi.publicStatus();
     if (data) setState(data);
@@ -26,15 +31,15 @@ export default function PemilihanOsisDetail() {
     (async () => {
       const { data } = await backendApi.auth.getCurrentUser();
       if (cancelled) return;
-      let student = false;
+      let userRole: string | null = null;
       if (data?.user) {
         const { data: prof } = await backendApi.database.from('profiles').select('role').eq('id', data.user.id).single();
         if (cancelled) return;
-        student = prof?.role === 'student';
+        userRole = prof?.role ?? null;
       }
       if (cancelled) return;
-      setIsStudent(student);
-      await loadStatus(student);
+      setRole(userRole);
+      await loadStatus(isVoterRole(userRole));
       if (!cancelled) setLoading(false);
     })();
     return () => { cancelled = true; };
@@ -43,7 +48,7 @@ export default function PemilihanOsisDetail() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#FAF6F0]">
-        <PageHero title="Detail Kandidat" subtitle="Area siswa SMKN 11" breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Ruang Siswa', href: '/siswa/pemilihan-osis' }, { label: 'Detail Kandidat' }]} />
+        <PageHero title="Detail Kandidat" subtitle="Siswa, guru & tendik SMKN 11" breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Ruang Siswa', href: '/siswa/pemilihan-osis' }, { label: 'Detail Kandidat' }]} />
         <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
           <SkeletonProfile count={1} />
         </div>
@@ -64,7 +69,7 @@ export default function PemilihanOsisDetail() {
   if (!election || !candidate) {
     return (
       <div className="min-h-screen bg-[#FAF6F0]">
-        <PageHero title="Detail Kandidat" subtitle="Area siswa SMKN 11" breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Ruang Siswa', href: backTo }, { label: 'Detail Kandidat' }]} />
+        <PageHero title="Detail Kandidat" subtitle="Siswa, guru & tendik SMKN 11" breadcrumbs={[{ label: 'Beranda', href: '/' }, { label: 'Ruang Siswa', href: backTo }, { label: 'Detail Kandidat' }]} />
         <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
           <div className="rounded-2xl bg-white p-10 text-center shadow-sm">
             <h2 className="text-xl font-bold text-[#1B2A4A]">Kandidat tidak ditemukan</h2>
@@ -95,9 +100,9 @@ export default function PemilihanOsisDetail() {
           <Link to={backTo} className="inline-flex items-center gap-2 text-sm font-bold text-[#866D2C] hover:text-[#C8A951]">
             <ArrowLeft size={16} /> Kembali ke daftar kandidat
           </Link>
-          <span className={`inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-bold shadow-sm ${isStudent ? 'text-[#1B2A4A]' : 'text-[#5B7088]'}`}>
-            <ShieldCheck className={`h-4 w-4 ${isStudent ? 'text-[#C8A951]' : 'text-[#5B7088]'}`} />
-            {isStudent ? 'Masuk sebagai siswa' : 'Anda melihat sebagai tamu'}
+          <span className={`inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-bold shadow-sm ${isVoter ? 'text-[#1B2A4A]' : 'text-[#5B7088]'}`}>
+            <ShieldCheck className={`h-4 w-4 ${isVoter ? 'text-[#C8A951]' : 'text-[#5B7088]'}`} />
+            {isVoter ? `Masuk sebagai ${roleLabel(role)}` : role ? `Masuk sebagai ${roleLabel(role)} — tidak berhak memilih` : 'Anda melihat sebagai tamu'}
           </span>
         </div>
 
@@ -157,22 +162,33 @@ export default function PemilihanOsisDetail() {
 
         <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-[#1B2A4A]/10 bg-white p-6 shadow-sm">
           <p className="text-sm text-[#5B7088]">
-            {!isStudent
-              ? election.is_active
-                ? 'Login sebagai siswa untuk memilih pasangan ini.'
-                : 'Pemilihan sedang ditutup.'
+            {!isVoter
+              ? role
+                ? 'Akun ini tidak berhak memberikan suara.'
+                : election.is_active
+                  ? 'Login sebagai siswa atau guru/tendik untuk memilih pasangan ini.'
+                  : 'Pemilihan sedang ditutup.'
               : hasVoted
                 ? isMine ? 'Ini adalah pasangan pilihan Anda.' : 'Anda sudah memberikan suara.'
                 : election.is_active ? 'Puas dengan visi & misi ini? Pilih pasangan ini.' : 'Pemilihan sedang ditutup.'}
           </p>
-          {!isStudent ? (
-            <button
-              onClick={() => navigate(`/mading/login?returnUrl=${encodeURIComponent(location.pathname)}`)}
-              disabled={!election.is_active}
-              className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-6 py-2.5 font-bold text-[#1B2A4A] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <ShieldCheck className="h-4 w-4" /> Login untuk Memilih
-            </button>
+          {!isVoter ? (
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={() => navigate(`/mading/login?returnUrl=${encodeURIComponent(location.pathname)}`)}
+                disabled={!election.is_active}
+                className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-6 py-2.5 font-bold text-[#1B2A4A] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <ShieldCheck className="h-4 w-4" /> Login Siswa
+              </button>
+              <button
+                onClick={() => navigate(`/admin/login?returnUrl=${encodeURIComponent(location.pathname)}`)}
+                disabled={!election.is_active}
+                className="inline-flex items-center gap-2 rounded-lg border-2 border-[#1B2A4A] px-6 py-2.5 font-bold text-[#1B2A4A] transition hover:bg-[#1B2A4A]/5 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <ShieldCheck className="h-4 w-4" /> Login Guru / Tendik
+              </button>
+            </div>
           ) : canVote ? (
             <button
               onClick={pick}
