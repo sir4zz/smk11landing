@@ -152,7 +152,8 @@ class SdmAccountService
                     'name' => $name,
                     'email' => $email,
                     'status' => 'active',
-                    'must_change_password' => true,
+                    // Guru/tendik langsung masuk tanpa wajib ganti password.
+                    'must_change_password' => false,
                     'updated_at' => now(),
                 ]);
 
