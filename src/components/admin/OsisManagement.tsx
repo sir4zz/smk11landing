@@ -33,6 +33,9 @@ export default function OsisManagement({ permissions }: Props) {
     setMembers((m.data as OsisMember[] | null) ?? []);
     setActivities((a.data as OsisActivity[] | null) ?? []);
     setElection(e.data ?? null);
+    if (e.error) {
+      setMsg({ type: 'err', text: `Gagal memuat data pemilihan: ${(e.error as { message?: string })?.message ?? 'akses ditolak (403)'}` });
+    }
     setLoading(false);
   }, []);
 

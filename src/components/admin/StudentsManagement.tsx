@@ -15,6 +15,7 @@ interface StudentRow {
   name: string;
   class: string;
   major: string;
+  status?: string;
   gender?: string;
   date_of_birth?: string;
   place_of_birth?: string;
@@ -640,7 +641,9 @@ function BiodataField({ field, value, onChange, placeholder, error }: { field: B
       {field.label}{requiredMark}
       {field.type === 'select' ? (
         <select value={value} onChange={onChange} className={inputCls}>
-          {field.options?.map((opt) => (
+          {(field.options?.includes(value) || value === '' || value === '__custom__'
+            ? field.options
+            : [...(field.options ?? []), value])?.map((opt) => (
             <option key={opt} value={opt}>
               {opt === '' ? 'Pilih' : selectLabel(field.key, opt)}
             </option>
@@ -944,7 +947,10 @@ function StudentRow({ student, selectionMode, selectedIds, toggleSelected, setDe
           ) : (
             <span className="grid h-9 w-9 place-items-center rounded-full bg-[#FAF6F0]"><UserRound className="h-4 w-4 text-[#866D2C]" /></span>
           )}
-          <span className="font-semibold">{student.name}</span>
+          <span className="flex items-center gap-2">
+            <span className="font-semibold">{student.name}</span>
+            {student.status === 'inactive' && <span className="inline-flex shrink-0 rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-red-700">Nonaktif</span>}
+          </span>
         </div>
       </td>
       <td className="p-4 font-mono text-xs">{student.nisn}</td>

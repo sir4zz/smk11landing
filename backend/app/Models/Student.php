@@ -15,7 +15,13 @@ class Student extends Model
 
     public static function isValidClass(mixed $value): bool
     {
-        return in_array(self::normalizeClass($value), self::CLASSES, true);
+        $v = self::normalizeClass($value);
+        if (in_array($v, self::CLASSES, true)) {
+            return true;
+        }
+
+        // Format legacy: "XII TJKT 1", "10 TKJ 2", dst — tingkat kelas + suffix bebas.
+        return (bool) preg_match('/^(10|11|12|XII|XI|X)(\s+\S.*)?$/u', $v);
     }
 
     public static function normalizeClass(mixed $value): string
