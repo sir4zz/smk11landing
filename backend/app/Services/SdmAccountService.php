@@ -269,6 +269,10 @@ class SdmAccountService
     /**
      * Bulk-create login accounts for ALL SDM persons (guru + tendik) that
      * don't have linked accounts yet.
+     *
+     * IMPORTANT: plaintext passwords are returned ONE TIME so admin can
+     * distribute them securely. They are stored hashed and cannot be
+     * retrieved again — admin must download/export immediately.
      */
     public function bulkCreateAccounts(): array
     {
@@ -279,11 +283,21 @@ class SdmAccountService
         $created = 0;
         $skipped = 0;
         $errors = [];
+        $accounts = [];
 
         foreach ($persons as $person) {
             try {
-                $this->createAccount($person, null, null);
+                $result = $this->createAccount($person, null, null);
                 $created++;
+                $user = $result['user']->fresh(['profileRecord']);
+                $accounts[] = [
+                    'name' => $person->name,
+                    'type' => $person instanceof SdmTendik ? 'tendik' : 'guru',
+                    'identifier' => $person->nip ?: $person->nipppk ?: $person->nuptk ?: '',
+                    'username' => $user->username ?? '',
+                    'email' => $user->email ?? '',
+                    'password' => $result['password'],
+                ];
             } catch (\Throwable $e) {
                 $skipped++;
                 $errors[] = [
@@ -304,6 +318,81 @@ class SdmAccountService
                 'skipped' => $skipped,
             ],
             'errors' => $errors,
+            'accounts' => $accounts,
+        ];
+    }
+
+    /**
+     * RECOVERY: destroy ALL existing SDM login accounts and recreate them
+     * fresh with the current (NIP-polos, no `nip-` prefix) scheme.
+     *
+     * Used when bulk-create was run with the old `nip-xxx` usernames and/or
+     * plaintext passwords were never distributed (hashed passwords are
+     * unrecoverable). Old users are deleted — profiles + legacy guru rows
+     * are removed via DB cascade, SDM records are kept and relinked.
+     * Returns plaintext passwords ONE TIME for secure distribution.
+     */
+    public function bulkResetPasswords(): array
+    {
+        $persons = collect();
+        $persons = $persons->concat(SdmGuru::query()->whereNotNull('user_id')->with('user')->get());
+        $persons = $persons->concat(SdmTendik::query()->whereNotNull('user_id')->with('user')->get());
+
+        $reset = 0;
+        $skipped = 0;
+        $errors = [];
+        $accounts = [];
+
+        foreach ($persons as $person) {
+            $type = $person instanceof SdmTendik ? 'tendik' : 'guru';
+
+            try {
+                // 1. Destroy old login account (if any). Cascade removes the
+                // linked profile + legacy guru row; SDM row itself is kept.
+                $oldUser = $person->user;
+                if ($oldUser) {
+                    $oldUser->tokens()->delete();
+                    $person->update(['user_id' => null]);
+                    $oldUser->delete();
+                } else {
+                    $person->update(['user_id' => null]);
+                }
+
+                // 2. Recreate fresh with NIP-polos username scheme.
+                $fresh = $person->fresh();
+                $result = $this->createAccount($fresh, null, null);
+                $user = $result['user']->fresh(['profileRecord']);
+
+                $reset++;
+                $accounts[] = [
+                    'name' => $fresh->name,
+                    'type' => $type,
+                    'identifier' => $fresh->nip ?: $fresh->nipppk ?: $fresh->nuptk ?: '',
+                    'username' => $user->username ?? '',
+                    'email' => $user->email ?? '',
+                    'password' => $result['password'],
+                ];
+            } catch (\Throwable $e) {
+                report($e);
+                $skipped++;
+                $errors[] = [
+                    'name' => $person->name,
+                    'type' => $type,
+                    'message' => $e->getMessage(),
+                ];
+            }
+        }
+
+        Cache::forget(\App\Http\Controllers\StatsController::CACHE_KEY);
+
+        return [
+            'summary' => [
+                'total' => $persons->count(),
+                'reset' => $reset,
+                'skipped' => $skipped,
+            ],
+            'errors' => $errors,
+            'accounts' => $accounts,
         ];
     }
 
@@ -328,9 +417,12 @@ class SdmAccountService
 
     private function generateUsername(Model $person): string
     {
+        // New scheme: bare NIP/NIPPPK/NUPTK digits (no `nip-` prefix) so
+        // teachers just type their NIP. Old `nip-xxx` accounts keep working
+        // via prefix-tolerant login in AccountService::resolveUser().
         $base = $person->nip ?: $person->nipppk ?: $person->nuptk;
         $digits = $base ? preg_replace('/[^0-9]/', '', $base) : '';
-        $prefix = $digits !== '' ? 'nip-'.$digits : ($person instanceof SdmTendik ? 'tendik' : 'guru');
+        $prefix = $digits !== '' ? $digits : ($person instanceof SdmTendik ? 'tendik' : 'guru');
 
         $candidate = $prefix;
         $username = $candidate;
@@ -348,7 +440,7 @@ class SdmAccountService
     {
         $base = $person->nip ?: $person->nipppk ?: $person->nuptk;
         $digits = $base ? preg_replace('/[^0-9]/', '', $base) : '';
-        $prefix = $digits !== '' ? 'nip-'.$digits : ($person instanceof SdmTendik ? 'tendik' : 'guru');
+        $prefix = $digits !== '' ? $digits : ($person instanceof SdmTendik ? 'tendik' : 'guru');
 
         $candidate = strtolower($prefix).'@'.self::EMAIL_DOMAIN;
         $email = $candidate;

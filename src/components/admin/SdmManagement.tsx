@@ -1,7 +1,7 @@
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { ArrowLeft, ChevronRight, Download, Eye, KeyRound, Loader2, Pencil, Plus, Search, Trash2, Upload, UserRound, X } from 'lucide-react';
-import { resolveImageUrl, sdmAccountApi, sdmApi } from '../../lib/api';
+import { downloadBulkAccountsCsv, resolveImageUrl, sdmAccountApi, sdmApi } from '../../lib/api';
 import type { GuruAccountSummary, SdmPersonRow, SdmType } from '../../lib/api';
 import { can } from '../../lib/permissions';
 import ImageField from './ImageField';
@@ -285,6 +285,7 @@ export default function SdmManagement({ type, permissions }: SdmManagementProps)
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [selectionMode, setSelectionMode] = useState(false);
   const [bulkCreating, setBulkCreating] = useState(false);
+  const [bulkResetting, setBulkResetting] = useState(false);
   const [exporting, setExporting] = useState(false);
 
   const canEdit = can(permissions, 'sdm.edit') || can(permissions, 'sdm.create');
@@ -457,7 +458,7 @@ export default function SdmManagement({ type, permissions }: SdmManagementProps)
   };
 
   const bulkCreateAccounts = async () => {
-    if (!confirm('Buatkan akun login untuk semua guru & tenaga kependidikan yang belum memiliki akun? Password akan di-generate otomatis.')) return;
+    if (!confirm('Buatkan akun login untuk semua guru & tenaga kependidikan yang belum memiliki akun? Password akan di-generate otomatis dan langsung diunduh sebagai CSV. Simpan file tersebut — password tidak bisa dilihat lagi.')) return;
     setBulkCreating(true);
     const { data, error } = await sdmAccountApi.bulkCreate();
     setBulkCreating(false);
@@ -466,9 +467,36 @@ export default function SdmManagement({ type, permissions }: SdmManagementProps)
       return;
     }
     if (data) {
-      const { summary, errors } = data;
+      const { summary, errors, accounts } = data;
       const msg = `Berhasil membuat ${summary.created} akun dari ${summary.total} data. ${summary.skipped > 0 ? `${summary.skipped} dilewati.` : ''}`;
-      flash(summary.created > 0 ? 'ok' : 'err', errors.length > 0 ? `${msg} (${errors.map((e) => `${e.name} [${e.type}]`).join(', ')})` : msg);
+      if (accounts && accounts.length > 0) {
+        downloadBulkAccountsCsv(accounts, `akun-guru-baru-${new Date().toISOString().slice(0, 10)}.csv`);
+        flash('ok', `${msg} File CSV berisi username/email + password baru otomatis terunduh. Bagikan secara aman, password hanya tampil di file itu.`);
+      } else {
+        flash(summary.created > 0 ? 'ok' : 'err', errors.length > 0 ? `${msg} (${errors.map((e) => `${e.name} [${e.type}]`).join(', ')})` : msg);
+      }
+    }
+    await load();
+  };
+
+  const bulkResetPasswords = async () => {
+    if (!confirm('HAPUS & BUAT ULANG semua akun guru/tendik yang sudah ada dengan username NIP polos (tanpa nip-) + password baru, lalu unduh CSV? Akun lama dihancurkan permanen dan semua sesi ditendang. Lanjutkan?')) return;
+    if (!confirm('Pastikan Anda siap menyimpan file CSV yang akan terunduh. Akun lama tidak bisa dikembalikan. Klik OK untuk hancurkan & buat ulang sekarang.')) return;
+    setBulkResetting(true);
+    const { data, error } = await sdmAccountApi.bulkResetPasswords();
+    setBulkResetting(false);
+    if (error) {
+      flash('err', error.message ?? 'Gagal reset password massal.');
+      return;
+    }
+    if (data) {
+      const { summary, accounts } = data;
+      if (accounts && accounts.length > 0) {
+        downloadBulkAccountsCsv(accounts, `akun-guru-baru-${new Date().toISOString().slice(0, 10)}.csv`);
+        flash('ok', `Berhasil buat ulang ${summary.reset} dari ${summary.total} akun dengan username NIP polos. File CSV otomatis terunduh — guru cukup ketik NIP saja saat login. Bagikan aman & hapus file setelah dibagikan.`);
+      } else {
+        flash('err', `Tidak ada akun yang direset dari ${summary.total} data.`);
+      }
     }
     await load();
   };
@@ -512,9 +540,14 @@ export default function SdmManagement({ type, permissions }: SdmManagementProps)
               </button>
             )}
             {canEditAccount && (
-              <button onClick={bulkCreateAccounts} disabled={bulkCreating} className="inline-flex items-center gap-2 rounded-lg border-2 border-[#C8A951]/60 px-4 py-2 font-bold text-[#866D2C] hover:bg-[#C8A951]/10 disabled:opacity-50">
-                {bulkCreating ? <Loader2 size={18} className="animate-spin" /> : <KeyRound size={18} />} Buat Akun Semua
-              </button>
+              <>
+                <button onClick={bulkCreateAccounts} disabled={bulkCreating || bulkResetting} className="inline-flex items-center gap-2 rounded-lg border-2 border-[#C8A951]/60 px-4 py-2 font-bold text-[#866D2C] hover:bg-[#C8A951]/10 disabled:opacity-50">
+                  {bulkCreating ? <Loader2 size={18} className="animate-spin" /> : <KeyRound size={18} />} Buat Akun Semua
+                </button>
+                <button onClick={bulkResetPasswords} disabled={bulkCreating || bulkResetting} title="Hancurkan akun lama & buat ulang dengan username NIP polos + unduh CSV" className="inline-flex items-center gap-2 rounded-lg border-2 border-red-300 px-4 py-2 font-bold text-red-700 hover:bg-red-50 disabled:opacity-50">
+                  {bulkResetting ? <Loader2 size={18} className="animate-spin" /> : <KeyRound size={18} />} Hapus & Buat Ulang + CSV
+                </button>
+              </>
             )}
             {canEdit && (
               <button onClick={openCreate} className="inline-flex items-center gap-2 rounded-lg bg-[#C8A951] px-4 py-2 font-bold text-[#1B2A4A]"><Plus size={18} /> Tambah</button>
