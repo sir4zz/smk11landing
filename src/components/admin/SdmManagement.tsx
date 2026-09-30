@@ -286,6 +286,7 @@ export default function SdmManagement({ type, permissions }: SdmManagementProps)
   const [selectionMode, setSelectionMode] = useState(false);
   const [bulkCreating, setBulkCreating] = useState(false);
   const [bulkResetting, setBulkResetting] = useState(false);
+  const [bulkLinking, setBulkLinking] = useState(false);
   const [exporting, setExporting] = useState(false);
 
   const canEdit = can(permissions, 'sdm.edit') || can(permissions, 'sdm.create');
@@ -469,12 +470,36 @@ export default function SdmManagement({ type, permissions }: SdmManagementProps)
     if (data) {
       const { summary, errors, accounts } = data;
       const msg = `Berhasil membuat ${summary.created} akun dari ${summary.total} data. ${summary.skipped > 0 ? `${summary.skipped} dilewati.` : ''}`;
+      const errText = errors.length > 0
+        ? ` Penyebab: ${errors.slice(0, 3).map((e) => `${e.name}: ${e.message}`).join('; ')}${errors.length > 3 ? ` (+${errors.length - 3} lainnya, cek console)` : ''}.`
+        : '';
+      if (errors.length > 0) console.error('Bulk create errors:', errors);
       if (accounts && accounts.length > 0) {
         downloadBulkAccountsCsv(accounts, `akun-guru-baru-${new Date().toISOString().slice(0, 10)}.csv`);
-        flash('ok', `${msg} File CSV berisi username/email + password baru otomatis terunduh. Bagikan secara aman, password hanya tampil di file itu.`);
+        flash(summary.skipped > 0 ? 'err' : 'ok', `${msg}${errText} File CSV berisi username/email + password baru otomatis terunduh. Bagikan secara aman, password hanya tampil di file itu.`);
       } else {
-        flash(summary.created > 0 ? 'ok' : 'err', errors.length > 0 ? `${msg} (${errors.map((e) => `${e.name} [${e.type}]`).join(', ')})` : msg);
+        flash(summary.created > 0 ? 'ok' : 'err', `${msg}${errText} Kemungkinan NIP/NUPTK sudah punya akun lama — gunakan tombol Link Akun Lama.`);
       }
+    }
+    await load();
+  };
+
+  const bulkLinkAccounts = async () => {
+    if (!confirm('Hubungkan data guru/tendik yang belum punya akun ke AKUN LAMA yang NIP/NIPPPK/NUPTK-nya cocok? Tidak ada password baru — guru tetap login dengan password lamanya (atau NIP saja). Lanjutkan?')) return;
+    setBulkLinking(true);
+    const { data, error } = await sdmAccountApi.bulkLinkAccounts();
+    setBulkLinking(false);
+    if (error) {
+      flash('err', error.message ?? 'Gagal menghubungkan akun.');
+      return;
+    }
+    if (data) {
+      const { summary, errors } = data;
+      const errText = errors && errors.length > 0
+        ? ` Belum ke-link: ${errors.slice(0, 3).map((e) => `${e.name}: ${e.message}`).join('; ')}${errors.length > 3 ? ` (+${errors.length - 3} lainnya, cek console)` : ''}.`
+        : '';
+      if (errors && errors.length > 0) console.error('Bulk link errors:', errors);
+      flash(summary.linked > 0 ? 'ok' : 'err', `Berhasil menghubungkan ${summary.linked} dari ${summary.total} data ke akun lama.${errText}`);
     }
     await load();
   };
@@ -490,12 +515,16 @@ export default function SdmManagement({ type, permissions }: SdmManagementProps)
       return;
     }
     if (data) {
-      const { summary, accounts } = data;
+      const { summary, accounts, errors } = data;
+      const errText = errors && errors.length > 0
+        ? ` Gagal: ${errors.slice(0, 5).map((e) => `${e.name} [${e.type}]: ${e.message}`).join('; ')}${errors.length > 5 ? ` (+${errors.length - 5} lainnya, cek console)` : ''}.`
+        : '';
+      if (errors && errors.length > 0) console.error('Bulk recreate errors:', errors);
       if (accounts && accounts.length > 0) {
         downloadBulkAccountsCsv(accounts, `akun-guru-baru-${new Date().toISOString().slice(0, 10)}.csv`);
-        flash('ok', `Berhasil buat ulang ${summary.reset} dari ${summary.total} akun dengan username NIP polos. File CSV otomatis terunduh — guru cukup ketik NIP saja saat login. Bagikan aman & hapus file setelah dibagikan.`);
+        flash(summary.skipped > 0 ? 'err' : 'ok', `Berhasil buat ulang ${summary.reset} dari ${summary.total} akun dengan username NIP polos.${summary.skipped > 0 ? ` ${summary.skipped} gagal.` : ''}${errText} File CSV otomatis terunduh — guru cukup ketik NIP saja saat login.`);
       } else {
-        flash('err', `Tidak ada akun yang direset dari ${summary.total} data.`);
+        flash('err', `Tidak ada akun yang dibuat ulang dari ${summary.total} data.${errText}`);
       }
     }
     await load();
@@ -541,10 +570,13 @@ export default function SdmManagement({ type, permissions }: SdmManagementProps)
             )}
             {canEditAccount && (
               <>
-                <button onClick={bulkCreateAccounts} disabled={bulkCreating || bulkResetting} className="inline-flex items-center gap-2 rounded-lg border-2 border-[#C8A951]/60 px-4 py-2 font-bold text-[#866D2C] hover:bg-[#C8A951]/10 disabled:opacity-50">
+                <button onClick={bulkCreateAccounts} disabled={bulkCreating || bulkResetting || bulkLinking} className="inline-flex items-center gap-2 rounded-lg border-2 border-[#C8A951]/60 px-4 py-2 font-bold text-[#866D2C] hover:bg-[#C8A951]/10 disabled:opacity-50">
                   {bulkCreating ? <Loader2 size={18} className="animate-spin" /> : <KeyRound size={18} />} Buat Akun Semua
                 </button>
-                <button onClick={bulkResetPasswords} disabled={bulkCreating || bulkResetting} title="Hancurkan akun lama & buat ulang dengan username NIP polos + unduh CSV" className="inline-flex items-center gap-2 rounded-lg border-2 border-red-300 px-4 py-2 font-bold text-red-700 hover:bg-red-50 disabled:opacity-50">
+                <button onClick={bulkLinkAccounts} disabled={bulkCreating || bulkResetting || bulkLinking} title="Hubungkan ke akun login lama yang NIP/NUPTK-nya cocok (tanpa password baru)" className="inline-flex items-center gap-2 rounded-lg border-2 border-[#1B2A4A]/40 px-4 py-2 font-bold text-[#1B2A4A] hover:bg-[#1B2A4A]/5 disabled:opacity-50">
+                  {bulkLinking ? <Loader2 size={18} className="animate-spin" /> : <KeyRound size={18} />} Link Akun Lama
+                </button>
+                <button onClick={bulkResetPasswords} disabled={bulkCreating || bulkResetting || bulkLinking} title="Hancurkan akun lama & buat ulang dengan username NIP polos + unduh CSV" className="inline-flex items-center gap-2 rounded-lg border-2 border-red-300 px-4 py-2 font-bold text-red-700 hover:bg-red-50 disabled:opacity-50">
                   {bulkResetting ? <Loader2 size={18} className="animate-spin" /> : <KeyRound size={18} />} Hapus & Buat Ulang + CSV
                 </button>
               </>

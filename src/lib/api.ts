@@ -1554,7 +1554,24 @@ export const sdmAccountApi = {
   bulkResetPasswords(): ApiResult<BulkResetResult> {
     return request<BulkResetResult>('/admin/sdm/guru/bulk-reset-passwords', { method: 'POST' });
   },
+  bulkLinkAccounts(): ApiResult<BulkLinkResult> {
+    return request<BulkLinkResult>('/admin/sdm/guru/bulk-link-accounts', { method: 'POST' });
+  },
 };
+
+export interface BulkLinkedRow {
+  name: string;
+  type: string;
+  identifier: string;
+  username: string;
+  email: string;
+}
+
+export interface BulkLinkResult {
+  summary: { total: number; linked: number; skipped: number };
+  errors: { name: string; type: string; message: string }[];
+  linked: BulkLinkedRow[];
+}
 
 export interface BulkAccountRow {
   name: string;

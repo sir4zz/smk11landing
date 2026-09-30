@@ -271,6 +271,7 @@ Route::middleware(['auth:sanctum', 'staff'])->group(function () {
     // Bulk route MUST come before {id} routes to avoid conflict
     Route::post('/admin/sdm/guru/bulk-create-accounts', [SdmAccountController::class, 'bulkCreate'])->middleware('permission:sdm.edit');
     Route::post('/admin/sdm/guru/bulk-reset-passwords', [SdmAccountController::class, 'bulkReset'])->middleware('permission:sdm.edit');
+    Route::post('/admin/sdm/guru/bulk-link-accounts', [SdmAccountController::class, 'bulkLink'])->middleware('permission:sdm.edit');
 
     // Guru account routes
     Route::get('/admin/sdm/guru/{id}/account', [SdmAccountController::class, 'show'])->middleware('permission:sdm.view');
