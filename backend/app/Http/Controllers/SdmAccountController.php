@@ -74,6 +74,16 @@ class SdmAccountController extends Controller
         ]);
     }
 
+    public function bulkReset()
+    {
+        $result = $this->service->bulkResetPasswords();
+
+        return response()->json([
+            'data' => $result,
+            'error' => null,
+        ]);
+    }
+
     /**
      * Resolve SDM person from either guru or tendik table.
      */

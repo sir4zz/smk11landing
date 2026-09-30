@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Guru;
 use App\Models\OsisAccount;
 use App\Models\SdmGuru;
+use App\Models\SdmTendik;
 use App\Models\Student;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -18,9 +19,13 @@ use Illuminate\Support\Str;
 class AccountService
 {
     /**
-     * Resolve a login identifier (username, email, NIS, NISN) to a user account.
-     * Staff/admin/guru/osis/bkk: username or email.
+     * Resolve a login identifier to a user account.
+     * Staff/admin/guru/osis/bkk: username, email, or NIP/NIPPPK/NUPTK/teacher_id.
      * Student: NISN or NIS.
+     *
+     * Backward compatible: old guru usernames use the `nip-` prefix
+     * (e.g. `nip-19760916...`) but teachers may now log in with the bare
+     * NIP/NUPTK digits only.
      */
     public function resolveUser(string $identifier): ?User
     {
@@ -36,9 +41,77 @@ class AccountService
             return $user;
         }
 
+        // Case-insensitive username retry (usernames are stored lowercase).
+        $lower = strtolower($term);
+        if ($lower !== $term) {
+            $user = User::query()->where('username', $lower)->first();
+            if ($user && $user->profileRecord?->role !== 'student') {
+                return $user;
+            }
+        }
+
+        // `nip-` prefix tolerance (both directions) so teachers can type
+        // just the NIP digits regardless of the stored username format.
+        if (preg_match('/^\d+$/', $term)) {
+            $user = User::query()->where('username', 'nip-'.$term)->first();
+            if ($user && $user->profileRecord?->role !== 'student') {
+                return $user;
+            }
+        }
+        if (preg_match('/^nip-(\d+)$/i', $term, $m)) {
+            $user = User::query()->where('username', $m[1])->first();
+            if ($user && $user->profileRecord?->role !== 'student') {
+                return $user;
+            }
+        }
+
         // Try email lookup (all accounts).
         if (str_contains($term, '@')) {
             $user = User::query()->where('email', strtolower($term))->first();
+            if ($user) {
+                return $user;
+            }
+        }
+
+        // Guru login via NIP / NIPPPK / NUPTK / teacher ID (legacy gurus table).
+        $guru = Guru::query()
+            ->where('nip', $term)
+            ->orWhere('nipppk', $term)
+            ->orWhere('nuptk', $term)
+            ->orWhere('teacher_id', $term)
+            ->first();
+
+        if ($guru) {
+            $user = User::query()->find($guru->id);
+            if ($user) {
+                return $user;
+            }
+        }
+
+        // SDM fallback: guru/tendik records already linked to a login account.
+        $sdmGuru = SdmGuru::query()
+            ->where(function ($q) use ($term) {
+                $q->where('nip', $term)->orWhere('nipppk', $term)->orWhere('nuptk', $term);
+            })
+            ->whereNotNull('user_id')
+            ->first();
+
+        if ($sdmGuru) {
+            $user = User::query()->find($sdmGuru->user_id);
+            if ($user) {
+                return $user;
+            }
+        }
+
+        $sdmTendik = SdmTendik::query()
+            ->where(function ($q) use ($term) {
+                $q->where('nip', $term)->orWhere('nipppk', $term)->orWhere('nuptk', $term);
+            })
+            ->whereNotNull('user_id')
+            ->first();
+
+        if ($sdmTendik) {
+            $user = User::query()->find($sdmTendik->user_id);
             if ($user) {
                 return $user;
             }

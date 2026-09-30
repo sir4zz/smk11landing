@@ -1551,11 +1551,48 @@ export const sdmAccountApi = {
   bulkCreate(): ApiResult<BulkCreateResult> {
     return request<BulkCreateResult>('/admin/sdm/guru/bulk-create-accounts', { method: 'POST' });
   },
+  bulkResetPasswords(): ApiResult<BulkResetResult> {
+    return request<BulkResetResult>('/admin/sdm/guru/bulk-reset-passwords', { method: 'POST' });
+  },
 };
+
+export interface BulkAccountRow {
+  name: string;
+  type: string;
+  identifier: string;
+  username: string;
+  email: string;
+  password: string;
+}
 
 export interface BulkCreateResult {
   summary: { total: number; created: number; skipped: number };
   errors: { name: string; type: string; message: string }[];
+  accounts?: BulkAccountRow[];
+}
+
+export interface BulkResetResult {
+  summary: { total: number; reset: number; skipped: number };
+  errors: { name: string; type: string; message: string }[];
+  accounts: BulkAccountRow[];
+}
+
+export function downloadBulkAccountsCsv(rows: BulkAccountRow[], filename: string) {
+  const header = ['nama', 'tipe', 'nip_nipppk_nuptk', 'username', 'email', 'password_baru'];
+  const escape = (v: string) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const lines = [
+    header.join(','),
+    ...rows.map((r) => [r.name, r.type, r.identifier, r.username, r.email, r.password].map(escape).join(',')),
+  ];
+  const blob = new Blob(["\uFEFF" + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 export interface PublicSdmProfile {
