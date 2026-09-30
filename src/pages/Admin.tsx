@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { BarChart3, BookOpen, Briefcase, Building2, CalendarDays, ChevronDown, ChevronRight, DatabaseBackup as DatabaseBackupIcon, FileText, GraduationCap, LogOut, Mail, MapPin, Menu, MessageCircle, Pencil, Plus, Trophy, Trash2, Upload, Users, X, Save, ShieldCheck, UsersRound, Dumbbell, Newspaper, UserCog, Camera, UserRound, Loader2, ArrowLeft, FileCheck2, Heart, Star, Target, Zap, Globe, Handshake, Sparkles, TrendingUp, Compass, Shield, CheckCircle, Rocket, Lightbulb, Award, ImagePlus } from 'lucide-react';
 import logoSekolah from '../assets/logo.png';
 import { backendApi, apiBaseUrl, resolveImageUrl, fetchStats, getAuthToken } from '../lib/api';
@@ -126,8 +126,14 @@ function formatDateValue(value: unknown): string {
 
 export function AdminLogin() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Hanya izinkan path internal (mis. /siswa/pemilihan-osis?returnUrl=...)
+  const rawReturnUrl = searchParams.get('returnUrl') ?? '';
+  const returnUrl = rawReturnUrl.startsWith('/') && !rawReturnUrl.startsWith('//') ? rawReturnUrl : '';
+  const homePath = () => returnUrl || '/admin';
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -153,10 +159,10 @@ export function AdminLogin() {
       if (data.must_change_password) {
         navigate('/admin/ubah-password');
       } else {
-        navigate('/admin');
+        navigate(homePath());
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login gagal.');
+      setError(err instanceof Error ? err.message : (err as { message?: string })?.message || 'Login gagal.');
     } finally {
       setLoading(false);
     }
@@ -169,11 +175,11 @@ export function AdminLogin() {
       if (cancelled || !data?.user) return;
       const { data: profile } = await backendApi.database.from('profiles').select('role').eq('id', data.user.id).single();
       if (!cancelled && profile?.role && (STAFF_ROLES as readonly string[]).includes(profile.role)) {
-        navigate(data.mustChangePassword ? '/admin/ubah-password' : '/admin', { replace: true });
+        navigate(data.mustChangePassword ? '/admin/ubah-password' : (returnUrl || '/admin'), { replace: true });
       }
     })();
     return () => { cancelled = true; };
-  }, [navigate]);
+  }, [navigate, returnUrl]);
 
   return (
     <main className="min-h-screen bg-[#FAF6F0] grid place-items-center p-4">

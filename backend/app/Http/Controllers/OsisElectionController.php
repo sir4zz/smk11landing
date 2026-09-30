@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\OsisCandidate;
 use App\Models\OsisElection;
 use App\Models\OsisVote;
+use App\Models\User;
 use App\Services\PermissionService;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
@@ -69,7 +70,7 @@ class OsisElectionController extends Controller
     {
         $user = $request->user();
 
-        if (! $user || ! $this->permissions->isStudent($user)) {
+        if (! $this->canVote($user)) {
             return response()->json(['error' => ['message' => 'Forbidden.']], 403);
         }
 
@@ -122,7 +123,7 @@ class OsisElectionController extends Controller
     {
         $user = $request->user();
 
-        if (! $user || ! $this->permissions->isStudent($user)) {
+        if (! $this->canVote($user)) {
             return response()->json(['error' => ['message' => 'Forbidden.']], 403);
         }
 
@@ -347,6 +348,15 @@ class OsisElectionController extends Controller
     /**
      * @return array<string, int> candidate_id => vote count
      */
+    /**
+     * Pemilih boleh: siswa + guru/tendik.
+     * (Akun dari data Guru & Tenaga Kependidikan dibuat dengan role 'guru'.)
+     */
+    private function canVote(?User $user): bool
+    {
+        return $user && ($this->permissions->isStudent($user) || $this->permissions->isGuru($user));
+    }
+
     private function tallies(string $electionId): array
     {
         return OsisVote::query()

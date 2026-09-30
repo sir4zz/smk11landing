@@ -178,7 +178,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/student/data-siswa/change-requests', [StudentDataChangeRequestController::class, 'store']);
     Route::delete('/student/data-siswa/change-requests/{id}', [StudentDataChangeRequestController::class, 'cancel']);
 
-    // Pemilihan OSIS (siswa wajib login; role dicek di controller)
+    // Pemilihan OSIS (login wajib; pemilih = siswa + guru/tendik, dicek di controller)
     Route::get('/student/pemilihan-osis', [OsisElectionController::class, 'studentStatus']);
     Route::post('/student/pemilihan-osis/vote', [OsisElectionController::class, 'vote']);
 
